@@ -42,6 +42,22 @@ programs with physically provable integrity gurantees on runtime
 labels.  We plan to revisit this issue as the GAPS hardware
 capabilities are developed.
 
+We envision that GAPS-enabled architectures will provide manifests
+that provide constraints on how the software-defined enclaves may be
+mapped to physical components of the platform.  The details still need
+to be worked out, but we anticipate this will include information
+about each processor architecture available on the platform, what
+sensitivity levels are allowed in enclaves compiled to a processor,
+and what unidirectional channels are available.  We anticipate that
+for many applications, there will be a need to map multiple separate
+enclaves to the same processor, map multiple channels to the same
+hardware channel, and perhaps allow one processor to control the
+startup and shutdown of enclaves on other processors.  When multiple
+enclaves and channels are mapped to the same underlying hardware, the
+isolation guarantees will lack physical guarantees, and so we will
+need mechanisms to ensure physical separation is achieved when
+required.
+
 Programming Model
 -----------------
 
@@ -155,8 +171,68 @@ then an error will be reported.
 Sensitivity Annotations
 =======================
 
-TODO: Describe sensitivity annotations.
+Sensitivity annotations are used to define different sensitivity
+levels which can be ordered.
 
+.. code-block:: c
+
+                #pragma sensitive declare(<new>)
+                #pragma sensitive declare(<new>, <level>)
+
+This declares a sensitivity level ``<new>``.  If additional argument is
+provided, it must be a previously declared level, and this indicates that
+``<new>`` is considered more sensitive than ``<level>``.
+
+.. code-block:: c
+
+                __attribute__((sensitive(<level>)))
+
+This attribute may be attached to declaration in the program,
+including function declarations and definitions, typedefs, compound
+types, variables, statements, enumerated elements and fields of
+struct, union and classes (classes are C++ only).  It is used to
+indicate that the data is considered to have the given sensitivity
+level.  Multiple annotations may be added to a single declaration if
+there is no single highest level of sensitivity affecting a
+declaration.
+
+TODO: Discuss the semantics of sensitivity levels and how propagation
+checking works.
+
+.. code-block:: c
+
+                #pragma sensitive push(<level>, <level>, ...)
+                #pragma sensitive pop
+
+This pragma indicates that all declarations between the ``push`` and
+``pop`` pragmas are annotated with the given levels provided to
+``push``.  The semantics are the same as if each declaration had the
+``sensitive`` attribute, and this is simply provided for convenience
+in files that contain many declarations that require sensitivity
+levels.
+
+.. code-block:: c
+
+                #pragma enclave trusted(<enclave>, <level>)
+
+This indicates that code running on the given enclave is permitted
+access to information marked with the given sensitivity level.  In the
+absense of such an annotation, the linker will report errors if the
+enclave named ``<enclave>`` depends on any information with the given
+level.  Adding this annotation, implicitly adds permission for the
+enclave to access information marked as less sensitive than the given
+level.  On GAPS-enabled architectures, the linker will verify that
+trusted enclaves are mapped to hardware approved for access to
+information with the given sensitivity level.
+
+Inferred vs Explicit Propagation
+--------------------------------
+
+TODO: Compare and constrast having the processor implicitly
+propagating sensitive information vs requiring explicit annotations
+for each declaration.  Discuss further the implications of requiring
+declarations are annotated vs only requiring definitions are
+annotated.
 
 -
 
