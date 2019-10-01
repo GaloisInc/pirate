@@ -3,3 +3,4 @@ project(gaps)
 
 add_subdirectory(libpirate)
 add_subdirectory(tiny)
+add_subdirectory(simple_demo)

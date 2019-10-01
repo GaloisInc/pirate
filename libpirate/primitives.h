@@ -50,4 +50,4 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // second invocation.
 int pirate_close(int gd);
 
-#endif //__PIRATE_PRIMITIVES_H 
+#endif //__PIRATE_PRIMITIVES_H
