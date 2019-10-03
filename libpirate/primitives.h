@@ -1,10 +1,14 @@
 #ifndef __PIRATE_PRIMITIVES_H
 #define __PIRATE_PRIMITIVES_H
 
+#include <fcntl.h>
 #include <sys/types.h>
 
-#define PIRATE_FILENAME "/tmp/gaps.channel.%d"
-#define PIRATE_LEN_NAME 64
+#define PIRATE_FILENAME     "/tmp/gaps.channel.%d"
+#define PIRATE_LEN_NAME     64
+
+// Allowed channel values 0,1,...,PIRATE_MAX_CHANNEL
+#define PIRATE_MAX_CHANNEL  15
 
 // Opens the gaps channel specified by the gaps descriptor.
 //

@@ -1,1 +1,11 @@
+Makefile
+CMakeFiles
+CMakeCache.txt
+*.cmake
+tiny/tiny
+libpirate/libpirate.a
+libpirate/libpirate.so
+libpirate/primitives_test
+libpirate/Testing
+.vscode
 /build/*
