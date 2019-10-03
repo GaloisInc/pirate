@@ -7,3 +7,4 @@ libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_test
 libpirate/Testing
+.vscode

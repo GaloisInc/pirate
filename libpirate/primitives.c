@@ -125,13 +125,12 @@ static int pirate_open_read(char *pathname) {
         if (access(pathname, F_OK) == 0) {
             break;
         }
-        nread = read(watch, buffer, PIRATE_INOTIFY_SIZE);
+        nread = read(notify, buffer, PIRATE_INOTIFY_SIZE);
         if (nread < 0) {
             rv = nread;
             break;
         }
     }
-    close(watch);
     close(notify);
     return rv;
 }
