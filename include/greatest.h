@@ -1136,7 +1136,7 @@ void GREATEST_PRINT_REPORT(void) {                                      \
             greatest_info.assertions,                                   \
             greatest_info.assertions == 1 ? "" : "s");                  \
         GREATEST_FPRINTF(GREATEST_STDOUT,                               \
-            "Pass: %u, fail: %u, skip: %u.\n",                          \
+            "\033[1;32mPass: %u\033[0m, \033[1;31mfail: %u\033[0m, skip: %u.\n",                          \
             greatest_info.passed,                                       \
             greatest_info.failed, greatest_info.skipped);               \
     }                                                                   \
