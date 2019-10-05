@@ -2,7 +2,10 @@ Makefile
 CMakeFiles
 CMakeCache.txt
 *.cmake
-tiny/tiny
+simpledemo/low
+simpledemo/high
+tiny/tinyserver
+tiny/libtiny.a
 libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_test

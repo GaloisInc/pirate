@@ -7,8 +7,7 @@
 #define PIRATE_FILENAME     "/tmp/gaps.channel.%d"
 #define PIRATE_LEN_NAME     64
 
-// Allowed channel values 0,1,...,PIRATE_MAX_CHANNEL
-#define PIRATE_MAX_CHANNEL  15
+#define PIRATE_NUM_CHANNELS  16
 
 // Opens the gaps channel specified by the gaps descriptor.
 //

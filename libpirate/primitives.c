@@ -7,19 +7,18 @@
 #include "primitives.h"
 
 typedef struct {
-    int gd;             // gaps descriptor
     int fd;             // pipe file descriptor
-    int flags;          // pipe open flags
 } pirate_channel_t;
 
-static pirate_channel_t* channels[PIRATE_MAX_CHANNEL + 1] = {0};
+static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {0};
+static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {0};
 
 int pirate_open(int gd, int flags) {
-    pirate_channel_t* ch;
-    int rv;
+    pirate_channel_t* channels;
+    int fd, rv;
     char pathname[PIRATE_LEN_NAME];
 
-    if (gd < 0 || gd > PIRATE_MAX_CHANNEL) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = EBADF;
         return -1;
     }
@@ -29,18 +28,15 @@ int pirate_open(int gd, int flags) {
         return -1;
     }
 
-    /* Prevent double-open */
-    ch = channels[gd];
-    if (ch != NULL) {
-        errno = EBUSY;
-        return -1;
+    if (flags == O_RDONLY) {
+        channels = readers;
+    } else {
+        channels = writers;
     }
 
-    /* Allocate a new hash entry */
-    ch = (pirate_channel_t* )calloc(1, sizeof(pirate_channel_t));
-    if (ch == NULL) {
-        errno = ENOMEM;
-        return -1;
+    fd = channels[gd].fd;
+    if (fd != 0) {
+        return gd;
     }
 
     /* Create a named pipe, if one does not exist */
@@ -50,82 +46,82 @@ int pirate_open(int gd, int flags) {
         return -1;
     }
 
-    /* Open the pipe: reader will block until writer opens its side */
-    ch->gd = gd;
-    ch->flags = flags;
-    ch->fd = open(pathname, O_RDWR);
-    if (ch->fd < 0) {
-        free(ch);
+    fd = open(pathname, flags);
+    if (fd < 0) {
         return -1;
     }
 
     /* Success */
-    channels[gd] = ch;
+    channels[gd] = (pirate_channel_t){fd};
     return gd;
 }
 
 int pirate_close(int gd) {
-    int rv = 0;
-    pirate_channel_t* ch;
+    int fd1, fd2;
+    int rv1 = 0, rv2 = 0;
 
-    if (gd < 0 || gd > PIRATE_MAX_CHANNEL) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = EBADF;
         return -1;
     }
 
-    ch = channels[gd];
-    if (ch == NULL) {
+    fd1 = readers[gd].fd;
+    fd2 = writers[gd].fd;
+
+    if ((fd1 == 0) && (fd2 == 0)) {
         errno = ENODEV;
         return -1;
     }
 
-    rv = close(ch->fd);
-    free(ch);
-    channels[gd] = NULL;
+    if (fd1 > 0) {
+        rv1 = close(fd1);
+    }
 
-    return rv;
+    if (fd2 > 0) {
+        rv2 = close(fd2);
+    }
+
+    if (rv1 != 0) {
+        return rv1;
+    }
+
+    if (rv2 != 0) {
+        return rv2;
+    }
+
+    return 0;
 }
 
 ssize_t pirate_read(int gd, void *buf, size_t count) {
-    pirate_channel_t* ch;
+    int fd;
 
-    if (gd < 0 || gd > PIRATE_MAX_CHANNEL) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = EBADF;
         return -1;
     }
 
-    ch = channels[gd];
-    if (ch == NULL) {
+    fd = readers[gd].fd;
+    if (fd == 0) {
         errno = EBADF;
         return -1;
     }
 
-    if (ch->flags != O_RDONLY) {
-        errno = EBADF;
-        return -1;
-    }
-
-    return read(ch->fd, buf, count);
+    return read(fd, buf, count);
 }
 
 ssize_t pirate_write(int gd, const void *buf, size_t count) {
-    pirate_channel_t* ch;
+    int fd;
 
-    if (gd < 0 || gd > PIRATE_MAX_CHANNEL) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = EBADF;
         return -1;
     }
 
-    ch = channels[gd];
-    if (ch == NULL) {
+    fd = writers[gd].fd;
+    if (fd == 0) {
         errno = EBADF;
         return -1;
     }
 
-    if (ch->flags != O_WRONLY) {
-        errno = EBADF;
-        return -1;
-    }
-
-    return write(ch->fd, buf, count);
+    return write(fd, buf, count);
 }
