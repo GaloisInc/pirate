@@ -43,7 +43,7 @@ TEST test_pirate_unopened(void) {
     ASSERT_EQ_FMT(-1, rv, "%d");
     ASSERT_EQ_FMT(EBADF, errno, "%d");
 
-    rv = pirate_close(HIGH_TEST_CH);
+    rv = pirate_close(HIGH_TEST_CH, O_RDONLY);
     ASSERT_EQ_FMT(-1, rv, "%d");
     ASSERT_EQ_FMT(ENODEV, errno, "%d");
 
@@ -71,10 +71,10 @@ TEST test_high_to_low_comm() {
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
     ASSERT_EQ_FMT(~TEST_DATA, data, "%u");
 
-    rv = pirate_close(LOW_TO_HIGH_CH);
+    rv = pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
 
-    rv = pirate_close(HIGH_TO_LOW_CH);
+    rv = pirate_close(LOW_TO_HIGH_CH, O_RDONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
 
     PASS();
@@ -98,10 +98,10 @@ TEST test_low_to_high_comm() {
     rv = pirate_write(LOW_TO_HIGH_CH, &data, sizeof(data));
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
 
-    rv = pirate_close(HIGH_TO_LOW_CH);
+    rv = pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
 
-    rv = pirate_close(LOW_TO_HIGH_CH);
+    rv = pirate_close(LOW_TO_HIGH_CH, O_WRONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
 
     PASS();

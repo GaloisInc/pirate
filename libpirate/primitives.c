@@ -13,6 +13,7 @@ typedef struct {
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {0};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {0};
 
+// gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
     pirate_channel_t* channels;
     int fd, rv;
@@ -35,7 +36,7 @@ int pirate_open(int gd, int flags) {
     }
 
     fd = channels[gd].fd;
-    if (fd != 0) {
+    if (fd > 0) {
         return gd;
     }
 
@@ -56,40 +57,34 @@ int pirate_open(int gd, int flags) {
     return gd;
 }
 
-int pirate_close(int gd) {
-    int fd1, fd2;
-    int rv1 = 0, rv2 = 0;
+int pirate_close(int gd, int flags) {
+    pirate_channel_t* channels;
+    int fd;
 
     if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = EBADF;
         return -1;
     }
 
-    fd1 = readers[gd].fd;
-    fd2 = writers[gd].fd;
+    if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+        errno = EINVAL;
+        return -1;
+    }
 
-    if ((fd1 == 0) && (fd2 == 0)) {
+    if (flags == O_RDONLY) {
+        channels = readers;
+    } else {
+        channels = writers;
+    }
+
+    fd = channels[gd].fd;
+    if (fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    if (fd1 > 0) {
-        rv1 = close(fd1);
-    }
-
-    if (fd2 > 0) {
-        rv2 = close(fd2);
-    }
-
-    if (rv1 != 0) {
-        return rv1;
-    }
-
-    if (rv2 != 0) {
-        return rv2;
-    }
-
-    return 0;
+    channels[gd].fd = 0;
+    return close(fd);
 }
 
 ssize_t pirate_read(int gd, void *buf, size_t count) {
@@ -101,7 +96,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     }
 
     fd = readers[gd].fd;
-    if (fd == 0) {
+    if (fd <= 0) {
         errno = EBADF;
         return -1;
     }
@@ -118,7 +113,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     }
 
     fd = writers[gd].fd;
-    if (fd == 0) {
+    if (fd <= 0) {
         errno = EBADF;
         return -1;
     }
