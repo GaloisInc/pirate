@@ -166,10 +166,10 @@ typedef struct greatest_suite_info {
 
 #if GREATEST_USE_TIME
     /* timers, pre/post running suite and individual tests */
-    clock_t pre_suite;
-    clock_t post_suite;
-    clock_t pre_test;
-    clock_t post_test;
+    struct timespec pre_suite;
+    struct timespec post_suite;
+    struct timespec pre_test;
+    struct timespec post_test;
 #endif
 } greatest_suite_info;
 
@@ -272,8 +272,8 @@ typedef struct greatest_run_info {
 
 #if GREATEST_USE_TIME
     /* overall timers */
-    clock_t begin;
-    clock_t end;
+    struct timespec begin;
+    struct timespec end;
 #endif
 
 #if GREATEST_USE_LONGJMP
@@ -622,17 +622,20 @@ typedef enum greatest_test_res {
 
 #if GREATEST_USE_TIME
 #define GREATEST_SET_TIME(NAME)                                         \
-    NAME = clock();                                                     \
-    if (NAME == (clock_t) -1) {                                         \
+    if (clock_gettime(CLOCK_MONOTONIC, &NAME)) {                        \
         GREATEST_FPRINTF(GREATEST_STDOUT,                               \
             "clock error: %s\n", #NAME);                                \
         exit(EXIT_FAILURE);                                             \
     }
 
 #define GREATEST_CLOCK_DIFF(C1, C2)                                     \
-    GREATEST_FPRINTF(GREATEST_STDOUT, " (%lu ticks, %.3f sec)",         \
-        (long unsigned int) (C2) - (long unsigned int)(C1),             \
-        (double)((C2) - (C1)) / (1.0 * (double)CLOCKS_PER_SEC))
+    do {                                                                \
+        double d1 = C1.tv_sec + 1.0e-9*C1.tv_nsec;                      \
+        double d2 = C2.tv_sec + 1.0e-9*C2.tv_nsec;                      \
+        GREATEST_FPRINTF(GREATEST_STDOUT, " (%.6f sec)",                \
+        (d2 - d1));                                                     \
+    } while (0)                                                         \
+
 #else
 #define GREATEST_SET_TIME(UNUSED)
 #define GREATEST_CLOCK_DIFF(UNUSED1, UNUSED2)
