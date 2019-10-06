@@ -1,5 +1,7 @@
 #include <errno.h>
+#include <pthread.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -107,6 +109,52 @@ TEST test_low_to_high_comm() {
     PASS();
 }
 
+void *low_to_high_func(__attribute__((unused)) void* unused) {
+    return (void*) test_low_to_high_comm();
+}
+
+void *high_to_low_func(__attribute__((unused)) void* unused) {
+    return (void*) test_high_to_low_comm();
+}
+
+TEST test_communication_pthread() {
+    pthread_t low_to_high_id, high_to_low_id;
+    int rv;
+    void *status1, *status2;
+
+    rv = pthread_create(&low_to_high_id, NULL, low_to_high_func, NULL);
+    if (rv != 0) {
+        FAILm(strerror(rv));
+    }
+
+    rv = pthread_create(&high_to_low_id, NULL, high_to_low_func, NULL);
+    if (rv != 0) {
+        FAILm(strerror(rv));
+    }
+
+    rv = pthread_join(low_to_high_id, &status1);
+    if (rv != 0) {
+        FAILm(strerror(rv));
+    }
+
+    rv = pthread_join(high_to_low_id, &status2);
+    if (rv != 0) {
+        FAILm(strerror(rv));
+    }
+
+    if (((greatest_test_res) status1) == GREATEST_TEST_RES_FAIL) {
+        if (GREATEST_ABORT_ON_FAIL()) { abort(); }
+        return GREATEST_TEST_RES_FAIL;
+    }
+
+    if (((greatest_test_res) status2) == GREATEST_TEST_RES_FAIL) {
+        if (GREATEST_ABORT_ON_FAIL()) { abort(); }
+        return GREATEST_TEST_RES_FAIL;
+    }
+
+    PASS();
+}
+
 SUITE(pirate_one_process) {
     RUN_TEST(test_pirate_open_invalid);
     RUN_TEST(test_pirate_unopened);
@@ -124,6 +172,8 @@ int main(int argc, char **argv) {
     GREATEST_MAIN_BEGIN();
 
     RUN_SUITE(pirate_one_process);
+
+    RUN_TEST(test_communication_pthread);
 
     pid_t ch_pid = fork();
     switch (ch_pid) {

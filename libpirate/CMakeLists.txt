@@ -15,6 +15,10 @@ set_target_properties(pirateprims-shared PROPERTIES OUTPUT_NAME pirate CLEAN_DIR
 
 target_compile_options(primitives_test PRIVATE -Werror -Wall -Wextra -Wpedantic)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(primitives_test Threads::Threads)
+
 enable_testing()
 
 add_test(NAME primitives_test COMMAND primitives_test -v)
