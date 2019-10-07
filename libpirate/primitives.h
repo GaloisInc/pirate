@@ -7,11 +7,14 @@
 #define PIRATE_FILENAME     "/tmp/gaps.channel.%d"
 #define PIRATE_LEN_NAME     64
 
-// Allowed channel values 0,1,...,PIRATE_MAX_CHANNEL
-#define PIRATE_MAX_CHANNEL  15
+#define PIRATE_NUM_CHANNELS  16
 
 // Opens the gaps channel specified by the gaps descriptor.
 //
+// Channels must be opened in order from smaller to largest
+// gaps descriptor. pirate_open() will block until both the
+// reader and the writer have opened the channel.
+
 // The return value is the input gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
@@ -20,11 +23,6 @@
 // The gaps chnnel is implemented using a FIFO special file
 // (a named pipe). The name of the pipe is formatted
 // with PIRATE_FILENAME where %d is the gaps descriptor.
-//
-// If flags is O_WRONLY then pirate_open() will create
-// the named pipe or return an error if the file already
-// exists. If flags is O_RDONLY then pirate_open() will
-// block until the named pipe file exists.
 int pirate_open(int gd, int flags);
 
 // pirate_read() attempts to read up to count bytes from
@@ -46,12 +44,6 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 //
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
-//
-// If the gaps descriptor was opened in read mode (O_RDONLY)
-// then pirate_close() will delete the named pipe. If the gaps
-// descriptor was opened in read mode and write mode
-// then pirate_close() will delete the named pipe on the
-// second invocation.
-int pirate_close(int gd);
+int pirate_close(int gd, int flags);
 
 #endif //__PIRATE_PRIMITIVES_H
