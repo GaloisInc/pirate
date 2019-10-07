@@ -31,6 +31,8 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
     /* start clean */
     memset(&ctx, 0x00, sizeof(ctx));
 
+    /* Open GAPS channels in order from lowest to highest */
+
     /* Open GAPS write channel */
     ctx.pirate.wr = pirate_open(HIGH_TO_LOW_CH, O_WRONLY);
     if (ctx.pirate.wr == -1) {
@@ -50,13 +52,13 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
 
 void __attribute__ ((destructor())) pirate_term() {
     if (ctx.pirate.rd > 0) {
-        pirate_close(LOW_TO_HIGH_CH);
+        pirate_close(LOW_TO_HIGH_CH, O_RDONLY);
         ctx.pirate.rd = -1;
         printf("TERM: HIGH<-LOW (RD) channel closed: CH %d\n", ctx.pirate.rd);
     }
 
     if (ctx.pirate.wr > 0) {
-        pirate_close(HIGH_TO_LOW_CH);
+        pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
         ctx.pirate.wr = -1;
         printf("TERM: HIGH->LOW (WR) channel closed: CH %d\n", ctx.pirate.wr);
     }
