@@ -120,3 +120,61 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
 
     return write(fd, buf, count);
 }
+
+int pirate_fcntl0(int gd, int flags, int cmd) {
+    pirate_channel_t* channels;
+    int fd;
+
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (flags == O_RDONLY) {
+        channels = readers;
+    } else {
+        channels = writers;
+    }
+
+    fd = channels[gd].fd;
+    if (fd <= 0) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    return fcntl(fd, cmd);
+}
+
+int pirate_fcntl1(int gd, int flags, int cmd, int arg) {
+    pirate_channel_t* channels;
+    int fd;
+
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (flags == O_RDONLY) {
+        channels = readers;
+    } else {
+        channels = writers;
+    }
+
+    fd = channels[gd].fd;
+    if (fd <= 0) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    return fcntl(fd, cmd, arg);
+}

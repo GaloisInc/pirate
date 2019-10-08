@@ -8,6 +8,7 @@ tiny/tinyserver
 tiny/libtiny.a
 libpirate/libpirate.a
 libpirate/libpirate.so
+libpirate/primitives_bench
 libpirate/primitives_test
 libpirate/Testing
 .vscode

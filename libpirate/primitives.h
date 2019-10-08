@@ -46,4 +46,8 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd, int flags);
 
+// Invoke fcntl() on the underlying file descriptor
+int pirate_fcntl0(int gd, int flags, int cmd);
+int pirate_fcntl1(int gd, int flags, int cmd, int arg);
+
 #endif //__PIRATE_PRIMITIVES_H
