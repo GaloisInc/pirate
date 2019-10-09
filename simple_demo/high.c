@@ -39,7 +39,8 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
         printf("Failed to open write channel\n");
         exit(-1);
     }
-    printf("INIT: HIGH->LOW (WR) channel created: CH %d\n", ctx.pirate.wr);
+    printf("INIT: %s->%s (WR) channel created: CH %d\n", HIGH_NAME, LOW_NAME,
+            ctx.pirate.wr);
 
     /* Open GAPS read channel */
     ctx.pirate.rd = pirate_open(LOW_TO_HIGH_CH, O_RDONLY);
@@ -47,20 +48,23 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
         printf("Failed to open read channel\n");
         exit(-1);
     }
-    printf("INIT: HIGH<-LOW (RD) channel created: CH %d\n", ctx.pirate.rd);
+    printf("INIT: %s<-%s (RD) channel created: CH %d\n", HIGH_NAME, LOW_NAME,
+            ctx.pirate.rd);
 }
 
 void __attribute__ ((destructor())) pirate_term() {
-    if (ctx.pirate.rd > 0) {
+    if (ctx.pirate.rd >= 0) {
         pirate_close(LOW_TO_HIGH_CH, O_RDONLY);
+        printf("TERM: %s<-%s (RD) channel closed: CH %d\n", HIGH_NAME, LOW_NAME,
+                ctx.pirate.rd);
         ctx.pirate.rd = -1;
-        printf("TERM: HIGH<-LOW (RD) channel closed: CH %d\n", ctx.pirate.rd);
     }
 
-    if (ctx.pirate.wr > 0) {
+    if (ctx.pirate.wr >= 0) {
         pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
+        printf("TERM: %s->%s (WR) channel closed: CH %d\n", HIGH_NAME, LOW_NAME,
+                ctx.pirate.wr);
         ctx.pirate.wr = -1;
-        printf("TERM: HIGH->LOW (WR) channel closed: CH %d\n", ctx.pirate.wr);
     }
 }
 
@@ -148,6 +152,8 @@ static int high_handler(short port) {
             continue;
         }
 
+        printf("Received data request from the %s side\n", HIGH_NAME);
+
         /* Serve high content */
         example_data_t* data = &ctx.data.high;
         int ret = serve_static_content(&ci, &ri, data->buf, data->len);
@@ -157,6 +163,8 @@ static int high_handler(short port) {
         }
 
         client_disconnect(&ci);
+
+        printf("Sent %d bytes to the %s side\n\n", data->len, HIGH_NAME);
     }
 
     return 0;
@@ -180,6 +188,8 @@ static void* low_handler(void *arg) {
             continue;
         }
 
+        printf("Received data request from the %s side\n", LOW_NAME);
+
         /* Reply back. Data length is sent first */
         num = pirate_write(ctx.pirate.wr, &data->len, sizeof(data->len));
         if (num != sizeof(data->len)) {
@@ -193,7 +203,7 @@ static void* low_handler(void *arg) {
             continue;
         }
 
-        printf("Send %d bytes to the low side\n", data->len);
+        printf("Sent %d bytes to the %s side\n\n", data->len, LOW_NAME);
     }
 
     return NULL;
@@ -210,6 +220,7 @@ int main(int argc, char* argv[]) {
     }
 
     port = atoi(argv[1]);
+    printf("\n%s web server on port %d\n\n", HIGH_NAME, port);
 
     /* Load high data from a static file */
     int ret = load_high_data(&ctx.data.high, HTML_PATH);

@@ -11,4 +11,7 @@ typedef struct {
     int len;
 } example_data_t;
 
+#define LOW_NAME  "\033[1;32mLOW\033[0m"
+#define HIGH_NAME "\033[1;31mHIGH\033[0m"
+
 #endif /* _SIMPLE_DEMO_COMMON_H_ */

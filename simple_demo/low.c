@@ -29,7 +29,8 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
         printf("Failed to open read channel\n");
         exit(-1);
     }
-    printf("INIT: LOW<-HIGH (RD) channel created: CH %d\n", ctx.pirate.rd);
+    printf("INIT: %s<-%s (RD) channel created: CH %d\n", LOW_NAME, HIGH_NAME,
+            ctx.pirate.rd);
 
     /* Open GAPS write channel */
     ctx.pirate.wr = pirate_open(LOW_TO_HIGH_CH, O_WRONLY);
@@ -37,20 +38,23 @@ void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
         printf("Failed to open write channel\n");
         exit(-1);
     }
-    printf("INIT: LOW->HIGH (WR) channel created: CH %d\n", ctx.pirate.wr);
+    printf("INIT: %s->%s (WR) channel created: CH %d\n", LOW_NAME, HIGH_NAME,
+            ctx.pirate.wr);
 }
 
 void __attribute__ ((destructor())) pirate_term() {
-    if (ctx.pirate.rd > 0) {
+    if (ctx.pirate.rd >= 0) {
         pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
+        printf("TERM: %s<-%s (RD) channel closed: CH %d\n", LOW_NAME, HIGH_NAME,
+                ctx.pirate.rd);
         ctx.pirate.rd = -1;
-        printf("TERM: LOW<-HIGH (RD) channel closed: CH %d\n", ctx.pirate.rd);
     }
 
-    if (ctx.pirate.wr > 0) {
+    if (ctx.pirate.wr >= 0) {
         pirate_close(LOW_TO_HIGH_CH, O_WRONLY);
+        printf("TERM: %s->%s (WR) channel closed: CH %d\n", LOW_NAME, HIGH_NAME,
+                ctx.pirate.wr);
         ctx.pirate.wr = -1;
-        printf("TERM: LOW->HIGH (WR) channel closed: CH %d\n", ctx.pirate.wr);
     }
 }
 
@@ -62,6 +66,7 @@ static int get_data(example_data_t* data) {
         fprintf(stderr, "Failed to send request\n");
         return -1;
     }
+    printf("Sent read request to the %s side\n", HIGH_NAME);
 
     /* Read and validate response length */
     num = pirate_read(ctx.pirate.rd, &len, sizeof(len));
@@ -84,7 +89,7 @@ static int get_data(example_data_t* data) {
 
     /* Success */
     data->len = len;
-    printf("Received %d bytes from the high side\n", data->len);
+    printf("Received %d bytes from the %s side\n\n\n\n\n", data->len, HIGH_NAME);
     return 0;
 }
 
@@ -102,6 +107,7 @@ int main(int argc, char* argv[])
     }
 
     port = atoi(argv[1]);
+    printf("\n%s web server on port %d\n\n", LOW_NAME, port);
 
     /* create, initialize, bind, listen on server socket */
     server_connect(&si, port);
