@@ -9,9 +9,9 @@ SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic")
 SET(ELF_O_SUFFIX "elf.o")
 
 set(HIGH_ELF "high")
-add_executable(${HIGH_ELF} high.c)
+add_executable(${HIGH_ELF} demo.c)
 target_link_libraries(${HIGH_ELF} pirateprims-static libtiny pthread)
-target_compile_options(${HIGH_ELF} PRIVATE ${BUILD_FLAGS})
+target_compile_options(${HIGH_ELF} PRIVATE ${BUILD_FLAGS} -DHIGH)
 
 set(HIGH_ELF_O "${HIGH_ELF}_${ELF_O_SUFFIX}")
 add_custom_target(HIGH_POST_BUILD
@@ -21,9 +21,9 @@ add_custom_target(HIGH_POST_BUILD
 )
 
 set(LOW_ELF "low")
-add_executable(${LOW_ELF} low.c)
+add_executable(${LOW_ELF} demo.c)
 target_link_libraries(${LOW_ELF} pirateprims-static libtiny)
-target_compile_options(${LOW_ELF} PRIVATE ${BUILD_FLAGS})
+target_compile_options(${LOW_ELF} PRIVATE ${BUILD_FLAGS} -DLOW)
 
 set(LOW_ELF_O "${LOW_ELF}_${ELF_O_SUFFIX}")
 add_custom_target(LOW_POST_BUILD
