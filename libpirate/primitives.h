@@ -4,10 +4,29 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#define PIRATE_FILENAME     "/tmp/gaps.channel.%d"
-#define PIRATE_LEN_NAME     64
+#define PIRATE_FILENAME         "/tmp/gaps.channel.%d"
+#define PIRATE_LEN_NAME         64
 
-#define PIRATE_NUM_CHANNELS  16
+#define PIRATE_NUM_CHANNELS     16
+#define PIRATE_INVALID_CHANNEL  -1
+
+#define PIRATE_CTOR_PRIO        101
+#define PIRATE_DTOR_PRIO        PIRATE_CTOR_PRIO
+
+typedef struct {
+    int num;        // Channel number
+    int gd;         // Channel descriptor
+    int flags;      // O_RDONLY or O_WRONLY
+    char* desc;     // Channel description string
+} pirate_channel_desc_t;
+
+#define PIRATE_CHANNEL_CONFIG(num, flags, desc)  {num, -1, flags, desc}
+#define PIRATE_END_CHANNEL_CONFIG   {PIRATE_INVALID_CHANNEL, -1, 0, NULL}
+
+#define PIRATE_NO_CHANNELS                                               \
+pirate_channel_desc_t pirate_channels[] = {                              \
+    PIRATE_END_CHANNEL_CONFIG                                            \
+}
 
 // Opens the gaps channel specified by the gaps descriptor.
 //

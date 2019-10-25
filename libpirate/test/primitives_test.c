@@ -14,6 +14,8 @@
 #define LOW_TO_HIGH_CH  2
 #define TEST_DATA       0xC0DEFACE
 
+PIRATE_NO_CHANNELS;
+
 GREATEST_MAIN_DEFS();
 
 TEST test_pirate_open_invalid(void) {

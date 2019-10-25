@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 #include <pthread.h>
 #include <sys/stat.h>
 #include "primitives.h"
@@ -14,86 +13,19 @@
 #define HTML_PATH           "./index.html"
 #define HTML_BOLD_REGEX     "<b>[0-9]*,</b>\\s*"
 
-struct {
-    struct {
-        int wr;                     // high to low channel
-        int rd;                     // low to high channel
-    } pirate;
+/* GAPS channel configuration will be automatically linked */
+pirate_channel_desc_t pirate_channels[] = {
+    PIRATE_CHANNEL_CONFIG(HIGH_TO_LOW_CH, O_WRONLY, HIGH_NAME"->"LOW_NAME),
+    PIRATE_CHANNEL_CONFIG(LOW_TO_HIGH_CH, O_RDONLY, HIGH_NAME"<-"LOW_NAME),
+    PIRATE_END_CHANNEL_CONFIG
+};
 
+struct {
     struct {
         example_data_t high;
         example_data_t low;
     } data;
 } ctx;
-
-
-void __attribute__ ((destructor())) pirate_term() {
-    if (ctx.pirate.rd >= 0) {
-        pirate_close(LOW_TO_HIGH_CH, O_RDONLY);
-        printf("TERM: %s<-%s (RD) channel closed: CH %d\n", HIGH_NAME, LOW_NAME,
-                ctx.pirate.rd);
-        ctx.pirate.rd = -1;
-    }
-
-    if (ctx.pirate.wr >= 0) {
-        pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
-        printf("TERM: %s->%s (WR) channel closed: CH %d\n", HIGH_NAME, LOW_NAME,
-                ctx.pirate.wr);
-        ctx.pirate.wr = -1;
-    }
-}
-
-
-static void sig_handler(int sig) {
-    (void) sig;
-    pirate_term();
-    exit(0);
-}
-
-void __attribute__ ((constructor())) pirate_init(int argc, char* argv[]) {
-    (void) argc, (void)argv;
-
-    /* start clean */
-    memset(&ctx, 0x00, sizeof(ctx));
-
-    /*
-     * The destructor will only be called when main returns, ensure that other
-     * cases are covered
-     */
-    if (atexit(pirate_term) != 0) {
-        perror("Failed to at at exit code\n");
-        exit(-1);
-    }
-
-    struct sigaction sa;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sa.sa_handler = sig_handler;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        perror("Failed to register SIGINT handler\n");
-        exit(-1);
-    }
-
-    /* Open GAPS channels in order from lowest to highest */
-
-    /* Open GAPS write channel */
-    ctx.pirate.wr = pirate_open(HIGH_TO_LOW_CH, O_WRONLY);
-    if (ctx.pirate.wr == -1) {
-        printf("Failed to open write channel\n");
-        exit(-1);
-    }
-    printf("INIT: %s->%s (WR) channel created: CH %d\n", HIGH_NAME, LOW_NAME,
-            ctx.pirate.wr);
-
-    /* Open GAPS read channel */
-    ctx.pirate.rd = pirate_open(LOW_TO_HIGH_CH, O_RDONLY);
-    if (ctx.pirate.rd == -1) {
-        printf("Failed to open read channel\n");
-        exit(-1);
-    }
-    printf("INIT: %s<-%s (RD) channel created: CH %d\n", HIGH_NAME, LOW_NAME,
-            ctx.pirate.rd);
-}
 
 
 static int load_high_data(example_data_t* to, const char* from) {
@@ -205,7 +137,7 @@ static void* low_handler(void *arg) {
     while (1) {
         /* Low side requests data by writing zero */
         int len = 0;
-        ssize_t num = pirate_read(ctx.pirate.rd, &len, sizeof(len));
+        ssize_t num = pirate_read(LOW_TO_HIGH_CH, &len, sizeof(len));
         if (num != sizeof(len)) {
             fprintf(stderr, "Failed to read request from the low side\n");
             exit(-1);
@@ -219,13 +151,13 @@ static void* low_handler(void *arg) {
         printf("Received data request from the %s side\n", LOW_NAME);
 
         /* Reply back. Data length is sent first */
-        num = pirate_write(ctx.pirate.wr, &data->len, sizeof(data->len));
+        num = pirate_write(HIGH_TO_LOW_CH, &data->len, sizeof(data->len));
         if (num != sizeof(data->len)) {
             fprintf(stderr, "Failed to send response length\n");
             continue;
         }
 
-        num = pirate_write(ctx.pirate.wr, &data->buf, data->len);
+        num = pirate_write(HIGH_TO_LOW_CH, &data->buf, data->len);
         if (num != data->len) {
             fprintf(stderr, "Failed to send response content\n");
             continue;
