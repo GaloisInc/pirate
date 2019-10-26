@@ -8,10 +8,6 @@ ELF extensions
 Overview
 --------
 
-[Note: depending on what channels look like and whether they need to
-be initialized in the start routine, an additional section or sections
-may need to be added for them here.]
-
 Pirate extends the ELF relocatable object-file format with information
 about enclaves, capabilities, and channels.  These extensions allow
 the linker to emit separate executables for each enclave in a way that
@@ -30,7 +26,7 @@ are identified internally by the index of their entry in ``.captab``
 and externally by their user-defined name, which must be unique within
 the compilation unit.  Sensitivities optionally contain the index of a
 parent sensitivity, meaning that an enclave authorized at the child
-level is also authorized at the parent level (I.e., the parent is less
+level is also authorized at the parent level (i.e., the parent is less
 sensitive than the child).  Lists of required or provided
 capabilities/sensitivities are specified as strings in ``.capstrtab``,
 ending in ``CAP_NULL``.
@@ -38,7 +34,7 @@ ending in ``CAP_NULL``.
 Special Sections
 ----------------
 
-We add five new special sections to the relocatable ELF format. Like
+We add six new special sections to the relocatable ELF format. Like
 Linux special sections, these are identified by their section names,
 so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
@@ -46,25 +42,25 @@ so the ``sh_type`` fields in their section headers should be set to
 ``.gaps.enclaves``
     An array of ``Elf64_GAPS_enclave`` listing the names, capabilities
     and entrypoints of each enclave declared in the source file. The
-    first entry is unused and corresponds to ``ENC_UNDEF``. This
-    section may appear only in relocatable ELFs.
+    first entry is unused and corresponds to ``ENC_UNDEF``.
 
 ``.gaps.symreq``
     An array of ``Elf64_GAPS_symreq`` indexed parallel to ``.symtab``.
     This section lists the capabilities/sensitivities and enclave (if
-    any) required by the ``.symtab`` entry with the same index. This
-    section may appear only in relocatable ELFs.
+    any) required by the ``.symtab`` entry with the same index.
 
 ``.gaps.captab``
     An array of ``Elf64_GAPS_cap`` listing the
     capabilities/sensitivities defined in the source file. The first
-    entry is unused and corresponds to ``CAP_NULL``. This section may
-    appear only in relocatable ELFs.
+    entry is unused and corresponds to ``CAP_NULL``.
 
 ``.gaps.capstrtab``
     A vector of arrays of indices into ``.gaps.captab``, each
-    terminated by ``CAP_NULL``. This section may appear only in
-    relocatable ELFs.
+    terminated by ``CAP_NULL``.
+
+``.gaps.channels``
+    An array of ``Elf64_GAPS_channel`` listing the channels declared
+    in the source file.
 
 Structures
 ----------
@@ -126,3 +122,48 @@ empty space left by alignment.]
     If this entry reoresents a sensitivity, the level that this
     sensitivity was declared as being more sensitive than in the
     source file. Otherwise, thisshould be set to ``CAP_NULL``.
+
+ .. code-block:: c
+
+                typedef struct {
+                    Elf64_Addr chan_initdata;
+                    Elf64_Word chan_source;
+                    Elf64_Word chan_sink;
+                } Elf64_GAPS_channel;
+
+``chan_data``
+    A pointer to the blob of data needed to initialize the channel.
+
+``chan_source``
+    The index into ``.gaps.enclaves`` indicating the enclave
+    authorized to send on this channel.
+
+``chan_sink``
+    The index into ``.gaps.enclaves`` indicating the enclave
+    authorized to receive on this channel.
+
+Global symbols
+--------------
+
+Executable ELFs linked by a GAPS-aware linker will define the
+following global symbols:
+
+.. code-block:: c
+
+                void **__gaps_receive_channels;
+                void **__gaps_send_channels;
+
+``__gaps_receive_channels``
+    A ``NULL``-terminated array of pointers to blobs of initialization
+    data for each receive channel the executable's enclave is
+    authorized to access.
+
+``__gaps_send_channels``
+    A ``NULL``-terminated array of pointers to blobs of initialization
+    data for each send channel the executable's enclave is authorized
+    to access.
+
+A GAPS-aware linker is responsible for populating these from
+``.gaps.channels``. Meanwhile, the GAPS runtime will define a
+cinstructor in ``.init`` that references these global symbols to
+initialize all send and receive channels.
