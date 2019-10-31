@@ -2,15 +2,17 @@ cmake_minimum_required(VERSION 3.5)
 
 project(simple_demo)
 
-include_directories(../libpirate ../tiny)
+include_directories(../libpirate)
 
 SET(CMAKE_C_COMPILER "clang")
 SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic")
+SET(DEMO_SOURCES "demo.c" "tiny.c")
 SET(ELF_O_SUFFIX "elf.o")
 
+
 set(HIGH_ELF "high")
-add_executable(${HIGH_ELF} demo.c)
-target_link_libraries(${HIGH_ELF} pirateprims-static libtiny pthread)
+add_executable(${HIGH_ELF} ${DEMO_SOURCES})
+target_link_libraries(${HIGH_ELF} pirateprims-static pthread)
 target_compile_options(${HIGH_ELF} PRIVATE ${BUILD_FLAGS} -DHIGH)
 
 set(HIGH_ELF_O "${HIGH_ELF}_${ELF_O_SUFFIX}")
@@ -21,8 +23,8 @@ add_custom_target(HIGH_POST_BUILD
 )
 
 set(LOW_ELF "low")
-add_executable(${LOW_ELF} demo.c)
-target_link_libraries(${LOW_ELF} pirateprims-static libtiny)
+add_executable(${LOW_ELF} ${DEMO_SOURCES})
+target_link_libraries(${LOW_ELF} pirateprims-static)
 target_compile_options(${LOW_ELF} PRIVATE ${BUILD_FLAGS} -DLOW)
 
 set(LOW_ELF_O "${LOW_ELF}_${ELF_O_SUFFIX}")
