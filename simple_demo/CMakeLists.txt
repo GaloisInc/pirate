@@ -40,7 +40,7 @@ add_executable(${DEMO_ELF}
     ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
     ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
 )
-target_compile_options(${DEMO_ELF} PRIVATE ${BUILD_FLAGS})
+target_compile_options(${DEMO_ELF} PRIVATE ${BUILD_FLAGS} "-D_GNU_SOURCE")
 add_dependencies(${DEMO_ELF} HIGH_POST_BUILD LOW_POST_BUILD)
 
 set(STAIC_HTML "index.html")
