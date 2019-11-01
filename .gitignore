@@ -6,8 +6,6 @@ simple_demo/low
 simple_demo/high
 simple_demo/both
 simple_demo/*.o
-tiny/tinyserver
-tiny/libtiny.a
 libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_bench
