@@ -34,14 +34,14 @@ add_custom_target(LOW_POST_BUILD
     DEPENDS ${LOW_ELF}
 )
 
-set(DEMO_ELF "demo")
-add_executable(${DEMO_ELF}
+set(BOTH_ELF "both")
+add_executable(${BOTH_ELF}
     gaps_wrapper.c 
     ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
     ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
 )
-target_compile_options(${DEMO_ELF} PRIVATE ${BUILD_FLAGS} "-D_GNU_SOURCE")
-add_dependencies(${DEMO_ELF} HIGH_POST_BUILD LOW_POST_BUILD)
+target_compile_options(${BOTH_ELF} PRIVATE ${BUILD_FLAGS} "-D_GNU_SOURCE")
+add_dependencies(${BOTH_ELF} HIGH_POST_BUILD LOW_POST_BUILD)
 
 set(STAIC_HTML "index.html")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${STAIC_HTML} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

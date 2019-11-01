@@ -4,6 +4,8 @@ CMakeCache.txt
 *.cmake
 simple_demo/low
 simple_demo/high
+simple_demo/both
+simple_demo/*.o
 tiny/tinyserver
 tiny/libtiny.a
 libpirate/libpirate.a

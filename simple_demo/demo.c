@@ -10,24 +10,11 @@
 #include <sys/stat.h>
 #endif
 
-/* GAPS channel configuration will be automatically linked */
 #define LOW_NAME  "\033[1;32mLOW\033[0m"
 #define HIGH_NAME "\033[1;31mHIGH\033[0m"
 
 #define HIGH_TO_LOW_CH 0
 #define LOW_TO_HIGH_CH 1
-
-pirate_channel_desc_t pirate_channels[] = {
-#ifdef HIGH
-    PIRATE_CHANNEL_CONFIG(HIGH_TO_LOW_CH, O_WRONLY, HIGH_NAME"->"LOW_NAME),
-    PIRATE_CHANNEL_CONFIG(LOW_TO_HIGH_CH, O_RDONLY, HIGH_NAME"<-"LOW_NAME),
-#endif /* HIGH */
-#ifdef LOW
-    PIRATE_CHANNEL_CONFIG(HIGH_TO_LOW_CH, O_RDONLY, LOW_NAME"<-"HIGH_NAME),
-    PIRATE_CHANNEL_CONFIG(LOW_TO_HIGH_CH, O_WRONLY, LOW_NAME"->"HIGH_NAME),
-#endif /* LOW */
-    PIRATE_END_CHANNEL_CONFIG
-};
 
 #define DATA_LEN            (32 << 10)         // 32 KB
 typedef struct {
@@ -258,8 +245,25 @@ int main(int argc, char* argv[]) {
     printf("\n%s web server on port %d\n\n", NAME, port);
 
 #ifdef HIGH
+    if (pirate_open(HIGH_TO_LOW_CH, O_WRONLY) < 0) {
+        perror("Unable to open high to low channel in write-only mode");
+        return -1;
+    }
+    if (pirate_open(LOW_TO_HIGH_CH, O_RDONLY) < 0) {
+        perror("Unable to open low to high channel in read-only mode");
+        return -1;
+    }
     if (run_gaps() != 0) {
         fprintf(stderr, "Failed to start the GAPS handler");
+        return -1;
+    }
+#else
+    if (pirate_open(HIGH_TO_LOW_CH, O_RDONLY) < 0) {
+        perror("Unable to open high to low channel in read-only mode");
+        return -1;
+    }
+    if (pirate_open(LOW_TO_HIGH_CH, O_WRONLY) < 0) {
+        perror("Unable to open low to high channel in write-only mode");
         return -1;
     }
 #endif
