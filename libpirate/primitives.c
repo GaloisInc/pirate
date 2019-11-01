@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include "primitives.h"
 
 typedef struct {
@@ -13,64 +14,6 @@ typedef struct {
 
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {0};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {0};
-
-extern pirate_channel_desc_t pirate_channels[];
-
-void __attribute__ ((destructor(PIRATE_DTOR_PRIO))) pirate_channel_term() {
-    pirate_channel_desc_t* ch;
-    for (ch = pirate_channels; ch->num != PIRATE_INVALID_CHANNEL; ch++) {
-        if (ch->gd < 0) {
-            continue;
-        }
-
-        pirate_close(ch->num, ch->flags);
-        ch->gd = -1;
-
-        printf("TERM: %s (%s) channel closed: CH %d\n", ch->desc, 
-            ch->flags == O_RDONLY ? "RD" : 
-            ch->flags == O_WRONLY ? "WR" : "ERR",
-            ch->num);        
-    }
-}
-
-void __attribute__ ((constructor(PIRATE_CTOR_PRIO)))
-pirate_channel_init(int argc, char* argv[], char* envp[]) {
-    (void) argc, (void)argv, (void) envp;
-    pirate_channel_desc_t* ch;
-
-    /*
-     * The destructor will only be called when main returns, ensure that other
-     * cases are covered
-     */
-    if (atexit(pirate_channel_term) != 0) {
-        perror("Failed to add at exit code\n");
-        exit(-1);
-    }
-
-    struct sigaction sa;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sa.sa_handler = pirate_channel_term;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        perror("Failed to register SIGINT handler\n");
-        exit(-1);
-    }
-
-    /* Open configured channels */
-    for (ch = pirate_channels; ch->num != PIRATE_INVALID_CHANNEL; ch++)
-    {
-        ch->gd = pirate_open(ch->num, ch->flags);
-        if (ch->gd == -1) {
-            printf("Failed to open write channel\n");
-            exit(-1);
-        }
-
-        printf("INIT: %s (%s) channel created: CH %d\n", ch->desc, 
-            ch->flags == O_RDONLY ? "RD" : 
-            ch->flags == O_WRONLY ? "WR" : "ERR",
-            ch->num);
-    }
-}
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {

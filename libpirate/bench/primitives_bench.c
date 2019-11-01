@@ -9,8 +9,6 @@
 
 #include "primitives.h"
 
-PIRATE_NO_CHANNELS;
-
 int main(int argc, char *argv[]) {
     int64_t i, size, count, delta;
     char *buf;
