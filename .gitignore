@@ -1,7 +1,8 @@
 Makefile
 CMakeFiles
 CMakeCache.txt
-*.cmake
+cmake_install.cmake
+CTestTestfile.cmake
 simple_demo/low
 simple_demo/high
 simple_demo/both
