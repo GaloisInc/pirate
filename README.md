@@ -2,7 +2,7 @@
 
 ### libpirate
 
-Pirate primitives layer. the PIRATE core primitives layer
+Pirate primitives layer. The PIRATE core primitives layer
 will provide a series of capabilities for executing PIRATE executables
 on TA1 hardware. At minimum, there are four basic primitives that must
 be supported: configuring TA1 hardware, loading code and data onto the
