@@ -18,3 +18,31 @@ echo 'ACTION=="add", SUBSYSTEM=="cuse", MODE="0660", GROUP="cuse"' | sudo tee -a
 KERNEL=="cuse", MODE="0660", GROUP="cuse", OPTIONS+="static_node=cuse"
 ACTION=="add", SUBSYSTEM=="cuse", MODE="0660", GROUP="cuse"
 ```
+
+# Usage
+
+To build, use `cmake .` then `make`.
+
+To run:
+
+```
+./cusegaps_pipe -f --name foobar
+```
+
+or
+
+```
+./cusegaps_net -f --name foobar --port 12345 --address 127.0.0.1
+```
+
+As a demonstration, run in one terminal
+
+```
+cat < /dev/foobar
+```
+
+and in another terminal
+
+```
+echo "hello world" > /dev/foobar
+```

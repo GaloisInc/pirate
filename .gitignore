@@ -12,5 +12,7 @@ libpirate/libpirate.so
 libpirate/primitives_bench
 libpirate/primitives_test
 libpirate/Testing
+cusegaps/cusegaps_net
+cusegaps/cusegaps_pipe
 .vscode
 /build/*

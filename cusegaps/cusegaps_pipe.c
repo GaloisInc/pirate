@@ -1,7 +1,6 @@
 #define FUSE_USE_VERSION 31
 #define _POSIX_C_SOURCE 200809L
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
@@ -9,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
@@ -19,147 +17,57 @@
 
 #include "fioc.h"
 
+#define PIRATE_FILENAME         "/tmp/gaps.channel.%s"
+
+static char dev_name[128];
 static char reader_buf[PIPE_BUF];
-
-static int writer_fd, reader_fd;
-
-static int port;
-static struct sockaddr_in serv_addr;
+static int reader_fd, writer_fd;
 
 static const char *usage =
-    "usage: cusegaps [options]\n"
+    "usage: cusegaps_pipe [options]\n"
     "\n"
     "options:\n"
     "    --help|-h              print this help message\n"
     "    --name|-n NAME         device name (mandatory)\n"
-    "    --port|-p PORT         port number (mandatory)\n"
-    "    --address|-a ADDRESS   reader address (writer mandatory)\n"
     "\n";
 
-static void reader_open(fuse_req_t req, struct fuse_file_info *fi) {
-  int err, server_fd, opt = 0;
-  struct sockaddr_in address;
-  int addrlen = sizeof(address);
-  struct linger socket_reset;
-
-  socket_reset.l_onoff = 1;
-  socket_reset.l_linger = 0;
-  if (port <= 0) {
-    fuse_reply_err(req, EINVAL);
-    return;
-  }
-  if (reader_fd != 0) {
-    fuse_reply_err(req, EBUSY);
-    return;
-  }
-  server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0) {
-    fuse_reply_err(req, errno);
-    return;
-  }
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                 sizeof(opt))) {
-    err = errno;
-    close(server_fd);
-    fuse_reply_err(req, err);
-    return;
-  }
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))) {
-    err = errno;
-    close(server_fd);
-    fuse_reply_err(req, err);
-    return;
-  }
-  if (listen(server_fd, 1)) {
-    err = errno;
-    close(server_fd);
-    fuse_reply_err(req, err);
-    return;
-  }
-  reader_fd =
-      accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-  err = errno;
-  close(server_fd);
-  if (reader_fd < 0) {
-    reader_fd = 0;
-    fuse_reply_err(req, err);
-    return;
-  }
-  // write should return EPIPE error when write fd is
-  // connected to a pipe or socket whose reading end
-  // is closed.
-  //
-  // Send a TCP reset (RST) on the read fd to
-  // generate the EPIPE error on the write fd.
-  if (setsockopt(reader_fd, SOL_SOCKET, SO_LINGER, &socket_reset,
-                 sizeof socket_reset)) {
-    err = errno;
-    close(reader_fd);
-    reader_fd = 0;
-    fuse_reply_err(req, err);
-  }
-  fuse_reply_open(req, fi);
-}
-
-static void writer_open(fuse_req_t req, struct fuse_file_info *fi) {
-  int err;
-  struct timespec tim;
-
-  tim.tv_sec = 0;
-  tim.tv_nsec = 100000000L;
-  if (serv_addr.sin_family <= 0) {
-    fuse_reply_err(req, EINVAL);
-    return;
-  }
-  if (serv_addr.sin_port <= 0) {
-    fuse_reply_err(req, EINVAL);
-    return;
-  }
-  if (serv_addr.sin_addr.s_addr == 0) {
-    fuse_reply_err(req, EINVAL);
-    return;
-  }
-  if (writer_fd != 0) {
-    fuse_reply_err(req, EBUSY);
-    return;
-  }
-  writer_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (writer_fd < 0) {
-    writer_fd = 0;
-    fuse_reply_err(req, errno);
-    return;
-  }
-  while (connect(writer_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) {
-    if (errno == ECONNREFUSED) {
-      if (!nanosleep(&tim, NULL)) {
-        continue;
-      }
-    }
-    err = errno;
-    close(writer_fd);
-    writer_fd = 0;
-    fuse_reply_err(req, err);
-    return;
-  }
-  fuse_reply_open(req, fi);
-}
-
 static void cusegaps_open(fuse_req_t req, struct fuse_file_info *fi) {
-  int flags = fi->flags & 0x3;
+  char pathname[128];
+  int rv, flags, *fd_p;
 
+  flags = fi->flags & 0x3;
   switch (flags) {
   case O_RDONLY:
-    reader_open(req, fi);
+    fd_p = &reader_fd;
     break;
   case O_WRONLY:
-    writer_open(req, fi);
+    fd_p = &writer_fd;
     break;
   default:
     fuse_reply_err(req, EINVAL);
+    return;
   }
+
+  if (*fd_p != 0) {
+    fuse_reply_err(req, EBUSY);
+    return;
+  }
+
+  snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, dev_name);
+  rv = mkfifo(pathname, 0660);
+  if ((rv == -1) && (errno != EEXIST)) {
+    fuse_reply_err(req, errno);
+    return;
+  }
+
+  *fd_p = open(pathname, flags);
+  if (*fd_p < 0) {
+    *fd_p = 0;
+    fuse_reply_err(req, errno);
+    return;
+  }
+
+  fuse_reply_open(req, fi);
 }
 
 static void cusegaps_release(fuse_req_t req, struct fuse_file_info *fi) {
@@ -185,7 +93,6 @@ static void cusegaps_release(fuse_req_t req, struct fuse_file_info *fi) {
     fuse_reply_err(req, EBADF);
     return;
   }
-  shutdown(fd, SHUT_RDWR);
   rv = close(fd);
   *fd_p = 0;
 
@@ -260,8 +167,6 @@ static void cusegaps_ioctl(fuse_req_t req, int cmd, void *arg,
 
 struct cusegaps_param {
   char *dev_name;
-  int port;
-  char *address;
   int is_help;
 };
 
@@ -271,10 +176,6 @@ struct cusegaps_param {
 static const struct fuse_opt cusegaps_opts[] = {
     CUSEXMP_OPT("-n %s", dev_name),
     CUSEXMP_OPT("--name %s", dev_name),
-    CUSEXMP_OPT("-p %u", port),
-    CUSEXMP_OPT("--port %u", port),
-    CUSEXMP_OPT("-a %s", address),
-    CUSEXMP_OPT("--address %s", address),
     FUSE_OPT_KEY("-h", 0),
     FUSE_OPT_KEY("--help", 0),
     FUSE_OPT_END};
@@ -306,9 +207,9 @@ static const struct cuse_lowlevel_ops cusegaps_clop = {
 
 int main(int argc, char **argv) {
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-  struct cusegaps_param param = {NULL, 0, NULL, 0};
-  char dev_name[128] = "DEVNAME=";
-  const char *dev_info_argv[] = {dev_name};
+  struct cusegaps_param param = {NULL, 0};
+  char cuse_dev_name[128] = "DEVNAME=";
+  const char *dev_info_argv[] = {cuse_dev_name};
   struct cuse_info ci;
 
   if (fuse_opt_parse(&args, &param, cusegaps_opts, cusegaps_process_arg)) {
@@ -321,22 +222,8 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Error: device name missing\n");
       return 1;
     }
-    if (param.port == 0) {
-      fprintf(stderr, "Error: port number missing\n");
-      return 1;
-    }
-    if (param.port < 0) {
-      fprintf(stderr, "Error: port number must be positive integer\n");
-      return 1;
-    }
-    if (param.address) {
-      if (inet_pton(AF_INET, param.address, &serv_addr.sin_addr) <= 0) {
-        fprintf(stderr, "Error: invalid address %s\n", param.address);
-      }
-      serv_addr.sin_family = AF_INET;
-      serv_addr.sin_port = htons(param.port);
-    }
-    strncat(dev_name, param.dev_name, sizeof(dev_name) - 9);
+    strncat(cuse_dev_name, param.dev_name, sizeof(cuse_dev_name) - 9);
+    strncpy(dev_name, param.dev_name, sizeof(dev_name));
   }
 
   memset(&ci, 0, sizeof(ci));
@@ -345,6 +232,5 @@ int main(int argc, char **argv) {
   ci.dev_info_argc = 1;
   ci.dev_info_argv = dev_info_argv;
   ci.flags = CUSE_UNRESTRICTED_IOCTL;
-  port = param.port;
   return cuse_lowlevel_main(args.argc, args.argv, &ci, &cusegaps_clop, NULL);
 }

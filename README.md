@@ -37,4 +37,4 @@ http://man7.org/linux/man-pages/man7/pipe.7.html.
 
 Implemented using the CUSE (character device in userspace) functionality
 that is available in the FUSE library (https://github.com/libfuse/libfuse).
-Communication is implemented using TCP/IP sockets.
+Communication is implemented using either TCP/IP sockets or names pipes.
