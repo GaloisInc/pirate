@@ -55,7 +55,7 @@ static void reader_open(fuse_req_t req, struct fuse_file_info *fi) {
     fuse_reply_err(req, errno);
     return;
   }
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt,
                  sizeof(opt))) {
     err = errno;
     close(server_fd);
@@ -183,7 +183,6 @@ static void cusegaps_release(fuse_req_t req, struct fuse_file_info *fi) {
     fuse_reply_err(req, EBADF);
     return;
   }
-  shutdown(fd, SHUT_RDWR);
   rv = close(fd);
   *fd_p = 0;
 
