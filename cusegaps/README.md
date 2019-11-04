@@ -3,6 +3,7 @@
 These instructions are for Ubuntu. Modify them for your distribution.
 
 ```
+sudo apt install libfuse-devel
 # create group 'cuse'
 sudo addgroup --system cuse
 # add yourself to group 'cuse'
