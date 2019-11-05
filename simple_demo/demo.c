@@ -29,10 +29,10 @@ typedef enum {
 
 #ifdef HIGH
 #define NAME                HIGH_NAME
-#endif /* HIGH */
-
-#ifdef LOW
+#elif LOW
 #define NAME                LOW_NAME
+#else
+#define NAME                "undefined"
 #endif /* LOW */
 
 static int load_web_content_high(data_t* data) {
@@ -113,9 +113,6 @@ static int load_web_content(data_t* data, level_e level) {
         default:
             return -1;
     }
-
-    /* Should never get here */
-    return -1;
 }
 
 
