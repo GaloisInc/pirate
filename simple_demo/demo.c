@@ -2,16 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "primitives.h"
-#include "tiny.h"
-#ifdef HIGH
 #include <regex.h>
 #include <pthread.h>
 #include <sys/stat.h>
-#endif
+#include "primitives.h"
+#include "tiny.h"
 
-#define LOW_NAME  "\033[1;32mLOW\033[0m"
-#define HIGH_NAME "\033[1;31mHIGH\033[0m"
+
 
 #define HIGH_TO_LOW_CH 0
 #define LOW_TO_HIGH_CH 1
@@ -22,6 +19,14 @@ typedef struct {
     int len;
 } data_t;
 
+typedef enum {
+    LEVEL_HIGH,
+    LEVEL_LOW
+} level_e;
+
+#define LOW_NAME  "\033[1;32mLOW\033[0m"
+#define HIGH_NAME "\033[1;31mHIGH\033[0m"
+
 #ifdef HIGH
 #define NAME                HIGH_NAME
 #endif /* HIGH */
@@ -30,81 +35,86 @@ typedef struct {
 #define NAME                LOW_NAME
 #endif /* LOW */
 
+static int load_web_content(data_t* data, level_e level) {
+    switch (level) {
+        case LEVEL_HIGH:
+        {
+            const char* path = "./index.html";
+            struct stat sbuf;
+            if (stat(path, &sbuf) < 0) {
+                fprintf(stderr, "ERROR: could not find file %s\n", path);
+                return -1;
+            }
 
-#ifdef HIGH
-#define HTML_PATH           "./index.html"
-static int load_web_content(data_t* data) {
-    struct stat sbuf;
-    if (stat(HTML_PATH, &sbuf) < 0) {
-        fprintf(stderr, "ERROR: could not find file %s\n", HTML_PATH);
-        return -1;
-    }
+            if (sbuf.st_size >= (long)sizeof(data->buf)) {
+                fprintf(stderr, "ERROR: file %s exceeds size limits\n", path);
+                return -1;
+            }
 
-    if (sbuf.st_size >= (long)sizeof(data->buf)) {
-        fprintf(stderr, "ERROR: file %s exceeds size limits\n", HTML_PATH);
-        return -1;
-    }
+            FILE* fp = fopen(path, "r");
+            if (fp == NULL) {
+                fprintf(stderr, "ERROR failed to open %s\n", path);
+                return -1;
+            }
 
-    FILE* fp = fopen(HTML_PATH, "r");
-    if (fp == NULL) {
-        fprintf(stderr, "ERROR failed to open %s\n", HTML_PATH);
-        return -1;
-    }
+            if (fread(data->buf, sbuf.st_size, 1, fp) != 1) {
+                fprintf(stderr, "Failed to read %s file\n", path);
+                return -1;
+            }
 
-    if (fread(data->buf, sbuf.st_size, 1, fp) != 1) {
-        fprintf(stderr, "Failed to read %s file\n", HTML_PATH);
-        return -1;
-    }
+            fclose(fp);
 
-    fclose(fp);
-
-    data->buf[sbuf.st_size] = '\0';
-    data->len = sbuf.st_size;
+            data->buf[sbuf.st_size] = '\0';
+            data->len = sbuf.st_size;
+        }
+            return 0;
     
-    return 0;
+        case LEVEL_LOW:
+        {
+            /* Low side requests data by writing zero */
+            int len = 0;
+            ssize_t num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
+            if (num != sizeof(int)) {
+                fprintf(stderr, "Failed to send request\n");
+                return -1;
+            }
+            printf("Sent read request to the %s side\n", HIGH_NAME);
+
+            /* Read and validate response length */
+            num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
+            if (num != sizeof(len)) {
+                fprintf(stderr, "Failed to receive response length\n");
+                return -1;
+            }
+
+            if (len >= DATA_LEN) {
+                fprintf(stderr, "Response length %d is too large\n", len);
+                return -1;
+            }
+
+            /* Read back the response */
+            num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
+            if (num != len) {
+                fprintf(stderr, "Failed to read back the response\n");
+                return -1;
+            }
+
+            /* Success */
+            data->len = len;
+            printf("Received %d bytes from the %s side\n", data->len, 
+                    HIGH_NAME);
+            return 0;
+        }
+
+        default:
+            return -1;
+    }
+
+    /* Should never get here */
+    return -1;
 }
-#endif
 
-#ifdef LOW
-static int load_web_content(data_t* data) {
-    /* Low side requests data by writing zero */
-    int len = 0;
-    ssize_t num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
-    if (num != sizeof(int)) {
-        fprintf(stderr, "Failed to send request\n");
-        return -1;
-    }
-    printf("Sent read request to the %s side\n", HIGH_NAME);
-
-    /* Read and validate response length */
-    num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
-    if (num != sizeof(len)) {
-        fprintf(stderr, "Failed to receive response length\n");
-        return -1;
-    }
-
-    if (len >= DATA_LEN) {
-        fprintf(stderr, "Response length %d is too large\n", len);
-        return -1;
-    }
-
-    /* Read back the response */
-    num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
-    if (num != len) {
-        fprintf(stderr, "Failed to read back the response\n");
-        return -1;
-    }
-
-    /* Success */
-    data->len = len;
-    printf("Received %d bytes from the %s side\n", data->len, HIGH_NAME);
-    return 0;
-}
-#endif
-
-
-#ifdef HIGH
-#define HTML_BOLD_REGEX     "<b>[0-9]*,</b>\\s*"
+   
 static void* gaps_thread(void *arg) {
     (void)arg;
     data_t high_data;
@@ -127,7 +137,7 @@ static void* gaps_thread(void *arg) {
         printf("Received data request from the %s side\n", LOW_NAME);
 
         /* Read in high data */
-        if (load_web_content(&high_data) != 0) {
+        if (load_web_content(&high_data, LEVEL_HIGH) != 0) {
             fprintf(stderr, "Failed to load data\n");
             continue;
         }
@@ -135,7 +145,7 @@ static void* gaps_thread(void *arg) {
         /* Create filtered data (remove bold text) */
         regmatch_t match;
         regex_t regex;
-        int ret = regcomp(&regex, HTML_BOLD_REGEX, REG_EXTENDED);
+        int ret = regcomp(&regex, "<b>[0-9]*,</b>\\s*", REG_EXTENDED);
         if (ret != 0) {
             fprintf(stderr, "Failed to compile regex\n");
             continue;
@@ -171,6 +181,7 @@ static void* gaps_thread(void *arg) {
     return NULL;
 }
 
+
 static int run_gaps()
 {
     pthread_t tid;
@@ -181,10 +192,9 @@ static int run_gaps()
     }
     return 0;
 }
-#endif
 
 
-static int web_server(int port) {
+static int web_server(int port, level_e level) {
     server_t si;
     client_t ci;
     request_t ri;
@@ -213,7 +223,7 @@ static int web_server(int port) {
         }
 
         /* Get data from the high side */
-        if (load_web_content(&data) != 0) {
+        if (load_web_content(&data, level) != 0) {
             cerror(ci.stream, ri.method, "501", "No data", "Data load fail");
             client_disconnect(&ci);
             continue;
@@ -234,7 +244,7 @@ static int web_server(int port) {
 }
 
 
-int main(int argc, char* argv[]) {
+int main_high(int argc, char* argv[]) {
     /* Validate and parse command-line options */
     if (argc != 2) {
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
@@ -244,20 +254,36 @@ int main(int argc, char* argv[]) {
     const short port = atoi(argv[1]);
     printf("\n%s web server on port %d\n\n", NAME, port);
 
-#ifdef HIGH
     if (pirate_open(HIGH_TO_LOW_CH, O_WRONLY) < 0) {
         perror("Unable to open high to low channel in write-only mode");
         return -1;
     }
+
     if (pirate_open(LOW_TO_HIGH_CH, O_RDONLY) < 0) {
         perror("Unable to open low to high channel in read-only mode");
         return -1;
     }
+
     if (run_gaps() != 0) {
         fprintf(stderr, "Failed to start the GAPS handler");
         return -1;
     }
-#else
+
+    /* Web server */
+    return web_server(port, LEVEL_HIGH);
+}
+
+
+int main_low(int argc, char* argv[]) {
+    /* Validate and parse command-line options */
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+        return -1;
+    }
+
+    const short port = atoi(argv[1]);
+    printf("\n%s web server on port %d\n\n", NAME, port);
+
     if (pirate_open(HIGH_TO_LOW_CH, O_RDONLY) < 0) {
         perror("Unable to open high to low channel in read-only mode");
         return -1;
@@ -266,8 +292,18 @@ int main(int argc, char* argv[]) {
         perror("Unable to open low to high channel in write-only mode");
         return -1;
     }
-#endif
 
     /* Web server */
-    return web_server(port);
+    return web_server(port, LEVEL_LOW);
+}
+
+
+int main(int argc, char* argv[]) {
+#ifdef HIGH
+    return main_high(argc, argv);
+#endif
+
+#ifdef LOW
+    return main_low(argc, argv);
+#endif
 }
