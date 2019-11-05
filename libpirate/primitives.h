@@ -9,6 +9,12 @@
 
 #define PIRATE_NUM_CHANNELS     16
 
+typedef enum {
+    PIPE,
+    DEVICE,
+    INVALID,
+} channel_t;
+
 // Opens the gaps channel specified by the gaps descriptor.
 //
 // Channels must be opened in order from smaller to largest
@@ -49,5 +55,27 @@ int pirate_close(int gd, int flags);
 // Invoke fcntl() on the underlying file descriptor
 int pirate_fcntl0(int gd, int flags, int cmd);
 int pirate_fcntl1(int gd, int flags, int cmd, int arg);
+
+// Sets the channel type for the read and write ends
+// of the gaps descriptor. Must be configured before
+// the channel is opened. Returns zero on success.
+// On error -1 is returned, and erro is set appropriately.
+int pirate_set_channel_type(int gd, channel_t channel_type);
+
+// Gets the channel type for the read and write ends
+// of the channel descriptor. Returns INVALID on error.
+channel_t pirate_get_channel_type(int gd);
+
+// Sets the pathname for the read and write ends
+// of the gaps descriptor. Only valid if the channel
+// type is DEVICE. Returns zero on success.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_pathname(int gd, char *pathname);
+
+// Gets the pathname for the read and write ends
+// of the gaps descriptor. There must be PIRATE_LEN_NAME
+// bytes allocated at pathname. Returns zero on success.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_get_pathname(int gd, char *pathname);
 
 #endif //__PIRATE_PRIMITIVES_H

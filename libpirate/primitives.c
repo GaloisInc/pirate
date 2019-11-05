@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -9,11 +10,13 @@
 #include "primitives.h"
 
 typedef struct {
-    int fd;             // pipe file descriptor
+    int fd;                         // file descriptor
+    channel_t channel;              // channel type
+    char pathname[PIRATE_LEN_NAME]; // optional device path
 } pirate_channel_t;
 
-static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {0};
-static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {0};
+static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {{0, PIPE, ""}};
+static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {{0, PIPE, ""}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -42,20 +45,33 @@ int pirate_open(int gd, int flags) {
         return gd;
     }
 
-    /* Create a named pipe, if one does not exist */
-    snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, gd);
-    rv = mkfifo(pathname, 0660);
-    if ((rv == -1) && (errno != EEXIST)) {
-        return -1;
+    switch (channels[gd].channel) {
+        case PIPE:
+            /* Create a named pipe, if one does not exist */
+            snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, gd);
+            rv = mkfifo(pathname, 0660);
+            if ((rv == -1) && (errno != EEXIST)) {
+                return -1;
+            }
+            break;
+        case DEVICE:
+            if (strnlen(channels[gd].pathname, PIRATE_LEN_NAME) == 0) {
+                errno = EINVAL;
+                return -1;
+            }
+            strncpy(pathname, channels[gd].pathname, PIRATE_LEN_NAME);
+            break;
+        case INVALID:
+            errno = EINVAL;
+            return -1;
     }
-
     fd = open(pathname, flags);
     if (fd < 0) {
         return -1;
     }
 
     /* Success */
-    channels[gd] = (pirate_channel_t){fd};
+    channels[gd].fd = fd;
     return gd;
 }
 
@@ -179,4 +195,40 @@ int pirate_fcntl1(int gd, int flags, int cmd, int arg) {
     }
 
     return fcntl(fd, cmd, arg);
+}
+
+int pirate_set_channel_type(int gd, channel_t channel_type) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        errno = EBADF;
+        return -1;
+    }
+    readers[gd].channel = channel_type;
+    writers[gd].channel = channel_type;
+    return 0;
+}
+
+channel_t pirate_get_channel_type(int gd) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        return INVALID;
+    }
+    return readers[gd].channel;
+}
+
+int pirate_set_pathname(int gd, char *pathname) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        errno = EBADF;
+        return -1;
+    }
+    strncpy(readers[gd].pathname, pathname, PIRATE_LEN_NAME);
+    strncpy(writers[gd].pathname, pathname, PIRATE_LEN_NAME);
+    return 0;
+}
+
+int pirate_get_pathname(int gd, char *pathname) {
+    if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+        errno = EBADF;
+        return -1;
+    }
+    strncpy(pathname, readers[gd].pathname, PIRATE_LEN_NAME);
+    return 0;
 }

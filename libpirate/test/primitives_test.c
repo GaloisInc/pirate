@@ -57,9 +57,15 @@ TEST test_high_to_low_comm() {
     uint32_t data = TEST_DATA;
 
     rv = pirate_open(HIGH_TO_LOW_CH, O_WRONLY);
+    if (rv < 0) {
+        perror("unable to open HIGH_TO_LOW_CH for writing");
+    }
     ASSERT_EQ_FMT(HIGH_TO_LOW_CH, rv, "%d");
 
     rv = pirate_open(LOW_TO_HIGH_CH, O_RDONLY);
+    if (rv < 0) {
+        perror("unable to open LOW_TO_HIGH_CH for reading");
+    }
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
     // test double-open
@@ -87,9 +93,15 @@ TEST test_low_to_high_comm() {
     uint32_t data;
 
     rv = pirate_open(HIGH_TO_LOW_CH, O_RDONLY);
+    if (rv < 0) {
+        perror("unable to open HIGH_TO_LOW_CH for reading");
+    }
     ASSERT_EQ_FMT(HIGH_TO_LOW_CH, rv, "%d");
 
     rv = pirate_open(LOW_TO_HIGH_CH, O_WRONLY);
+    if (rv < 0) {
+        perror("unable to open LOW_TO_HIGH_CH for writing");
+    }
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
     rv = pirate_read(HIGH_TO_LOW_CH, &data, sizeof(data));
@@ -169,7 +181,16 @@ SUITE(pirate_high) {
 }
 
 int main(int argc, char **argv) {
+    int i;
     GREATEST_MAIN_BEGIN();
+
+    for (i = 1; i < argc; i++) {
+        if (argv[i][0] != '-') {
+            pirate_set_channel_type(HIGH_TO_LOW_CH, DEVICE);
+            pirate_set_pathname(HIGH_TO_LOW_CH, argv[i]);
+            break;
+        }
+    }
 
     RUN_SUITE(pirate_one_process);
 
