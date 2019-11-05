@@ -22,9 +22,6 @@ sending it to the low side application. Uses the libpirate API.
 
 Adapted from http://www.cs.cmu.edu/afs/cs/academic/class/15213-s00/www/class28/tiny.c
 
-TODO refactor the source so that the program structure is amenable to pirate
-annotations.
-
 The build script for simple_demo includes an experiment that builds
 a single executable that contains both the low-side and high-side
 executables.
