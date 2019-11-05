@@ -35,76 +35,80 @@ typedef enum {
 #define NAME                LOW_NAME
 #endif /* LOW */
 
+static int load_web_content_high(data_t* data) {
+    const char* path = "./index.html";
+    struct stat sbuf;
+
+    if (stat(path, &sbuf) < 0) {
+        fprintf(stderr, "ERROR: could not find file %s\n", path);
+        return -1;
+    }
+
+    if (sbuf.st_size >= (long)sizeof(data->buf)) {
+        fprintf(stderr, "ERROR: file %s exceeds size limits\n", path);
+        return -1;
+    }
+
+    FILE* fp = fopen(path, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "ERROR failed to open %s\n", path);
+        return -1;
+    }
+
+    if (fread(data->buf, sbuf.st_size, 1, fp) != 1) {
+        fprintf(stderr, "Failed to read %s file\n", path);
+        return -1;
+    }
+
+    fclose(fp);
+
+    data->buf[sbuf.st_size] = '\0';
+    data->len = sbuf.st_size;
+    return 0;
+}
+
+static int load_web_content_low(data_t* data) {
+    /* Low side requests data by writing zero */
+    int len = 0;
+    ssize_t num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
+    if (num != sizeof(int)) {
+        fprintf(stderr, "Failed to send request\n");
+        return -1;
+    }
+    printf("Sent read request to the %s side\n", HIGH_NAME);
+
+    /* Read and validate response length */
+    num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
+    if (num != sizeof(len)) {
+        fprintf(stderr, "Failed to receive response length\n");
+        return -1;
+    }
+
+    if (len >= DATA_LEN) {
+        fprintf(stderr, "Response length %d is too large\n", len);
+        return -1;
+    }
+
+    /* Read back the response */
+    num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
+    if (num != len) {
+        fprintf(stderr, "Failed to read back the response\n");
+        return -1;
+    }
+
+    /* Success */
+    data->len = len;
+    printf("Received %d bytes from the %s side\n", data->len, HIGH_NAME);
+    return 0;
+}
+
 static int load_web_content(data_t* data, level_e level) {
     switch (level) {
         case LEVEL_HIGH:
-        {
-            const char* path = "./index.html";
-            struct stat sbuf;
-            if (stat(path, &sbuf) < 0) {
-                fprintf(stderr, "ERROR: could not find file %s\n", path);
-                return -1;
-            }
-
-            if (sbuf.st_size >= (long)sizeof(data->buf)) {
-                fprintf(stderr, "ERROR: file %s exceeds size limits\n", path);
-                return -1;
-            }
-
-            FILE* fp = fopen(path, "r");
-            if (fp == NULL) {
-                fprintf(stderr, "ERROR failed to open %s\n", path);
-                return -1;
-            }
-
-            if (fread(data->buf, sbuf.st_size, 1, fp) != 1) {
-                fprintf(stderr, "Failed to read %s file\n", path);
-                return -1;
-            }
-
-            fclose(fp);
-
-            data->buf[sbuf.st_size] = '\0';
-            data->len = sbuf.st_size;
-        }
-            return 0;
+            return load_web_content_high(data);
     
         case LEVEL_LOW:
-        {
-            /* Low side requests data by writing zero */
-            int len = 0;
-            ssize_t num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
-            if (num != sizeof(int)) {
-                fprintf(stderr, "Failed to send request\n");
-                return -1;
-            }
-            printf("Sent read request to the %s side\n", HIGH_NAME);
-
-            /* Read and validate response length */
-            num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
-            if (num != sizeof(len)) {
-                fprintf(stderr, "Failed to receive response length\n");
-                return -1;
-            }
-
-            if (len >= DATA_LEN) {
-                fprintf(stderr, "Response length %d is too large\n", len);
-                return -1;
-            }
-
-            /* Read back the response */
-            num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
-            if (num != len) {
-                fprintf(stderr, "Failed to read back the response\n");
-                return -1;
-            }
-
-            /* Success */
-            data->len = len;
-            printf("Received %d bytes from the %s side\n", data->len, 
-                    HIGH_NAME);
-            return 0;
-        }
+            return load_web_content_low(data);
 
         default:
             return -1;
@@ -114,7 +118,7 @@ static int load_web_content(data_t* data, level_e level) {
     return -1;
 }
 
-   
+
 static void* gaps_thread(void *arg) {
     (void)arg;
     data_t high_data;
