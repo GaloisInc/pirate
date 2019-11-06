@@ -47,3 +47,15 @@ and in another terminal
 ```
 echo "hello world" > /dev/foobar
 ```
+
+# Limitations
+
+Signal handling does not work on blocking operations. When the cuse
+device receives a signal in a blocking system call, the signal
+is not propagated to the user process. The user process enters
+a state such that it cannot be killed. The character device driver
+process must be terminated. This has been observed for SIGTERM
+and SIGKILL.
+
+More investigation is needed to determine whether this is a FUSE
+library bug or we are using the library incorrectly.
