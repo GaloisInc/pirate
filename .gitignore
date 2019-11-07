@@ -14,5 +14,6 @@ libpirate/primitives_test
 libpirate/Testing
 cusegaps/cusegaps_net
 cusegaps/cusegaps_pipe
+cusegaps/cusegaps_test
 .vscode
 /build/*
