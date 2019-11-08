@@ -6,41 +6,81 @@
 The Pirate C and C++ Extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 Overview
 ========
 
-The Pirate C and C++ extensions allow developers to define software
-enclaves that run in isolation of other code in the application.
-Enclaves can communicate with each other using unidirectional
-communication channels.  The enclaves and channels are all defined
-by names in the source code, and these names can be used to map
-applications to specific processors and hardware channels on
-GAPS-enabled architectures.
+The Pirate C and C++ extensions allow developers to partition their
+software into a set of software enclaves.  These enclaves can
+communicate with each other using unidirectional communication
+channels, and can be mapped to different execution environments that
+may provide stronger isolation and integrity guarantees than
+traditional operating system process or hypervisor VM guarantees.
+This provides a higher level of assurance that the runtime maintains
+confidentiality and integrity requirements than traditional
+architectures.  Our approach allows developers to use attributes to
+declarare enclaves and channels in the source code that can then be
+leveraged by the build process to map these virtual enclaves to
+hardware architectures tailored to the application security and
+performance requirements.
 
-In addition to the enclave annotations, our extensions will allow
-users the ability to define sensitivity levels that can be
-associated with declarations in the program.  These sensitivity
-levels will be propagated from declarations to the code using those
-declaraations, and can be used to derive requirements on GAPS-enabled
-architectures and summarize what sensitivity levels are associated
-with code in the application.  These levels will prevent the user from
-inadverently incorporating sensitive code or data on systems not
-approved for access to information with that level of sensitivity.
+In addition to the enclave annotations, our extensions can attach
+attributes to declarations in the source code.  These attributes will
+be collected during the build process and collected into the final
+binary.  Attributes will initially be used for defining and
+associating sensitivity to levels to declarations in the program, and
+the language extensions will allow one to define custom sensitivity
+levels and inclusion relationships between sensitivity levels.  One
+can then check the sensitivity levels of artifacts within the binary
+prior to deploying it on a system.  This will not prevent users from
+intentionslly mislabeling sensitive information in the code as
+non-sensitive, but will prevent the build system from inadverently
+incorporating sensitive code or data on systems not approved for
+access to information with that level of sensitivity.
 
-We should note that the current extensions in this document do not
-include any libraries or facilities to assist with runtime
-manipulation of sensitive data.  In enclaves that have access to
-information at different sensitivity levels, one may need this to, for
-example, attach labels to specific data, and ensure that data is
-correctly labeled before being sent across a channel.  This tracking
-is not included as general purpose C compilers lack to generate
-programs with physically provable integrity gurantees on runtime
-labels.  We plan to revisit this issue as the GAPS hardware
-capabilities are developed.
+This technology should be usable across multiple enclave technologies,
+and make it easy for system developers to change how multi-enclave
+code is mapped into the physical hardware architecture.  Spliting a
+given capability across enclaves will almost always require developer
+involvement, but mapping multiple enclaves defined in the source code
+to the same physical proceessor will not require changes to the
+application.  Furthermore, we envision that on many hardware enclave
+technologies developers or system admistrators will have the ability
+to insert transformations such as filters between enclaves without
+changing the application logic.
+
+
+An extensible attribute system will be provided so that the developers
+can annotate that environment requirements.  For example, the code may
+require specific features are available in the hardware prior to
+execution or that certain code or data is highly sensitive, and not
+for disclosure to untrusted hardware or software.  This will allow the
+build process and deployment tools to check that required hardware is
+available in the system during the application build process, or
+during deployment for software designed to run in multiple
+environments.
+
+The PIRATE language extensions are designed to facilitate the
+development of multi-enclave systems via common interfaces and modest
+compiler extensions to support annotations.  These annotations will
+not prevent buffer overflows, return-oriented-programming exploits or
+other security vulnerabilities in application code.  Rather they are
+intended to help developers decompose applications into multiple
+computing enclaves that may be isolated from each other via physical
+isolation boundaries, virtual machines or processor-specific
+technologies such as Intel SGX and ARM TrustZone.
+
+We should note that the current extensions in this document are
+orthogonal to writing software guards that check information prior to
+sending it over a channel.  Application developers are encouraged to
+implement such checks as needed, but should be aware that our system
+does not change the the fundamental lack of memory safety in C and C++
+applications.  Adversaries may be able exploit bugs in the application
+or supporting libraries to tamper with data and cause checks to
+operate incorrectly, or even inject their own functionality into the
+program and bypass checks.  Application developers can mitigate
+against these attacks through a variety of other means such as use of
+safe languages, compiler-inserted protections, and secure development
+practices.
 
 We envision that GAPS-enabled architectures will provide manifests
 that provide constraints on how the software-defined enclaves may be
@@ -87,158 +127,10 @@ TODO: Refine this into prose
   board configuration, but rather describe requirements on
   the compiled target that code is deployed to.
 
-Enclave Annotations
-===================
 
-Enclave support is controlled via the following pragmas and attributes.
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
-.. code-block:: c
-
-                #pragma enclave declare(<enclave_name>)
-
-This pragma declares an enclave with the given name.  The enclave name
-is a string that uniquely identifies the enclave within the program.
-
-
-.. code-block:: c
-
-                __attribute__((enclave_main(<enclave_name>)))
-
-This attribute may be attached to function definitions, and indicates
-that the function provides the main method for the enclave with the
-given name.  For initial implementation purposes, we require that the
-function this is attached to has the signature `void f(void)` (e.g.,
-neither accepts arguments or returns).
-
-.. code-block:: c
-
-                __attribute__((enclave_only(<enclave_name>)))
-
-This attribute may be attached to global variables, function
-declarations, and function definitions.  On a function, it indicates
-that the function may be only executed or referenced on the enclave
-with the given name.  On a global variable, it indicates the variable
-may only be referenced (i.e., have its address taken or be read/written)
-on that enclave.
-
-Enclave Communication
----------------------
-
-Enclaves can communicate between named channels that are created at
-enclave startup.  Each channel allows communication between a pair of
-channels.  Channels are declared via global variables, and the PIRATE
-toolchain will be responsible for ensuring that channels are correctly
-initialized, and only accessible to the correct enclaves.  By declaring
-channels in this way, the PIRATE development toolchain is aware of
-the enclave communication architecture, and is able to map it to
-different architectures.
-
-.. code-block:: c
-
-  const enclave_send_channel_t sender
-  __attribute__((enclave_send_channel(<channel>, <enclave>)));
-
-This declares that **sender** is a send channel with the name **channel**
-that is visible in the enclave **enclave**.
-
-.. code-block:: c
-
-  const enclave_receive_channel_t receiver
-  __attribute__((enclave_receive_channel(<channel>, <enclave>)));
-
-This declares that **receiver** is a send channel with the name **channel**
-that is visible in the enclave **enclave**.
-
-TODO: Describe channel API.
-
-Building specific enclaves
---------------------------
-
-After compiling one or more C source files into object files using
-enclave-aware compilers, one can generate an executable that runs the
-enclaves by running passing ``--enclave name,name,..`` to ``lld``
-along with other linker options and object files.  This will result in
-`lld` producing an executable that establishes the communication
-channels and launches each of the enclave main function at startup.
-This capability is intended for testing purposes, and does not
-provide physical security protections between enclaves.  A version
-of ``lld`` with these protection guarantees will be developed once
-suitable hardware is available.
-
-If ``lld`` does not find the main function for one of the enclaves,
-then an error will be reported.
-
-Sensitivity Annotations
-=======================
-
-Sensitivity annotations are used to define different sensitivity
-levels which can be ordered.
-
-.. code-block:: c
-
-                #pragma sensitive declare(<new>)
-                #pragma sensitive declare(<new>, <level>)
-
-This declares a sensitivity level ``<new>``.  If additional argument is
-provided, it must be a previously declared level, and this indicates that
-``<new>`` is considered more sensitive than ``<level>``.
-
-.. code-block:: c
-
-                __attribute__((sensitive(<level>)))
-
-This attribute may be attached to declaration in the program,
-including function declarations and definitions, typedefs, compound
-types, variables, statements, enumerated elements and fields of
-struct, union and classes (classes are C++ only).  It is used to
-indicate that the data is considered to have the given sensitivity
-level.  Multiple annotations may be added to a single declaration if
-there is no single highest level of sensitivity affecting a
-declaration.
-
-TODO: Discuss the semantics of sensitivity levels and how propagation
-checking works.
-
-.. code-block:: c
-
-                #pragma sensitive push(<level>, <level>, ...)
-                #pragma sensitive pop
-
-This pragma indicates that all declarations between the ``push`` and
-``pop`` pragmas are annotated with the given levels provided to
-``push``.  The semantics are the same as if each declaration had the
-``sensitive`` attribute, and this is simply provided for convenience
-in files that contain many declarations that require sensitivity
-levels.
-
-.. code-block:: c
-
-                #pragma enclave trusted(<enclave>, <level>)
-
-This indicates that code running on the given enclave is permitted
-access to information marked with the given sensitivity level.  In the
-absense of such an annotation, the linker will report errors if the
-enclave named ``<enclave>`` depends on any information with the given
-level.  Adding this annotation, implicitly adds permission for the
-enclave to access information marked as less sensitive than the given
-level.  On GAPS-enabled architectures, the linker will verify that
-trusted enclaves are mapped to hardware approved for access to
-information with the given sensitivity level.
-
-Inferred vs Explicit Propagation
---------------------------------
-
-TODO: Compare and constrast having the processor implicitly
-propagating sensitive information vs requiring explicit annotations
-for each declaration.  Discuss further the implications of requiring
-declarations are annotated vs only requiring definitions are
-annotated.
-
--
-
-.. Indices and tables
-.. ==================
-
-.. * :ref:`genindex`
-.. * :ref:`modindex`
-.. * :ref:`search`
+   code_annotations
+   elf_extensions
