@@ -84,8 +84,10 @@ Step 2. Signing a queued request.
    a signature and serializes the certificate ``C_R`` containing the time
    of the timestamp, a signature, and other data.
 
-#. The proxy receives the certificate ``C_R`` from the proxy.  If
-   forwards the tuple ``(N, R, C_R)`` to the application.
+#. The proxy receives the certificate ``C_R`` from the timestamping
+   service.  If the queue was empty in step 1, then this is dropped.
+   Otherwise, the proxy forwards the tuple ``(N, R, C_R)`` to the
+   application.
 
 #. The application receives the tuple ``(N, R, C_R)`` from the proxy,
    finds the hash ``H_D`` associated with request ``N``, and checks that the

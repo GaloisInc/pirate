@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'Pirate'
+project = u'Pirate Code'
 copyright = u'2019, Galois, Inc.'
 author = u'Joe Hendrix'
 
