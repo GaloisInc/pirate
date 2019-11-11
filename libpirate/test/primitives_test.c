@@ -10,6 +10,7 @@
 
 #include "greatest.h"
 #include "primitives.h"
+#include "shmem_test.h"
 
 #define HIGH_TEST_CH    0
 #define HIGH_TO_LOW_CH  1
@@ -174,6 +175,14 @@ SUITE(pirate_one_process) {
     RUN_TEST(test_pirate_unopened);
 }
 
+SUITE(pirate_pthread) {
+    RUN_TEST(test_communication_pthread);
+}
+
+SUITE(pirate_pthread_shmem) {
+    RUN_TEST(test_communication_pthread_shmem);
+}
+
 SUITE(pirate_low) {
     RUN_TEST(test_low_to_high_comm);
 }
@@ -195,8 +204,10 @@ int main(int argc, char **argv) {
     }
 
     RUN_SUITE(pirate_one_process);
-
-    RUN_TEST(test_communication_pthread);
+    RUN_SUITE(pirate_pthread);
+#ifdef PIRATE_SHMEM_FEATURE
+    RUN_SUITE(pirate_pthread_shmem);
+#endif
 
     pid_t ch_pid = fork();
     switch (ch_pid) {
@@ -210,6 +221,8 @@ int main(int argc, char **argv) {
         RUN_SUITE(pirate_high);
         wait(NULL);
     }
+
+    pirate_set_pathname(HIGH_TO_LOW_CH, NULL);
 
     GREATEST_MAIN_END();
 }

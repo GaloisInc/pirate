@@ -4,7 +4,10 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
+#include "shmem.h"
+
 #define PIRATE_FILENAME         "/tmp/gaps.channel.%d"
+#define PIRATE_SHM_NAME         "/gaps.channel.%d"
 #define PIRATE_LEN_NAME         64
 
 #define PIRATE_NUM_CHANNELS     16
@@ -12,8 +15,16 @@
 typedef enum {
     PIPE,
     DEVICE,
+    SHMEM,
     INVALID,
 } channel_t;
+
+typedef struct {
+  int fd;                       // file descriptor
+  channel_t channel;            // channel type
+  char *pathname;               // optional device path
+  shmem_buffer_t *shmem_buffer; // optional shared memory buffer
+} pirate_channel_t;
 
 // Opens the gaps channel specified by the gaps descriptor.
 //
@@ -70,6 +81,8 @@ channel_t pirate_get_channel_type(int gd);
 // of the gaps descriptor. Only valid if the channel
 // type is DEVICE. Returns zero on success.
 // On error -1 is returned, and errno is set appropriately.
+// If pathname is NULL, then the memory allocated
+// for the channel pathname is free'd.
 int pirate_set_pathname(int gd, char *pathname);
 
 // Gets the pathname for the read and write ends

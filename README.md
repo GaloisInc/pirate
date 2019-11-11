@@ -9,8 +9,8 @@ be supported: configuring TA1 hardware, loading code and data onto the
 appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
-libpirate currently implements GAPS channels using either Linux named pipes
-or a character device driver.
+libpirate currently implements GAPS channels using Linux named pipes,
+a character device driver, or shared memory.
 
 ### simple_demo
 
