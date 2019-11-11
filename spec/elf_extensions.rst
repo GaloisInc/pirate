@@ -44,19 +44,25 @@ so the ``sh_type`` fields in their section headers should be set to
     and entrypoints of each enclave declared in the source file. The
     first entry is unused and corresponds to ``ENC_UNDEF``.
 
-``.gaps.symreq``
+``.gaps.reqtab``
     An array of ``Elf64_GAPS_symreq`` indexed parallel to ``.symtab``.
     This section lists the capabilities/sensitivities and enclave (if
     any) required by the ``.symtab`` entry with the same index.
 
-``.gaps.captab``
+``.gaps.capabilities``
     An array of ``Elf64_GAPS_cap`` listing the
     capabilities/sensitivities defined in the source file. The first
     entry is unused and corresponds to ``CAP_NULL``.
 
-``.gaps.capstrtab``
-    A vector of arrays of indices into ``.gaps.captab``, each
-    terminated by ``CAP_NULL``.
+``.gaps.captab``
+    A vector of arrays of ``Elf64_Half`` indices into ``.gaps.captab``,
+    each terminated by ``CAP_NULL``. Offset zero contains a 0 to
+    signify an empty capacity list.
+
+``.gaps.strtab``
+    A vector of zero-terminated strings to hold the names of enclaves,
+    sensitivities, and capabilities. Offset zero contains a null byte,
+    to signify the empty string.
 
 ``.gaps.channels``
     An array of ``Elf64_GAPS_channel`` listing the channels declared
@@ -72,18 +78,18 @@ empty space left by alignment.]
 
                 typedef struct {
                     Elf64_Addr enc_name;
-                    Elf64_Addr enc_cap;
+                    Elf64_Word enc_cap;
                     Elf64_Word enc_entry;
                 } Elf64_GAPS_enclave;
 
 ``enc_name``
-    The address of a string-table entry for the user-defined name of
-    the enclave.
+    The offset of a ``.gaps.strtab`` entry for the user-defined name
+    of the enclave.
 
 ``enc_cap``
-    The address of a string of capability indices in
-    ``.gaps.capstrtab``, indicating capabilities and sensitivity
-    permissions for this enclave.
+    The offset of a string of capability indices in ``.gaps.captab``,
+    indicating capabilities and sensitivity permissions for this
+    enclave.
 
 ``enc_entry``
     The index of the entry in ``.symtab`` to be used as an entrypoint
@@ -92,15 +98,14 @@ empty space left by alignment.]
 .. code-block:: c
 
                 typedef struct {
-                    Elf64_Addr sr_cap;
+                    Elf64_Word sr_cap;
                     Elf64_Word sr_enc;
                 } Elf64_GAPS_symreq;
 
 ``sr_cap``
-    The address of a string of capability indices in
-    ``.gaps.capstrtab`` indicating capability and sensitivity
-    requirements for the ``.symtab`` entry with the corresponding
-    index.
+    The address of a string of capability indices in ``.gaps.captab``
+    indicating capability and sensitivity requirements for the
+    ``.symtab`` entry with the corresponding index.
 
 ``sr_enc``
     If this symbol was annotated with ``enclave_only(e)``, the index
@@ -165,5 +170,5 @@ following global symbols:
 
 A GAPS-aware linker is responsible for populating these from
 ``.gaps.channels``. Meanwhile, the GAPS runtime will define a
-cinstructor in ``.init`` that references these global symbols to
+constructor in ``.init`` that references these global symbols to
 initialize all send and receive channels.
