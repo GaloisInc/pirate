@@ -9,7 +9,7 @@ cleanup / data wipe on termination.
 
 ## Usage
 
-See [primitives.h](/primitives.h) for additional documentation.
+See [primitives.h](/libpirate/primitives.h) for additional documentation.
 
 Reader:
 
@@ -62,11 +62,11 @@ The pathname to the character device must be specified using
 Uses a POSIX shared memory region to communicate. Support
 for the SHMEM type requires the librt.so POSIX real-time extensions
 library. This support is not included by default. Set
-the PIRATE_SHMEM_FEATURE flag in [CMakeLists.txt](/CMakeLists.txt)
+the PIRATE_SHMEM_FEATURE flag in [CMakeLists.txt](/libpirate/CMakeLists.txt)
 to enable support for shared memory.
 
 If the reader or writer process is killed while blocked
 on pirate_open() then you must delete the file
-/dev/shm/gaps.channel.%d prior to launching another reader or writer.
+`/dev/shm/gaps.channel.%d` prior to launching another reader or writer.
 
 The SHMEM type is intended for benchmarking purposes only.
