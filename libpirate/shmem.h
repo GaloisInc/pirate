@@ -17,12 +17,13 @@ typedef struct {
   pthread_mutex_t mutex;
   pthread_cond_t is_not_empty;
   pthread_cond_t is_not_full;
+  int size;
   char buffer[];
 } shmem_buffer_t;
 
-#define SHMEM_BUFFER (131072)
+#define DEFAULT_SHMEM_BUFFER (131072)
 
-int shmem_buffer_open(int gd, int flags, char *name, shmem_buffer_t **buffer_addr);
+int shmem_buffer_open(int gd, int flags, int size, char *name, shmem_buffer_t **buffer_addr);
 
 ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf, size_t count);
 

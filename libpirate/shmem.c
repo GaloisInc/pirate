@@ -48,14 +48,20 @@ static inline int is_empty(uint64_t value) { return get_status(value) == 0; }
 
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
-static shmem_buffer_t *shmem_buffer_init(int fd) {
-  int err, rv, success;
-  size_t buffer_size = sizeof(shmem_buffer_t) + SHMEM_BUFFER;
+static shmem_buffer_t *shmem_buffer_init(int fd, int size) {
+  int buffer_size, err, rv, success;
+  size_t alloc_size;
   shmem_buffer_t *shmem_buffer;
   pthread_mutexattr_t mutex_attr;
   pthread_condattr_t cond_attr;
 
-  if ((rv = ftruncate(fd, buffer_size)) != 0) {
+  if (size <= 0) {
+    buffer_size = DEFAULT_SHMEM_BUFFER;
+  } else {
+    buffer_size = size;
+  }
+  alloc_size = sizeof(shmem_buffer_t) + buffer_size;
+  if ((rv = ftruncate(fd, alloc_size)) != 0) {
     err = errno;
     close(fd);
     errno = err;
@@ -63,7 +69,7 @@ static shmem_buffer_t *shmem_buffer_init(int fd) {
   }
 
   shmem_buffer = (shmem_buffer_t *)mmap(
-      NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+      NULL, alloc_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
   if (shmem_buffer == MAP_FAILED) {
     err = errno;
@@ -89,10 +95,12 @@ static shmem_buffer_t *shmem_buffer_init(int fd) {
     case 2:
       return shmem_buffer;
     default:
-      munmap(shmem_buffer, buffer_size);
+      munmap(shmem_buffer, alloc_size);
       return NULL;
     }
   }
+
+  shmem_buffer->size = buffer_size;
 
   if ((rv = sem_init(&shmem_buffer->reader_open_wait, 1, 0)) != 0) {
     goto error;
@@ -145,12 +153,12 @@ static shmem_buffer_t *shmem_buffer_init(int fd) {
 error:
   err = errno;
   atomic_store(&shmem_buffer->init, 0);
-  munmap(shmem_buffer, buffer_size);
+  munmap(shmem_buffer, alloc_size);
   errno = err;
   return NULL;
 }
 
-int shmem_buffer_open(int gd, int flags, char *name,
+int shmem_buffer_open(int gd, int flags, int size, char *name,
                       shmem_buffer_t **buffer_addr) {
   atomic_uint_fast64_t init_pid;
   int err, fd;
@@ -164,7 +172,7 @@ int shmem_buffer_open(int gd, int flags, char *name,
     *buffer_addr = NULL;
     return -1;
   }
-  shmem_buffer = shmem_buffer_init(fd);
+  shmem_buffer = shmem_buffer_init(fd, size);
   if (shmem_buffer == NULL) {
     goto error;
   }
@@ -210,7 +218,7 @@ error:
 
 ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
                           size_t count) {
-  int was_full;
+  int buffer_size, was_full;
   size_t nbytes, nbytes1, nbytes2;
   uint64_t position;
   uint32_t reader, writer;
@@ -235,13 +243,14 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
   }
   reader = get_read(position);
   writer = get_write(position);
+  buffer_size = shmem_buffer->size;
   if (reader < writer) {
     nbytes = writer - reader;
   } else {
-    nbytes = SHMEM_BUFFER + writer - reader;
+    nbytes = buffer_size + writer - reader;
   }
   nbytes = MIN(nbytes, count);
-  nbytes1 = MIN(SHMEM_BUFFER - reader, nbytes);
+  nbytes1 = MIN(buffer_size - reader, nbytes);
   nbytes2 = nbytes - nbytes1;
   atomic_thread_fence(memory_order_acquire);
   memcpy(buf, shmem_buffer->buffer + reader, nbytes1);
@@ -249,8 +258,7 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
     memcpy(((char *)buf) + nbytes1, shmem_buffer->buffer + nbytes1, nbytes2);
   }
   for (;;) {
-    uint64_t update =
-        create_position(writer, (reader + nbytes) % SHMEM_BUFFER, 0);
+    uint64_t update = create_position(writer, (reader + nbytes) % buffer_size, 0);
     if (atomic_compare_exchange_weak(&shmem_buffer->position, &position,
                                      update)) {
       was_full = is_full(position);
@@ -268,7 +276,7 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
 
 ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
                            size_t size) {
-  int was_empty;
+  int buffer_size, was_empty;
   size_t nbytes, nbytes1, nbytes2;
   uint64_t position = atomic_load(&shmem_buffer->position);
   uint32_t reader, writer;
@@ -297,13 +305,14 @@ ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
   }
   reader = get_read(position);
   writer = get_write(position);
+  buffer_size = shmem_buffer->size;
   if (writer < reader) {
     nbytes = reader - writer;
   } else {
-    nbytes = SHMEM_BUFFER + reader - writer;
+    nbytes = buffer_size + reader - writer;
   }
   nbytes = MIN(nbytes, size);
-  nbytes1 = MIN(SHMEM_BUFFER - writer, nbytes);
+  nbytes1 = MIN(buffer_size - writer, nbytes);
   nbytes2 = nbytes - nbytes1;
   memcpy(shmem_buffer->buffer + writer, buf, nbytes1);
   if (nbytes2 > 0) {
@@ -311,8 +320,7 @@ ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
   }
   atomic_thread_fence(memory_order_release);
   for (;;) {
-    uint64_t update =
-        create_position((writer + nbytes) % SHMEM_BUFFER, reader, 1);
+    uint64_t update = create_position((writer + nbytes) % buffer_size, reader, 1);
     if (atomic_compare_exchange_weak(&shmem_buffer->position, &position,
                                      update)) {
       was_empty = is_empty(position);
@@ -329,7 +337,7 @@ ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
 }
 
 int shmem_buffer_close(int flags, shmem_buffer_t *shmem_buffer) {
-  size_t buffer_size = sizeof(shmem_buffer_t) + SHMEM_BUFFER;
+  size_t buffer_size = sizeof(shmem_buffer_t) + shmem_buffer->size;
   if (flags == O_RDONLY) {
     atomic_store(&shmem_buffer->reader_pid, 0);
     pthread_mutex_lock(&shmem_buffer->mutex);

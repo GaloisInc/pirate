@@ -10,8 +10,8 @@
 #include "primitives.h"
 #include "shmem_interface.h"
 
-static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, NULL}};
-static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, NULL}};
+static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, 0, NULL}};
+static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, 0, NULL}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -263,4 +263,22 @@ int pirate_get_pathname(int gd, char *pathname) {
     strncpy(pathname, readers[gd].pathname, PIRATE_LEN_NAME);
   }
   return 0;
+}
+
+int pirate_set_shmem_size(int gd, int shmem_size) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  readers[gd].shmem_size = shmem_size;
+  writers[gd].shmem_size = shmem_size;
+  return 0;
+}
+
+int pirate_get_shmem_size(int gd) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  return readers[gd].shmem_size;
 }

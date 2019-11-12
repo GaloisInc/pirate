@@ -1,6 +1,6 @@
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "primitives.h"
 
@@ -8,7 +8,8 @@ int pirate_shmem_open(int gd, int flags, pirate_channel_t *channels) {
 #ifdef PIRATE_SHMEM_FEATURE
   char pathname[PIRATE_LEN_NAME];
   snprintf(pathname, sizeof(pathname) - 1, PIRATE_SHM_NAME, gd);
-  return shmem_buffer_open(gd, flags, pathname, &channels[gd].shmem_buffer);
+  return shmem_buffer_open(gd, flags, channels[gd].shmem_size, pathname,
+                           &channels[gd].shmem_buffer);
 #else
   (void)gd;
   (void)flags;

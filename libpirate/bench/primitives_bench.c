@@ -42,6 +42,12 @@ int main(int argc, char *argv[]) {
 
   if (!fork()) {
     // child
+    if (pirate_get_channel_type(1) == SHMEM) {
+      if (pirate_set_shmem_size(1, 8 * size) < 0) {
+        perror("pirate_set_shmem_size");
+        return 1;
+      }
+    }
     if (pirate_open(1, O_RDONLY) < 0) {
       perror("pirate_open");
       return 1;
@@ -66,6 +72,12 @@ int main(int argc, char *argv[]) {
     pirate_close(1, O_RDONLY);
   } else {
     // parent
+    if (pirate_get_channel_type(1) == SHMEM) {
+      if (pirate_set_shmem_size(1, 8 * size) < 0) {
+        perror("pirate_set_shmem_size");
+        return 1;
+      }
+    }
     if (pirate_open(1, O_WRONLY) < 0) {
       perror("pirate_open");
       return 1;

@@ -70,3 +70,5 @@ on pirate_open() then you must delete the file
 `/dev/shm/gaps.channel.%d` prior to launching another reader or writer.
 
 The SHMEM type is intended for benchmarking purposes only.
+The size of the shared memory buffer can be specified using
+`pirate_set_shmem_size(int, int)` prior to opening the channel.

@@ -20,7 +20,7 @@ int test_buffer_fill(char *buffer, int len, int value) {
 
 TEST test_high_to_low_comm_shmem() {
   int rv;
-  char *data = malloc(SHMEM_BUFFER);
+  char *data = malloc(DEFAULT_SHMEM_BUFFER);
 
   rv = pirate_open(HIGH_TO_LOW_CH, O_WRONLY);
   if (rv < 0) {
@@ -34,13 +34,13 @@ TEST test_high_to_low_comm_shmem() {
   }
   ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
-  memset(data, '0', SHMEM_BUFFER);
-  rv = pirate_write(HIGH_TO_LOW_CH, data, SHMEM_BUFFER);
-  ASSERT_EQ_FMT(SHMEM_BUFFER, rv, "%d");
+  memset(data, '0', DEFAULT_SHMEM_BUFFER);
+  rv = pirate_write(HIGH_TO_LOW_CH, data, DEFAULT_SHMEM_BUFFER);
+  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
 
-  rv = pirate_read(LOW_TO_HIGH_CH, data, SHMEM_BUFFER);
-  ASSERT_EQ_FMT(SHMEM_BUFFER, rv, "%d");
-  ASSERT_EQ_FMT(0, test_buffer_fill(data, SHMEM_BUFFER, '1'), "%d");
+  rv = pirate_read(LOW_TO_HIGH_CH, data, DEFAULT_SHMEM_BUFFER);
+  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
+  ASSERT_EQ_FMT(0, test_buffer_fill(data, DEFAULT_SHMEM_BUFFER, '1'), "%d");
 
   rv = pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
   ASSERT_EQ_FMT(0, rv, "%d");
@@ -55,7 +55,7 @@ TEST test_high_to_low_comm_shmem() {
 
 TEST test_low_to_high_comm_shmem() {
   int rv;
-  char *data = malloc(SHMEM_BUFFER);
+  char *data = malloc(DEFAULT_SHMEM_BUFFER);
 
   rv = pirate_open(HIGH_TO_LOW_CH, O_RDONLY);
   if (rv < 0) {
@@ -69,13 +69,13 @@ TEST test_low_to_high_comm_shmem() {
   }
   ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
-  rv = pirate_read(HIGH_TO_LOW_CH, data, SHMEM_BUFFER);
-  ASSERT_EQ_FMT(SHMEM_BUFFER, rv, "%d");
-  ASSERT_EQ_FMT(0, test_buffer_fill(data, SHMEM_BUFFER, '0'), "%d");
+  rv = pirate_read(HIGH_TO_LOW_CH, data, DEFAULT_SHMEM_BUFFER);
+  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
+  ASSERT_EQ_FMT(0, test_buffer_fill(data, DEFAULT_SHMEM_BUFFER, '0'), "%d");
 
-  memset(data, '1', SHMEM_BUFFER);
-  rv = pirate_write(LOW_TO_HIGH_CH, data, SHMEM_BUFFER);
-  ASSERT_EQ_FMT(SHMEM_BUFFER, rv, "%d");
+  memset(data, '1', DEFAULT_SHMEM_BUFFER);
+  rv = pirate_write(LOW_TO_HIGH_CH, data, DEFAULT_SHMEM_BUFFER);
+  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
 
   rv = pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
   ASSERT_EQ_FMT(0, rv, "%d");

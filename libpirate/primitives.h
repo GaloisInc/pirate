@@ -34,6 +34,7 @@ typedef struct {
   int fd;                       // file descriptor
   channel_t channel;            // channel type
   char *pathname;               // optional device path
+  int shmem_size;               // optional shared memory buffer size
   shmem_buffer_t *shmem_buffer; // optional shared memory buffer
 } pirate_channel_t;
 
@@ -97,5 +98,15 @@ int pirate_set_pathname(int gd, char *pathname);
 // bytes allocated at pathname. Returns zero on success.
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_pathname(int gd, char *pathname);
+
+// Sets the shared memory buffer size for the gaps channel.
+// Only valid if the channel type is SHMEM.
+// If zero then DEFAULT_SHMEM_BUFFER bytes will be allocated.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_shmem_size(int gd, int shmem_size);
+
+// Gets the shared memory buffer size for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_get_shmem_size(int gd);
 
 #endif //__PIRATE_PRIMITIVES_H
