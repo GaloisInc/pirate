@@ -6,17 +6,28 @@
 
 #include "shmem.h"
 
-#define PIRATE_FILENAME         "/tmp/gaps.channel.%d"
-#define PIRATE_SHM_NAME         "/gaps.channel.%d"
-#define PIRATE_LEN_NAME         64
+#define PIRATE_FILENAME "/tmp/gaps.channel.%d"
+#define PIRATE_SHM_NAME "/gaps.channel.%d"
+#define PIRATE_LEN_NAME 64
 
-#define PIRATE_NUM_CHANNELS     16
+#define PIRATE_NUM_CHANNELS 16
 
 typedef enum {
-    PIPE,
-    DEVICE,
-    SHMEM,
-    INVALID,
+  // The gaps channel is implemented using a FIFO special file
+  // (a named pipe). The name of the pipe is formatted
+  // with PIRATE_FILENAME where %d is the gaps descriptor.
+  PIPE,
+  // The gaps channel is implemented using a filepath.
+  // This filepath points to a character device or a
+  // named pipe. pirate_set_pathname(int, char *) must
+  // be used to specify the pathname.
+  DEVICE,
+  // The gaps channel is implemented using shared memory.
+  // This feature is disabled by default. It must be enabled
+  // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
+  SHMEM,
+  // The gaps channel is unavailable for operations.
+  INVALID,
 } channel_t;
 
 typedef struct {
@@ -36,10 +47,6 @@ typedef struct {
 // error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must be O_RDONLY or O_WRONLY.
-//
-// The gaps chnnel is implemented using a FIFO special file
-// (a named pipe). The name of the pipe is formatted
-// with PIRATE_FILENAME where %d is the gaps descriptor.
 int pirate_open(int gd, int flags);
 
 // pirate_read() attempts to read up to count bytes from

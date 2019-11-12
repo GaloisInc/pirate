@@ -50,7 +50,7 @@ a character device driver, or shared memory. Use
 ### PIPE type
 
 Linux named pipes are the default channel type. A pipe file is
-created at /tmp/gaps.channel.%d if one does not exist.
+created at `/tmp/gaps.channel.%d` if one does not exist.
 
 ### DEVICE type
 
