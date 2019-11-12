@@ -72,7 +72,7 @@ int pirate_close(int gd, int flags);
 
 // Invoke fcntl() on the underlying file descriptor
 int pirate_fcntl0(int gd, int flags, int cmd);
-int pirate_fcntl1(int gd, int flags, int cmd, int arg);
+int pirate_fcntl1_int(int gd, int flags, int cmd, int arg);
 
 // Sets the channel type for the read and write ends
 // of the gaps descriptor. Must be configured before

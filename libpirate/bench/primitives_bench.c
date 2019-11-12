@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     }
     // check /proc/sys/fs/pipe-max-size on failure
     if (pirate_get_channel_type(1) == PIPE) {
-      if (pirate_fcntl1(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_fcntl1_int(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     }
     // check /proc/sys/fs/pipe-max-size on failure
     if (pirate_get_channel_type(1) == PIPE) {
-      if (pirate_fcntl1(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_fcntl1_int(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }

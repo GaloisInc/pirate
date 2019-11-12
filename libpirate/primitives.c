@@ -181,7 +181,7 @@ int pirate_fcntl0(int gd, int flags, int cmd) {
   return fcntl(fd, cmd);
 }
 
-int pirate_fcntl1(int gd, int flags, int cmd, int arg) {
+int pirate_fcntl1_int(int gd, int flags, int cmd, int arg) {
   pirate_channel_t *channels;
   int fd;
 
