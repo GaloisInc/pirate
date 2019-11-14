@@ -14,6 +14,8 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
+#define SPIN_ITERATIONS (10000)
+
 #include "shmem.h"
 
 // TODO: replace reader and writer with BipBuffer
@@ -218,12 +220,15 @@ error:
 
 ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
                           size_t count) {
-  int buffer_size, was_full;
+  int spin, buffer_size, was_full;
   size_t nbytes, nbytes1, nbytes2;
   uint64_t position;
   uint32_t reader, writer;
 
   position = atomic_load(&shmem_buffer->position);
+  for (spin = 0; (spin < SPIN_ITERATIONS) && is_empty(position); spin++) {
+    position = atomic_load(&shmem_buffer->position);
+  }
   if (is_empty(position)) {
     pthread_mutex_lock(&shmem_buffer->mutex);
     position = atomic_load(&shmem_buffer->position);
@@ -258,7 +263,8 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
     memcpy(((char *)buf) + nbytes1, shmem_buffer->buffer + nbytes1, nbytes2);
   }
   for (;;) {
-    uint64_t update = create_position(writer, (reader + nbytes) % buffer_size, 0);
+    uint64_t update =
+        create_position(writer, (reader + nbytes) % buffer_size, 0);
     if (atomic_compare_exchange_weak(&shmem_buffer->position, &position,
                                      update)) {
       was_full = is_full(position);
@@ -276,10 +282,15 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
 
 ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
                            size_t size) {
-  int buffer_size, was_empty;
+  int spin, buffer_size, was_empty;
   size_t nbytes, nbytes1, nbytes2;
-  uint64_t position = atomic_load(&shmem_buffer->position);
+  uint64_t position;
   uint32_t reader, writer;
+
+  position = atomic_load(&shmem_buffer->position);
+  for (spin = 0; (spin < SPIN_ITERATIONS) && is_full(position); spin++) {
+    position = atomic_load(&shmem_buffer->position);
+  }
   if (is_full(position)) {
     pthread_mutex_lock(&shmem_buffer->mutex);
     position = atomic_load(&shmem_buffer->position);
@@ -320,7 +331,8 @@ ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
   }
   atomic_thread_fence(memory_order_release);
   for (;;) {
-    uint64_t update = create_position((writer + nbytes) % buffer_size, reader, 1);
+    uint64_t update =
+        create_position((writer + nbytes) % buffer_size, reader, 1);
     if (atomic_compare_exchange_weak(&shmem_buffer->position, &position,
                                      update)) {
       was_empty = is_empty(position);
