@@ -55,9 +55,9 @@ so the ``sh_type`` fields in their section headers should be set to
     entry is unused and corresponds to ``CAP_NULL``.
 
 ``.gaps.captab``
-    A vector of arrays of ``Elf64_Half`` indices into ``.gaps.captab``,
-    each terminated by ``CAP_NULL``. Offset zero contains a 0 to
-    signify an empty capacity list.
+    A vector of arrays of ``Elf64_Half`` indices into
+    ``.gaps.capabilities``, each terminated by ``CAP_NULL``. Offset
+    zero contains a 0 to signify an empty capacity list.
 
 ``.gaps.strtab``
     A vector of zero-terminated strings to hold the names of enclaves,
