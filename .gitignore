@@ -9,9 +9,12 @@ simple_demo/both
 simple_demo/*.o
 libpirate/libpirate.a
 libpirate/libpirate.so
-libpirate/primitives_bench
+libpirate/primitives_bench_thr
+libpirate/primitives_bench_lat
 libpirate/primitives_test
 libpirate/Testing
+libpirate/bench/*.results
+libpirate/bench/*.pdf
 cusegaps/cusegaps_net
 cusegaps/cusegaps_pipe
 cusegaps/cusegaps_test

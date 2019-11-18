@@ -72,3 +72,24 @@ on pirate_open() then you must delete the file
 The SHMEM type is intended for benchmarking purposes only.
 The size of the shared memory buffer can be specified using
 `pirate_set_shmem_size(int, int)` prior to opening the channel.
+
+## Benchmarks
+
+`primitives_bench_thr` and `primitives_bench_lat` are throughput
+and latency benchmarks for the library. `bench.py` is a wrapper
+script that can be used to run the benchmarks across a range
+of message sizes.
+
+Example usage:
+
+```
+# throughput benchmarks
+./bench.py thr unix-pipe >> throughput.results
+./bench.py thr device /dev/foobar >> throughput.results
+./bench.py thr shmem shmem >> throughput.results
+
+# latency benchmarks
+./bench.py lat unix-pipe >> latency.results
+./bench.py lat device /dev/foo /dev/bar >> latency.results
+./bench.py lat shmem shmem shmem >> latency.results
+```

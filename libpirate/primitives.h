@@ -71,10 +71,6 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd, int flags);
 
-// Invoke fcntl() on the underlying file descriptor
-int pirate_fcntl0(int gd, int flags, int cmd);
-int pirate_fcntl1_int(int gd, int flags, int cmd, int arg);
-
 // Sets the channel type for the read and write ends
 // of the gaps descriptor. Must be configured before
 // the channel is opened. Returns zero on success.
@@ -108,5 +104,13 @@ int pirate_set_shmem_size(int gd, int shmem_size);
 // Gets the shared memory buffer size for the gaps channel.
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_shmem_size(int gd);
+
+// Invoke fcntl() on the underlying file descriptor
+int pirate_fcntl0(int gd, int flags, int cmd);
+int pirate_fcntl1_int(int gd, int flags, int cmd, int arg);
+
+// Invoke ioctl() on the underlying device
+int pirate_ioctl0(int gd, int flags, long cmd);
+int pirate_ioctl1_int(int gd, int flags, long cmd, int arg);
 
 #endif //__PIRATE_PRIMITIVES_H

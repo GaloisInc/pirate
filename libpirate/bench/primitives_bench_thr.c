@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
   struct timespec start, stop;
 
   if (argc < 3) {
-    printf("usage: primitives_bench [message-size] [roundtrip-count] [device, "
-           "optional]\n");
+    printf("usage: primitives_bench_thr message-size roundtrip-count "
+           "[devicepath]\n");
     return 1;
   }
 
@@ -53,16 +53,26 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     // check /proc/sys/fs/pipe-max-size on failure
-    if (pirate_get_channel_type(1) == PIPE) {
+    switch (pirate_get_channel_type(1)) {
+    case PIPE:
       if (pirate_fcntl1_int(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }
+      break;
+    case DEVICE:
+      if (pirate_ioctl1_int(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+        perror("pirate_ioctl1");
+        return 1;
+      }
+      break;
+    default:
+      break;
     }
     for (i = 0; i < count; i++) {
       int nbytes = size;
       while (nbytes > 0) {
-        if ((rv = pirate_read(1, buf, size)) < 1) {
+        if ((rv = pirate_read(1, buf, size)) <= 0) {
           perror("pirate_read");
           return 1;
         }
@@ -83,11 +93,21 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     // check /proc/sys/fs/pipe-max-size on failure
-    if (pirate_get_channel_type(1) == PIPE) {
+    switch (pirate_get_channel_type(1)) {
+    case PIPE:
       if (pirate_fcntl1_int(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }
+      break;
+    case DEVICE:
+      if (pirate_ioctl1_int(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+        perror("pirate_ioctl1");
+        return 1;
+      }
+      break;
+    default:
+      break;
     }
     if (clock_gettime(CLOCK_MONOTONIC, &start) < 0) {
       perror("clock_gettime");
@@ -96,7 +116,7 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < count; i++) {
       int nbytes = size;
       while (nbytes > 0) {
-        if ((rv = pirate_write(1, buf, size)) < 1) {
+        if ((rv = pirate_write(1, buf, size)) <= 0) {
           perror("pirate_write");
           return 1;
         }
@@ -112,11 +132,10 @@ int main(int argc, char *argv[]) {
     // nanoseconds difference
     delta = ((stop.tv_sec - start.tv_sec) * 1000000000 +
              (stop.tv_nsec - start.tv_nsec));
-    // 8 bits per byte
     // 1e9 nanoseconds per second
     // 1e6 bytes per megabytes
-    printf("average throughput: %f Mb/s\n",
-           (8.0 * (1e9 / 1e6) * count * size) / delta);
+    printf("average throughput: %f MB/s\n",
+           ((1e9 / 1e6) * count * size) / delta);
   }
   free(buf);
 }

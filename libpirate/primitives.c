@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -208,6 +209,64 @@ int pirate_fcntl1_int(int gd, int flags, int cmd, int arg) {
   }
 
   return fcntl(fd, cmd, arg);
+}
+
+int pirate_ioctl0(int gd, int flags, long cmd) {
+  pirate_channel_t *channels;
+  int fd;
+
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+
+  if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (flags == O_RDONLY) {
+    channels = readers;
+  } else {
+    channels = writers;
+  }
+
+  fd = channels[gd].fd;
+  if (fd <= 0) {
+    errno = ENODEV;
+    return -1;
+  }
+
+  return ioctl(fd, cmd);
+}
+
+int pirate_ioctl1_int(int gd, int flags, long cmd, int arg) {
+  pirate_channel_t *channels;
+  int fd;
+
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+
+  if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (flags == O_RDONLY) {
+    channels = readers;
+  } else {
+    channels = writers;
+  }
+
+  fd = channels[gd].fd;
+  if (fd <= 0) {
+    errno = ENODEV;
+    return -1;
+  }
+
+  return ioctl(fd, cmd, arg);
 }
 
 int pirate_set_channel_type(int gd, channel_t channel_type) {
