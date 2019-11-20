@@ -36,3 +36,4 @@ Configuration
 -------------
 
 - Out of band communication to configure channels
+- Of lower priority, it would be beneficial if the character device could be configured for use in a trusted mode. In trusted mode the device driver behaves identically to a posix named pipe (fifo).
