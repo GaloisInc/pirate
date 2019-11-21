@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #define FUSE_USE_VERSION 31
 #define _POSIX_C_SOURCE 200809L
 #define _GNU_SOURCE

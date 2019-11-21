@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #define _GNU_SOURCE
 
 #include <fcntl.h>

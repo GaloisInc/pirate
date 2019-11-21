@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #define _POSIX_C_SOURCE 200809L
 
 #include <errno.h>

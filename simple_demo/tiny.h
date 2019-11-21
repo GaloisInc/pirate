@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #ifndef _TINY_H_
 #define _TINY_H_
 

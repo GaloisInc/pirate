@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #ifndef __SHMEM_INTERFACE_H
 #define __SHMEM_INTERFACE_H
 

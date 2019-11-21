@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 //
 // An example of using C constructors and destructors to initialize
 // channels. This code is not compiled into the libpirate library.

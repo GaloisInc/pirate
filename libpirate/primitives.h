@@ -12,6 +12,7 @@
  *
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
+
 #ifndef __PIRATE_PRIMITIVES_H
 #define __PIRATE_PRIMITIVES_H
 
