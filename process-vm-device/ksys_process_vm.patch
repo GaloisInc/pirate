@@ -1,0 +1,105 @@
+diff --git a/mm/process_vm_access.c b/mm/process_vm_access.c
+index 8973cd231ece..31e267887201 100644
+--- a/mm/process_vm_access.c
++++ b/mm/process_vm_access.c
+@@ -146,6 +146,7 @@ static int process_vm_rw_single_vec(unsigned long addr,
+  * @rvec: iovec array specifying where to copy to/from in the other process
+  * @riovcnt: size of rvec array
+  * @flags: currently unused
++ * @ksys: 0 if invoked from a system call, 1 if called from kernelspace
+  * @vm_write: 0 if reading from other process, 1 if writing to other process
+  * Returns the number of bytes read/written or error code. May
+  *  return less bytes than expected if an error occurs during the copying
+@@ -154,7 +155,7 @@ static int process_vm_rw_single_vec(unsigned long addr,
+ static ssize_t process_vm_rw_core(pid_t pid, struct iov_iter *iter,
+ 				  const struct iovec *rvec,
+ 				  unsigned long riovcnt,
+-				  unsigned long flags, int vm_write)
++				  unsigned long flags, int ksys, int vm_write)
+ {
+ 	struct task_struct *task;
+ 	struct page *pp_stack[PVM_MAX_PP_ARRAY_COUNT];
+@@ -207,7 +208,11 @@ static ssize_t process_vm_rw_core(pid_t pid, struct iov_iter *iter,
+ 		goto free_proc_pages;
+ 	}
+ 
+-	mm = mm_access(task, PTRACE_MODE_ATTACH_REALCREDS);
++	if (ksys) {
++		mm = get_task_mm(task);
++	} else {
++		mm = mm_access(task, PTRACE_MODE_ATTACH_REALCREDS);
++	}
+ 	if (!mm || IS_ERR(mm)) {
+ 		rc = IS_ERR(mm) ? PTR_ERR(mm) : -ESRCH;
+ 		/*
+@@ -287,7 +292,7 @@ static ssize_t process_vm_rw(pid_t pid,
+ 	if (rc <= 0)
+ 		goto free_iovecs;
+ 
+-	rc = process_vm_rw_core(pid, &iter, iov_r, riovcnt, flags, vm_write);
++	rc = process_vm_rw_core(pid, &iter, iov_r, riovcnt, flags, 0, vm_write);
+ 
+ free_iovecs:
+ 	if (iov_r != iovstack_r)
+@@ -297,6 +302,27 @@ static ssize_t process_vm_rw(pid_t pid,
+ 	return rc;
+ }
+ 
++static ssize_t ksys_process_vm_rw(pid_t pid,
++                                  const struct iovec *lvec,
++                                  unsigned long liovcnt,
++                                  const struct iovec *rvec,
++                                  unsigned long riovcnt,
++                                  unsigned long flags, int vm_write)
++{
++	struct iov_iter iter;
++	ssize_t liovsize;
++	int dir = vm_write ? WRITE : READ;
++
++        if (flags != 0)
++                return -EINVAL;
++
++	liovsize = iov_length(lvec, liovcnt);
++	iov_iter_init(&iter, dir, lvec, liovcnt, liovsize);
++
++	return process_vm_rw_core(pid, &iter, rvec, riovcnt, flags, 1, vm_write);
++}
++
++
+ SYSCALL_DEFINE6(process_vm_readv, pid_t, pid, const struct iovec __user *, lvec,
+ 		unsigned long, liovcnt, const struct iovec __user *, rvec,
+ 		unsigned long, riovcnt,	unsigned long, flags)
+@@ -312,6 +338,24 @@ SYSCALL_DEFINE6(process_vm_writev, pid_t, pid,
+ 	return process_vm_rw(pid, lvec, liovcnt, rvec, riovcnt, flags, 1);
+ }
+ 
++ssize_t ksys_process_vm_readv(pid_t pid, const struct iovec *lvec,
++                              unsigned long liovcnt, const struct iovec *rvec,
++                              unsigned long riovcnt, unsigned long flags)
++{
++	return ksys_process_vm_rw(pid, lvec, liovcnt, rvec, riovcnt, flags, 0);
++}
++
++EXPORT_SYMBOL(ksys_process_vm_readv);
++
++ssize_t ksys_process_vm_writev(pid_t pid, const struct iovec *lvec,
++                               unsigned long liovcnt, const struct iovec *rvec,
++                               unsigned long riovcnt, unsigned long flags)
++{
++        return ksys_process_vm_rw(pid, lvec, liovcnt, rvec, riovcnt, flags, 1);
++}
++
++EXPORT_SYMBOL(ksys_process_vm_writev);
++
+ #ifdef CONFIG_COMPAT
+ 
+ static ssize_t
+@@ -344,7 +388,7 @@ compat_process_vm_rw(compat_pid_t pid,
+ 	if (rc <= 0)
+ 		goto free_iovecs;
+ 
+-	rc = process_vm_rw_core(pid, &iter, iov_r, riovcnt, flags, vm_write);
++	rc = process_vm_rw_core(pid, &iter, iov_r, riovcnt, flags, 0, vm_write);
+ 
+ free_iovecs:
+ 	if (iov_r != iovstack_r)
