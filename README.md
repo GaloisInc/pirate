@@ -35,3 +35,11 @@ http://man7.org/linux/man-pages/man7/pipe.7.html.
 Implemented using the CUSE (character device in userspace) functionality
 that is available in the FUSE library (https://github.com/libfuse/libfuse).
 Communication is implemented using either TCP/IP sockets or named pipes.
+
+### process-vm-device
+
+This kernel module creates a character device. The character device allows
+one reader process and one writer process to communicate using the
+[process_vm](https://linux.die.net/man/2/process_vm_writev) interface.
+The data moves directly between the address spaces of the two processes,
+without passing through kernel space.
