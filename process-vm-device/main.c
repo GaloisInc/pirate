@@ -8,7 +8,7 @@
 #include <linux/uio.h>
 #include <linux/fs.h>
 
-#define MAX_DEV 1
+#define MAX_DEV 2
 
 #define SPIN_ITERATIONS (10000)
 
@@ -40,23 +40,23 @@ static const struct file_operations process_vm_pipe_fops = {
     .write       = process_vm_pipe_write
 };
 
-struct mychar_device_data {
+struct process_vm_dev {
+    atomic_t atomic_fastpath;
+
+    struct semaphore reader_semaphore;
+    char __user *reader_buf;
+    size_t reader_count;
+    pid_t reader_pid;
+
+    struct semaphore writer_semaphore;
+    size_t writer_count;
+
     struct cdev cdev;
 };
 
 static int dev_major = 0;
 static struct class *process_vm_pipe_class = NULL;
-static struct mychar_device_data process_vm_pipe_data[MAX_DEV];
-
-static atomic_t atomic_fastpath = ATOMIC_INIT(STATE_INITIAL);
-
-static struct semaphore reader_semaphore;
-static char __user *reader_buf;
-static size_t reader_count;
-static pid_t reader_pid;
-
-static struct semaphore writer_semaphore;
-static size_t writer_count;
+static struct process_vm_dev process_vm_pipe_data[MAX_DEV];
 
 static int process_vm_pipe_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
@@ -83,10 +83,11 @@ static int __init process_vm_pipe_init(void)
         cdev_add(&process_vm_pipe_data[i].cdev, MKDEV(dev_major, i), 1);
 
         device_create(process_vm_pipe_class, NULL, MKDEV(dev_major, i), NULL, "processvm-pipe-%d", i);
-    }
 
-    sema_init(&reader_semaphore, 0);
-    sema_init(&writer_semaphore, 0);
+        atomic_set(&process_vm_pipe_data[i].atomic_fastpath, STATE_INITIAL);
+        sema_init(&process_vm_pipe_data[i].reader_semaphore, 0);
+        sema_init(&process_vm_pipe_data[i].writer_semaphore, 0);
+    }
 
     return 0;
 }
@@ -107,6 +108,10 @@ static void __exit process_vm_pipe_exit(void)
 
 static int process_vm_pipe_open(struct inode *inode, struct file *file)
 {
+    struct process_vm_dev *dev;
+
+    dev = container_of(inode->i_cdev, struct process_vm_dev, cdev);
+    file->private_data = dev;
     return 0;
 }
 
@@ -123,6 +128,8 @@ static long process_vm_pipe_ioctl(struct file *file, unsigned int cmd, unsigned 
 static ssize_t process_vm_pipe_read(struct file *file, char __user *buf, size_t count, loff_t *offset)
 {
     int i, state;
+    struct process_vm_dev *dev;
+    atomic_t *atomic_fastpath;
 
     if (count == 0) {
         return 0;
@@ -136,40 +143,41 @@ static ssize_t process_vm_pipe_read(struct file *file, char __user *buf, size_t 
         return -EFAULT;
     }
 
-    reader_buf = buf;
-    reader_count = count;
-    reader_pid = current->pid;
-
+    dev = file->private_data;
+    dev->reader_buf = buf;
+    dev->reader_count = count;
+    dev->reader_pid = current->pid;
     barrier();
 
-    state = atomic_cmpxchg(&atomic_fastpath, STATE_INITIAL, STATE_READER_WAIT);
+    atomic_fastpath = &dev->atomic_fastpath;
+    state = atomic_cmpxchg(atomic_fastpath, STATE_INITIAL, STATE_READER_WAIT);
 
     if (state == STATE_INITIAL) {
         for (i = 0; i < SPIN_ITERATIONS; i++) {
-            state = atomic_read(&atomic_fastpath);
+            state = atomic_read(atomic_fastpath);
             if (state == STATE_WRITER_START) {
                 break;
             }
         }
     }
 
-    state = atomic_cmpxchg(&atomic_fastpath, STATE_READER_WAIT, STATE_INITIAL);
+    state = atomic_cmpxchg(atomic_fastpath, STATE_READER_WAIT, STATE_INITIAL);
 
     if (state == STATE_READER_WAIT) {
-        up(&writer_semaphore);
-        if (down_interruptible(&reader_semaphore)) {
+        up(&dev->writer_semaphore);
+        if (down_interruptible(&dev->reader_semaphore)) {
             return -ERESTARTSYS;
         }
     } else {
         while (state != STATE_WRITER_FINISH) {
-            state = atomic_read(&atomic_fastpath);
+            state = atomic_read(atomic_fastpath);
         }
     }
 
     barrier();
 
-    count = writer_count;
-    atomic_cmpxchg(&atomic_fastpath, STATE_WRITER_FINISH, STATE_INITIAL);
+    count = dev->writer_count;
+    atomic_cmpxchg(atomic_fastpath, STATE_WRITER_FINISH, STATE_INITIAL);
 
     if (count == 0) {
         return -EIO;
@@ -181,6 +189,8 @@ static ssize_t process_vm_pipe_write(struct file *file, const char __user *buf, 
 {
     int i, state;
     struct iovec local_iov, remote_iov;
+    struct process_vm_dev *dev;
+    atomic_t *atomic_fastpath;
 
     if (count == 0) {
         return 0;
@@ -194,38 +204,41 @@ static ssize_t process_vm_pipe_write(struct file *file, const char __user *buf, 
         return -EFAULT;
     }
 
+    dev = file->private_data;
+    atomic_fastpath = &dev->atomic_fastpath;
+
     for (i = 0; i < SPIN_ITERATIONS; i++) {
-        state = atomic_read(&atomic_fastpath);
+        state = atomic_read(atomic_fastpath);
         if (state == STATE_READER_WAIT) {
             break;
         }
     }
-    state = atomic_cmpxchg(&atomic_fastpath, STATE_READER_WAIT, STATE_WRITER_START);
+    state = atomic_cmpxchg(atomic_fastpath, STATE_READER_WAIT, STATE_WRITER_START);
     if (state != STATE_READER_WAIT) {
-        if (down_interruptible(&writer_semaphore)) {
+        if (down_interruptible(&dev->writer_semaphore)) {
             return -ERESTARTSYS;
         }
     }
 
-    if (count > reader_count) {
-        count = reader_count;
+    if (count > dev->reader_count) {
+        count = dev->reader_count;
     }
 
     barrier();
 
     local_iov.iov_base = buf;
     local_iov.iov_len = count;
-    remote_iov.iov_base = reader_buf;
+    remote_iov.iov_base = dev->reader_buf;
     remote_iov.iov_len = count;
 
-    count = ksys_process_vm_writev(reader_pid, &local_iov, 1, &remote_iov, 1, 0);
+    count = ksys_process_vm_writev(dev->reader_pid, &local_iov, 1, &remote_iov, 1, 0);
 
-    writer_count = count;
+    dev->writer_count = count;
 
     barrier();
 
-    if (atomic_cmpxchg(&atomic_fastpath, STATE_WRITER_START, STATE_WRITER_FINISH) != STATE_WRITER_START) {
-        up(&reader_semaphore);
+    if (atomic_cmpxchg(atomic_fastpath, STATE_WRITER_START, STATE_WRITER_FINISH) != STATE_WRITER_START) {
+        up(&dev->reader_semaphore);
     }
 
     if (count == 0) {
