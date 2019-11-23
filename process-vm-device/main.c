@@ -181,6 +181,7 @@ static ssize_t process_vm_pipe_read(struct file *file, char __user *buf, size_t 
     if (state == STATE_READER_WAIT) {
         up(&dev->writer_semaphore);
         if (down_interruptible(&dev->reader_semaphore)) {
+            down_trylock(&dev->writer_semaphore);
             return -ERESTARTSYS;
         }
     } else {
