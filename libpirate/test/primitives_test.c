@@ -91,9 +91,15 @@ TEST test_high_to_low_comm() {
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
     rv = pirate_write(HIGH_TO_LOW_CH, &data, sizeof(data));
+    if (rv < 0) {
+        perror("pirate HIGH_TO_LOW_CH write error");
+    }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
 
     rv = pirate_read(LOW_TO_HIGH_CH, &data, sizeof(data));
+    if (rv < 0) {
+        perror("pirate LOW_TO_HIGH_CH read error");
+    }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
     ASSERT_EQ_FMT(~TEST_DATA, data, "%u");
 
@@ -123,11 +129,17 @@ TEST test_low_to_high_comm() {
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
     rv = pirate_read(HIGH_TO_LOW_CH, &data, sizeof(data));
+    if (rv < 0) {
+        perror("pirate HIGH_TO_LOW_CH read error");
+    }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
     ASSERT_EQ_FMT(TEST_DATA, data, "%u");
 
     data = ~data;
     rv = pirate_write(LOW_TO_HIGH_CH, &data, sizeof(data));
+    if (rv < 0) {
+        perror("pirate LOW_TO_HIGH_CH write error");
+    }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
 
     rv = pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
@@ -194,6 +206,13 @@ SUITE(pirate_pthread) {
     RUN_TEST(test_communication_pthread);
 }
 
+SUITE(pirate_unix_sockets) {
+    channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, UNIX_SOCKET);
+    RUN_TEST(test_communication_pthread);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
+}
+
 SUITE(pirate_pthread_shmem) {
     RUN_TEST(test_communication_pthread_shmem);
 }
@@ -220,6 +239,7 @@ int main(int argc, char **argv) {
 
     RUN_SUITE(pirate_one_process);
     RUN_SUITE(pirate_pthread);
+    RUN_SUITE(pirate_unix_sockets);
 #ifdef PIRATE_SHMEM_FEATURE
     RUN_SUITE(pirate_pthread_shmem);
 #endif

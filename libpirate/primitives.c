@@ -25,9 +25,12 @@
 
 #include "primitives.h"
 #include "shmem_interface.h"
+#include "unix_socket.h"
 
-static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, 0, NULL}};
-static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {{0, PIPE, NULL, 0, NULL}};
+static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
+    {0, PIPE, NULL, 0, NULL}};
+static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
+    {0, PIPE, NULL, 0, NULL}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -76,6 +79,13 @@ int pirate_open(int gd, int flags) {
     }
     strncpy(pathname, channels[gd].pathname, PIRATE_LEN_NAME);
     break;
+  case UNIX_SOCKET:
+    fd = pirate_unix_socket_open(gd, flags, channels[gd].buffer_size);
+    if (fd < 0) {
+      return -1;
+    }
+    channels[gd].fd = fd;
+    return gd;
   case SHMEM:
     return pirate_shmem_open(gd, flags, channels);
   case INVALID:
@@ -339,20 +349,20 @@ int pirate_get_pathname(int gd, char *pathname) {
   return 0;
 }
 
-int pirate_set_shmem_size(int gd, int shmem_size) {
+int pirate_set_buffer_size(int gd, int buffer_size) {
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
     return -1;
   }
-  readers[gd].shmem_size = shmem_size;
-  writers[gd].shmem_size = shmem_size;
+  readers[gd].buffer_size = buffer_size;
+  writers[gd].buffer_size = buffer_size;
   return 0;
 }
 
-int pirate_get_shmem_size(int gd) {
+int pirate_get_buffer_size(int gd) {
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
     return -1;
   }
-  return readers[gd].shmem_size;
+  return readers[gd].buffer_size;
 }

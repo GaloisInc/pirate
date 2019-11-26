@@ -25,6 +25,30 @@
 
 #include "primitives.h"
 
+static int set_buffer_size(int gd, int size) {
+  size = 8 * size;
+  switch (pirate_get_channel_type(gd)) {
+  case SHMEM:
+    if (pirate_set_buffer_size(gd, size) < 0) {
+      perror("pirate_set_buffer_size");
+      return -1;
+    }
+    break;
+  case UNIX_SOCKET:
+    if (size > 212992) {
+      // check /proc/sys/net/core/wmem_max on failure
+      if (pirate_set_buffer_size(gd, size) < 0) {
+        perror("pirate_set_buffer_size");
+        return -1;
+      }
+    }
+    break;
+  default:
+    break;
+  }
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
   int64_t i, size, count, delta;
   int rv;
@@ -43,6 +67,8 @@ int main(int argc, char *argv[]) {
   if (argc >= 4) {
     if (strncmp(argv[3], "shmem", 6) == 0) {
       pirate_set_channel_type(1, SHMEM);
+    } else if (strncmp(argv[3], "unix", 5) == 0) {
+      pirate_set_channel_type(1, UNIX_SOCKET);
     } else {
       pirate_set_channel_type(1, DEVICE);
       pirate_set_pathname(1, argv[3]);
@@ -57,11 +83,8 @@ int main(int argc, char *argv[]) {
 
   if (!fork()) {
     // child
-    if (pirate_get_channel_type(1) == SHMEM) {
-      if (pirate_set_shmem_size(1, 8 * size) < 0) {
-        perror("pirate_set_shmem_size");
-        return 1;
-      }
+    if (set_buffer_size(1, size) < 0) {
+      return 1;
     }
     if (pirate_open(1, O_RDONLY) < 0) {
       perror("pirate_open");
@@ -87,7 +110,7 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < count; i++) {
       int nbytes = size;
       while (nbytes > 0) {
-        if ((rv = pirate_read(1, buf, size)) <= 0) {
+        if ((rv = pirate_read(1, buf, nbytes)) <= 0) {
           perror("pirate_read");
           return 1;
         }
@@ -97,11 +120,8 @@ int main(int argc, char *argv[]) {
     pirate_close(1, O_RDONLY);
   } else {
     // parent
-    if (pirate_get_channel_type(1) == SHMEM) {
-      if (pirate_set_shmem_size(1, 8 * size) < 0) {
-        perror("pirate_set_shmem_size");
-        return 1;
-      }
+    if (set_buffer_size(1, size) < 0) {
+      return 1;
     }
     if (pirate_open(1, O_WRONLY) < 0) {
       perror("pirate_open");
@@ -131,7 +151,7 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < count; i++) {
       int nbytes = size;
       while (nbytes > 0) {
-        if ((rv = pirate_write(1, buf, size)) <= 0) {
+        if ((rv = pirate_write(1, buf, nbytes)) <= 0) {
           perror("pirate_write");
           return 1;
         }

@@ -6,9 +6,9 @@ SET(PIRATE_SHMEM_FEATURE 0)
 
 if(PIRATE_SHMEM_FEATURE)
 add_definitions(-DPIRATE_SHMEM_FEATURE=1)
-SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "shmem.c")
+SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "shmem.c" "unix_socket.c")
 else()
-SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c")
+SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "unix_socket.c")
 endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(. ../include)

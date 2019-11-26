@@ -22,6 +22,7 @@
 #include "shmem.h"
 
 #define PIRATE_FILENAME "/tmp/gaps.channel.%d"
+#define PIRATE_DOMAIN_FILENAME "/tmp/gaps.channel.%d.sock"
 #define PIRATE_SHM_NAME "/gaps.channel.%d"
 #define PIRATE_LEN_NAME 64
 
@@ -37,6 +38,10 @@ typedef enum {
   // named pipe. pirate_set_pathname(int, char *) must
   // be used to specify the pathname.
   DEVICE,
+  // The gaps channel is implemented by using Unix domain sockets
+  // The name of the socket is formatted with PIRATE_DOMAIN_FILENAME
+  // where %d is the gaps descriptor.
+  UNIX_SOCKET,
   // The gaps channel is implemented using shared memory.
   // This feature is disabled by default. It must be enabled
   // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
@@ -49,7 +54,7 @@ typedef struct {
   int fd;                       // file descriptor
   channel_t channel;            // channel type
   char *pathname;               // optional device path
-  int shmem_size;               // optional shared memory buffer size
+  int buffer_size;              // optional memory buffer size
   shmem_buffer_t *shmem_buffer; // optional shared memory buffer
 } pirate_channel_t;
 
@@ -110,15 +115,15 @@ int pirate_set_pathname(int gd, char *pathname);
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_pathname(int gd, char *pathname);
 
-// Sets the shared memory buffer size for the gaps channel.
-// Only valid if the channel type is SHMEM.
-// If zero then DEFAULT_SHMEM_BUFFER bytes will be allocated.
+// Sets the memory buffer size for the gaps channel.
+// Only valid if the channel type is SHMEM or UNIX_SOCKET.
+// If zero then SHMEM will allocate DEFAULT_SHMEM_BUFFER bytes.
 // On error -1 is returned, and errno is set appropriately.
-int pirate_set_shmem_size(int gd, int shmem_size);
+int pirate_set_buffer_size(int gd, int buffer_size);
 
 // Gets the shared memory buffer size for the gaps channel.
 // On error -1 is returned, and errno is set appropriately.
-int pirate_get_shmem_size(int gd);
+int pirate_get_buffer_size(int gd);
 
 // Invoke fcntl() on the underlying file descriptor
 int pirate_fcntl0(int gd, int flags, int cmd);
