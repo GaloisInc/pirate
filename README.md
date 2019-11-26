@@ -10,7 +10,8 @@ appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
 libpirate currently implements GAPS channels using Linux named pipes,
-a character device driver, or shared memory.
+a character device driver, Unix domain sockets, or shared memory.
+Benchmarks are available on the [wiki](https://github.com/GaloisInc/pirate-demos/wiki/libpirate-benchmarks).
 
 ### simple_demo
 
