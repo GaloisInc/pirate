@@ -29,7 +29,7 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
-#define SPIN_ITERATIONS (10000)
+#define SPIN_ITERATIONS (100000)
 
 #include "shmem.h"
 
