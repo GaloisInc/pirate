@@ -28,7 +28,7 @@ the compilation unit.  Sensitivities optionally contain the index of a
 parent sensitivity, meaning that an enclave authorized at the child
 level is also authorized at the parent level (i.e., the parent is less
 sensitive than the child).  Lists of required or provided
-capabilities/sensitivities are specified as strings in ``.capstrtab``,
+capabilities/sensitivities are specified as strings in ``.gaps.strtab``,
 ending in ``CAP_NULL``.
 
 Special Sections
@@ -40,14 +40,14 @@ so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
 
 ``.gaps.enclaves``
-    An array of ``Elf64_GAPS_enclave`` listing the names, capabilities
+    An array of ``Elf64_GAPS_enc`` listing the names, capabilities
     and entrypoints of each enclave declared in the source file. The
     first entry is unused and corresponds to ``ENC_UNDEF``.
 
-``.gaps.reqtab``
-    An array of ``Elf64_GAPS_symreq`` indexed parallel to ``.symtab``.
-    This section lists the capabilities/sensitivities and enclave (if
-    any) required by the ``.symtab`` entry with the same index.
+``.gaps.symreqs``
+    An array of ``Elf64_GAPS_req`` indexed parallel listing the
+    capabilities/sensitivities and enclave (if any) required by the
+    ``.symtab`` entry with the same index.
 
 ``.gaps.capabilities``
     An array of ``Elf64_GAPS_cap`` listing the
@@ -79,8 +79,9 @@ empty space left by alignment.]
                 typedef struct {
                     Elf64_Addr enc_name;
                     Elf64_Word enc_cap;
-                    Elf64_Word enc_entry;
-                } Elf64_GAPS_enclave;
+                    Elf64_Half enc_entry;
+                    Elf64_Half enc_padding;
+                } Elf64_GAPS_enc;
 
 ``enc_name``
     The offset of a ``.gaps.strtab`` entry for the user-defined name
@@ -98,25 +99,31 @@ empty space left by alignment.]
 .. code-block:: c
 
                 typedef struct {
-                    Elf64_Word sr_cap;
-                    Elf64_Word sr_enc;
-                } Elf64_GAPS_symreq;
+                    Elf64_Word req_cap;
+                    Elf64_Word req_enc;
+                    Elf64_Half req_sym;
+                    Elf64_Half req_padding;
+                } Elf64_GAPS_req;
 
-``sr_cap``
+``req_cap``
     The address of a string of capability indices in ``.gaps.captab``
     indicating capability and sensitivity requirements for the
     ``.symtab`` entry with the corresponding index.
 
-``sr_enc``
+``req_enc``
     If this symbol was annotated with ``enclave_only(e)``, the index
     into ``.gaps.enclaves`` of the enclave ``e``. Otherwise, this
     should be set to ``ENC_UNDEF``.
+
+``req_sym``
+    The symtab index of the symbol with these requirements.
 
 .. code-block:: c
 
                 typedef struct {
                     Elf64_Addr cap_name;
                     Elf64_Word cap_parent;
+                    Elf64_Word cap_padding;
                 } Elf64_GAPS_cap;
 
 ``cap_name``
