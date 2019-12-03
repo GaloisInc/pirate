@@ -18,13 +18,13 @@
 #include <stdlib.h>
 
 #include "primitives.h"
+#include "shmem.h"
 
 int pirate_shmem_open(int gd, int flags, pirate_channel_t *channels) {
 #ifdef PIRATE_SHMEM_FEATURE
   char pathname[PIRATE_LEN_NAME];
   snprintf(pathname, sizeof(pathname) - 1, PIRATE_SHM_NAME, gd);
-  return shmem_buffer_open(gd, flags, channels[gd].buffer_size, pathname,
-                           &channels[gd].shmem_buffer);
+  return shmem_buffer_open(gd, flags, pathname, &channels[gd]);
 #else
   (void)gd;
   (void)flags;
@@ -53,39 +53,27 @@ int pirate_shmem_close(int gd, pirate_channel_t *channels) {
 #endif
 }
 
-ssize_t pirate_shmem_read(int gd, void *buf, size_t count,
-                          pirate_channel_t *readers) {
+ssize_t pirate_shmem_read(shmem_buffer_t *shmem_buffer, void *buf,
+                          size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-  if (readers[gd].shmem_buffer == NULL) {
-    errno = EBADF;
-    return -1;
-  } else {
-    return shmem_buffer_read(readers[gd].shmem_buffer, buf, count);
-  }
+  return shmem_buffer_read(shmem_buffer, buf, count);
 #else
-  (void)gd;
+  (void)shmem_buffer;
   (void)buf;
   (void)count;
-  (void)readers;
   errno = ENXIO;
   return -1;
 #endif
 }
 
-ssize_t pirate_shmem_write(int gd, const void *buf, size_t count,
-                           pirate_channel_t *writers) {
+ssize_t pirate_shmem_write(shmem_buffer_t *shmem_buffer, const void *buf,
+                           size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-  if (writers[gd].shmem_buffer == NULL) {
-    errno = EBADF;
-    return -1;
-  } else {
-    return shmem_buffer_write(writers[gd].shmem_buffer, buf, count);
-  }
+  return shmem_buffer_write(shmem_buffer, buf, count);
 #else
-  (void)gd;
+  (void)shmem_buffer;
   (void)buf;
   (void)count;
-  (void)writers;
   errno = ENXIO;
   return -1;
 #endif

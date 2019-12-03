@@ -25,6 +25,7 @@
 
 #include "primitives.h"
 #include "shmem_interface.h"
+#include "uio.h"
 #include "unix_socket.h"
 
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
@@ -88,6 +89,13 @@ int pirate_open(int gd, int flags) {
     return gd;
   case SHMEM:
     return pirate_shmem_open(gd, flags, channels);
+  case UIO_DEVICE:
+    fd = uio_buffer_open(gd, flags, channels);
+    if (fd < 0) {
+      return -1;
+    }
+    channels[gd].fd = fd;
+    return gd;
   case INVALID:
     errno = EINVAL;
     return -1;
@@ -122,17 +130,24 @@ int pirate_close(int gd, int flags) {
     channels = writers;
   }
 
-  if (channels[gd].channel == SHMEM) {
+  switch (channels[gd].channel) {
+  case SHMEM:
     return pirate_shmem_close(gd, channels);
-  } else {
-    fd = channels[gd].fd;
-    if (fd <= 0) {
-      errno = ENODEV;
-      return -1;
-    }
-    channels[gd].fd = 0;
-    rv = close(fd);
+  case UIO_DEVICE:
+    uio_buffer_close(flags, channels[gd].shmem_buffer);
+    channels[gd].shmem_buffer = NULL;
+    break;
+  default:
+    break;
   }
+
+  fd = channels[gd].fd;
+  if (fd <= 0) {
+    errno = ENODEV;
+    return -1;
+  }
+  channels[gd].fd = 0;
+  rv = close(fd);
   return rv;
 }
 
@@ -144,8 +159,13 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     return -1;
   }
 
-  if (readers[gd].channel == SHMEM) {
-    return pirate_shmem_read(gd, buf, count, readers);
+  switch (readers[gd].channel) {
+  case SHMEM:
+    return pirate_shmem_read(readers[gd].shmem_buffer, buf, count);
+  case UIO_DEVICE:
+    return uio_buffer_read(readers[gd].shmem_buffer, buf, count);
+  default:
+    break;
   }
 
   fd = readers[gd].fd;
@@ -165,8 +185,13 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return -1;
   }
 
-  if (writers[gd].channel == SHMEM) {
-    return pirate_shmem_write(gd, buf, count, writers);
+  switch (writers[gd].channel) {
+  case SHMEM:
+    return pirate_shmem_write(writers[gd].shmem_buffer, buf, count);
+  case UIO_DEVICE:
+    return uio_buffer_write(writers[gd].shmem_buffer, buf, count);
+  default:
+    break;
   }
 
   fd = writers[gd].fd;

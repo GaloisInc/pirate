@@ -26,6 +26,7 @@
 #include "greatest.h"
 #include "primitives.h"
 #include "shmem_test.h"
+#include "uio_test.h"
 
 #define HIGH_TEST_CH    0
 #define HIGH_TO_LOW_CH  1
@@ -217,6 +218,10 @@ SUITE(pirate_pthread_shmem) {
     RUN_TEST(test_communication_pthread_shmem);
 }
 
+SUITE(pirate_pthread_uio) {
+    RUN_TEST(test_communication_pthread_uio);
+}
+
 SUITE(pirate_low) {
     RUN_TEST(test_low_to_high_comm);
 }
@@ -243,6 +248,7 @@ int main(int argc, char **argv) {
 #ifdef PIRATE_SHMEM_FEATURE
     RUN_SUITE(pirate_pthread_shmem);
 #endif
+    RUN_SUITE(pirate_pthread_uio);
 
     pid_t ch_pid = fork();
     switch (ch_pid) {

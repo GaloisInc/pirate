@@ -13,7 +13,6 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -175,8 +174,8 @@ error:
   return NULL;
 }
 
-int shmem_buffer_open(int gd, int flags, int size, char *name,
-                      shmem_buffer_t **buffer_addr) {
+int shmem_buffer_open(int gd, int flags, char *name,
+                      pirate_channel_t *channel) {
   atomic_uint_fast64_t init_pid;
   int err, fd;
   shmem_buffer_t *shmem_buffer;
@@ -186,14 +185,14 @@ int shmem_buffer_open(int gd, int flags, int size, char *name,
   // shm_unlink before exiting this function
   fd = shm_open(name, O_RDWR | O_CREAT, 0660);
   if (fd < 0) {
-    *buffer_addr = NULL;
+    channel->shmem_buffer = NULL;
     return -1;
   }
-  shmem_buffer = shmem_buffer_init(fd, size);
+  shmem_buffer = shmem_buffer_init(fd, channel->buffer_size);
   if (shmem_buffer == NULL) {
     goto error;
   }
-  *buffer_addr = shmem_buffer;
+  channel->shmem_buffer = shmem_buffer;
   if (flags == O_RDONLY) {
     if (!atomic_compare_exchange_strong(&shmem_buffer->reader_pid, &init_pid,
                                         (uint64_t)getpid())) {
@@ -227,7 +226,7 @@ int shmem_buffer_open(int gd, int flags, int size, char *name,
   return gd;
 error:
   err = errno;
-  *buffer_addr = NULL;
+  channel->shmem_buffer = NULL;
   shm_unlink(name);
   errno = err;
   return -1;
@@ -239,6 +238,11 @@ ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
   size_t nbytes, nbytes1, nbytes2;
   uint64_t position;
   uint32_t reader, writer;
+
+  if (shmem_buffer == NULL) {
+    errno = EBADF;
+    return -1;
+  }
 
   position = atomic_load(&shmem_buffer->position);
   for (spin = 0; (spin < SPIN_ITERATIONS) && is_empty(position); spin++) {
@@ -301,6 +305,11 @@ ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
   size_t nbytes, nbytes1, nbytes2;
   uint64_t position;
   uint32_t reader, writer;
+
+  if (shmem_buffer == NULL) {
+    errno = EBADF;
+    return -1;
+  }
 
   position = atomic_load(&shmem_buffer->position);
   for (spin = 0; (spin < SPIN_ITERATIONS) && is_full(position); spin++) {
