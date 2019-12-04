@@ -1,6 +1,12 @@
-char foo_msg[] = "foo\n";
-static char bar_msg[] = "bar\n";
+char
+//__attribute__((sensitive(foo_sensitivity)))
+foo_msg[] = "foo\n";
 
+static char
+bar_msg[] = "bar\n";
+
+//__attribute__((needs_capability(foo_capability)))
+//__attribute__((enclave_main(foo_enclave)))
 int foo_main(void) {
     __asm__(
         "mov $1, %%rax\n\t"
@@ -15,6 +21,8 @@ int foo_main(void) {
     return 0;
 }
 
+//__attribute__((sensitive(common_sensitivity)))
+//__attribute__((enclave_only(bar_enclave)))
 static void bar_sub(void) {
     __asm__(
         "mov $1, %%rax\n\t"
@@ -28,6 +36,7 @@ static void bar_sub(void) {
     );
 }
 
+//__attribute__((enclave_main(bar_enclave)))
 int bar_main(void) {
     __asm__(
         "mov $1, %%rax\n\t"
@@ -42,6 +51,20 @@ int bar_main(void) {
     bar_sub();
     return 0;
 }
+
+/*
+#pragma enclave declare(enclave_foo)
+#pragma enclave declare(enclave_bar)
+
+#pragma enclave trusted(enclave_foo, foo_sensitivity)
+#pragma enclave trusted(enclave_bar, bar_sensitivity)
+#pragma enclave capable(enclave_foo, foo_capability)
+
+#pragma declare sensitivity(common_sensitivity)
+#pragma declare sensitivity(foo_sensitivity, common_sensitivity)
+#pragma declare sensitivity(bar_sensitivity, common_sensitivity)
+#pragma declare capability(foo_capability)
+*/
 
 __asm__(
     "\n"
