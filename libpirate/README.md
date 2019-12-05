@@ -57,6 +57,11 @@ created at `/tmp/gaps.channel.%d` if one does not exist.
 The pathname to the character device must be specified using
 `pirate_set_pathname(int, char *)` prior to opening the channel.
 
+### UNIX_SOCKET type
+
+Unix domain socket communication. A unix socket file is
+created at `/tmp/gaps.channel.%d.sock` if one does not exist.
+
 ### SHMEM type
 
 Uses a POSIX shared memory region to communicate. Support
@@ -72,6 +77,12 @@ on pirate_open() then you must delete the file
 The SHMEM type is intended for benchmarking purposes only.
 The size of the shared memory buffer can be specified using
 `pirate_set_shmem_size(int, int)` prior to opening the channel.
+
+### UIO_DEVICE type
+
+Uses shared memory provided by the kernel from a Userspace IO
+device driver. The [uio-device](/uio-device/README.md) kernel module
+must be loaded.
 
 ## Benchmarks
 

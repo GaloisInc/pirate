@@ -70,6 +70,8 @@ int main(int argc, char *argv[]) {
       pirate_set_channel_type(1, SHMEM);
     } else if (strncmp(argv[3], "unix", 5) == 0) {
       pirate_set_channel_type(1, UNIX_SOCKET);
+    } else if (strncmp(argv[3], "uio", 4) == 0) {
+      pirate_set_channel_type(1, UIO_DEVICE);
     } else {
       pirate_set_channel_type(1, DEVICE);
       pirate_set_pathname(1, argv[3]);
@@ -81,6 +83,8 @@ int main(int argc, char *argv[]) {
       pirate_set_channel_type(2, SHMEM);
     } else if (strncmp(argv[4], "unix", 5) == 0) {
       pirate_set_channel_type(2, UNIX_SOCKET);
+    } else if (strncmp(argv[4], "uio", 4) == 0) {
+      pirate_set_channel_type(2, UIO_DEVICE);
     } else {
       pirate_set_channel_type(2, DEVICE);
       pirate_set_pathname(2, argv[4]);

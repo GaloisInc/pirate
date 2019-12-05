@@ -10,7 +10,8 @@ appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
 libpirate currently implements GAPS channels using Linux named pipes,
-a character device driver, or shared memory.
+a character device driver, a Unix domain socket, shared memory,
+or userspace IO.
 
 ### simple_demo
 
@@ -43,3 +44,9 @@ one reader process and one writer process to communicate using the
 [process_vm](https://linux.die.net/man/2/process_vm_writev) interface.
 The data moves directly between the address spaces of the two processes,
 without passing through kernel space.
+
+### uio-device
+
+This kernel module creates a userspace IO device. The reader and writer
+processes communicate directly through an mmap shared memory region.
+The reader and writer do not issue `read()` and `write()` system calls.

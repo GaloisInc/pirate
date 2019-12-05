@@ -25,21 +25,26 @@
 
 static struct platform_device *uio_pdev;
 static struct uio_info *info;
-static unsigned long mem_addr;
+static void* mem_addr[4];
+
+#define MEM_ORDER (4)
+#define MEM_SIZE (PAGE_SIZE * (1 << MEM_ORDER))
 
 static int __init uio_dev_init(void)
 {
+    int i;
+
     info = kzalloc(sizeof(struct uio_info), GFP_KERNEL);
     if (!info) {
         return -ENOMEM;
     }
 
-    mem_addr = __get_free_pages(GFP_KERNEL, 0);
-    if (!mem_addr) {
-        return -ENOMEM;
+    for (i = 0; i < 4; i++) {
+        mem_addr[i] = vmalloc_user(MEM_SIZE);
+        if (!mem_addr[i]) {
+            return -ENOMEM;
+        }
     }
-
-    memset((void*) mem_addr, 0, PAGE_SIZE);
 
     uio_pdev = platform_device_register_simple("uiogaps-platform", -1, NULL, 0);
     if (IS_ERR(uio_pdev)) {
@@ -48,17 +53,23 @@ static int __init uio_dev_init(void)
 
     info->name = "uiogaps";
     info->version = "0.1.0";
-    info->mem[0].memtype = UIO_MEM_LOGICAL;
-    info->mem[0].addr = (phys_addr_t) mem_addr;
-    info->mem[0].size = PAGE_SIZE;
+    for (i = 0; i < 4; i++) {
+        info->mem[i].memtype = UIO_MEM_VIRTUAL;
+        info->mem[i].addr = (phys_addr_t) mem_addr[i];
+        info->mem[i].size = MEM_SIZE;
+    }
 
     return uio_register_device(&uio_pdev->dev, info);
 }
 
 static void __exit uio_dev_exit(void)
 {
-    free_pages(mem_addr, 0);
+    int i;
+
     uio_unregister_device(info);
+    for (i = 0; i < 4; i++) {
+        vfree(mem_addr[i]);
+    }
     kfree(info);
     platform_device_unregister(uio_pdev);
 }

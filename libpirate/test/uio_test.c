@@ -15,6 +15,8 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include <unistd.h>
+
 #include "greatest.h"
 #include "primitives.h"
 #include "uio.h"
@@ -115,10 +117,16 @@ enum greatest_test_res test_communication_pthread_uio() {
   pthread_t low_to_high_id, high_to_low_id;
   int rv;
   void *status1, *status2;
-  channel_t prev1;
+  channel_t prev1, prev2;
+
+  if (access("/dev/uio0", F_OK) == -1) {
+    SKIPm("/dev/uio0 device not found");
+  }
 
   prev1 = pirate_get_channel_type(HIGH_TO_LOW_CH);
+  prev2 = pirate_get_channel_type(LOW_TO_HIGH_CH);
   pirate_set_channel_type(HIGH_TO_LOW_CH, UIO_DEVICE);
+  pirate_set_channel_type(LOW_TO_HIGH_CH, UIO_DEVICE);
 
   rv = pthread_create(&low_to_high_id, NULL, low_to_high_func_uio, NULL);
   if (rv != 0) {
@@ -141,6 +149,7 @@ enum greatest_test_res test_communication_pthread_uio() {
   }
 
   pirate_set_channel_type(HIGH_TO_LOW_CH, prev1);
+  pirate_set_channel_type(LOW_TO_HIGH_CH, prev2);
 
   if (((greatest_test_res)status1) == GREATEST_TEST_RES_FAIL) {
     if (GREATEST_ABORT_ON_FAIL()) {
