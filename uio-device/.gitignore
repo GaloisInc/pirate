@@ -1,0 +1,10 @@
+.cache.mk
+.tmp_versions/
+Module.symvers
+modules.order
+*.o
+*.ko
+*.cmd
+*.mod.*
+reader
+writer

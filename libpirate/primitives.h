@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include "shmem.h"
+#include "shmem_buffer.h"
 
 #define PIRATE_FILENAME "/tmp/gaps.channel.%d"
 #define PIRATE_DOMAIN_FILENAME "/tmp/gaps.channel.%d.sock"
@@ -46,6 +46,9 @@ typedef enum {
   // This feature is disabled by default. It must be enabled
   // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
   SHMEM,
+  // The gaps channel is implemented using userspace io.
+  // The gaps uio device driver must be loaded.
+  UIO_DEVICE,
   // The gaps channel is unavailable for operations.
   INVALID,
 } channel_t;

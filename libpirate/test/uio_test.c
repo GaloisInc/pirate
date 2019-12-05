@@ -15,9 +15,11 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include <unistd.h>
+
 #include "greatest.h"
 #include "primitives.h"
-#include "shmem.h"
+#include "uio.h"
 
 #define HIGH_TEST_CH 0
 #define HIGH_TO_LOW_CH 1
@@ -33,9 +35,9 @@ static int test_buffer_fill(char *buffer, int len, int value) {
   return 0;
 }
 
-TEST test_high_to_low_comm_shmem() {
+TEST test_high_to_low_comm_uio() {
   int rv;
-  char *data = malloc(DEFAULT_SHMEM_BUFFER);
+  char *data = malloc(1024);
 
   rv = pirate_open(HIGH_TO_LOW_CH, O_WRONLY);
   if (rv < 0) {
@@ -49,13 +51,13 @@ TEST test_high_to_low_comm_shmem() {
   }
   ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
-  memset(data, '0', DEFAULT_SHMEM_BUFFER);
-  rv = pirate_write(HIGH_TO_LOW_CH, data, DEFAULT_SHMEM_BUFFER);
-  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
+  memset(data, '0', 1024);
+  rv = pirate_write(HIGH_TO_LOW_CH, data, 1024);
+  ASSERT_EQ_FMT(1024, rv, "%d");
 
-  rv = pirate_read(LOW_TO_HIGH_CH, data, DEFAULT_SHMEM_BUFFER);
-  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
-  ASSERT_EQ_FMT(0, test_buffer_fill(data, DEFAULT_SHMEM_BUFFER, '1'), "%d");
+  rv = pirate_read(LOW_TO_HIGH_CH, data, 1024);
+  ASSERT_EQ_FMT(1024, rv, "%d");
+  ASSERT_EQ_FMT(0, test_buffer_fill(data, 1024, '1'), "%d");
 
   rv = pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
   ASSERT_EQ_FMT(0, rv, "%d");
@@ -68,9 +70,9 @@ TEST test_high_to_low_comm_shmem() {
   PASS();
 }
 
-TEST test_low_to_high_comm_shmem() {
+TEST test_low_to_high_comm_uio() {
   int rv;
-  char *data = malloc(DEFAULT_SHMEM_BUFFER);
+  char *data = malloc(1024);
 
   rv = pirate_open(HIGH_TO_LOW_CH, O_RDONLY);
   if (rv < 0) {
@@ -84,13 +86,13 @@ TEST test_low_to_high_comm_shmem() {
   }
   ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
 
-  rv = pirate_read(HIGH_TO_LOW_CH, data, DEFAULT_SHMEM_BUFFER);
-  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
-  ASSERT_EQ_FMT(0, test_buffer_fill(data, DEFAULT_SHMEM_BUFFER, '0'), "%d");
+  rv = pirate_read(HIGH_TO_LOW_CH, data, 1024);
+  ASSERT_EQ_FMT(1024, rv, "%d");
+  ASSERT_EQ_FMT(0, test_buffer_fill(data, 1024, '0'), "%d");
 
-  memset(data, '1', DEFAULT_SHMEM_BUFFER);
-  rv = pirate_write(LOW_TO_HIGH_CH, data, DEFAULT_SHMEM_BUFFER);
-  ASSERT_EQ_FMT(DEFAULT_SHMEM_BUFFER, rv, "%d");
+  memset(data, '1', 1024);
+  rv = pirate_write(LOW_TO_HIGH_CH, data, 1024);
+  ASSERT_EQ_FMT(1024, rv, "%d");
 
   rv = pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
   ASSERT_EQ_FMT(0, rv, "%d");
@@ -103,31 +105,35 @@ TEST test_low_to_high_comm_shmem() {
   PASS();
 }
 
-void *low_to_high_func_shmem(__attribute__((unused)) void *unused) {
-  return (void *)test_low_to_high_comm_shmem();
+void *low_to_high_func_uio(__attribute__((unused)) void *unused) {
+  return (void *)test_low_to_high_comm_uio();
 }
 
-void *high_to_low_func_shmem(__attribute__((unused)) void *unused) {
-  return (void *)test_high_to_low_comm_shmem();
+void *high_to_low_func_uio(__attribute__((unused)) void *unused) {
+  return (void *)test_high_to_low_comm_uio();
 }
 
-enum greatest_test_res test_communication_pthread_shmem() {
+enum greatest_test_res test_communication_pthread_uio() {
   pthread_t low_to_high_id, high_to_low_id;
   int rv;
   void *status1, *status2;
   channel_t prev1, prev2;
 
+  if (access("/dev/uio0", F_OK) == -1) {
+    SKIPm("/dev/uio0 device not found");
+  }
+
   prev1 = pirate_get_channel_type(HIGH_TO_LOW_CH);
   prev2 = pirate_get_channel_type(LOW_TO_HIGH_CH);
-  pirate_set_channel_type(HIGH_TO_LOW_CH, SHMEM);
-  pirate_set_channel_type(LOW_TO_HIGH_CH, SHMEM);
+  pirate_set_channel_type(HIGH_TO_LOW_CH, UIO_DEVICE);
+  pirate_set_channel_type(LOW_TO_HIGH_CH, UIO_DEVICE);
 
-  rv = pthread_create(&low_to_high_id, NULL, low_to_high_func_shmem, NULL);
+  rv = pthread_create(&low_to_high_id, NULL, low_to_high_func_uio, NULL);
   if (rv != 0) {
     FAILm(strerror(rv));
   }
 
-  rv = pthread_create(&high_to_low_id, NULL, high_to_low_func_shmem, NULL);
+  rv = pthread_create(&high_to_low_id, NULL, high_to_low_func_uio, NULL);
   if (rv != 0) {
     FAILm(strerror(rv));
   }

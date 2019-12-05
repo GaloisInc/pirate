@@ -13,22 +13,23 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __SHMEM_H
-#define __SHMEM_H
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "primitives.h"
-#include "shmem_buffer.h"
+int main() {
+  int fd;
+  char *shmem;
 
-#define DEFAULT_SHMEM_BUFFER (131072)
+  fd = open("/dev/uio0", O_RDWR | O_SYNC);
 
-int shmem_buffer_open(int gd, int flags, char *name, pirate_channel_t *channel);
+  shmem = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
-ssize_t shmem_buffer_read(shmem_buffer_t *shmem_buffer, void *buf,
-                          size_t count);
+  sprintf(shmem, "hello world");
 
-ssize_t shmem_buffer_write(shmem_buffer_t *shmem_buffer, const void *buf,
-                           size_t size);
-
-int shmem_buffer_close(int flags, shmem_buffer_t *shmem_buffer);
-
-#endif
+  return 0;
+}

@@ -6,14 +6,14 @@ SET(PIRATE_SHMEM_FEATURE 0)
 
 if(PIRATE_SHMEM_FEATURE)
 add_definitions(-DPIRATE_SHMEM_FEATURE=1)
-SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "shmem.c" "unix_socket.c")
+SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "shmem.c" "unix_socket.c" "uio.c")
 else()
-SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "unix_socket.c")
+SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "unix_socket.c" "uio.c")
 endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(. ../include)
 
-add_executable(primitives_test ${PIRATE_SOURCES} test/primitives_test.c test/shmem_test.c)
+add_executable(primitives_test ${PIRATE_SOURCES} test/primitives_test.c test/shmem_test.c test/uio_test.c)
 
 add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
 
@@ -38,7 +38,7 @@ target_link_libraries(primitives_bench_lat rt Threads::Threads)
 else()
 target_link_libraries(primitives_test Threads::Threads)
 target_link_libraries(primitives_bench_thr Threads::Threads)
-target_link_libraries(primitives_bench_lat rt Threads::Threads)
+target_link_libraries(primitives_bench_lat Threads::Threads)
 endif(PIRATE_SHMEM_FEATURE)
 
 enable_testing()
