@@ -15,8 +15,11 @@
 # Copyright 2019 Two Six Labs, LLC.  All rights reserved.
 #
 
+import hashlib
+import hmac
 import glob
 import os
+import shutil
 import string
 import subprocess
 import sys
@@ -35,6 +38,8 @@ TEMPLATE = """
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "picohash.h"
+
 ${headers}
 
 #define NUM_PROGRAMS (${count})
@@ -45,11 +50,22 @@ static char *program_names[NUM_PROGRAMS];
 static char *program_ids[NUM_PROGRAMS];
 static unsigned int program_id_lengths[NUM_PROGRAMS];
 
+void to_hexdigest(unsigned char *digest, char *hexdigest, int len) {
+    int i;
+    for (i = 0; i < len; i++) {
+        sprintf(hexdigest, "%02x", digest[i]);
+        hexdigest += 2;
+    }
+}
+
 int main(int argc, char *argv[]) {
     int i, memfd, secfd, seclen, program_index, count;
     unsigned char *buf;
     unsigned int remain;
     char *secret;
+    picohash_ctx_t ctx;
+    unsigned char digest[PICOHASH_SHA256_DIGEST_LENGTH];
+    char hexdigest[PICOHASH_SHA256_DIGEST_LENGTH * 2 + 1];
 
     ${program_bytes}
     ${program_lengths}
@@ -57,6 +73,7 @@ int main(int argc, char *argv[]) {
     ${program_ids}
     ${program_id_lengths}
 
+    memset(hexdigest, 0, PICOHASH_SHA256_DIGEST_LENGTH * 2 + 1);
     memfd = memfd_create("child", MFD_CLOEXEC);
     if (memfd < 0) {
         perror("memfd_create failed: ");
@@ -99,17 +116,22 @@ int main(int argc, char *argv[]) {
         seclen -= 1;
     }
 
+    picohash_init_hmac(&ctx, picohash_init_sha256, secret, seclen);
+    picohash_update(&ctx, "identifier", 10);
+    picohash_final(&ctx, digest);
+    free(secret);
+    to_hexdigest(digest, hexdigest, PICOHASH_SHA256_DIGEST_LENGTH);
+    seclen = PICOHASH_SHA256_DIGEST_LENGTH * 2;
     program_index = -1;
     for (i = 0; i < NUM_PROGRAMS; i++) {
         if (program_id_lengths[i] != seclen) {
             continue;
         }
-        if (strncmp(secret, program_ids[i], seclen) == 0) {
+        if (strncmp(hexdigest, program_ids[i], seclen) == 0) {
             program_index = i;
             break;
         }
     }
-    free(secret);
 
     if (program_index == -1) {
         fprintf(stderr, "no matching hardware identifier found\\n");
@@ -199,6 +221,7 @@ def build_config():
 def create_blobs(config, tempdir):
     if which("xxd") is None:
         sys.exit("xxd is not found in $PATH")
+    shutil.copyfile("picohash.h", os.path.join(tempdir, "picohash.h"))
     for key in config.program_to_id.keys():
         progname = os.path.join(tempdir, os.path.basename(key) + ".c")
         with open(progname, "w") as outfile:
@@ -221,6 +244,9 @@ def create_template(config, tempdir):
     for idx, key in enumerate(program_to_id.keys()):
         progname = os.path.basename(key)
         val = program_to_id[key]
+        message = bytes('identifier', 'utf-8')
+        secret = bytes(val, 'utf-8')
+        val_hash = hmac.new(secret, message, hashlib.sha256).hexdigest()
 
         subs['headers'] += "extern unsigned char {}[];\n".format(progname)
         subs['headers'] += "extern unsigned int {}_len;\n".format(progname)
@@ -239,11 +265,12 @@ def create_template(config, tempdir):
         subs['program_names'] += 'program_names[{}] = "{}";\n'.format(
             idx, progname)
         subs['program_ids'] += 'program_ids[{}] = "{}";\n'.format(
-            idx, val)
+            idx, val_hash)
         subs['program_id_lengths'] += "program_id_lengths[{}] = {};\n".format(
-            idx, len(val))
+            idx, len(val_hash))
 
     template = string.Template(TEMPLATE)
+    print(template.substitute(subs))
     filename = uuid.uuid4().hex + ".c"
     outfile = open(os.path.join(tempdir, filename), "w")
     outfile.write(template.substitute(subs))
