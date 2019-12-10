@@ -19,6 +19,7 @@ import hashlib
 import hmac
 import glob
 import os
+import secrets
 import shutil
 import string
 import subprocess
@@ -38,6 +39,7 @@ TEMPLATE = """
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "aes.h"
 #include "picohash.h"
 
 ${headers}
@@ -59,11 +61,12 @@ void to_hexdigest(unsigned char *digest, char *hexdigest, int len) {
 }
 
 int main(int argc, char *argv[]) {
-    int i, memfd, secfd, seclen, program_index, count;
+    int i, memfd, secfd, seclen, keylen, program_index, count;
     unsigned char *buf;
     unsigned int remain;
     char *secret;
-    picohash_ctx_t ctx;
+    picohash_ctx_t p_ctx;
+    struct AES_ctx a_ctx;
     unsigned char digest[PICOHASH_SHA256_DIGEST_LENGTH];
     char hexdigest[PICOHASH_SHA256_DIGEST_LENGTH * 2 + 1];
 
@@ -73,7 +76,8 @@ int main(int argc, char *argv[]) {
     ${program_ids}
     ${program_id_lengths}
 
-    memset(hexdigest, 0, PICOHASH_SHA256_DIGEST_LENGTH * 2 + 1);
+    keylen = PICOHASH_SHA256_DIGEST_LENGTH * 2;
+    memset(hexdigest, 0, keylen + 1);
     memfd = memfd_create("child", MFD_CLOEXEC);
     if (memfd < 0) {
         perror("memfd_create failed: ");
@@ -116,18 +120,17 @@ int main(int argc, char *argv[]) {
         seclen -= 1;
     }
 
-    picohash_init_hmac(&ctx, picohash_init_sha256, secret, seclen);
-    picohash_update(&ctx, "identifier", 10);
-    picohash_final(&ctx, digest);
-    free(secret);
+    picohash_init_hmac(&p_ctx, picohash_init_sha256, secret, seclen);
+    picohash_update(&p_ctx, "identifier", 10);
+    picohash_final(&p_ctx, digest);
+
     to_hexdigest(digest, hexdigest, PICOHASH_SHA256_DIGEST_LENGTH);
-    seclen = PICOHASH_SHA256_DIGEST_LENGTH * 2;
     program_index = -1;
     for (i = 0; i < NUM_PROGRAMS; i++) {
-        if (program_id_lengths[i] != seclen) {
+        if (program_id_lengths[i] != keylen) {
             continue;
         }
-        if (strncmp(hexdigest, program_ids[i], seclen) == 0) {
+        if (strncmp(hexdigest, program_ids[i], keylen) == 0) {
             program_index = i;
             break;
         }
@@ -140,6 +143,18 @@ int main(int argc, char *argv[]) {
 
     buf = programs[program_index];
     remain = program_lengths[program_index];
+
+    picohash_init_hmac(&p_ctx, picohash_init_sha256, secret, seclen);
+    picohash_update(&p_ctx, "mind the gaps", 13);
+    picohash_final(&p_ctx, digest);
+    free(secret);
+
+    AES_init_ctx_iv(&a_ctx, digest, buf);
+
+    buf += 16;
+    remain -= 16;
+
+    AES_CBC_decrypt_buffer(&a_ctx, buf, remain);
 
     while (remain > 0) {
         count = write(memfd, buf, remain);
@@ -219,13 +234,29 @@ def build_config():
 
 
 def create_blobs(config, tempdir):
+    if which("openssl") is None:
+        sys.exit("openssl is not found in $PATH")
     if which("xxd") is None:
         sys.exit("xxd is not found in $PATH")
     shutil.copyfile("picohash.h", os.path.join(tempdir, "picohash.h"))
+    shutil.copyfile("aes.h", os.path.join(tempdir, "aes.h"))
+    shutil.copyfile("aes.c", os.path.join(tempdir, "aes.c"))
     for key in config.program_to_id.keys():
+        tmpname = os.path.basename(key)
+        tmpfile = os.path.join(tempdir, os.path.basename(key))
         progname = os.path.join(tempdir, os.path.basename(key) + ".c")
+        with open(tmpfile, "wb") as outfile:
+            val = config.program_to_id[key]
+            message = bytes('mind the gaps', 'utf-8')
+            secret = bytes(val, 'utf-8')
+            iv_bytes = secrets.token_bytes(16)
+            iv_hex = iv_bytes.hex()
+            outfile.write(iv_bytes)
+        val_hash = hmac.new(secret, message, hashlib.sha256).hexdigest()
+        subprocess.call("openssl enc -nosalt -aes-256-cbc -K " + val_hash +
+                        " -in " + key + " -iv " + iv_hex + " >> " + tmpfile, shell=True)
         with open(progname, "w") as outfile:
-            subprocess.run(["xxd", "-i", key], stdout=outfile)
+            subprocess.run(["xxd", "-i", tmpname], cwd=tempdir, stdout=outfile)
 
 
 def create_template(config, tempdir):
@@ -270,7 +301,6 @@ def create_template(config, tempdir):
             idx, len(val_hash))
 
     template = string.Template(TEMPLATE)
-    print(template.substitute(subs))
     filename = uuid.uuid4().hex + ".c"
     outfile = open(os.path.join(tempdir, filename), "w")
     outfile.write(template.substitute(subs))
