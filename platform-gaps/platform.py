@@ -25,7 +25,6 @@ import string
 import subprocess
 import sys
 import tempfile
-import uuid
 
 TEMPLATE = """
 #define _GNU_SOURCE
@@ -301,7 +300,7 @@ def create_template(config, tempdir):
             idx, len(val_hash))
 
     template = string.Template(TEMPLATE)
-    filename = uuid.uuid4().hex + ".c"
+    filename = secrets.token_hex(16) + ".c"
     outfile = open(os.path.join(tempdir, filename), "w")
     outfile.write(template.substitute(subs))
     outfile.close()
