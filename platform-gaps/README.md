@@ -2,10 +2,9 @@
 
 The script [platform.py](/platform-gaps/platform.py) will combine several
 executables into a single executable. Each executable is associated with
-a unique identifier. When the resulting program is run, it will execute
+a unique identifier. The executables are encrypted using the associated
+unique identifier. When the resulting program is run, it will execute
 one of the input executables based on the matching unique identifier.
-
-TODO: encrypt the executables stored in the generated program
 
 Usage:
 
