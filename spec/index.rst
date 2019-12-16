@@ -133,4 +133,5 @@ TODO: Refine this into prose
    :caption: Contents:
 
    code_annotations
+   building_applications
    elf_extensions

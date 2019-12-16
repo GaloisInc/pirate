@@ -1,10 +1,34 @@
-PIRATE Annotations
-^^^^^^^^^^^^^^^^^^
+Code Annotations
+^^^^^^^^^^^^^^^^
 
-The PIRATE annotations language allows one to define enclaves, which
-are execution environments designed to perform various operations that
-may involve specific hardware, and communicate with other components
-via channels.
+The PIRATE enclave capability annotations are intended to help
+developers partition complex applications into a set of individual
+components.  The goal is to assist developers in making secure
+resilient applications that minimize the attack surface of sensitive
+information in the system.
+
+Users can use these annotations to define enclaves and capabilities.
+*Enclaves* are specific execution environments that have their own
+startup `main` function and typically execute without sharing memory
+with other system components.  *Capabilities* are attributes that can
+be attached to enclaves as well as source code and variables within
+the application.  When attributed to enclaves, capabilities represent
+features or authorities the enclave is expected to support.  When
+attributed to code or data, capabilities represent features any
+enclave that includes this code is expected to have.
+
+The capability model is designed to allow one to capture requirements
+of code while still allowing that code to run on any enclave that
+satisfies the requirements.  This could be used to express that code
+needs specific hardware or other feature like the ability to run
+kernel mode instructions without requiring the user tie that code to a
+specific named enclave.  The capability model can also be used to
+restrict sensitive code or data.  For example, one could describe the
+ability to run code as a *capability*, and then achieve the effect of
+marking code as sensitive by giving it that capability requirement.
+
+We first describe the annotations for enclaves, and then give
+annotations for capabilities.
 
 Enclave Annotations
 ===================
@@ -40,106 +64,59 @@ with the given name.  On a global variable, it indicates the variable
 may only be referenced (i.e., have its address taken or be read/written)
 on that enclave.
 
-Enclave Communication
----------------------
-
-Enclaves can communicate between named channels that are created at
-enclave startup.  Each channel allows communication between a pair of
-channels.  Channels are declared via global variables, and the PIRATE
-toolchain will be responsible for ensuring that channels are correctly
-initialized, and only accessible to the correct enclaves.  By declaring
-channels in this way, the PIRATE development toolchain is aware of
-the enclave communication architecture, and is able to map it to
-different architectures.
-
-.. code-block:: c
-
-  const enclave_send_channel_t sender
-  __attribute__((enclave_send_channel(<channel>, <enclave>)));
-
-This declares that **sender** is a send channel with the name **channel**
-that is visible in the enclave **enclave**.
-
-.. code-block:: c
-
-  const enclave_receive_channel_t receiver
-  __attribute__((enclave_receive_channel(<channel>, <enclave>)));
-
-This declares that **receiver** is a send channel with the name **channel**
-that is visible in the enclave **enclave**.
-
-TODO: Describe channel API.
-
-Building specific enclaves
---------------------------
-
-After compiling one or more C source files into object files using
-enclave-aware compilers, one can generate an executable that runs the
-enclaves by running passing ``--enclave name,name,..`` to ``lld``
-along with other linker options and object files.  This will result in
-`lld` producing an executable that establishes the communication
-channels and launches each of the enclave main function at startup.
-This capability is intended for testing purposes, and does not
-provide physical security protections between enclaves.  A version
-of ``lld`` with these protection guarantees will be developed once
-suitable hardware is available.
-
-If ``lld`` does not find the main function for one of the enclaves,
-then an error will be reported.
-
-Sensitivity Annotations
+Capability Annotations
 =======================
 
-Sensitivity annotations are used to define different sensitivity
-levels which can be ordered.
+Capability annotations are used to define capabilities in code, and to
+annotate enclaves and code with capabilities.
+
+
+Our capability model includes a simple form of inheritance, and one
+may define both new capabilities and extended capabilities.  Extended
+capabilities encompass a parent capability, and annotating an enclave
+with an extended capability implicitly indicates it has the parent
+capability while annotating code with an extended capability
+implicitly indicates that it requires the
+
 
 .. code-block:: c
 
-                #pragma sensitive declare(<new>)
-                #pragma sensitive declare(<new>, <level>)
+                #pragma capability declare(<new>)
+                #pragma capability declare(<new>, <parent>)
 
-This declares a sensitivity level ``<new>``.  If additional argument is
-provided, it must be a previously declared level, and this indicates that
-``<new>`` is considered more sensitive than ``<level>``.
+This declares a capability ``<new>``.  If the additional argument
+``<parent>`` is provided, it must be a previously declared level, and
+this indicates that ``<new>`` extends the ``<parent>`` capability.
 
 .. code-block:: c
 
-                __attribute__((sensitive(<level>)))
+                __attribute__((capability(<level>)))
 
 This attribute may be attached to declaration in the program,
 including function declarations and definitions, typedefs, compound
 types, variables, statements, enumerated elements and fields of
 struct, union and classes (classes are C++ only).  It is used to
-indicate that the data is considered to have the given sensitivity
-level.  Multiple annotations may be added to a single declaration if
-there is no single highest level of sensitivity affecting a
-declaration.
-
-TODO: Discuss the semantics of sensitivity levels and how propagation
-checking works.
+indicate that the data requires the given capability.  Multiple
+annotations may be added to a single declaration.
 
 .. code-block:: c
 
-                #pragma sensitive push(<level>, <level>, ...)
-                #pragma sensitive pop
+                #pragma capability push(<level>, <level>, ...)
+                #pragma capability pop
 
 This pragma indicates that all declarations between the ``push`` and
 ``pop`` pragmas are annotated with the given levels provided to
 ``push``.  The semantics are the same as if each declaration had the
-``sensitive`` attribute, and this is simply provided for convenience
-in files that contain many declarations that require sensitivity
-levels.
+``capability`` attribute, and this is simply provided for convenience
+in files that contain many declarations with shared capability
+requirements.
 
 .. code-block:: c
 
-                #pragma enclave trusted(<enclave>, <level>)
+                #pragma enclave capability(<enclave>, <capability>)
 
-This indicates that code running on the given enclave is permitted
-access to information marked with the given sensitivity level.  In the
-absense of such an annotation, the linker will report errors if the
-enclave named ``<enclave>`` depends on any information with the given
-level.  Adding this annotation, implicitly adds permission for the
-enclave to access information marked as less sensitive than the given
-level.  On GAPS-enabled architectures, the linker will verify that
-trusted enclaves are mapped to hardware approved for access to
-information with the given sensitivity level.
+This indicates that code running on the given enclave has the given
+capability.  In the absence of such an annotation, the linker will
+report errors if the enclave named ``<enclave>`` depends on any
+information with the given level.  If ``<capability>`` is an extended
+capability, this recursively adds any parent capabilities.
