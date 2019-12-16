@@ -10,7 +10,7 @@
 static int unix_socket_reader_open(int gd, int buffer_size) {
   int fd, rv, err, server_fd;
   struct sockaddr_un addr;
-  char pathname[PIRATE_LEN_NAME];
+  char pathname[PIRATE_LEN_NAME + 1];
 
   server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (server_fd < 0) {
@@ -19,7 +19,7 @@ static int unix_socket_reader_open(int gd, int buffer_size) {
 
   memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
-  snprintf(pathname, sizeof(pathname) - 1, PIRATE_DOMAIN_FILENAME, gd);
+  snprintf(pathname, PIRATE_LEN_NAME, PIRATE_DOMAIN_FILENAME, gd);
   strncpy(addr.sun_path, pathname, sizeof(addr.sun_path) - 1);
 
   if (buffer_size > 0) {
@@ -68,7 +68,7 @@ static int unix_socket_writer_open(int gd, int buffer_size) {
   struct sockaddr_un addr;
   struct timespec req;
 
-  char pathname[PIRATE_LEN_NAME];
+  char pathname[PIRATE_LEN_NAME + 1];
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0) {
@@ -77,7 +77,7 @@ static int unix_socket_writer_open(int gd, int buffer_size) {
 
   memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
-  snprintf(pathname, sizeof(pathname) - 1, PIRATE_DOMAIN_FILENAME, gd);
+  snprintf(pathname, PIRATE_LEN_NAME, PIRATE_DOMAIN_FILENAME, gd);
   strncpy(addr.sun_path, pathname, sizeof(addr.sun_path) - 1);
 
   if (buffer_size > 0) {

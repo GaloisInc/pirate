@@ -37,7 +37,7 @@ static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
 int pirate_open(int gd, int flags) {
   pirate_channel_t *channels;
   int fd, rv;
-  char pathname[PIRATE_LEN_NAME];
+  char pathname[PIRATE_LEN_NAME + 1];
 
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
@@ -63,7 +63,7 @@ int pirate_open(int gd, int flags) {
   switch (channels[gd].channel) {
   case PIPE:
     /* Create a named pipe, if one does not exist */
-    snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, gd);
+    snprintf(pathname, PIRATE_LEN_NAME, PIRATE_FILENAME, gd);
     rv = mkfifo(pathname, 0660);
     if ((rv == -1) && (errno != EEXIST)) {
       return -1;
@@ -352,10 +352,10 @@ int pirate_set_pathname(int gd, char *pathname) {
     }
   } else {
     if (readers[gd].pathname == NULL) {
-      readers[gd].pathname = calloc(PIRATE_LEN_NAME, sizeof(char));
+      readers[gd].pathname = calloc(PIRATE_LEN_NAME + 1, sizeof(char));
     }
     if (writers[gd].pathname == NULL) {
-      writers[gd].pathname = calloc(PIRATE_LEN_NAME, sizeof(char));
+      writers[gd].pathname = calloc(PIRATE_LEN_NAME + 1, sizeof(char));
     }
     strncpy(readers[gd].pathname, pathname, PIRATE_LEN_NAME);
     strncpy(writers[gd].pathname, pathname, PIRATE_LEN_NAME);
