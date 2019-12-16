@@ -36,8 +36,8 @@ static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
   pirate_channel_t *channels;
-  int fd, rv;
-  char pathname[PIRATE_LEN_NAME + 1];
+  int fd, rv, len;
+  char pathname[PIRATE_LEN_NAME];
 
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
@@ -60,6 +60,7 @@ int pirate_open(int gd, int flags) {
     return gd;
   }
 
+  memset(pathname, 0, PIRATE_LEN_NAME);
   switch (channels[gd].channel) {
   case PIPE:
     /* Create a named pipe, if one does not exist */
@@ -74,11 +75,12 @@ int pirate_open(int gd, int flags) {
       errno = EINVAL;
       return -1;
     }
-    if (strnlen(channels[gd].pathname, PIRATE_LEN_NAME) == 0) {
+    len = strnlen(channels[gd].pathname, PIRATE_LEN_NAME);
+    if ((len <= 0) || (len >= PIRATE_LEN_NAME)) {
       errno = EINVAL;
       return -1;
     }
-    strncpy(pathname, channels[gd].pathname, PIRATE_LEN_NAME);
+    strncpy(pathname, channels[gd].pathname, PIRATE_LEN_NAME - 1);
     break;
   case UNIX_SOCKET:
     fd = pirate_unix_socket_open(gd, flags, channels[gd].buffer_size);
@@ -337,6 +339,7 @@ channel_t pirate_get_channel_type(int gd) {
 }
 
 int pirate_set_pathname(int gd, char *pathname) {
+  int len;
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
     return -1;
@@ -351,14 +354,19 @@ int pirate_set_pathname(int gd, char *pathname) {
       writers[gd].pathname = NULL;
     }
   } else {
+    len = strnlen(pathname, PIRATE_LEN_NAME);
+    if ((len <= 0) || (len >= PIRATE_LEN_NAME)) {
+      errno = EINVAL;
+      return - 1;
+    }
     if (readers[gd].pathname == NULL) {
-      readers[gd].pathname = calloc(PIRATE_LEN_NAME + 1, sizeof(char));
+      readers[gd].pathname = calloc(PIRATE_LEN_NAME, sizeof(char));
     }
     if (writers[gd].pathname == NULL) {
-      writers[gd].pathname = calloc(PIRATE_LEN_NAME + 1, sizeof(char));
+      writers[gd].pathname = calloc(PIRATE_LEN_NAME, sizeof(char));
     }
-    strncpy(readers[gd].pathname, pathname, PIRATE_LEN_NAME);
-    strncpy(writers[gd].pathname, pathname, PIRATE_LEN_NAME);
+    strncpy(readers[gd].pathname, pathname, PIRATE_LEN_NAME - 1);
+    strncpy(writers[gd].pathname, pathname, PIRATE_LEN_NAME - 1);
   }
   return 0;
 }
