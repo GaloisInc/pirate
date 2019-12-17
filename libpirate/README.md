@@ -81,7 +81,7 @@ The size of the shared memory buffer can be specified using
 ### UIO_DEVICE type
 
 Uses shared memory provided by the kernel from a Userspace IO
-device driver. The [uio-device](/uio-device/README.md) kernel module
+device driver. The [uio-device](/devices/uio-device/README.md) kernel module
 must be loaded.
 
 ## Benchmarks

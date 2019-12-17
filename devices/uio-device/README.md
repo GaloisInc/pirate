@@ -4,7 +4,7 @@ Device driver that uses Linux [userspace I/O](https://www.kernel.org/doc/html/la
 The device allocates four memory regions of 16 contiguous pages (65,536 bytes).
 Memory regions are allocated from virtual memory (vmalloc).
 
-See [reader.c](/uio-device/reader.c) and [writer.c](/uio-device/writer.c) for simple
+See [reader.c](/devices/uio-device/reader.c) and [writer.c](/devices/uio-device/writer.c) for simple
 examples of how to use the device.
 
 ## Install

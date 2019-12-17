@@ -6,7 +6,7 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 find_package(FUSE REQUIRED)
 
-include_directories(${FUSE_INCLUDE_DIR} ../include)
+include_directories(${FUSE_INCLUDE_DIR} ../../include)
 
 add_executable(cusegaps_net cusegaps_net.c)
 target_link_libraries(cusegaps_net ${FUSE_LIBRARIES})

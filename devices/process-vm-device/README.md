@@ -9,5 +9,5 @@ without passing through kernel space.
 `process_vm_readv` and `process_vm_writev` are system calls. The functionality
 is not available to other parts of the kernel or kernel modules. You will need
 to apply the kernel patch
-[ksys_process_vm](/process-vm-device/ksys_process_vm.patch) in order to
+[ksys_process_vm](/devices/process-vm-device/ksys_process_vm.patch) in order to
 compile the character device.
