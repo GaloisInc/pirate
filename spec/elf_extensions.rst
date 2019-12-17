@@ -20,13 +20,14 @@ enclave offers.  For each symbol in ``.symtab``, we provide a list of
 required capabilities, and optionally, the enclave that is allowed to
 run or access the symbol.
 
-Note that capabilities are handled identically: Both are identified
-internally by the index of their entry in ``.gaps.captab`` and
-externally by their user-defined name, which must be unique within the
-compilation unit.  Extended capabilities are capabilities that extend
-a previous capability, and these contain the index of a parent
-capability.  Lists of required or provided capabilities are specified
-as strings in ``.gaps.strtab``, ending in ``CAP_NULL``.
+Capabilities are identified internally by the index of their entry in
+``.gaps.captab`` and externally by their user-defined name, which must
+be unique within the compilation unit.  Extended capabilities are
+capabilities that extend a previous capability, and these contain the
+index of a parent capability, with the intended meaning that any enclave
+with the extended capability also has its parent.  Lists of required or
+provided capabilities are specified as strings in ``.gaps.captab``,
+ending in ``CAP_NULL``.
 
 Special Sections
 ----------------
@@ -47,12 +48,12 @@ so the ``sh_type`` fields in their section headers should be set to
     ``.symtab`` entry with the same index.
 
 ``.gaps.capabilities``
-    An array of ``Elf64_GAPS_cap`` listing the
-    capabilities defined in the source file. The first
-    entry is unused and corresponds to ``CAP_NULL``.
+    An array of ``Elf64_GAPS_cap`` listing the capabilities defined
+    in the source file. The first entry is unused and corresponds to
+    ``CAP_NULL``.
 
 ``.gaps.captab``
-    A vector of arrays of ``Elf64_Half`` indices into
+    A vector of arrays of ``Elf64_Word`` indices into
     ``.gaps.capabilities``, each terminated by ``CAP_NULL``. Offset
     zero contains a 0 to signify an empty capacity list.
 
@@ -69,9 +70,6 @@ so the ``sh_type`` fields in their section headers should be set to
 Structures
 ----------
 
-[Note: We may want to add placeholder fields to take advantage of the
-empty space left by alignment.]
-
 .. code-block:: c
 
                 typedef struct {
@@ -86,8 +84,8 @@ empty space left by alignment.]
     of the enclave.
 
 ``enc_cap``
-    The offset of a string of capability indices in ``.gaps.captab``,
-    indicating capabilities for this enclave.
+    The starting index of a string of capability indices in
+    ``.gaps.captab``, indicating capabilities for this enclave.
 
 ``enc_entry``
     The index of the entry in ``.symtab`` to be used as an entrypoint
@@ -178,3 +176,25 @@ A GAPS-aware linker is responsible for populating these from
 ``.gaps.channels``. Meanwhile, the GAPS runtime will define a
 constructor in ``.init`` that references these global symbols to
 initialize all send and receive channels.
+
+Linking Examples
+----------------
+
+[Note: It would be nice to have an example with more meaningful file
+and enclave names]
+
+Compiling and linking an executable with two enclaves, ``foo`` and
+``baz``, given two annotated source files ``zip.c`` and ``zap.c``,
+can be achieved as follows:
+
+.. code-block:: sh
+
+               clang -ffunction-sections -fdata-sections -c zip.c zap.c
+               ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+                   /usr/lib/x86_64-linux-gnu/crt*.o \
+                   /usr/lib/x86_64-linux-gnu/libc.so \
+                   -o foo -enclave foo zip.o zap.o
+               ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+                   /usr/lib/x86_64-linux-gnu/crt*.o \
+                   /usr/lib/x86_64-linux-gnu/libc.so \
+                   -o bar -enclave bar zip.o zap.o
