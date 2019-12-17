@@ -15,9 +15,9 @@ libpirate/primitives_test
 libpirate/Testing
 libpirate/bench/*.results
 libpirate/bench/*.pdf
-cusegaps/cusegaps_net
-cusegaps/cusegaps_pipe
-cusegaps/cusegaps_test
+devices/cusegaps/cusegaps_net
+devices/cusegaps/cusegaps_pipe
+devices/cusegaps/cusegaps_test
 platform-gaps/hello
 platform-gaps/world
 .vscode
