@@ -17,8 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "tiny.h"
 
+#include "tiny.h"
 
 /* error - wrapper for perror used for bad syscalls */
 static void error(char *msg) {
@@ -28,15 +28,15 @@ static void error(char *msg) {
 
 
 /* cerror - returns an error message to the client */
-void cerror(FILE *s, char *cause, char *errno, char *shortmsg, char *longmsg) {
-    fprintf(s, "HTTP/1.1 %s %s\n", errno, shortmsg);
-    fprintf(s, "Content-type: text/html\n");
-    fprintf(s, "\n");
-    fprintf(s, "<html><title>Tiny Error</title>");
+void cerror(FILE *s, char *cause, int statuscode, char *shortmsg) {
+    fprintf(s, "HTTP/1.1 %d %s\r\n", statuscode, shortmsg);
+    fprintf(s, "Content-type: text/html\r\n");
+    fprintf(s, "\r\n");
+    fprintf(s, "<html>");
     fprintf(s, "<body bgcolor=ffffff>\n");
-    fprintf(s, "%s: %s\n", errno, shortmsg);
-    fprintf(s, "<p>%s: %s\n", longmsg, cause);
+    fprintf(s, "%s %d: %s\n", cause, statuscode, shortmsg);
     fprintf(s, "<hr><em>The Tiny Web server</em>\n");
+    fprintf(s, "</body></html>");
 }
 
 
@@ -112,14 +112,15 @@ void client_request_info(const client_t* ci, request_t* ri) {
     /* read (and ignore) the HTTP headers */
     do {
         read_http_line(ri->buf, BUFSIZE, ci->stream);
-    } while(strcmp(ri->buf, "\r\n"));
+    } while(strncmp(ri->buf, "\r\n", 3));
 
     /* parse the uri [crufty] */
-    strcpy(ri->filename, ".");
-    strcat(ri->filename, ri->uri);
-    if (ri->uri[strlen(ri->uri) - 1] == '/') {
-        strcat(ri->filename, "index.html");
-
+    memset(ri->filename, 0, sizeof(ri->filename));
+    strncpy(ri->filename, ".", sizeof(ri->filename));
+    if (strnlen(ri->uri, 2) < 2) {
+        strncat(ri->filename, "/index.html", sizeof(ri->filename));
+    } else {
+        strncat(ri->filename, ri->uri, sizeof(ri->filename));
     }
 }
 
@@ -128,10 +129,10 @@ int serve_static_content(client_t* ci, request_t* ri, char* buf, int len) {
     (void) ri;
 
     /* send response header and passed data */
-    fprintf(ci->stream, "HTTP/1.1 200 OK\n");
-    fprintf(ci->stream, "Server: Tiny Web Server\n");
-    fprintf(ci->stream, "Content-length: %d\n", len);
-    fprintf(ci->stream, "Content-type: text/html\n");
+    fprintf(ci->stream, "HTTP/1.1 200 OK\r\n");
+    fprintf(ci->stream, "Server: Tiny Web Server\r\n");
+    fprintf(ci->stream, "Content-length: %d\r\n", len);
+    fprintf(ci->stream, "Content-type: text/html\r\n");
     fprintf(ci->stream, "\r\n");
     fwrite(buf, len, 1, ci->stream);
     fflush(ci->stream);

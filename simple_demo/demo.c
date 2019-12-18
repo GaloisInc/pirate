@@ -50,83 +50,100 @@ typedef enum {
 #define NAME                "undefined"
 #endif /* LOW */
 
-static int load_web_content_high(data_t* data) {
-    const char* path = "./index.html";
+static int load_web_content_high(data_t* data, const char *path) {
     struct stat sbuf;
 
     if (stat(path, &sbuf) < 0) {
         fprintf(stderr, "ERROR: could not find file %s\n", path);
-        return -1;
+        return 404;
     }
 
     if (sbuf.st_size >= (long)sizeof(data->buf)) {
         fprintf(stderr, "ERROR: file %s exceeds size limits\n", path);
-        return -1;
+        return 500;
     }
 
     FILE* fp = fopen(path, "r");
     if (fp == NULL) {
         fprintf(stderr, "ERROR failed to open %s\n", path);
-        return -1;
+        return 500;
     }
 
     if (fread(data->buf, sbuf.st_size, 1, fp) != 1) {
         fprintf(stderr, "Failed to read %s file\n", path);
-        return -1;
+        return 500;
     }
 
     fclose(fp);
 
     data->buf[sbuf.st_size] = '\0';
     data->len = sbuf.st_size;
-    return 0;
+    return 200;
 }
 
-static int load_web_content_low(data_t* data) {
-    /* Low side requests data by writing zero */
-    int len = 0;
-    ssize_t num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
+static int load_web_content_low(data_t* data, char *path) {
+    int rv, len;
+    ssize_t num;
+
+    len = strnlen(path, PATHSIZE);
+    num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
     if (num != sizeof(int)) {
-        fprintf(stderr, "Failed to send request\n");
-        return -1;
+        fprintf(stderr, "Failed to send request length\n");
+        return 500;
     }
+
+    num = pirate_write(LOW_TO_HIGH_CH, path, len);
+    if (num != len) {
+        fprintf(stderr, "Failed to send request path\n");
+        return 500;
+    }
+
     printf("Sent read request to the %s side\n", HIGH_NAME);
+
+    num = pirate_read(HIGH_TO_LOW_CH, &rv, sizeof(rv));
+    if (num != sizeof(rv)) {
+        fprintf(stderr, "Failed to receive status code\n");
+        return 500;
+    }
+    if (rv != 200) {
+        return rv;
+    }
 
     /* Read and validate response length */
     num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
     if (num != sizeof(len)) {
         fprintf(stderr, "Failed to receive response length\n");
-        return -1;
+        return 500;
     }
 
-    if (len >= DATA_LEN) {
+    if (len >= (long)sizeof(data->buf)) {
         fprintf(stderr, "Response length %d is too large\n", len);
-        return -1;
+        return 500;
     }
 
     /* Read back the response */
     num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
     if (num != len) {
         fprintf(stderr, "Failed to read back the response\n");
-        return -1;
+        return 500;
     }
 
     /* Success */
     data->len = len;
     printf("Received %d bytes from the %s side\n", data->len, HIGH_NAME);
-    return 0;
+    return 200;
 }
 
-static int load_web_content(data_t* data, level_e level) {
+static int load_web_content(data_t* data, char *path, level_e level) {
     switch (level) {
         case LEVEL_HIGH:
-            return load_web_content_high(data);
+            return load_web_content_high(data, path);
     
         case LEVEL_LOW:
-            return load_web_content_low(data);
+            return load_web_content_low(data, path);
 
         default:
-            return -1;
+            return 500;
     }
 }
 
@@ -138,23 +155,37 @@ static void* gaps_thread(void *arg) {
 
     while (1) {
         /* Low side requests data by writing zero */
-        int len = 0;
+        int rv, len = 0;
+        char path[PATHSIZE];
+
         ssize_t num = pirate_read(LOW_TO_HIGH_CH, &len, sizeof(len));
         if (num != sizeof(len)) {
             fprintf(stderr, "Failed to read request from the low side\n");
             exit(-1);
         }
 
-        if (len != 0) {
-            fprintf(stderr, "Invalid request from the low side %d\n", len);
+        if ((len <= 0) || (len >= (long)sizeof(path))) {
+            fprintf(stderr, "Invalid request length from the low side %d\n", len);
+            continue;
+        }
+
+        memset(path, 0, sizeof(path));
+        num = pirate_read(LOW_TO_HIGH_CH, &path, len);
+        if (num != len) {
+            fprintf(stderr, "Invalid request path from the low side %d\n", len);
             continue;
         }
 
         printf("Received data request from the %s side\n", LOW_NAME);
 
         /* Read in high data */
-        if (load_web_content(&high_data, LEVEL_HIGH) != 0) {
-            fprintf(stderr, "Failed to load data\n");
+        rv = load_web_content_high(&high_data, path);
+        num = pirate_write(HIGH_TO_LOW_CH, &rv, sizeof(rv));
+        if (num != sizeof(rv)) {
+            fprintf(stderr, "Failed to send status code\n");
+            continue;
+        }
+        if (rv != 200) {
             continue;
         }
 
@@ -177,7 +208,7 @@ static void* gaps_thread(void *arg) {
         int tail_len = high_data.len - (search - high_data.buf);
         memcpy(wr, search, tail_len);
         wr[tail_len] = '\0';
-        low_data.len = strlen(low_data.buf);
+        low_data.len = strnlen(low_data.buf, sizeof(low_data.buf));
 
         /* Reply back. Data length is sent first */
         num = pirate_write(HIGH_TO_LOW_CH, &low_data.len, sizeof(low_data.len));
@@ -211,6 +242,7 @@ static int run_gaps()
 
 
 static int web_server(int port, level_e level) {
+    int rv;
     server_t si;
     client_t ci;
     request_t ri;
@@ -232,22 +264,22 @@ static int web_server(int port, level_e level) {
 
         /* tiny only supports the GET method */
         if (strcasecmp(ri.method, "GET")) {
-            cerror(ci.stream, ri.method, "501", "Not Implemented",
-                    "This method is not implemented");
+            cerror(ci.stream, ri.method, 405, "Not Implemented");
             client_disconnect(&ci);
             continue;
         }
 
         /* Get data from the high side */
-        if (load_web_content(&data, level) != 0) {
-            cerror(ci.stream, ri.method, "501", "No data", "Data load fail");
+        rv = load_web_content(&data, ri.filename, level);
+        if (rv != 200) {
+            cerror(ci.stream, ri.filename, rv, "Loading Data");
             client_disconnect(&ci);
             continue;
         }
 
         /* Serve low content */
-        int ret = serve_static_content(&ci, &ri, data.buf, data.len);
-        if  (ret < 0) {
+        rv = serve_static_content(&ci, &ri, data.buf, data.len);
+        if  (rv < 0) {
             client_disconnect(&ci);
             continue;
         }

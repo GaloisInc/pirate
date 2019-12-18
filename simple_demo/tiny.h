@@ -61,6 +61,6 @@ void client_request_info(const client_t* ci, request_t* ri);
 int serve_static_content(client_t* ci, request_t* ri, char* buf, int len);
 
 /* Send error message to the client */
-void cerror(FILE *s, char *cause, char *errno, char *shortmsg, char *longmsg);
+void cerror(FILE *s, char *cause, int statuscode, char *shortmsg);
 
 #endif /* _TINY_H_ */
