@@ -50,3 +50,9 @@ add_custom_target(testing COMMAND ${CMAKE_CTEST_COMMAND}
     --verbose
     --output-on-failure
 )
+
+ add_custom_target(valgrind COMMAND valgrind
+    --leak-check=full
+    --error-exitcode=1
+    ./primitives_test
+)

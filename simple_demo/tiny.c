@@ -20,12 +20,6 @@
 
 #include "tiny.h"
 
-/* error - wrapper for perror used for bad syscalls */
-static void error(char *msg) {
-    perror(msg);
-    exit(1);
-}
-
 
 /* cerror - returns an error message to the client */
 void cerror(FILE *s, char *cause, int statuscode, char *shortmsg) {
@@ -39,14 +33,18 @@ void cerror(FILE *s, char *cause, int statuscode, char *shortmsg) {
     fprintf(s, "</body></html>");
 }
 
+static char* socket_err = "socket";
+static char* setsockopt_err = "setsockopt";
+static char* bind_err = "bind";
+static char* listen_err = "listen";
 
-void server_connect(server_t* si, int port) {
+char *server_connect(server_t* si, int port) {
     si->portno = port;
 
     /* open socket descriptor */
     si->parentfd = socket(AF_INET, SOCK_STREAM, 0);
     if (si->parentfd < 0) {
-        error("ERROR opening socket");
+        return socket_err;
     }
 
     /* allows us to restart server immediately */
@@ -54,7 +52,7 @@ void server_connect(server_t* si, int port) {
     int sts = setsockopt(si->parentfd, SOL_SOCKET, SO_REUSEADDR,
                         (const void *)&optval, sizeof(int));
     if (sts != 0) {
-        error("ERROR setsockopt SO_REUSEADDR");
+        return setsockopt_err;
     }
 
     /* bind port to socket */
@@ -65,37 +63,59 @@ void server_connect(server_t* si, int port) {
     sts = bind(si->parentfd, (struct sockaddr *)&si->serveraddr,
                 sizeof(si->serveraddr));
     if (sts < 0) {
-        error("ERROR on binding");
+        return bind_err;
     }
 
     /* get us ready to accept connection requests (max 5 clients) */
     sts = listen(si->parentfd, 5);
     if (sts < 0) {
-        error("ERROR on listen");
+        return listen_err;
     }
+
+    return NULL;
 }
 
+static char* close_server_err = "close child socket";
 
-void client_connect(const server_t* si, client_t* ci) {
+char *server_disconnect(server_t* si) {
+    if (si->parentfd) {
+        if (close(si->parentfd)) {
+            return close_server_err;
+        }
+    }
+    return NULL;
+}
+
+static char* accept_err = "accept";
+static char* fdopen_err = "fdopen";
+
+char *client_connect(const server_t* si, client_t* ci) {
     /* wait for a connection request */
     socklen_t clientlen = sizeof(ci->clientaddr);
     ci->childfd = accept(si->parentfd, (struct sockaddr *)&ci->clientaddr,
                             &clientlen);
     if (ci->childfd < 0) {
-        error("ERROR on accept");
+        return accept_err;
     }
 
     /* open the child socket descriptor as a stream */
     ci->stream = fdopen(ci->childfd, "r+");
     if (ci->stream == NULL) {
-        error("ERROR on fdopen");
+        return fdopen_err;
     }
+
+    return NULL;
 }
 
+static char* fclose_err = "fclose";
 
-void client_disconnect(client_t* ci) {
-    fclose(ci->stream);
-    close(ci->childfd);
+char *client_disconnect(client_t* ci) {
+    if (ci->stream) {
+        if (fclose(ci->stream)) {
+            return fclose_err;
+        }
+    }
+    return NULL;
 }
 
 
@@ -116,11 +136,11 @@ void client_request_info(const client_t* ci, request_t* ri) {
 
     /* parse the uri [crufty] */
     memset(ri->filename, 0, sizeof(ri->filename));
-    strncpy(ri->filename, ".", sizeof(ri->filename));
+    strncpy(ri->filename, ".", sizeof(ri->filename) - 1);
     if (strnlen(ri->uri, 2) < 2) {
-        strncat(ri->filename, "/index.html", sizeof(ri->filename));
+        strncat(ri->filename, "/index.html", sizeof(ri->filename) - 1);
     } else {
-        strncat(ri->filename, ri->uri, sizeof(ri->filename));
+        strncat(ri->filename, ri->uri, sizeof(ri->filename) - 1);
     }
 }
 

@@ -104,3 +104,17 @@ Example usage:
 ./bench.py lat device /dev/foo /dev/bar >> latency.results
 ./bench.py lat shmem shmem shmem >> latency.results
 ```
+
+## Tests
+
+Run the unit tests:
+
+```
+make test
+```
+
+Run the unit tests under valgrind:
+
+```
+make valgrind
+```

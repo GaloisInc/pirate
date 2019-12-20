@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(simple_demo)
 
+set(CMAKE_BUILD_TYPE RelwithDebInfo)
+
 include_directories(../libpirate)
 
 SET(CMAKE_C_COMPILER "clang")

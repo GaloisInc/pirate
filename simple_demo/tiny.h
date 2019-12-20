@@ -46,13 +46,16 @@ typedef struct {
 
 
 /* Create, initialize, bind, listen on server socket */
-void server_connect(server_t* si, int port);
+char *server_connect(server_t* si, int port);
+
+/* Close server socket */
+char *server_disconnect(server_t* si);
 
 /* Accept client's connection and open fstream */
-void client_connect(const server_t* si, client_t* ci);
+char *client_connect(const server_t* si, client_t* ci);
 
 /* Close client stream and socket */
-void client_disconnect(client_t* ci);
+char *client_disconnect(client_t* ci);
 
 /* Process client request */
 void client_request_info(const client_t* ci, request_t* ri);
