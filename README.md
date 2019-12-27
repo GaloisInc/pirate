@@ -11,7 +11,8 @@ cleanup / data wipe on termination.
 
 libpirate currently implements GAPS channels using Linux named pipes,
 a character device driver, a Unix domain socket, shared memory,
-or userspace IO. Benchmarks are available on the [wiki](https://github.com/GaloisInc/pirate-demos/wiki/libpirate-benchmarks).
+network communication, or userspace IO. Benchmarks are available on
+the [wiki](https://github.com/GaloisInc/pirate-demos/wiki/libpirate-benchmarks).
 
 ### simple_demo
 

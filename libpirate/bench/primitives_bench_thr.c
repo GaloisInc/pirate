@@ -15,7 +15,9 @@
 
 #define _GNU_SOURCE
 
+#include <arpa/inet.h>
 #include <fcntl.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,10 +52,11 @@ static int set_buffer_size(int gd, int size) {
 }
 
 int main(int argc, char *argv[]) {
-  int64_t i, size, count, delta;
+  int64_t i, size, bufsize, count, delta;
   int rv;
   char *buf;
   struct timespec start, stop;
+  struct linger socket_reset;
 
   if (argc < 3) {
     printf("usage: primitives_bench_thr message-size roundtrip-count "
@@ -71,6 +74,12 @@ int main(int argc, char *argv[]) {
       pirate_set_channel_type(1, UNIX_SOCKET);
     } else if (strncmp(argv[3], "uio", 4) == 0) {
       pirate_set_channel_type(1, UIO_DEVICE);
+    } else if (strncmp(argv[3], "tcp4://", 7) == 0) {
+      pirate_set_channel_type(1, TCP_SOCKET);
+      pirate_set_pathname(1, argv[3] + 7);
+    } else if (strncmp(argv[3], "udp4://", 7) == 0) {
+      pirate_set_channel_type(1, UDP_SOCKET);
+      pirate_set_pathname(1, argv[3] + 7);
     } else {
       pirate_set_channel_type(1, DEVICE);
       pirate_set_pathname(1, argv[3]);
@@ -78,6 +87,9 @@ int main(int argc, char *argv[]) {
   }
 
   buf = malloc(size);
+  bufsize = 8 * size;
+  socket_reset.l_onoff = 1;
+  socket_reset.l_linger = 0;
   if (buf == NULL) {
     perror("malloc");
     return 1;
@@ -85,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   if (!fork()) {
     // child
-    if (set_buffer_size(1, size) < 0) {
+    if (set_buffer_size(1, bufsize) < 0) {
       return 1;
     }
     if (pirate_open(1, O_RDONLY) < 0) {
@@ -95,13 +107,20 @@ int main(int argc, char *argv[]) {
     // check /proc/sys/fs/pipe-max-size on failure
     switch (pirate_get_channel_type(1)) {
     case PIPE:
-      if (pirate_fcntl1_int(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_fcntl1_int(1, O_RDONLY, F_SETPIPE_SZ, bufsize) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }
       break;
+    case TCP_SOCKET:
+      if (pirate_setsockopt(1, O_RDONLY, SOL_SOCKET, SO_LINGER, &socket_reset,
+                            sizeof(socket_reset)) < 0) {
+        perror("pirate_setsockopt SO_LINGER");
+        return 1;
+      }
+      break;
     case DEVICE:
-      if (pirate_ioctl1_int(1, O_RDONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_ioctl1_int(1, O_RDONLY, F_SETPIPE_SZ, bufsize) < 0) {
         perror("pirate_ioctl1");
         return 1;
       }
@@ -122,7 +141,7 @@ int main(int argc, char *argv[]) {
     pirate_close(1, O_RDONLY);
   } else {
     // parent
-    if (set_buffer_size(1, size) < 0) {
+    if (set_buffer_size(1, bufsize) < 0) {
       return 1;
     }
     if (pirate_open(1, O_WRONLY) < 0) {
@@ -132,13 +151,23 @@ int main(int argc, char *argv[]) {
     // check /proc/sys/fs/pipe-max-size on failure
     switch (pirate_get_channel_type(1)) {
     case PIPE:
-      if (pirate_fcntl1_int(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_fcntl1_int(1, O_WRONLY, F_SETPIPE_SZ, bufsize) < 0) {
         perror("pirate_fcntl1");
         return 1;
       }
       break;
+    case TCP_SOCKET:
+      if (pirate_setsockopt(1, O_WRONLY, SOL_SOCKET, SO_LINGER, &socket_reset,
+                            sizeof(socket_reset)) < 0) {
+        perror("pirate_setsockopt SO_LINGER");
+        return 1;
+      }
+      break;
+    case UDP_SOCKET:
+      sleep(2);
+      break;
     case DEVICE:
-      if (pirate_ioctl1_int(1, O_WRONLY, F_SETPIPE_SZ, 8 * size) < 0) {
+      if (pirate_ioctl1_int(1, O_WRONLY, F_SETPIPE_SZ, bufsize) < 0) {
         perror("pirate_ioctl1");
         return 1;
       }

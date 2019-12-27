@@ -11,6 +11,7 @@ libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_bench_thr
 libpirate/primitives_bench_lat
+libpirate/primitives_bench_lat_percentiles
 libpirate/primitives_test
 libpirate/Testing
 libpirate/bench/*.results

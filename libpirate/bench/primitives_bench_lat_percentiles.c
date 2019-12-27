@@ -27,6 +27,8 @@
 
 #include "primitives.h"
 
+#define ITERATIONS 1000
+
 static int set_buffer_size(int gd, int size) {
   size = 8 * size;
   switch (pirate_get_channel_type(gd)) {
@@ -52,9 +54,10 @@ static int set_buffer_size(int gd, int size) {
 }
 
 int main(int argc, char *argv[]) {
-  int64_t i, size, bufsize, count, delta;
+  int64_t i, j, size, bufsize, count, delta;
   int rv, enable;
   char *buf;
+  int64_t *datapoints;
   struct timespec start, stop;
   struct linger socket_reset;
 
@@ -112,6 +115,11 @@ int main(int argc, char *argv[]) {
   enable = 1;
   if (buf == NULL) {
     perror("malloc");
+    return 1;
+  }
+  datapoints = calloc(count, sizeof(uint64_t));
+  if (datapoints == NULL) {
+    perror("calloc");
     return 1;
   }
 
@@ -189,21 +197,23 @@ int main(int argc, char *argv[]) {
       break;
     }
     for (i = 0; i < count; i++) {
-      int nbytes = size;
-      while (nbytes > 0) {
-        if ((rv = pirate_read(1, buf, nbytes)) <= 0) {
-          perror("pirate_read channel 1");
-          return 1;
+      for (j = 0; j < ITERATIONS; j++) {
+        int nbytes = size;
+        while (nbytes > 0) {
+          if ((rv = pirate_read(1, buf, nbytes)) <= 0) {
+            perror("pirate_read channel 1");
+            return 1;
+          }
+          nbytes -= rv;
         }
-        nbytes -= rv;
-      }
-      nbytes = size;
-      while (nbytes > 0) {
-        if ((rv = pirate_write(2, buf, nbytes)) <= 0) {
-          perror("pirate_write channel 2");
-          return 1;
+        nbytes = size;
+        while (nbytes > 0) {
+          if ((rv = pirate_write(2, buf, nbytes)) <= 0) {
+            perror("pirate_write channel 2");
+            return 1;
+          }
+          nbytes -= rv;
         }
-        nbytes -= rv;
       }
     }
     pirate_close(1, O_RDONLY);
@@ -281,39 +291,45 @@ int main(int argc, char *argv[]) {
     default:
       break;
     }
-    if (clock_gettime(CLOCK_MONOTONIC, &start) < 0) {
-      perror("clock_gettime");
-      return 1;
-    }
     for (i = 0; i < count; i++) {
-      int nbytes = size;
-      while (nbytes > 0) {
-        if ((rv = pirate_write(1, buf, nbytes)) <= 0) {
-          perror("pirate_write channel 1");
-          return 1;
-        }
-        nbytes -= rv;
+      if (clock_gettime(CLOCK_MONOTONIC, &start) < 0) {
+        perror("clock_gettime");
+        return 1;
       }
-      nbytes = size;
-      while (nbytes > 0) {
-        if ((rv = pirate_read(2, buf, nbytes)) <= 0) {
-          perror("pirate_read channel 2");
-          return 1;
+      for (j = 0; j < ITERATIONS; j++) {
+        int nbytes = size;
+        while (nbytes > 0) {
+          if ((rv = pirate_write(1, buf, nbytes)) <= 0) {
+            perror("pirate_write channel 1");
+            return 1;
+          }
+          nbytes -= rv;
         }
-        nbytes -= rv;
+        nbytes = size;
+        while (nbytes > 0) {
+          if ((rv = pirate_read(2, buf, nbytes)) <= 0) {
+            perror("pirate_read channel 2");
+            return 1;
+          }
+          nbytes -= rv;
+        }
       }
+      if (clock_gettime(CLOCK_MONOTONIC, &stop) < 0) {
+        perror("clock_gettime");
+        return 1;
+      }
+      // nanoseconds difference
+      delta = ((stop.tv_sec - start.tv_sec) * 1000000000 +
+        (stop.tv_nsec - start.tv_nsec));
+      datapoints[i] = delta / (ITERATIONS * 2);
     }
     wait(NULL);
-    if (clock_gettime(CLOCK_MONOTONIC, &stop) < 0) {
-      perror("clock_gettime");
-      return 1;
-    }
     pirate_close(1, O_WRONLY);
     pirate_close(2, O_RDONLY);
-    // nanoseconds difference
-    delta = ((stop.tv_sec - start.tv_sec) * 1000000000 +
-             (stop.tv_nsec - start.tv_nsec));
-    printf("average latency: %li ns\n", delta / (count * 2));
+    for (i = 0; i < count; i++) {
+      printf("%ld\n", datapoints[i]);
+    }
   }
   free(buf);
+  free(datapoints);
 }

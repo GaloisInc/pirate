@@ -13,11 +13,15 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __UNIX_SOCKET_H
-#define __UNIX_SOCKET_H
+#ifndef __UDP_SOCKET_H
+#define __UDP_SOCKET_H
 
 #include "primitives.h"
 
-int pirate_unix_socket_open(int gd, int flags, pirate_channel_t *channels);
+int pirate_udp_socket_open(int gd, int flags, pirate_channel_t *channels);
+
+ssize_t pirate_udp_socket_read(int gd, pirate_channel_t *readers, void *buf, size_t count);
+
+ssize_t pirate_udp_socket_write(int gd, pirate_channel_t *writers, const void *buf, size_t count);
 
 #endif

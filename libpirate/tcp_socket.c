@@ -1,30 +1,44 @@
+#define _POSIX_C_SOURCE 200809L
+
+#include <arpa/inet.h>
 #include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
-#include <sys/un.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "primitives.h"
 
-static int unix_socket_reader_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, err, buffer_size, server_fd;
-  struct sockaddr_un addr;
-  char pathname[PIRATE_LEN_NAME + 1];
+static int tcp_socket_reader_open(int gd, pirate_channel_t *channels) {
+  int fd, rv, err, enable, buffer_size, server_fd;
+  struct sockaddr_in addr;
 
-  server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0) {
     return server_fd;
   }
 
-  memset(&addr, 0, sizeof(struct sockaddr_un));
-  addr.sun_family = AF_UNIX;
-  snprintf(pathname, PIRATE_LEN_NAME, PIRATE_DOMAIN_FILENAME, gd);
-  strncpy(addr.sun_path, pathname, sizeof(addr.sun_path) - 1);
+  memset(&addr, 0, sizeof(struct sockaddr_in));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
+
+  enable = 1;
+  rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+  if (rv < 0) {
+    err = errno;
+    close(server_fd);
+    errno = err;
+    return rv;
+  }
 
   buffer_size = channels[gd].buffer_size;
   if (buffer_size > 0) {
-    rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size,
+    rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &buffer_size,
                     sizeof(buffer_size));
     if (rv < 0) {
       err = errno;
@@ -34,8 +48,7 @@ static int unix_socket_reader_open(int gd, pirate_channel_t *channels) {
     }
   }
 
-  unlink(pathname);
-  rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
+  rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
   if (rv < 0) {
     err = errno;
     close(server_fd);
@@ -64,22 +77,15 @@ static int unix_socket_reader_open(int gd, pirate_channel_t *channels) {
   return fd;
 }
 
-static int unix_socket_writer_open(int gd, pirate_channel_t *channels) {
+static int tcp_socket_writer_open(int gd, pirate_channel_t *channels) {
   int fd, rv, buffer_size, err;
-  struct sockaddr_un addr;
+  struct sockaddr_in addr;
   struct timespec req;
 
-  char pathname[PIRATE_LEN_NAME + 1];
-
-  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd < 0) {
     return fd;
   }
-
-  memset(&addr, 0, sizeof(struct sockaddr_un));
-  addr.sun_family = AF_UNIX;
-  snprintf(pathname, PIRATE_LEN_NAME, PIRATE_DOMAIN_FILENAME, gd);
-  strncpy(addr.sun_path, pathname, sizeof(addr.sun_path) - 1);
 
   buffer_size = channels[gd].buffer_size;
   if (buffer_size > 0) {
@@ -92,6 +98,10 @@ static int unix_socket_writer_open(int gd, pirate_channel_t *channels) {
       return rv;
     }
   }
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = inet_addr(channels[gd].pathname);
+  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
 
   for (;;) {
     rv = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
@@ -113,10 +123,10 @@ static int unix_socket_writer_open(int gd, pirate_channel_t *channels) {
   }
 }
 
-int pirate_unix_socket_open(int gd, int flags, pirate_channel_t *channels) {
+int pirate_tcp_socket_open(int gd, int flags, pirate_channel_t *channels) {
   if (flags == O_RDONLY) {
-    return unix_socket_reader_open(gd, channels);
+    return tcp_socket_reader_open(gd, channels);
   } else {
-    return unix_socket_writer_open(gd, channels);
+    return tcp_socket_writer_open(gd, channels);
   }
 }

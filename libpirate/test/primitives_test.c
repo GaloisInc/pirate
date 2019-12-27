@@ -214,6 +214,28 @@ SUITE(pirate_unix_sockets) {
     pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
 }
 
+SUITE(pirate_tcp_sockets) {
+    char pathname[PIRATE_LEN_NAME];
+    channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
+    pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, TCP_SOCKET);
+    pirate_set_pathname(HIGH_TO_LOW_CH, "127.0.0.1");
+    RUN_TEST(test_communication_pthread);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
+    pirate_set_pathname(HIGH_TO_LOW_CH, pathname);
+}
+
+SUITE(pirate_udp_sockets) {
+    char pathname[PIRATE_LEN_NAME];
+    channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
+    pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, UDP_SOCKET);
+    pirate_set_pathname(HIGH_TO_LOW_CH, "127.0.0.1");
+    RUN_TEST(test_communication_pthread);
+    pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
+    pirate_set_pathname(HIGH_TO_LOW_CH, pathname);
+}
+
 SUITE(pirate_pthread_shmem) {
     RUN_TEST(test_communication_pthread_shmem);
 }
@@ -245,6 +267,8 @@ int main(int argc, char **argv) {
     RUN_SUITE(pirate_one_process);
     RUN_SUITE(pirate_pthread);
     RUN_SUITE(pirate_unix_sockets);
+    RUN_SUITE(pirate_tcp_sockets);
+    RUN_SUITE(pirate_udp_sockets);
 #ifdef PIRATE_SHMEM_FEATURE
     RUN_SUITE(pirate_pthread_shmem);
 #endif

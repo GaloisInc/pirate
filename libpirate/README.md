@@ -62,6 +62,16 @@ The pathname to the character device must be specified using
 Unix domain socket communication. A unix socket file is
 created at `/tmp/gaps.channel.%d.sock` if one does not exist.
 
+### TCP_SOCKET type
+
+TCP socket communication. The port number is (26427 + d)
+where d is the gaps descriptor.
+
+### UDP_SOCKET type
+
+UDP socket communication. The port number is (26427 + d)
+where d is the gaps descriptor.
+
 ### SHMEM type
 
 Uses a POSIX shared memory region to communicate. Support
