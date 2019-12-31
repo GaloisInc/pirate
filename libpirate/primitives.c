@@ -21,6 +21,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include "primitives.h"
@@ -30,10 +31,12 @@
 #include "uio.h"
 #include "unix_socket.h"
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, NULL}};
+    {0, PIPE, NULL, 0, NULL, 0}};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, NULL}};
+    {0, PIPE, NULL, 0, NULL, 0}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -178,7 +181,10 @@ int pirate_close(int gd, int flags) {
 }
 
 ssize_t pirate_read(int gd, void *buf, size_t count) {
-  int fd;
+  int i, fd, iovcnt;
+  struct iovec iov[PIRATE_IOV_MAX];
+  unsigned char *iov_base;
+  size_t iov_len;
 
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
@@ -202,11 +208,31 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     return -1;
   }
 
-  return read(fd, buf, count);
+  if ((readers[gd].iov_len > 0) && (count > readers[gd].iov_len)) {
+    iovcnt = count / readers[gd].iov_len;
+    if ((count % readers[gd].iov_len) != 0) {
+      iovcnt += 1;
+    }
+    iovcnt = MIN(iovcnt, PIRATE_IOV_MAX);
+    iov_base = buf;
+    for (i = 0; i < iovcnt; i++) {
+      iov_len = MIN(count, readers[gd].iov_len);
+      iov[i].iov_base = iov_base;
+      iov[i].iov_len = iov_len;
+      iov_base += iov_len;
+      count -= iov_len;
+    }
+    return readv(fd, iov, iovcnt);
+  } else {
+    return read(fd, buf, count);
+  }
 }
 
 ssize_t pirate_write(int gd, const void *buf, size_t count) {
-  int fd;
+  int i, fd, iovcnt;
+  struct iovec iov[PIRATE_IOV_MAX];
+  unsigned char *iov_base;
+  size_t iov_len;
 
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;
@@ -230,7 +256,24 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return -1;
   }
 
-  return write(fd, buf, count);
+  if ((writers[gd].iov_len > 0) && (count > writers[gd].iov_len)) {
+    iovcnt = count / writers[gd].iov_len;
+    if ((count % writers[gd].iov_len) != 0) {
+      iovcnt += 1;
+    }
+    iovcnt = MIN(iovcnt, PIRATE_IOV_MAX);
+    iov_base = (void*) buf;
+    for (i = 0; i < iovcnt; i++) {
+      iov_len = MIN(count, writers[gd].iov_len);
+      iov[i].iov_base = iov_base;
+      iov[i].iov_len = iov_len;
+      iov_base += iov_len;
+      count -= iov_len;
+    }
+    return writev(fd, iov, iovcnt);
+  } else {
+    return write(fd, buf, count);
+  }
 }
 
 int pirate_fcntl0(int gd, int flags, int cmd) {
@@ -485,4 +528,22 @@ int pirate_get_buffer_size(int gd) {
     return -1;
   }
   return readers[gd].buffer_size;
+}
+
+int pirate_set_iov_length(int gd, size_t iov_len) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  readers[gd].iov_len = iov_len;
+  writers[gd].iov_len = iov_len;
+  return 0;
+}
+
+ssize_t pirate_get_iov_length(int gd) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  return readers[gd].iov_len;
 }

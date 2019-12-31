@@ -13,24 +13,28 @@ for i in range(0, 21):
     MESSAGE_SIZES.append(2 ** i)
 
 if len(sys.argv) < 3:
-    print("Usage: " + sys.argv[0] + " { lat | thr }" + " scenario-name [device1] [device2]")
+    print("Usage: " + sys.argv[0] + " { lat | thr | thr_vector }" + " scenario-name [device1] [device2]")
     exit(1)
 
 def main():
     suite = sys.argv[1]
     scenario = sys.argv[2]
 
-    if (suite != "lat") and (suite != "thr"):
-        print("Usage: " + sys.argv[0] + " [ lat | thr ]")
+    if not ((suite == "lat") or (suite != "thr") or (suite != "thr_vector")):
+        print("Usage: " + sys.argv[0] + " [ lat | thr | thr_vector ]")
         exit(1)
 
     if suite == "thr":
         filename = "primitives_bench_thr"
-        message_count = 100_000
+        message_count = 1_000_000
+        pattern = re.compile(r'average throughput: ([0-9.]+) MB/s')
+    elif suite == "thr_vector":
+        filename = "primitives_bench_thr_vector"
+        message_count = 1_000_000
         pattern = re.compile(r'average throughput: ([0-9.]+) MB/s')
     else:
         filename = "primitives_bench_lat"
-        message_count = 100_000
+        message_count = 1_000_000
         pattern = re.compile(r'average latency: (\d+) ns')
 
     for message_size in MESSAGE_SIZES:

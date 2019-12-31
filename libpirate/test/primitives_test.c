@@ -207,6 +207,14 @@ SUITE(pirate_pthread) {
     RUN_TEST(test_communication_pthread);
 }
 
+SUITE(pirate_readv_writev) {
+    pirate_set_iov_length(HIGH_TO_LOW_CH, 1);
+    pirate_set_iov_length(LOW_TO_HIGH_CH, 1);
+    RUN_TEST(test_communication_pthread);
+    pirate_set_iov_length(HIGH_TO_LOW_CH, 0);
+    pirate_set_iov_length(LOW_TO_HIGH_CH, 0);
+}
+
 SUITE(pirate_unix_sockets) {
     channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
     pirate_set_channel_type(HIGH_TO_LOW_CH, UNIX_SOCKET);
@@ -216,6 +224,7 @@ SUITE(pirate_unix_sockets) {
 
 SUITE(pirate_tcp_sockets) {
     char pathname[PIRATE_LEN_NAME];
+    memset(pathname, 0, PIRATE_LEN_NAME);
     channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
     pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
     pirate_set_channel_type(HIGH_TO_LOW_CH, TCP_SOCKET);
@@ -227,6 +236,7 @@ SUITE(pirate_tcp_sockets) {
 
 SUITE(pirate_udp_sockets) {
     char pathname[PIRATE_LEN_NAME];
+    memset(pathname, 0, PIRATE_LEN_NAME);
     channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
     pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
     pirate_set_channel_type(HIGH_TO_LOW_CH, UDP_SOCKET);
@@ -266,6 +276,7 @@ int main(int argc, char **argv) {
 
     RUN_SUITE(pirate_one_process);
     RUN_SUITE(pirate_pthread);
+    RUN_SUITE(pirate_readv_writev);
     RUN_SUITE(pirate_unix_sockets);
     RUN_SUITE(pirate_tcp_sockets);
     RUN_SUITE(pirate_udp_sockets);

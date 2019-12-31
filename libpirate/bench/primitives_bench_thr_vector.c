@@ -52,7 +52,7 @@ static int set_buffer_size(int gd, int size) {
 }
 
 int main(int argc, char *argv[]) {
-  int64_t i, size, bufsize, count, delta;
+  int64_t i, iter, size, bufsize, count, delta;
   int rv;
   char *buf;
   struct timespec start, stop;
@@ -86,8 +86,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  buf = malloc(size);
-  bufsize = 8 * size;
+  pirate_set_iov_length(1, size);
+  buf = malloc(size * PIRATE_IOV_MAX);
+  bufsize = 8 * size * PIRATE_IOV_MAX;
   socket_reset.l_onoff = 1;
   socket_reset.l_linger = 0;
   if (buf == NULL) {
@@ -132,8 +133,8 @@ int main(int argc, char *argv[]) {
       perror("clock_gettime");
       return 1;
     }
-    for (i = 0; i < count; i++) {
-      int nbytes = size;
+    for (i = 0; i < (count / PIRATE_IOV_MAX); i++) {
+      long nbytes = size * PIRATE_IOV_MAX;
       while (nbytes > 0) {
         if ((rv = pirate_read(1, buf, nbytes)) <= 0) {
           perror("pirate_read");
@@ -187,11 +188,12 @@ int main(int argc, char *argv[]) {
     default:
       break;
     }
+    iter = (count / PIRATE_IOV_MAX);
     if (pirate_get_channel_type(1) == UDP_SOCKET) {
-      count *= 3;
+      iter *= 3;
     }
-    for (i = 0; i < count; i++) {
-      int nbytes = size;
+    for (i = 0; i < iter; i++) {
+      long nbytes = size * PIRATE_IOV_MAX;
       while (nbytes > 0) {
         if ((rv = pirate_write(1, buf, nbytes)) <= 0) {
           if (pirate_get_channel_type(1) == UDP_SOCKET) {

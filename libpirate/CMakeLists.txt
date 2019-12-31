@@ -17,6 +17,8 @@ add_executable(primitives_test ${PIRATE_SOURCES} test/primitives_test.c test/shm
 
 add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
 
+add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
+
 add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat.c)
 
 add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
@@ -29,6 +31,7 @@ set_target_properties(pirateprims-shared PROPERTIES OUTPUT_NAME pirate CLEAN_DIR
 
 target_compile_options(primitives_test PRIVATE -Werror -Wall -Wextra -Wpedantic)
 target_compile_options(primitives_bench_thr PRIVATE -Werror -Wall -Wextra -Wpedantic)
+target_compile_options(primitives_bench_thr_vector PRIVATE -Werror -Wall -Wextra -Wpedantic)
 target_compile_options(primitives_bench_lat PRIVATE -Werror -Wall -Wextra -Wpedantic)
 target_compile_options(primitives_bench_lat_percentiles PRIVATE -Werror -Wall -Wextra -Wpedantic)
 
@@ -37,11 +40,13 @@ find_package(Threads REQUIRED)
 if(PIRATE_SHMEM_FEATURE)
 target_link_libraries(primitives_test rt Threads::Threads)
 target_link_libraries(primitives_bench_thr rt Threads::Threads)
+target_link_libraries(primitives_bench_thr_vector rt Threads::Threads)
 target_link_libraries(primitives_bench_lat rt Threads::Threads)
 target_link_libraries(primitives_bench_lat_percentiles rt Threads::Threads)
 else()
 target_link_libraries(primitives_test Threads::Threads)
 target_link_libraries(primitives_bench_thr Threads::Threads)
+target_link_libraries(primitives_bench_thr_vector Threads::Threads)
 target_link_libraries(primitives_bench_lat Threads::Threads)
 target_link_libraries(primitives_bench_lat_percentiles Threads::Threads)
 endif(PIRATE_SHMEM_FEATURE)

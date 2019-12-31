@@ -30,6 +30,8 @@
 
 #define PIRATE_NUM_CHANNELS 16
 
+#define PIRATE_IOV_MAX 16
+
 typedef enum {
   // The gaps channel is implemented using a FIFO special file
   // (a named pipe). The name of the pipe is formatted
@@ -71,7 +73,12 @@ typedef struct {
   char *pathname;               // optional device path
   int buffer_size;              // optional memory buffer size
   shmem_buffer_t *shmem_buffer; // optional shared memory buffer (SHMEM)
+  size_t iov_len;               // optional use readv/writev
 } pirate_channel_t;
+
+//
+// API
+//
 
 // Opens the gaps channel specified by the gaps descriptor.
 //
@@ -106,6 +113,10 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd, int flags);
 
+//
+// CONFIGURATION PARAMETERS
+//
+
 // Sets the channel type for the read and write ends
 // of the gaps descriptor. Must be configured before
 // the channel is opened. Returns zero on success.
@@ -139,6 +150,14 @@ int pirate_set_buffer_size(int gd, int buffer_size);
 // Gets the shared memory buffer size for the gaps channel.
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_buffer_size(int gd);
+
+// Sets the iovector length for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_iov_length(int gd, size_t iov_len);
+
+// Gets the iovector length for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+ssize_t pirate_get_iov_length(int gd);
 
 // Invoke fcntl() on the underlying file descriptor
 int pirate_fcntl0(int gd, int flags, int cmd);

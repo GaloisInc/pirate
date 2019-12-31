@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -12,6 +13,8 @@
 #include <unistd.h>
 
 #include "primitives.h"
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static int udp_socket_reader_open(int gd, pirate_channel_t *channels) {
   int fd, rv, err, enable, buffer_size;
@@ -106,7 +109,12 @@ int pirate_udp_socket_open(int gd, int flags, pirate_channel_t *channels) {
 
 ssize_t pirate_udp_socket_read(int gd, pirate_channel_t *readers, void *buf,
                                size_t count) {
-  int fd;
+  int i, rv, fd, vlen;
+  struct mmsghdr msgvec[PIRATE_IOV_MAX];
+  struct iovec iov[PIRATE_IOV_MAX];
+  unsigned char *iov_base;
+  size_t iov_len;
+  ssize_t numbytes = 0;
 
   fd = readers[gd].fd;
   if (fd <= 0) {
@@ -114,12 +122,47 @@ ssize_t pirate_udp_socket_read(int gd, pirate_channel_t *readers, void *buf,
     return -1;
   }
 
-  return recv(fd, buf, count, 0);
+
+  if ((readers[gd].iov_len > 0) && (count > readers[gd].iov_len)) {
+    vlen = count / readers[gd].iov_len;
+    if ((count % readers[gd].iov_len) != 0) {
+      vlen += 1;
+    }
+    vlen = MIN(vlen, PIRATE_IOV_MAX);
+    iov_base = buf;
+    memset(msgvec, 0, sizeof(msgvec));
+    for (i = 0; i < vlen; i++) {
+      iov_len = MIN(count, readers[gd].iov_len);
+      iov[i].iov_base = iov_base;
+      iov[i].iov_len = iov_len;
+      msgvec[i].msg_hdr.msg_name = NULL;
+      msgvec[i].msg_hdr.msg_namelen = 0;
+      msgvec[i].msg_hdr.msg_iov = &iov[i];
+      msgvec[i].msg_hdr.msg_iovlen = 1;
+      iov_base += iov_len;
+      count -= iov_len;
+    }
+    rv = recvmmsg(fd, msgvec, vlen, 0, NULL);
+    if (rv < 0) {
+      return rv;
+    }
+    for (i = 0; i < rv; i++) {
+      numbytes += iov[i].iov_len;
+    }
+    return numbytes;
+  } else {
+    return recv(fd, buf, count, 0);
+  }
 }
 
 ssize_t pirate_udp_socket_write(int gd, pirate_channel_t *writers,
                                 const void *buf, size_t count) {
-  int fd;
+  int i, rv, fd, vlen;
+  struct mmsghdr msgvec[PIRATE_IOV_MAX];
+  struct iovec iov[PIRATE_IOV_MAX];
+  unsigned char *iov_base;
+  size_t iov_len;
+  ssize_t numbytes = 0;
 
   fd = writers[gd].fd;
   if (fd <= 0) {
@@ -127,5 +170,34 @@ ssize_t pirate_udp_socket_write(int gd, pirate_channel_t *writers,
     return -1;
   }
 
-  return send(fd, buf, count, 0);
+  if ((writers[gd].iov_len > 0) && (count > writers[gd].iov_len)) {
+    vlen = count / writers[gd].iov_len;
+    if ((count % writers[gd].iov_len) != 0) {
+      vlen += 1;
+    }
+    vlen = MIN(vlen, PIRATE_IOV_MAX);
+    iov_base = (unsigned char*) buf;
+    memset(msgvec, 0, sizeof(msgvec));
+    for (i = 0; i < vlen; i++) {
+      iov_len = MIN(count, writers[gd].iov_len);
+      iov[i].iov_base = iov_base;
+      iov[i].iov_len = iov_len;
+      msgvec[i].msg_hdr.msg_name = NULL;
+      msgvec[i].msg_hdr.msg_namelen = 0;
+      msgvec[i].msg_hdr.msg_iov = &iov[i];
+      msgvec[i].msg_hdr.msg_iovlen = 1;
+      iov_base += iov_len;
+      count -= iov_len;
+    }
+    rv = sendmmsg(fd, msgvec, vlen, 0);
+    if (rv < 0) {
+      return rv;
+    }
+    for (i = 0; i < rv; i++) {
+      numbytes += iov[i].iov_len;
+    }
+    return numbytes;
+  } else {
+    return send(fd, buf, count, 0);
+  }
 }

@@ -10,6 +10,7 @@ simple_demo/*.o
 libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_bench_thr
+libpirate/primitives_bench_thr_vector
 libpirate/primitives_bench_lat
 libpirate/primitives_bench_lat_percentiles
 libpirate/primitives_test
