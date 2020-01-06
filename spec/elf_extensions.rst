@@ -14,7 +14,7 @@ the linker to emit separate executables for each enclave in a way that
 adheres to the annotations applied to the source code.
 
 For each enclave, we provide a name, used when specifying which
-enclaves to generate executables for; an entrypoint, in the form of
+enclaves to generate executables for; a main function, in the form of
 the index of a ``.symtab`` entry; and a list of capabilities the
 enclave offers.  For each symbol in ``.symtab``, we provide a list of
 required capabilities, and optionally, the enclave that is allowed to
@@ -39,8 +39,8 @@ so the ``sh_type`` fields in their section headers should be set to
 
 ``.gaps.enclaves``
     An array of ``Elf64_GAPS_enc`` listing the names, capabilities
-    and entrypoints of each enclave declared in the source file. The
-    first entry is unused and corresponds to ``ENC_UNDEF``.
+    and main functions of each enclave declared in the source file.
+    The first entry is unused and corresponds to ``ENC_UNDEF``.
 
 ``.gaps.symreqs``
     An array of ``Elf64_GAPS_req`` indexed parallel listing the
@@ -75,7 +75,7 @@ Structures
                 typedef struct {
                     Elf64_Addr enc_name;
                     Elf64_Word enc_cap;
-                    Elf64_Half enc_entry;
+                    Elf64_Half enc_main;
                     Elf64_Half enc_padding;
                 } Elf64_GAPS_enc;
 
@@ -87,9 +87,9 @@ Structures
     The starting index of a string of capability indices in
     ``.gaps.captab``, indicating capabilities for this enclave.
 
-``enc_entry``
-    The index of the entry in ``.symtab`` to be used as an entrypoint
-    for this enclave.
+``enc_main``
+    The index of the entry in ``.symtab`` to be used as the main
+    function for this enclave.
 
 .. code-block:: c
 
