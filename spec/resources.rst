@@ -135,7 +135,7 @@ implementing the application, proxy, and signing server, respectively. The
 application has a channel to the proxy, and the proxy has two (for
 illustration's sake) channels to the signing server.
 
-.. `trusted timestamp`_ timestamp_demo.rst
+.. `trusted timestamp`_: timestamp_demo.rst
 
 Further suppose we want a configuration where the application and the proxy
 run on the same machine. They communicate with each other using a Unix
