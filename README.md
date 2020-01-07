@@ -28,7 +28,9 @@ The build script for simple_demo includes an experiment that builds
 a single executable that contains both the low-side and high-side
 executables.
 
-### cusegaps
+### device drivers
+
+#### cusegaps
 
 Implements a character device driver with fifo (named pipe) semantics.
 Follows the semantics described in https://docs.google.com/document/d/12hvdts3zsxoWW4KoH26hjaovyZE2s0_LSm_vcw_KL3E/edit which is copied from
@@ -38,7 +40,7 @@ Implemented using the CUSE (character device in userspace) functionality
 that is available in the FUSE library (https://github.com/libfuse/libfuse).
 Communication is implemented using either TCP/IP sockets or named pipes.
 
-### process-vm-device
+#### process-vm-device
 
 This kernel module creates a character device. The character device allows
 one reader process and one writer process to communicate using the
@@ -46,8 +48,16 @@ one reader process and one writer process to communicate using the
 The data moves directly between the address spaces of the two processes,
 without passing through kernel space.
 
-### uio-device
+#### uio-device
 
 This kernel module creates a userspace IO device. The reader and writer
 processes communicate directly through an mmap shared memory region.
 The reader and writer do not issue `read()` and `write()` system calls.
+
+### platform-gaps
+
+The script [platform.py](/platform-gaps/platform.py) will combine several
+executables into a single executable. Each executable is associated with
+a unique identifier. The executables are encrypted using the associated
+unique identifier. When the resulting program is run, it will execute
+one of the input executables based on the matching unique identifier.
