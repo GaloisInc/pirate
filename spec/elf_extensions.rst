@@ -43,9 +43,9 @@ so the ``sh_type`` fields in their section headers should be set to
     The first entry is unused and corresponds to ``ENC_UNDEF``.
 
 ``.gaps.symreqs``
-    An array of ``Elf64_GAPS_req`` indexed parallel listing the
-    capabilities and enclave (if any) required by the
-    ``.symtab`` entry with the same index.
+    An array of ``Elf64_GAPS_req`` associating symbols with
+    specific required capabities (and/or) tied to specific
+    enclaves.
 
 ``.gaps.capabilities``
     An array of ``Elf64_GAPS_cap`` listing the capabilities defined
@@ -61,14 +61,29 @@ so the ``sh_type`` fields in their section headers should be set to
     of enclaves and capabilities.  Offset zero contains a null byte,
     to signify the empty string.
 
-[Note: Channels are still in the discussion phase, and highly subject to change.]
+``.gaps.res``
+    An array of ``Elf64_GAPS_res`` listing the resources to be managed
+    by GAPS in the object file.
 
-``.gaps.channels``
-    An array of ``Elf64_GAPS_channel`` listing the channels declared
-    in the source file.
+``.gaps.res.params``
+    An array of ``Elf64_GAPS_res_param`` values listing the parameters
+    for resources.  Parameters are a contiguous sequence of
+    ``Elf64_GAPS_res_param`` values terminated by a ``Elf64_GAPS_res_param`` struct
+    with an empty name (i.e., ``param_name = 0``).
+
+``.gaps.res.strtab``
+    A string table consisting of vector of zero-terminated strings to
+    hold the names of resource names and types along with resource
+    parameter names and values.  Offset zero contains a null byte, to
+    signify the empty string.
 
 Structures
 ----------
+
+``Elf64_GAPS_enc``
+==================
+
+Encodes information about an enclave
 
 .. code-block:: c
 
@@ -90,6 +105,34 @@ Structures
 ``enc_main``
     The index of the entry in ``.symtab`` to be used as the main
     function for this enclave.
+
+``Elf64_GAPS_cap``
+==================
+
+Encodes information about capabilities.
+
+.. code-block:: c
+
+                typedef struct {
+                    Elf64_Addr cap_name;
+                    Elf64_Word cap_parent;
+                    Elf64_Word cap_padding;
+                } Elf64_GAPS_cap;
+
+``cap_name``
+    The address of a string-table entry for the name of this
+    capability.
+
+``cap_parent``
+    If this entry represents an extended capability, then this stores
+    the index of the parent capability.  Otherwise, this should be set
+    to ``CAP_NULL``.
+
+``Elf64_GAPS_req``
+==================
+
+Encodes information about the capabilities and/or enclave
+attributes of a symbol.
 
 .. code-block:: c
 
@@ -113,69 +156,57 @@ Structures
 ``req_sym``
     The symtab index of the symbol with these requirements.
 
-.. code-block:: c
+``Elf64_GAPS_res``
+==================
 
-                typedef struct {
-                    Elf64_Addr cap_name;
-                    Elf64_Word cap_parent;
-                    Elf64_Word cap_padding;
-                } Elf64_GAPS_cap;
-
-``cap_name``
-    The address of a string-table entry for the name of this
-    capability.
-
-``cap_parent``
-    If this entry represents an extended capability, then this stores
-    the index of the parent capability.  Otherwise, this should be set
-    to ``CAP_NULL``.
-
-[Note: Channels are still in the discussion phase, and highly subject to change.]
+Encodes information about a PIRATE initialized resource
 
  .. code-block:: c
 
                 typedef struct {
-                    Elf64_Addr chan_initdata;
-                    Elf64_Word chan_source;
-                    Elf64_Word chan_sink;
-                } Elf64_GAPS_channel;
+                    Elf64_Word res_name;
+                    Elf64_Word res_type;
+                    Elf64_Word res_param;
+                    Elf64_Half res_sym;
+                    Elf64_Half res_pading;
+                } Elf64_GAPS_res;
 
-``chan_data``
-    A pointer to the blob of data needed to initialize the channel.
+``res_name``
+    The offset of a ``.gaps.res.strtab`` entry for the user-defined name
+    of the resource.
 
-``chan_source``
-    The index into ``.gaps.enclaves`` indicating the enclave
-    authorized to send on this channel.
+``res_type``
+    The offset of a ``.gaps.res.strtab`` entry for the type
+    of the resource.
 
-``chan_sink``
-    The index into ``.gaps.enclaves`` indicating the enclave
-    authorized to receive on this channel.
+``res_param``
+    The index into the ``.gaps.res.params`` array for the first
+    parameter for this resource.
 
-Global symbols
---------------
+``res_sym``
+    The index into ``.symtab`` identifying the variable
+    this resource is associated with.
 
-Executable ELFs linked by a GAPS-aware linker will define the
-following global symbols:
+``Elf64_GAPS_res_param``
+========================
 
-.. code-block:: c
+Encodes information about a parameter for a PIRATE initialized resource.
 
-                void **__gaps_receive_channels;
-                void **__gaps_send_channels;
+ .. code-block:: c
 
-``__gaps_receive_channels``
-    A ``NULL``-terminated array of pointers to blobs of initialization
-    data for each receive channel the executable's enclave is
-    authorized to access.
+                typedef struct {
+                    Elf64_Word param_name;
+                    Elf64_Word param_value;
+                } Elf64_GAPS_res_param;
 
-``__gaps_send_channels``
-    A ``NULL``-terminated array of pointers to blobs of initialization
-    data for each send channel the executable's enclave is authorized
-    to access.
+``param_name``
+    The offset of a ``.gaps.res.strtab`` entry for the name
+    of the resource parameter.  If this is ``0``, then this
+    terminates the parameter list for the current resource.
 
-A GAPS-aware linker is responsible for populating these from
-``.gaps.channels``. Meanwhile, the GAPS runtime will define a
-constructor in ``.init`` that references these global symbols to
-initialize all send and receive channels.
+``param_value``
+    The offset of a ``.gaps.res.strtab`` entry for the value of
+    of the resource parameter.
 
 Linking Examples
 ----------------
