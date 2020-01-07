@@ -117,7 +117,7 @@ An ``fd_channel`` object has the following fields:
     ``type`` is not ``serial``.
 
 Example
-~~~~~~~
+=======
 
 Suppose we have a trusted timestamp application separated into three
 executables: tts_app, tts_proxy, and tts_signserv (collectively called tts),
@@ -129,9 +129,7 @@ Further suppose we want a configuration where the application and the proxy
 run on the same machine. They communicate with each other using a Unix
 socket, and with the signing server using a network socket for one channel and
 a serial device for the other. Graphically, the configuration looks like as
-follows:
-
-::
+follows::
 
     +-----------------------------------+ +-------------------+
     | OS 1                              | | OS 2              |
