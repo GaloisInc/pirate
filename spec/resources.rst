@@ -129,13 +129,13 @@ An ``fd_channel`` object has the following fields:
 Example
 =======
 
-Suppose we have a |trusted timestamp| application separated into three
+Suppose we have a `trusted timestamp`_ application separated into three
 executables: tts_app, tts_proxy, and tts_signserv (collectively called tts),
 implementing the application, proxy, and signing server, respectively. The
 application has a channel to the proxy, and the proxy has two (for
 illustration's sake) channels to the signing server.
 
-.. |trusted timestamp| timestamp_demo.rst
+.. `trusted timestamp`_ timestamp_demo.rst
 
 Further suppose we want a configuration where the application and the proxy
 run on the same machine. They communicate with each other using a Unix
