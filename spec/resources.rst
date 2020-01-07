@@ -72,13 +72,16 @@ objects, each of which defines an executable to run. The ``resources`` key is
 an object with a key for each kind of resource. [Note: Currently, the only key
 is ``fd_channels``.]
 
-``executables`` A list of ``executable`` objects.
+``executables``
+    A list of ``executable`` objects.
 
-``resources`` An object, with a key for each kind of resource.
+``resources``
+    An object, with a key for each kind of resource.
 
 An ``executable`` object has the following fields:
 
-``path`` The path to the executable. This may be an absolute path, or it may
+``path``
+    The path to the executable. This may be an absolute path, or it may
     be relative to the location of the config file.
 
 [Note: Although ``path`` is the only field here at present, in the future, we
@@ -88,42 +91,51 @@ activation for some executables.]
 
 A ``resources`` object has the following fields:
 
-``fd_channels`` A list of ``fd_channel`` objects with run-time configuration
+``fd_channels``
+    A list of ``fd_channel`` objects with run-time configuration
     for the channels specified in the executables.
 
 An ``fd_channel`` object has the following fields:
 
-``name`` The user-defined name of the channel. This should match the name the
+``name``
+    The user-defined name of the channel. This should match the name the
     user gave the channel in source-file annotations.
 
-``type`` Permissible types are ``socket`` for a network socket,
+``type``
+    Permissible types are ``socket`` for a network socket,
     ``unix_socket`` for a Unix socket, and ``serial`` for a serial device.
 
-``path`` If ``type`` is ``unix_socket``, this is the filesystem path to use
+``path``
+    If ``type`` is ``unix_socket``, this is the filesystem path to use
     for the socket. It will be created if it does not exist. If ``type`` is
     ``serial``, this is the path to the serial device. It is an error to
     include this key if ``type`` is ``socket``.
 
-``local`` The local address to bind to for network sockets, in the form
+``local``
+    The local address to bind to for network sockets, in the form
     ``<ip>:<port>``. It is an error to include this key if ``type`` is not
     ``socket``.
 
-``remote`` The remote address to connect to for network sockets, in the form
+``remote``
+    The remote address to connect to for network sockets, in the form
     ``<ip>:<port>``. It is an error to include this key if ``type`` is not
     ``socket``.
 
-``rate`` The baud rate for serial channels. This may be omitted, in which case
+``rate``
+    The baud rate for serial channels. This may be omitted, in which case
     a default rate of 9600 will be used. It is an error to include this key if
     ``type`` is not ``serial``.
 
 Example
 =======
 
-Suppose we have a trusted timestamp application separated into three
+Suppose we have a |trusted timestamp| application separated into three
 executables: tts_app, tts_proxy, and tts_signserv (collectively called tts),
 implementing the application, proxy, and signing server, respectively. The
 application has a channel to the proxy, and the proxy has two (for
 illustration's sake) channels to the signing server.
+
+.. |trusted timestamp| timestamp_demo.rst
 
 Further suppose we want a configuration where the application and the proxy
 run on the same machine. They communicate with each other using a Unix
