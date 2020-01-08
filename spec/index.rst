@@ -3,25 +3,29 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-The Pirate C and C++ Extensions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Pirate Framework
+^^^^^^^^^^^^^^^^^^^^
 
 Overview
 ========
 
-The Pirate C and C++ extensions allow developers to partition their
+The Pirate framework allow developers to partition their
 software into a set of software enclaves.  These enclaves can
-communicate with each other using unidirectional communication
-channels, and can be mapped to different execution environments that
-may provide stronger isolation and integrity guarantees than
-traditional operating system process or hypervisor VM guarantees.
-This provides a higher level of assurance that the runtime maintains
-confidentiality and integrity requirements than traditional
-architectures.  Our approach allows developers to use attributes to
-declarare enclaves and channels in the source code that can then be
-leveraged by the build process to map these virtual enclaves to
-hardware architectures tailored to the application security and
-performance requirements.
+communicate with each other using communication channels, and can be
+initialized to run in different execution environments that may
+provide strong isolation and integrity guarantees.  This provides a
+higher level of assurance that the runtime maintains confidentiality
+and integrity requirements than traditional architectures.  Our
+approach allows developers to use attributes to declarare enclaves and
+channels in the source code that can then be leveraged by the build
+process to map these virtual enclaves to hardware architectures
+tailored to the application security and performance requirements.
+
+The Pirate framework consists of language extensions to annotate
+programs, compiler extensions to build partitioned executables, a
+runtime application launcher to start and configure partitoned
+executables, and finally a set of developer support tools to inspect
+Pirate annotations and verify applications conform with policies.
 
 In addition to the enclave annotations, our extensions can attach
 attributes to declarations in the source code.  These attributes will
@@ -48,7 +52,6 @@ technologies developers or system admistrators will have the ability
 to insert transformations such as filters between enclaves without
 changing the application logic.
 
-
 An extensible attribute system will be provided so that the developers
 can annotate that environment requirements.  For example, the code may
 require specific features are available in the hardware prior to
@@ -59,7 +62,7 @@ available in the system during the application build process, or
 during deployment for software designed to run in multiple
 environments.
 
-The PIRATE language extensions are designed to facilitate the
+The Pirate language extensions are designed to facilitate the
 development of multi-enclave systems via common interfaces and modest
 compiler extensions to support annotations.  These annotations will
 not prevent buffer overflows, return-oriented-programming exploits or
@@ -133,5 +136,6 @@ TODO: Refine this into prose
    :caption: Contents:
 
    code_annotations
+   resources
    building_applications
    elf_extensions
