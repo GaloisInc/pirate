@@ -84,9 +84,17 @@ An ``executable`` object has the following fields:
     The path to the executable. This may be an absolute path, or it may
     be relative to the location of the config file.
 
-[Note: Although ``path`` is the only field here at present, in the future, we
-could use other fields to specify how the executable should be run, e.g.,
-which user it should run as. We could even have systemd-style socket
+``arguments``
+    A list of strings to pass to the executable as positional arguments.
+    This key may be omitted if no arguments need to be passed.
+
+``environment``
+    A set of key-value pairs to add to the executable's environment. This
+    key may be omitted if no environment variables are needed.
+
+[Note: Although these are the only fields here at present, in the future,
+we could use other fields to specify how the executable should be run,
+e.g., which user it should run as. We could even have systemd-style socket
 activation for some executables.]
 
 A ``resources`` object has the following fields:
@@ -157,7 +165,11 @@ The configuration file ``os_1.yml`` might look like this:
 
     executables:
       - path: tts_app
+        arguments: ["--flag1", "--flag2"]
       - path: tts_proxy
+        environment:
+          VAR1: value1
+          VAR2: value2
     resources:
       fd_channels:
         - name: app_to_proxy
