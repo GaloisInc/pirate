@@ -1,5 +1,5 @@
-Code Annotations
-^^^^^^^^^^^^^^^^
+Enclaves and Capabilities
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The PIRATE enclave capability annotations are intended to help
 developers partition complex applications into a set of individual

@@ -19,8 +19,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'Pirate Code'
-copyright = u'2019, Galois, Inc.'
+project = u'Pirate'
+copyright = u'2019-2020, Galois, Inc.'
 author = u'Joe Hendrix'
 
 # The short X.Y version

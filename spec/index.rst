@@ -1,45 +1,36 @@
-.. Pirate documentation master file, created by
-   sphinx-quickstart on Mon Sep 16 21:42:19 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 The Pirate Framework
 ^^^^^^^^^^^^^^^^^^^^
 
 Overview
 ========
 
-The Pirate framework allow developers to partition their
-software into a set of software enclaves.  These enclaves can
-communicate with each other using communication channels, and can be
-initialized to run in different execution environments that may
-provide strong isolation and integrity guarantees.  This provides a
-higher level of assurance that the runtime maintains confidentiality
-and integrity requirements than traditional architectures.  Our
-approach allows developers to use attributes to declarare enclaves and
-channels in the source code that can then be leveraged by the build
-process to map these virtual enclaves to hardware architectures
-tailored to the application security and performance requirements.
+Pirate is a set of technologies designed to let developers build
+applications and systems out of a set of services that communicate via
+channels.  These services will be sandboxed to ensure they can
+communicate using approved channels, but not unintentionally interfere
+with each other.  Furthermore, we want to facilitate the development
+of system architectures that are resilient to attacks and can still
+prevent data breaches or loss of integrity even if some of the
+underlying services are compromised.
 
-The Pirate framework consists of language extensions to annotate
-programs, compiler extensions to build partitioned executables, a
-runtime application launcher to start and configure partitoned
-executables, and finally a set of developer support tools to inspect
-Pirate annotations and verify applications conform with policies.
+The key technologies that are currently part of Pirate include:
 
-In addition to the enclave annotations, our extensions can attach
-attributes to declarations in the source code.  These attributes will
-be collected during the build process and collected into the final
-binary.  Attributes will initially be used for defining and
-associating sensitivity to levels to declarations in the program, and
-the language extensions will allow one to define custom sensitivity
-levels and inclusion relationships between sensitivity levels.  One
-can then check the sensitivity levels of artifacts within the binary
-prior to deploying it on a system.  This will not prevent users from
-intentionslly mislabeling sensitive information in the code as
-non-sensitive, but will prevent the build system from inadverently
-incorporating sensitive code or data on systems not approved for
-access to information with that level of sensitivity.
+ * A set of attributes and pragmas to associate code with individual
+   enclaves that host services, and extensions to the LLVM compilation
+   and linking tools to support these annotations.
+
+ * A lightweight resource management framework that lets developers
+   export variables associated with externally visible enclave
+   resources such as communication channels, and an application
+   launcher that initializes these resources to a particular platform
+   configuration based on the ultimate execution environment.
+
+ * A communication channel library that abstracts over different
+   hardware communication channels.
+
+In addition to these core components, we plan to extend development
+tools, debugging tools, and IDEs to better support developers of
+Pirate applications.
 
 This technology should be usable across multiple enclave technologies,
 and make it easy for system developers to change how multi-enclave
@@ -72,70 +63,38 @@ computing enclaves that may be isolated from each other via physical
 isolation boundaries, virtual machines or processor-specific
 technologies such as Intel SGX and ARM TrustZone.
 
-We should note that the current extensions in this document are
-orthogonal to writing software guards that check information prior to
-sending it over a channel.  Application developers are encouraged to
-implement such checks as needed, but should be aware that our system
-does not change the the fundamental lack of memory safety in C and C++
-applications.  Adversaries may be able exploit bugs in the application
-or supporting libraries to tamper with data and cause checks to
-operate incorrectly, or even inject their own functionality into the
-program and bypass checks.  Application developers can mitigate
-against these attacks through a variety of other means such as use of
-safe languages, compiler-inserted protections, and secure development
-practices.
-
-We envision that GAPS-enabled architectures will provide manifests
-that provide constraints on how the software-defined enclaves may be
-mapped to physical components of the platform.  The details still need
-to be worked out, but we anticipate this will include information
-about each processor architecture available on the platform, what
-sensitivity levels are allowed in enclaves compiled to a processor,
-and what unidirectional channels are available.  We anticipate that
-for many applications, there will be a need to map multiple separate
-enclaves to the same processor, map multiple channels to the same
-hardware channel, and perhaps allow one processor to control the
-startup and shutdown of enclaves on other processors.  When multiple
-enclaves and channels are mapped to the same underlying hardware, the
-isolation guarantees will lack physical guarantees, and so we will
-need mechanisms to ensure physical separation is achieved when
-required.
-
-Programming Model
+Pirate Workflow
 -----------------
 
-TODO: Refine this into prose
+The process for developing applications using Pirate is similar to
+existing methodologies for developing standalone applications, but with
+baddition that multiple executables may be produced from the same set of
+source files, and executables may be launched from a configuration
+file that simultaneously launches and configures several executables.
 
-* GAPS systems are partitioned into one or more enclaves
-  that communicate using unidirectional channels.
+As an example, we show below a simple Pirate system consisting of three
+enclaves running in two execution environments.  In this diagram, the
+three enclaves correspond to a device driver that reads from a sensor,
+a filter that processes sensor data to compute a state estimation, and
+a server process on a separate machine that may further aggregrate
+state estimates.  Although separate runtime components, there may
+be considerable overlap in the underlying libraries used to implement
+each component.
 
-* Enclaves and channels are named via attributes in the
-  code so that they may be mapped during linking to specific
-  GAPS hardware features.
 
-* Sensitive data is labeled via source annotations as well
-  so that the compiler can ensure that sensitive code and
-  data values in the source is not included in binaries
-  generated for processors not approved for access to that
-  data.
+.. figure:: architecture.png
+  :width: 1000
+  :alt: Compilation Toolchain Overview
 
-* The annotations language may be attached to specific declarations in
-  a fine-grained way so that developers can identify as specifically
-  as possible the exact information needing protection.
-
-* The annotations language allows users to develop their own
-  sensitivity levels rather than building in a fixed vocabulary.
-
-* Sensitivity levels do not imply a particular layout or TA1
-  board configuration, but rather describe requirements on
-  the compiled target that code is deployed to.
-
+In the rest of this document,
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   code_annotations
+   enclave_overview
    resources
    building_applications
    elf_extensions
+   unidirectional_channels
+   timestamp_demo

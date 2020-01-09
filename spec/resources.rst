@@ -1,16 +1,15 @@
-Enclave Resources
+Managed Resources
 =================
 
-The Pirate framework simplifies the initialization and configuration
-of communication channels and other resources available to Enclaves.
-It does this by offering language extensions that emit externally
-visible information about such resources, and a custom program launch
-facility that can configure resources shared across enclaves within
-the same execution environment.  Thus the Pirate runtime provides
-dependency injection facilities tailored to the needs of multi-enclave
-execution, and thus makes it easier for one to configure an
-application for a particular runtime environment without rebuilding
-from source.
+Pirate provides facilities for the setting up communication channels
+and other resources prior to enclave execution.  This is done by
+defining resources in the program source files, and separately
+defining a application configuration file that describes how those
+resources are configured for a particular environment.  This allows
+the application or library developer to be agnostic to how
+communication channels and other resources are ultimately configured,
+and allows integrators with the ability to reconfigure an application
+with needing to modify the program source.
 
 Inter-enclave communication chanenls are the most common resource that
 the Pirate framework will manage and the focus of our initial
@@ -206,7 +205,7 @@ source code:
 
 .. code-block:: c
 
-   const int clockFD
+   const int clockGCD
    __attribute__((gaps_resource(channel_clock, gaps_channel)));
 
 File Descriptor Channels
@@ -232,7 +231,8 @@ The following attributes may appear in the source file annotations.
 
 ``unidirectional``
    This is an attribute indicating if the POSIX unidirectional
-   constraints is allowed.   Valid options are ``true`` and ``false``.
+   semantics in :doc:`unidirectional_channels` are allowed.
+   Valid options are ``true`` and ``false``.
    If this attribute is omitted, it is assumed ``unidirectional=false``.
 
 GAPS Channels
