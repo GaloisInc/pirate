@@ -70,6 +70,8 @@ int main(int argc, char *argv[]) {
   if (argc >= 4) {
     if (strncmp(argv[3], "shmem", 6) == 0) {
       pirate_set_channel_type(1, SHMEM);
+    } else if (strncmp(argv[3], "shmem-udp", 10) == 0) {
+      pirate_set_channel_type(1, SHMEM_UDP);
     } else if (strncmp(argv[3], "unix", 5) == 0) {
       pirate_set_channel_type(1, UNIX_SOCKET);
     } else if (strncmp(argv[3], "uio", 4) == 0) {
@@ -89,6 +91,8 @@ int main(int argc, char *argv[]) {
   if (argc >= 5) {
     if (strncmp(argv[4], "shmem", 6) == 0) {
       pirate_set_channel_type(2, SHMEM);
+    } else if (strncmp(argv[4], "shmem-udp", 10) == 0) {
+      pirate_set_channel_type(2, SHMEM_UDP);
     } else if (strncmp(argv[4], "unix", 5) == 0) {
       pirate_set_channel_type(2, UNIX_SOCKET);
     } else if (strncmp(argv[4], "uio", 4) == 0) {
@@ -105,13 +109,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  buf = malloc(size);
+  buf = calloc(size, 1);
   bufsize = 8 * size;
   socket_reset.l_onoff = 1;
   socket_reset.l_linger = 0;
   enable = 1;
   if (buf == NULL) {
-    perror("malloc");
+    perror("calloc");
     return 1;
   }
 
@@ -121,6 +125,14 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     if (set_buffer_size(2, bufsize) < 0) {
+      return 1;
+    }
+    // ignored by everything except SHMEM_UDP
+    if (pirate_set_packet_size(1, size) < 0) {
+      return 1;
+    }
+    // ignored by everything except SHMEM_UDP
+    if (pirate_set_packet_size(2, size) < 0) {
       return 1;
     }
     if (pirate_open(1, O_RDONLY) < 0) {
@@ -214,6 +226,14 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     if (set_buffer_size(2, bufsize) < 0) {
+      return 1;
+    }
+    // ignored by everything except SHMEM_UDP
+    if (pirate_set_packet_size(1, size) < 0) {
+      return 1;
+    }
+    // ignored by everything except SHMEM_UDP
+    if (pirate_set_packet_size(2, size) < 0) {
       return 1;
     }
     if (pirate_open(1, O_WRONLY) < 0) {

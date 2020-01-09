@@ -60,6 +60,12 @@ typedef enum {
   // This feature is disabled by default. It must be enabled
   // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
   SHMEM,
+  // The gaps channel is implemented using UDP packets
+  // transmitted over shared memory. For measuring the
+  // cost of creating UDP packets in userspace.
+  // This feature is disabled by default. It must be enabled
+  // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
+  SHMEM_UDP,
   // The gaps channel is implemented using userspace io.
   // The gaps uio device driver must be loaded.
   UIO_DEVICE,
@@ -72,6 +78,8 @@ typedef struct {
   channel_t channel;            // channel type
   char *pathname;               // optional device path
   int buffer_size;              // optional memory buffer size
+  size_t packet_size;           // optional packet size (SHMEM_UDP)
+  size_t packet_count;          // optional packet count (SHMEM_UDP)
   shmem_buffer_t *shmem_buffer; // optional shared memory buffer (SHMEM)
   size_t iov_len;               // optional use readv/writev
 } pirate_channel_t;
@@ -140,6 +148,36 @@ int pirate_set_pathname(int gd, char *pathname);
 // bytes allocated at pathname. Returns zero on success.
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_pathname(int gd, char *pathname);
+
+// Sets the memory buffer size for the gaps channel.
+// Only valid if the channel type is SHMEM or UNIX_SOCKET.
+// If zero then SHMEM will allocate DEFAULT_SHMEM_BUFFER bytes.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_buffer_size(int gd, int buffer_size);
+
+// Gets the shared memory buffer size for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_get_buffer_size(int gd);
+
+// Sets the packet size for the gaps channel.
+// Only valid if the channel type is SHMEM_UDP.
+// If zero then SHMEM will allocate DEFAULT_PACKET_SIZE packet size.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_packet_size(int gd, size_t packet_size);
+
+// Gets the packet size for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+size_t pirate_get_packet_size(int gd);
+
+// Sets the packet count for the gaps channel buffer.
+// Only valid if the channel type is SHMEM_UDP.
+// If zero then SHMEM will allocate DEFAULT_PACKET_COUNT packet size.
+// On error -1 is returned, and errno is set appropriately.
+int pirate_set_packet_count(int gd, size_t packet_count);
+
+// Gets the packet count for the gaps channel.
+// On error -1 is returned, and errno is set appropriately.
+size_t pirate_get_packet_count(int gd);
 
 // Sets the memory buffer size for the gaps channel.
 // Only valid if the channel type is SHMEM or UNIX_SOCKET.

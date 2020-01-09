@@ -26,6 +26,7 @@
 
 #include "primitives.h"
 #include "shmem_interface.h"
+#include "shmem_udp_interface.h"
 #include "tcp_socket.h"
 #include "udp_socket.h"
 #include "uio.h"
@@ -34,9 +35,9 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, NULL, 0}};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, NULL, 0}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -118,6 +119,8 @@ int pirate_open(int gd, int flags) {
     return gd;
   case SHMEM:
     return pirate_shmem_open(gd, flags, channels);
+  case SHMEM_UDP:
+    return pirate_shmem_udp_open(gd, flags, channels);
   case UIO_DEVICE:
     fd = uio_buffer_open(gd, flags, channels);
     if (fd < 0) {
@@ -162,6 +165,8 @@ int pirate_close(int gd, int flags) {
   switch (channels[gd].channel) {
   case SHMEM:
     return pirate_shmem_close(gd, channels);
+  case SHMEM_UDP:
+    return pirate_shmem_udp_close(gd, channels);
   case UIO_DEVICE:
     uio_buffer_close(flags, channels[gd].shmem_buffer);
     channels[gd].shmem_buffer = NULL;
@@ -194,6 +199,8 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
   switch (readers[gd].channel) {
   case SHMEM:
     return pirate_shmem_read(readers[gd].shmem_buffer, buf, count);
+  case SHMEM_UDP:
+    return pirate_shmem_udp_read(readers[gd].shmem_buffer, buf, count);
   case UIO_DEVICE:
     return uio_buffer_read(readers[gd].shmem_buffer, buf, count);
   case UDP_SOCKET:
@@ -242,6 +249,8 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
   switch (writers[gd].channel) {
   case SHMEM:
     return pirate_shmem_write(writers[gd].shmem_buffer, buf, count);
+  case SHMEM_UDP:
+    return pirate_shmem_udp_write(writers[gd].shmem_buffer, buf, count);
   case UIO_DEVICE:
     return uio_buffer_write(writers[gd].shmem_buffer, buf, count);
   case UDP_SOCKET:
@@ -528,6 +537,42 @@ int pirate_get_buffer_size(int gd) {
     return -1;
   }
   return readers[gd].buffer_size;
+}
+
+int pirate_set_packet_size(int gd, size_t packet_size) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  readers[gd].packet_size = packet_size;
+  writers[gd].packet_size = packet_size;
+  return 0;
+}
+
+size_t pirate_get_packet_size(int gd) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  return readers[gd].packet_size;
+}
+
+int pirate_set_packet_count(int gd, size_t packet_count) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  readers[gd].packet_count = packet_count;
+  writers[gd].packet_count = packet_count;
+  return 0;
+}
+
+size_t pirate_get_packet_count(int gd) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  return readers[gd].packet_count;
 }
 
 int pirate_set_iov_length(int gd, size_t iov_len) {

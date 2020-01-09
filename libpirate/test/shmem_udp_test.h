@@ -13,29 +13,11 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __SHMEM_BUFFER_H
-#define __SHMEM_BUFFER_H
+#ifndef __PRIMITIVES_TEST_SHMEM_UDP_H
+#define __PRIMITIVES_TEST_SHMEM_UDP_H
 
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdatomic.h>
-#include <stdint.h>
-#include <sys/types.h>
+#include "greatest.h"
 
-typedef struct {
-  atomic_uint_fast64_t position;
-  atomic_uint_fast64_t init;
-  atomic_uint_fast64_t reader_pid;
-  atomic_uint_fast64_t writer_pid;
-  sem_t reader_open_wait;
-  sem_t writer_open_wait;
-  pthread_mutex_t mutex;
-  pthread_cond_t is_not_empty;
-  pthread_cond_t is_not_full;
-  int size;
-  size_t packet_size;
-  size_t packet_count;
-  unsigned char buffer[];
-} shmem_buffer_t;
+enum greatest_test_res test_communication_pthread_shmem_udp();
 
 #endif

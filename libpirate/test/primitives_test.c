@@ -26,6 +26,7 @@
 #include "greatest.h"
 #include "primitives.h"
 #include "shmem_test.h"
+#include "shmem_udp_test.h"
 #include "uio_test.h"
 
 #define HIGH_TEST_CH    0
@@ -250,6 +251,10 @@ SUITE(pirate_pthread_shmem) {
     RUN_TEST(test_communication_pthread_shmem);
 }
 
+SUITE(pirate_pthread_shmem_udp) {
+    RUN_TEST(test_communication_pthread_shmem_udp);
+}
+
 SUITE(pirate_pthread_uio) {
     RUN_TEST(test_communication_pthread_uio);
 }
@@ -282,6 +287,7 @@ int main(int argc, char **argv) {
     RUN_SUITE(pirate_udp_sockets);
 #ifdef PIRATE_SHMEM_FEATURE
     RUN_SUITE(pirate_pthread_shmem);
+    RUN_SUITE(pirate_pthread_shmem_udp);
 #endif
     RUN_SUITE(pirate_pthread_uio);
 
