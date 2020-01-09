@@ -11,7 +11,7 @@ communication channels and other resources are ultimately configured,
 and allows integrators with the ability to reconfigure an application
 with needing to modify the program source.
 
-Inter-enclave communication chanenls are the most common resource that
+Inter-enclave communication channels are the most common resource that
 the Pirate framework will manage and the focus of our initial
 demonstration system.  However, we envision this framework will be
 useful for initializing other types of information, and plan to
@@ -175,7 +175,7 @@ The configuration file ``os_1.yml`` might look like this:
 Channel Resources
 -----------------
 
-Channels represent communiction channels between enclaves or between
+Channels represent communication channels between enclaves or between
 an enclave and the outside world.  In Pirate, we are careful to
 distinguish between the underlying message transport mechanism and the
 API used by the Enclave to send and receive messages.  We expect that
