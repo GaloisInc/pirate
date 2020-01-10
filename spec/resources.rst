@@ -161,15 +161,13 @@ The configuration file ``os_1.yml`` might look like this:
     resources:
       - name: app_to_proxy
         type: unix_socket
-        path: /var/run/tts/app_to_proxy
+        path: /var/run/tts/app_to_proxy.sock
       - name: proxy_to_signserv_1
-        type: socket
-        local: 10.0.0.1:9001
-        remote: 10.0.0.2:9002
+        type: udp_socket
+        path: 10.0.0.2:9002
       - name: proxy_to_signserv_2
-        type: serial
+        type: device
         path: /dev/ttyS0
-        rate: 115200
 
 
 Channel Resources
@@ -224,11 +222,6 @@ The following attributes may appear in the source file annotations.
    for sending or receiving on a channel.  Valid options are ``readonly``,
    ``writeonly``, and ``readwrite``.
 
-``mode``
-   This attribute affects whether the channel is viewed as individual
-   datagrams or a contiguous stream of bytes.  Valid options are ``datagram``
-   and ``stream``.
-
 ``unidirectional``
    This is an attribute indicating if the POSIX unidirectional
    semantics in :doc:`unidirectional_channels` are allowed.
@@ -252,26 +245,69 @@ fields:
     The user-defined name of the resource.
 
 ``type``
-    Permissible types are ``socket`` for a network socket,
-    ``unix_socket`` for a Unix socket, and ``serial`` for a serial device.
+    Permissible types are as follows:
+
+    ``tcp_socket``
+        A TCP socket channel. A remote hostname or IP address and port must
+        be provided using the ``path`` field, in the form
+        ``<hostname>:<port>``. The port is ignored with the ``gaps_channel``
+        resource type and may be omitted.
+
+    ``udp_socket``
+        A UDP socket channel. A remote hostname or IP address and port must
+        be provided using the ``path`` field, in the form
+        ``<hostname>:<port>``. The port is ignored with the ``gaps_channel``
+        resource type and may be omitted.
+
+    ``unix_socket``
+        A Unix socket channel. A filepath may be provided using the
+        ``path`` field.
+
+    ``pipe``
+        A Linux named-pipe channel. A filepath may be provided using the
+        ``path`` field.
+
+    ``device``
+        A character-device channel. A device path must be provided using
+        the ``path`` field.
+
+    ``shmem``
+        A POSIX shared-memory libpirate channel, intended for benchmarking.
+        The size of the shared-memory buffer may be specified using the
+        ``buffer`` field. See the libpirate documentation for more
+        information.
+
+    ``uio_device``
+        A Userspace IO shared-memory channel. See the libpirate
+        documentation for more information.
 
 ``path``
-    If ``type`` is ``unix_socket``, this is the filesystem path to use
-    for the socket. It will be created if it does not exist. If ``type`` is
-    ``serial``, this is the path to the serial device. It is an error to
-    include this key if ``type`` is ``socket``.
+    The contents of this field differs depending on the ``type`` field as
+    follows:
 
-``local``
-    The local address to bind to for network sockets, in the form
-    ``<ip>:<port>``. It is an error to include this key if ``type`` is not
-    ``socket``.
+    ``tcp_socket``, ``udp_socket``
+        A hostname/IP and port pair, e.g., ``10.0.0.1:9001``. The port is
+        ignored with the ``gaps_channel`` resource type and may be omitted.
 
-``remote``
-    The remote address to connect to for network sockets, in the form
-    ``<ip>:<port>``. It is an error to include this key if ``type`` is not
-    ``socket``.
+    ``unix_socket``, ``path``
+        The path to the file to be created or used. This may be an absolute
+        path, or relative to the location of the configuration file.
+
+    ``device``
+        The path to the device to be used.
+
+``buffer``
+    The size of the shared-memory buffer for channels of type ``shmem`` or
+    the buffer size for channels of type ``unix_socket``. It is an error to
+    include this field for any other type of device.
+
+``packet_size``
+    The size of a packet for channels of type ``shmem``. It is an error to
+    include this field for any other type of device.
+
+``iov_length``
+    The length of an iovector for libpirate channels.
 
 ``rate``
     The baud rate for serial channels. This may be omitted, in which case
-    a default rate of 9600 will be used. It is an error to include this key if
-    ``type`` is not ``serial``.
+    a default rate of 9600 will be used.

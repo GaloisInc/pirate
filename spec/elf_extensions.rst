@@ -120,7 +120,7 @@ Encodes information about capabilities.
                 } Elf64_GAPS_cap;
 
 ``cap_name``
-    The address of a string-table entry for the name of this
+    The offset of a ``.gaps.strtab`` entry for the name of this
     capability.
 
 ``cap_parent``
@@ -144,7 +144,7 @@ attributes of a symbol.
                 } Elf64_GAPS_req;
 
 ``req_cap``
-    The address of a string of capability indices in ``.gaps.captab``
+    The offset of a string of capability indices in ``.gaps.captab``
     indicating capability for the ``.symtab`` entry with the
     corresponding index.
 
@@ -168,7 +168,7 @@ Encodes information about a PIRATE initialized resource
                     Elf64_Word res_type;
                     Elf64_Word res_param;
                     Elf64_Half res_sym;
-                    Elf64_Half res_pading;
+                    Elf64_Half res_padding;
                 } Elf64_GAPS_res;
 
 ``res_name``
