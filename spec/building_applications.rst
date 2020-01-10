@@ -5,7 +5,7 @@ Building Enclaves
 
 After compiling one or more C source files into object files using
 enclave-aware compilers, one can generate an executable that runs the
-enclaves by running passing ``--enclave name,name,..`` to ``lld``
+enclaves by running passing ``--enclave name`` to ``lld``
 along with other linker options and object files.  This will result in
 `lld` producing an executable that establishes the communication
 channels and launches each of the enclave main function at startup.
@@ -38,10 +38,17 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     $ cd ..
 
     # build a trivial example
-    $ llvm-ninja/bin/clang --target=x86_64-pc-linux-elf -c enclave.c
+    $ llvm-ninja/bin/clang -ffunction-sections -fdata-sections \
+      --target=x86_64-pc-linux-elf -c enclave.c
 
     # see that the example worked
     $ llvm-ninja/bin/llvm-readobj --gaps-info enclave.o
+    
+    # link the example to produce an executable for the alpha enclave
+    $ ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+      /usr/lib/x86_64-linux-gnu/crt*.o \
+      /usr/lib/x86_64-linux-gnu/libc.so \
+      -o enclave_alpha -enclave alpha enclave.o
 
 Trivial Example: `enclave.c`
 ----
