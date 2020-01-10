@@ -148,7 +148,7 @@ Trusted timestamp sequence of
 ```
 is tested in a standalone application ```low/ts_test```.
 
-```ts_test.sh``` script executes the test application under different levels of
+```low/ts_test.sh``` script executes the test application under different levels of
 verbosity and checks for memory leaks and errors.
 
 ## Outstanding Tasks
