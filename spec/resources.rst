@@ -285,16 +285,13 @@ fields:
     The contents of this field differs depending on the ``type`` field as
     follows:
 
-    ``tcp_socket``, ``udp_socket``
-        A hostname/IP and port pair, e.g., ``10.0.0.1:9001``. The port is
-        ignored with the ``gaps_channel`` resource type and may be omitted.
-
-    ``unix_socket``, ``path``
-        The path to the file to be created or used. This may be an absolute
-        path, or relative to the location of the configuration file.
-
-    ``device``
-        The path to the device to be used.
+    * If ``type`` is ``tcp_socket`` or ``udp_socket``, this is a hostname/IP
+      and port pair, e.g., ``10.0.0.1:9001``. The port is ignored with the
+      ``gaps_channel`` resource type and may be omitted.
+    * If ``type`` is ``unix_socket`` or ``path``, this is the path to the
+      file to be created or used. This may be an absolute path, or relative
+      to the location of the configuration file.
+    * If ``type`` is ``device``, this is the path to the device to be used.
 
 ``buffer``
     The size of the shared-memory buffer for channels of type ``shmem`` or
