@@ -17,6 +17,7 @@ libpirate/primitives_test
 libpirate/Testing
 libpirate/bench/*.results
 libpirate/bench/*.pdf
+libpirate/bench/*.png
 devices/cusegaps/cusegaps_net
 devices/cusegaps/cusegaps_pipe
 devices/cusegaps/cusegaps_test
