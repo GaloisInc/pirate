@@ -1,5 +1,14 @@
 ## Project structure
 
+### Building
+```
+$ cd pirate-demos
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
 ### libpirate
 
 Pirate primitives layer. The PIRATE core primitives layer
