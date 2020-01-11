@@ -164,7 +164,12 @@ The configuration file ``os_1.yml`` might look like this:
         path: /var/run/tts/app_to_proxy.sock
       - name: proxy_to_signserv_1
         type: udp_socket
-        path: 10.0.0.2:9002
+        local:
+          host: 10.0.0.1
+          port: 9001
+        remote:
+          host: os2.localdomain
+          port: 9002
       - name: proxy_to_signserv_2
         type: device
         path: /dev/ttyS0
@@ -249,15 +254,11 @@ fields:
 
     ``tcp_socket``
         A TCP socket channel. A remote hostname or IP address and port must
-        be provided using the ``path`` field, in the form
-        ``<hostname>:<port>``. The port is ignored with the ``gaps_channel``
-        resource type and may be omitted.
+        be provided using the ``remote`` field (see below).
 
     ``udp_socket``
         A UDP socket channel. A remote hostname or IP address and port must
-        be provided using the ``path`` field, in the form
-        ``<hostname>:<port>``. The port is ignored with the ``gaps_channel``
-        resource type and may be omitted.
+        be provided using the ``remote`` field (see below).
 
     ``unix_socket``
         A Unix socket channel. A filepath may be provided using the
@@ -285,13 +286,32 @@ fields:
     The contents of this field differs depending on the ``type`` field as
     follows:
 
-    * If ``type`` is ``tcp_socket`` or ``udp_socket``, this is a hostname/IP
-      and port pair, e.g., ``10.0.0.1:9001``. The port is ignored with the
-      ``gaps_channel`` resource type and may be omitted.
     * If ``type`` is ``unix_socket`` or ``path``, this is the path to the
       file to be created or used. This may be an absolute path, or relative
       to the location of the configuration file.
     * If ``type`` is ``device``, this is the path to the device to be used.
+
+``local``
+    An object representing the local address to bind to for a channel of
+    type ``tcp_socket`` or ``udp_socket``. This is ignored and may be
+    omitted for ``gaps_channel`` resources. It has the following fields:
+
+    ``host``
+        A hostname or IP address.
+
+    ``port``
+        A port number.
+
+``remote``
+    An object representing the remote address to connect to for a channel
+    of type ``tcp_socket`` or ``udp_socket``, with the following fields:
+
+    ``host``
+        A hostname or IP address.
+
+    ``port``
+        A port number. This is ignored and may be omitted for
+        ``gaps_channel`` resources.
 
 ``buffer``
     The size of the shared-memory buffer for channels of type ``shmem`` or
