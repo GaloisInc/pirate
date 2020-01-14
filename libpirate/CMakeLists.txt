@@ -28,12 +28,11 @@ include_directories(. ../include)
 add_executable(primitives_test ${PIRATE_SOURCES} test/primitives_test.c test/shmem_test.c test/shmem_udp_test.c test/uio_test.c)
 
 add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
-
 add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
-
 add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat.c)
-
 add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
+set_target_properties(primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles PROPERTIES EXCLUDE_FROM_ALL 1)
+add_custom_target(bench DEPENDS primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles)
 
 add_library(pirateprims-static STATIC ${PIRATE_SOURCES})
 set_target_properties(pirateprims-static PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)

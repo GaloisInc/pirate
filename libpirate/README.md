@@ -99,7 +99,8 @@ must be loaded.
 `primitives_bench_thr` and `primitives_bench_lat` are throughput
 and latency benchmarks for the library. `bench.py` is a wrapper
 script that can be used to run the benchmarks across a range
-of message sizes.
+of message sizes. Benchmarks are compiled using the command
+`make bench`.
 
 Example usage:
 
