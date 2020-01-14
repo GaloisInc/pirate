@@ -45,14 +45,10 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     $ llvm-ninja/bin/llvm-readobj --gaps-info enclave.o
     
     # link the example to produce an executable for each enclave
-    $ llvm-ninja/bin/ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
-      /usr/lib/x86_64-linux-gnu/crt*.o \
-      /usr/lib/x86_64-linux-gnu/libc.so \
-      -o enclave_alpha -enclave alpha enclave.o
-    $ llvm-ninja/bin/ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
-      /usr/lib/x86_64-linux-gnu/crt*.o \
-      /usr/lib/x86_64-linux-gnu/libc.so \
-      -o enclave_beta -enclave beta enclave.o
+    $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
+      -fuse-ld=lld -Xlinker -enclave -Xlinker alpha
+    $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
+      -fuse-ld=lld -Xlinker -enclave -Xlinker beta
 
 Trivial Example: `enclave.c`
 ----
