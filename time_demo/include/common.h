@@ -21,8 +21,8 @@ typedef struct {
     int num;
     int flags;
     channel_t type;
+    const char* path;
     const char* desc;
-    int fd;
 } gaps_channel_ctx_t;
 
 typedef struct {
@@ -30,8 +30,15 @@ typedef struct {
     thread_ctx_t threads[MAX_APP_THREADS];
     int signal_fd;
 } gaps_app_t;
-#define GAPS_CHANNEL(n, f, t, d) { .num = n, .flags = f, .type = t, .desc = d}
-#define GAPS_CHANNEL_END      GAPS_CHANNEL(-1, 0, INVALID, NULL)
+#define GAPS_CHANNEL(n, f, t, p, d) \
+{                                   \
+    .num   = n,                     \
+    .flags = f,                     \
+    .type  = t,                     \
+    .path  = p,                     \
+    .desc  = d                      \
+}
+#define GAPS_CHANNEL_END      GAPS_CHANNEL(-1, 0, INVALID, NULL, NULL)
 
 int gaps_app_run(gaps_app_t *ctx);
 int gaps_app_wait_exit(gaps_app_t *ctx);

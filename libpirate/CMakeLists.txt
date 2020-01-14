@@ -4,7 +4,16 @@ project(libpirate)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 SET(PIRATE_SHMEM_FEATURE 0)
 
-SET(PIRATE_SOURCES "primitives.c" "shmem_interface.c" "shmem_udp_interface.c" "tcp_socket.c" "udp_socket.c" "unix_socket.c" "uio.c")
+SET(PIRATE_SOURCES
+    "primitives.c"
+    "serial.c"
+    "shmem_interface.c"
+    "shmem_udp_interface.c"
+    "tcp_socket.c" 
+    "udp_socket.c" 
+    "unix_socket.c" 
+    "uio.c"
+)
 
 SET(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic)
 

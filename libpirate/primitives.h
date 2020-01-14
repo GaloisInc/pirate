@@ -69,6 +69,9 @@ typedef enum {
   // The gaps channel is implemented using userspace io.
   // The gaps uio device driver must be loaded.
   UIO_DEVICE,
+  // The gaps channel is implemented over a /dev/tty* interface
+  // Baud rate = 230400, no error detection or correction
+  SERIAL,
   // The gaps channel is unavailable for operations.
   INVALID,
 } channel_t;
@@ -141,7 +144,7 @@ channel_t pirate_get_channel_type(int gd);
 // On error -1 is returned, and errno is set appropriately.
 // If pathname is NULL, then the memory allocated
 // for the channel pathname is free'd.
-int pirate_set_pathname(int gd, char *pathname);
+int pirate_set_pathname(int gd, const char *pathname);
 
 // Gets the pathname for the read and write ends
 // of the gaps descriptor. There must be PIRATE_LEN_NAME

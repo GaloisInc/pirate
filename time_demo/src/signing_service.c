@@ -74,12 +74,9 @@ static void *signer_thread(void *arg) {
     tsa_request_t req = TSA_REQUEST_INIT;
     tsa_response_t rsp = TSA_RESPONSE_INIT;
 
-    const gaps_channel_ctx_t *proxy_rd = &signer->app.ch[0];
-    const gaps_channel_ctx_t *proxy_wr = &signer->app.ch[1];
-
     while (gaps_running()) {
         /* Receive sign request */
-        len = gaps_packet_read(proxy_rd->fd, &req, sizeof(req));
+        len = gaps_packet_read(PROXY_TO_SIGNER, &req, sizeof(req));
         if (len != sizeof(req)) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to receive sign request");
@@ -93,7 +90,7 @@ static void *signer_thread(void *arg) {
         ts_sign(signer->ts.tsa, &req, &rsp);
 
         /* Reply */
-        if (gaps_packet_write(proxy_wr->fd, &rsp, sizeof(rsp)) != 0) {
+        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp, sizeof(rsp)) != 0) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to send sign response");
                 gaps_terminate();
@@ -130,8 +127,17 @@ int main(int argc, char *argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, "proxy<-signer"),
+#ifdef GAPS_SERIAL
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, "/dev/ttyUSB1",
+                            "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL, "/dev/ttyUSB2", 
+                            "proxy<-signer"),
+#else
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, NULL,
+                            "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL, 
+                            "proxy<-signer"),
+#endif
                 GAPS_CHANNEL_END
             }
         }

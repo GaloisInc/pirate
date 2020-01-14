@@ -162,8 +162,6 @@ static void *client_thread(void *arg) {
 
     proxy_request_t req = PROXY_REQUEST_INIT;
     tsa_response_t rsp = TSA_RESPONSE_INIT;
-    const gaps_channel_ctx_t *proxy_wr = &client->app.ch[0];
-    const gaps_channel_ctx_t *proxy_rd = &client->app.ch[1];
 
     const struct timespec ts = {
         .tv_sec = client->request_delay_ms / 1000,
@@ -185,7 +183,7 @@ static void *client_thread(void *arg) {
         }
 
         /* Send request */
-        int sts = gaps_packet_write(proxy_wr->fd, &req, sizeof(req));
+        int sts = gaps_packet_write(CLIENT_TO_PROXY, &req, sizeof(req));
         if (sts == -1) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to send signing request to proxy");
@@ -196,7 +194,7 @@ static void *client_thread(void *arg) {
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
         /* Get response */
-        sts = gaps_packet_read(proxy_rd->fd, &rsp, sizeof(rsp));
+        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp, sizeof(rsp));
         if (sts != sizeof(rsp)) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to receive response");
@@ -244,8 +242,10 @@ int main(int argc, char *argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_WRONLY, PIPE, "client->proxy"),
-                GAPS_CHANNEL(PROXY_TO_CLIENT, O_RDONLY, PIPE, "client<-proxy"),
+                GAPS_CHANNEL(CLIENT_TO_PROXY, O_WRONLY, PIPE, NULL, 
+                            "client->proxy"),
+                GAPS_CHANNEL(PROXY_TO_CLIENT, O_RDONLY, PIPE, NULL,
+                            "client<-proxy"),
                 GAPS_CHANNEL_END
             }
         },

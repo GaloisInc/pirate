@@ -207,10 +207,9 @@ static void *request_receive(void *argp) {
     ssize_t len;
     proxy_request_t req;
     proxy_request_entry_t *entry = NULL;
-    const gaps_channel_ctx_t *client_rd = &proxy->app.ch[0];
 
     while (gaps_running()) {
-        len = gaps_packet_read(client_rd->fd, &req, sizeof(req));
+        len = gaps_packet_read(CLIENT_TO_PROXY, &req, sizeof(req));
         if (len != sizeof(req)) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to receive request");
@@ -259,10 +258,6 @@ static void *proxy_thread(void *arg) {
     tsa_response_t rsp = TSA_RESPONSE_INIT;
     proxy_request_entry_t *entry = NULL;
 
-    const gaps_channel_ctx_t *client_wr = &proxy->app.ch[1];
-    const gaps_channel_ctx_t *signer_wr = &proxy->app.ch[2];
-    const gaps_channel_ctx_t *signer_rd = &proxy->app.ch[3];
-
     const struct timespec ts = {
         .tv_sec  = proxy->poll_period_ms / 1000,
         .tv_nsec = (proxy->poll_period_ms % 1000) * 1000000
@@ -289,7 +284,7 @@ static void *proxy_thread(void *arg) {
         log_tsa_req(proxy->verbosity, "Timestamp request sent", &req);
 
         request_queue_push(&proxy->queue.free, entry);
-        sts = gaps_packet_write(signer_wr->fd, &req, sizeof(req));
+        sts = gaps_packet_write(PROXY_TO_SIGNER, &req, sizeof(req));
         if (sts != 0) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to send timestamp request");
@@ -298,7 +293,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        len = gaps_packet_read(signer_rd->fd, &rsp, sizeof(rsp));
+        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp, sizeof(rsp));
         if (len != sizeof(rsp)) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to receive timestamp response");
@@ -312,7 +307,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        sts = gaps_packet_write(client_wr->fd, &rsp, sizeof(rsp));
+        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp, sizeof(rsp));
         if (sts != 0) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to send response");
@@ -343,10 +338,21 @@ int main(int argc, char *argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, "client->proxy"),
-                GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, PIPE, "client<-proxy"),
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, PIPE, "proxy<-signer")
+                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL, 
+                    "client->proxy"),
+                GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, PIPE, NULL,
+                    "client<-proxy"),
+#ifdef GAPS_SERIAL
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL, "/dev/ttyUSB0", 
+                    "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL, "/dev/ttyUSB3",
+                    "proxy<-signer")
+#else
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, NULL, 
+                    "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, PIPE, NULL,
+                    "proxy<-signer")   
+#endif
             }
         }
     };

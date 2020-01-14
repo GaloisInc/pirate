@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "primitives.h"
+#include "serial.h"
 #include "shmem_interface.h"
 #include "shmem_udp_interface.h"
 #include "tcp_socket.h"
@@ -128,6 +129,11 @@ int pirate_open(int gd, int flags) {
     }
     channels[gd].fd = fd;
     return gd;
+  case SERIAL:
+    if (channels[gd].pathname == NULL) {
+      return -1;
+    }
+    return pirate_serial_open(gd, flags, channels);
   case INVALID:
     errno = EINVAL;
     return -1;
@@ -477,7 +483,7 @@ channel_t pirate_get_channel_type(int gd) {
   return readers[gd].channel;
 }
 
-int pirate_set_pathname(int gd, char *pathname) {
+int pirate_set_pathname(int gd, const char *pathname) {
   int len;
   if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
     errno = EBADF;

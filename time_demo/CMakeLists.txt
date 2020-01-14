@@ -3,17 +3,18 @@ cmake_minimum_required(VERSION 3.5)
 project(time_demo)
 set(VERSION 0.0.1)
 
+OPTION(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
+
 find_package(OpenSSL REQUIRED)
 
 include_directories(./include ../libpirate ${OPENSSL_INCLUDE_DIR})
 
-#add_library(openddl_dbg SHARED IMPORTED)
-#set_property(TARGET openddl_dbg PROPERTY IMPORTED_LOCATION "../../openssl/build/lib/libcrypto.so.3")
-
-
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"' -g")
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic")
+IF(GAPS_SERIAL)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_SERIAL")
+ENDIF(GAPS_SERIAL)
 set(PIRATE_LIB "pirateprims-static")
 set(COMMON_SRC
     "${PROJECT_SOURCE_DIR}/src/gaps_packet.c"
@@ -51,7 +52,7 @@ set(CONF_CA ${CONF_DIR}/tsa_ca.conf)
 set(CONF_TSA ${CONF_DIR}/tsa.conf)
 set(PKI_DIR_LOW ${PROJECT_BINARY_DIR}/${LEVEL_LOW}/pki)
 set(PKI_DIR_LOW_PRIV ${PKI_DIR_LOW}/priv)
-file(MAKE_DIRECTORY 
+file(MAKE_DIRECTORY
     ${PKI_DIR_LOW}
     ${PKI_DIR_LOW_PRIV}
 )

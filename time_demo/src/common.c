@@ -61,12 +61,17 @@ int gaps_app_run(gaps_app_t *ctx) {
             break;
         }
 
-        if (pirate_set_channel_type(CLIENT_TO_PROXY, GAPS_CH_TYPE)) {
+        if (pirate_set_channel_type(c->num, c->type)) {
             ts_log(ERROR, "Failed to set channel type for %s", c->desc);
             return -1;
         }
 
-        if ((c->fd = pirate_open(c->num, c->flags)) == -1) {
+        if (pirate_set_pathname(c->num, c->path)) {
+            ts_log(ERROR, "Failed to set path %s for %u", c->path, c->num);
+            return -1;
+        }
+
+        if (pirate_open(c->num, c->flags) != c->num) {
             ts_log(ERROR, "Failed to open channel type for %s", c->desc);
             return -1;
         }
@@ -111,10 +116,7 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
             break;
         }
 
-        if (c->fd != -1) {
-            pirate_close(c->fd, c->flags);
-            c->fd = -1;
-        }
+        pirate_close(c->num, c->flags);
     }
     
     // Stop worker threads
