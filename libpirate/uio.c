@@ -80,7 +80,7 @@ static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
 }
 
 int uio_buffer_open(int gd, int flags, pirate_channel_t *channels) {
-  atomic_uint_fast64_t init_pid;
+  uint_fast64_t init_pid;
   int err, fd;
   shmem_buffer_t *uio_buffer;
 

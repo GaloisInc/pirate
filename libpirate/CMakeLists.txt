@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(libpirate)
 
+set(CMAKE_C_COMPILER "clang")
+
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 SET(PIRATE_SHMEM_FEATURE 0)
 
