@@ -31,8 +31,8 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     $ mkdir llvm-ninja
     $ cd llvm-ninja
     $ cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
-      -DLLVM_ENABLE_PROJECTS=clang ../private-llvm/llvm
-    $ ninja
+      -DLLVM_ENABLE_PROJECTS=clang\;lld ../private-llvm/llvm
+    $ ninja clang lld
 
     # leave build directory
     $ cd ..
@@ -44,25 +44,46 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     # see that the example worked
     $ llvm-ninja/bin/llvm-readobj --gaps-info enclave.o
     
-    # link the example to produce an executable for the alpha enclave
-    $ ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+    # link the example to produce an executable for each enclave
+    $ llvm-ninja/bin/ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
       /usr/lib/x86_64-linux-gnu/crt*.o \
       /usr/lib/x86_64-linux-gnu/libc.so \
       -o enclave_alpha -enclave alpha enclave.o
+    $ llvm-ninja/bin/ld.lld -dynamic-linker /lib64/ld-linux-x86-64.so.2 \
+      /usr/lib/x86_64-linux-gnu/crt*.o \
+      /usr/lib/x86_64-linux-gnu/libc.so \
+      -o enclave_beta -enclave beta enclave.o
 
 Trivial Example: `enclave.c`
 ----
 
 .. code-block:: c
 
+    #include <stdio.h>
+
     #pragma capability declare(red)
     #pragma enclave declare(alpha)
+    #pragma enclave declare(beta)
     #pragma enclave capability(alpha, red)
-
-    void alphamain(void) __attribute__((gaps_enclave_main("alpha")));
-    void alphamain(void) { }
 
     void onalpha(void)
       __attribute__((gaps_enclave_only("alpha")))
-      __attribute__((gaps_capability("red")));
-    void onalpha(void) { }
+      __attribute__((gaps_capability("red")))
+    {
+            printf("running on alpha\n");
+    }
+
+    void
+    alphamain(void)
+      __attribute__((gaps_enclave_main("alpha")))
+    {
+            onalpha();
+            printf("alpha started\n");
+    }
+
+    void
+    betamain(void)
+      __attribute__((gaps_enclave_main("beta")))
+    {
+            printf("beta started\n");
+    }
