@@ -358,10 +358,10 @@ int main(int argc, char *argv[]) {
                 GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, PIPE, NULL,
                     "client<-proxy"),
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL, "/dev/ttyUSB0", 
-                    "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL, "/dev/ttyUSB3",
-                    "proxy<-signer")
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL, 
+                    PROXY_TO_SIGNER_WR, "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL, 
+                    SIGNER_TO_PROXY_RD, "proxy<-signer")
 #else
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, NULL, 
                     "proxy->signer"),

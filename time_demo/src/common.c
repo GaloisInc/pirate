@@ -87,7 +87,7 @@ int gaps_app_run(gaps_app_t *ctx) {
         }
 
         if (pirate_open(c->num, c->flags) != c->num) {
-            ts_log(ERROR, "Failed to open channel type for %s", c->desc);
+            ts_log(ERROR, "Failed to open %s for %s", c->path, c->desc);
             return -1;
         }
     }
