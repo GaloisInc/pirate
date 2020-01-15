@@ -153,6 +153,65 @@ is tested in a standalone application ```low/ts_test```.
 ```low/ts_test.sh``` script executes the test application under different levels of
 verbosity and checks for memory leaks and errors.
 
+## Setup
+
+### Applying udev rules
+In order to avoid ambiguity of ```/dev/ttyUSB*``` device assignment, a udev
+rules file was added to generate symbolic links for pre-configured USB to serial
+devices.
+```
+$ cd time_demo/scripts
+$ ./add_udev_rules.sh
+```
+__NOTE__ ___sudo___ privileges are required for this task
+
+### Adding a new USB serial device
+Determine __vendor id__, __product id__, and __serial number__ of the device:
+```
+$ lsusb
+...
+Bus 001 Device 005: ID 0403:6001 Future Technology Devices International, Ltd FT232 USB-Serial (UART) IC
+...
+
+$ sudo lsusb -v -d 0403:6001 | grep iSerial
+  iSerial                 3 AC018LUP
+```
+__NOTE__ The last command will run successfully without ___sudo___, however, the
+serial number will not be fetched.
+
+Add a new entry to the ```gaps.rules``` file
+```
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LUP", SYMLINK+="<name>"
+```
+Apply updated udev rules by following instructions in the section above
+
+__NOTE__ not all USB to serial devices provide a valid serial number, however, [this](https://www.amazon.com/gp/product/B07589ZF9X/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1) device does.
+
+### Add the current user to the __dialout__ group
+```
+$ sudo usermod -a -G dialout <user_name>
+```
+__NOTE__ technically this step is not needed as long as time demo binaries are
+executed with ___sudo___ privileges.
+
+### Serial Connection
+A serial [null modem](https://en.wikipedia.org/wiki/Null_modem) is required.
+
+## Troubleshooting
+### GAPS Serial Device Fails to Open
+* Verify that the symbolic link is present ```ls /dev/tty_*```
+* Verify that the user has privileges to open the device
+
+### Serial Data is Corrupted
+* Unplug and plug back in USB to serial converters
+* Run UART stress test located in ```build/time_demo/low```
+* Reduce the baud rate. Note this change requires editing of ```libpirate/test/serial_test.c``` and re-compilation
+* Use a different USB to serial device
+
+### Time Signature Fails Validation
+* Make sure that the time service is configured with proper PKI. This issue may occur when timestamp signing service was compiled independently on a separate machine. Instead of building time stamp service, copy ```pki``` and ```low``` directories to the target machine.
+* Make sure that system time is set correctly.
+
 ## Outstanding Tasks
 - Add and test GAPS annotations
 - Add a worker thread in signing proxy for sending back client replies. This
