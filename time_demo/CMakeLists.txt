@@ -103,3 +103,6 @@ configure_file(${TS_TEST_SCRIPT} ${PROJECT_BINARY_DIR}/${LEVEL_LOW} COPYONLY)
 
 set(TS_TEST_NAME ts_test)
 add_gaps_target(${TS_TEST_NAME} ${LEVEL_LOW})
+
+set(UART_TEST_NAME uart_test)
+add_gaps_target(${UART_TEST_NAME} ${LEVEL_LOW})
