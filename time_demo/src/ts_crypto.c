@@ -48,11 +48,37 @@ end:
 }
 
 
+int ts_create_request_from_data(const void *data, uint32_t len, 
+    proxy_request_t *req) {
+    SHA256_CTX sha256;
+    int ret = -1;
+
+    if (SHA256_Init(&sha256) != 1) {
+        goto end;
+    }
+
+    if (SHA256_Update(&sha256, data, len) != 1) {
+        goto end;
+    }
+
+    if (SHA256_Final(req->digest, &sha256) != 1) {
+        goto end;
+    }
+
+    ret = 0;
+end:
+    if (ret != 0) {
+        print_err("Failed to generate request digest");
+    }
+
+    return ret;
+}
+
 /*
  * Generate SHA256 digest from the content of a file.
  * If path is NULL, then the output digest is filled with random data
  */
-int ts_create_request(const char *path, proxy_request_t *req) {
+int ts_create_request_from_file(const char *path, proxy_request_t *req) {
     FILE *f = NULL;
     SHA256_CTX sha256;
     unsigned char buf[4096];
@@ -474,12 +500,11 @@ static int ts_verify_cb(int ok, X509_STORE_CTX *ctx) {
     return ok;
 }
 
-int ts_verify(const char *path, const char *ca, tsa_response_t* rsp) {
+int ts_verify_bio(BIO *data, const char *ca, tsa_response_t* rsp) {
     int ret = 1;
     BIO *ts_req_bio = NULL;
     TS_RESP *ts_resp = NULL;
     TS_VERIFY_CTX *ctx = NULL;
-    BIO *data = NULL;
     X509_STORE *cert_ctx = NULL;
     X509_LOOKUP *lkp = NULL;
 
@@ -494,10 +519,6 @@ int ts_verify(const char *path, const char *ca, tsa_response_t* rsp) {
     }
 
     if ((ctx = TS_VERIFY_CTX_new()) == NULL) {
-        goto end;
-    }
-
-    if ((data = BIO_new_file(path, "rb")) == NULL) {
         goto end;
     }
 
@@ -542,6 +563,43 @@ end:
     BIO_free_all(ts_req_bio);
     BIO_free_all(data);
     X509_STORE_free(cert_ctx);
+
+    return ret;
+}
+
+int ts_verify_data(const void *data, uint32_t len, 
+    const char *ca, tsa_response_t* rsp) {
+    int ret = 1;
+    BIO *data_bio = NULL;
+
+    if ((data_bio = BIO_new_mem_buf(data, len)) == NULL) {
+        goto end;
+    }
+
+    // data_bio is freed in the ts_verify_bio call
+    ret = ts_verify_bio(data_bio, ca, rsp);
+end:
+    if (ret) {
+        print_err("Failed to validate response for data in a file");
+    }
+
+    return ret;
+}
+
+int ts_verify_file(const char *path, const char *ca, tsa_response_t* rsp) {
+    int ret = 1;
+    BIO *data_bio = NULL;
+
+    if ((data_bio = BIO_new_file(path, "rb")) == NULL) {
+        goto end;
+    }
+
+    // data_bio is freed in the ts_verify_bio call
+    ret = ts_verify_bio(data_bio, ca, rsp);
+end:
+    if (ret) {
+        print_err("Failed to validate response for data in a file");
+    }
 
     return ret;
 }
@@ -618,7 +676,7 @@ int ts_print_tsa_rsp(FILE* out, const tsa_response_t *rsp) {
         goto end;
     }
 
-    fprintf(out, "%s", buf);
+    fprintf(out, "%d\n%s", rsp->len, buf);
     ret = 0;
 end:
     if (ret != 0) {

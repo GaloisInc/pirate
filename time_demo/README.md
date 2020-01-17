@@ -1,4 +1,4 @@
-# Trusted Timestamp Demo
+# Trusted Timestamp Example
 
 ## Overview
 A detailed description of the Trusted Timestamp demo is provided
@@ -46,16 +46,16 @@ All application binaries support help and usage options:
 - ```<application binary> --help```
 - ```<application binary> --usage```
 
-#### Planner (Client)
+#### Sensor Manager (Trusted Timestamp Client)
 ```
-Usage: planner [OPTION...] [FILE] [FILE] ...
+Usage: sensor_manager [OPTION...] [FILE] [FILE] ...
 Sign files with the trusted timestamp service
 
   -C, --ca_path=PATH         CA Path
   -d, --req_delay=MS         Request delay in milliseconds
-  -s, --save=PATH            Save timestamp signatures to a directory
+  -s, --save_path=PATH       TSR output directory
   -v, --verbose              Increase verbosity level
-  -V, --validate             Validate timestamp signatures
+  -V, --verify               Verify timestamp signatures
   -?, --help                 Give this help list
       --usage                Give a short usage message
       --version              Print program version
@@ -129,7 +129,7 @@ time_demo
     │   │   └── tsa_ca_key.pem         Certificate authority private key
     │   └── tsa_ca.pem                 Certificate authority certificate
     ├── high
-    │   ├── planner                    Timestamp client application binary
+    │   ├── sensor_manager             Timestamp client application binary
     │   └── signing_proxy              Timestamp proxy application binary
     └── low
         ├── pki

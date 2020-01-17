@@ -25,10 +25,10 @@ set(COMMON_SRC
 set(LEVEL_HIGH "high")
 set(LEVEL_LOW "low")
 
-function(add_gaps_target TGT LVL)
+function(add_gaps_target TGT LVL TGT_LIBS)
     set(TGT_SRC "${PROJECT_SOURCE_DIR}/src/${TGT}.c")
     add_executable(${TGT} ${TGT_SRC} ${COMMON_SRC})
-    target_link_libraries(${TGT} ${PIRATE_LIB} ${OPENSSL_LIBRARIES} "pthread")
+    target_link_libraries(${TGT} ${PIRATE_LIB} ${OPENSSL_LIBRARIES} ${TGT_LIBS} "pthread")
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
     set_target_properties(
         ${TGT}
@@ -39,12 +39,12 @@ function(add_gaps_target TGT LVL)
 endfunction()
 
 # Build targets
-set(PLANNER_NAME planner)
+set(SENSOR_MANAGER_NAME sensor_manager)
 set(SIGNING_PROXY_NAME signing_proxy)
 set(SIGNING_SERVICE_NAME signing_service)
-add_gaps_target(${PLANNER_NAME} ${LEVEL_HIGH})
-add_gaps_target(${SIGNING_PROXY_NAME} ${LEVEL_HIGH})
-add_gaps_target(${SIGNING_SERVICE_NAME} ${LEVEL_LOW})
+add_gaps_target(${SENSOR_MANAGER_NAME} ${LEVEL_HIGH} "m")
+add_gaps_target(${SIGNING_PROXY_NAME} ${LEVEL_HIGH} "")
+add_gaps_target(${SIGNING_SERVICE_NAME} ${LEVEL_LOW} "")
 
 # Configuration resources
 set(CONF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/conf)
@@ -102,7 +102,7 @@ set(TS_TEST_SCRIPT ${SCRIPTS_DIR}/ts_test.sh)
 configure_file(${TS_TEST_SCRIPT} ${PROJECT_BINARY_DIR}/${LEVEL_LOW} COPYONLY)
 
 set(TS_TEST_NAME ts_test)
-add_gaps_target(${TS_TEST_NAME} ${LEVEL_LOW})
+add_gaps_target(${TS_TEST_NAME} ${LEVEL_LOW} "")
 
 set(UART_TEST_NAME uart_test)
-add_gaps_target(${UART_TEST_NAME} ${LEVEL_LOW})
+add_gaps_target(${UART_TEST_NAME} ${LEVEL_LOW} "")

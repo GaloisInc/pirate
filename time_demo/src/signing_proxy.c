@@ -201,7 +201,7 @@ static void *sim_request_gen(void *argp) {
             continue;
         }
 
-        if (ts_create_request(NULL, &entry->req) != 0) {
+        if (ts_create_request_from_file(NULL, &entry->req) != 0) {
             ts_log(ERROR, "Failed to generate random request data");
             gaps_terminate();
             continue;
