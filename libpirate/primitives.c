@@ -261,6 +261,8 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return uio_buffer_write(writers[gd].shmem_buffer, buf, count);
   case UDP_SOCKET:
     return pirate_udp_socket_write(gd, writers, buf, count);
+  case SERIAL:
+    return pirate_serial_write(gd, writers, buf, count);
   default:
     break;
   }

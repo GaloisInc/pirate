@@ -68,6 +68,11 @@ typedef enum {
     SIGNER_TO_PROXY = 3
 } demo_channel_t;
 
+#define PROXY_TO_SIGNER_WR "/dev/tty_P_TO_S_WR"
+#define PROXY_TO_SIGNER_RD "/dev/tty_P_TO_S_RD"
+#define SIGNER_TO_PROXY_WR "/dev/tty_S_TO_P_WR"
+#define SIGNER_TO_PROXY_RD "/dev/tty_S_TO_P_RD"
+
 typedef enum {
     OK,
     BUSY,

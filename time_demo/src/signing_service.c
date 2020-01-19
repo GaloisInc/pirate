@@ -143,10 +143,10 @@ int main(int argc, char *argv[]) {
 
             .ch = {
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, "/dev/ttyUSB1",
-                            "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL, "/dev/ttyUSB2", 
-                            "proxy<-signer"),
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, 
+                    PROXY_TO_SIGNER_RD, "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL,
+                    SIGNER_TO_PROXY_WR, "proxy<-signer"),
 #else
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, NULL,
                             "proxy->signer"),
