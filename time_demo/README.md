@@ -8,7 +8,7 @@
  - Simplicity - the design and implementation will focus on experimenting and
    testing GAPS hardware channels and PIRATE source code annotations
  - Scalable to more than two sensitivity domains
- - Correct and stable implementation - before applying GAPS pirate annotations,
+ - Correct and stable implementation - before applying GAPS pirate annotations
    application binaries will be checked for runtime errors and memory leaks with
    Valgrind. This step is necessary for mitigating potential bugs or unintended
    behaviors that may be introduced by added compiler changes.  
