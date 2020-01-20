@@ -41,7 +41,7 @@ typedef struct {
     char method[16];                    /* request method */
     char uri[PATHSIZE];                 /* request uri */
     char version[32];                   /* request method */
-    char filename[PATHSIZE];            /* path derived from uri */
+    char filename[PATHSIZE + 1];        /* path derived from uri */
 } request_t;
 
 

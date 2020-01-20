@@ -120,7 +120,8 @@ char *client_disconnect(client_t* ci) {
 
 
 static void read_http_line(char* buf, size_t sz, FILE* stream) {
-    fgets(buf, sz, stream);
+    char *ignored = fgets(buf, sz, stream);
+    (void) ignored;
 }
 
 
@@ -135,13 +136,10 @@ void client_request_info(const client_t* ci, request_t* ri) {
     } while(strncmp(ri->buf, "\r\n", 3));
 
     /* parse the uri [crufty] */
-    memset(ri->filename, 0, sizeof(ri->filename));
-    strncpy(ri->filename, ".", sizeof(ri->filename) - 1);
-    if (strnlen(ri->uri, 2) < 2) {
-        strncat(ri->filename, "/index.html", sizeof(ri->filename) - 1);
-    } else {
-        strncat(ri->filename, ri->uri, sizeof(ri->filename) - 1);
-    }
+    const char *const filepart =
+      strnlen(ri->uri, 2) < 2 ? "/index.html" : ri->uri;
+
+    snprintf(ri->filename, sizeof(ri->filename), ".%s", filepart);
 }
 
 
