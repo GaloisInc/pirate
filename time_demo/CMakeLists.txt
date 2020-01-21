@@ -39,12 +39,12 @@ function(add_gaps_target TGT LVL TGT_LIBS)
 endfunction()
 
 # Build targets
-set(SENSOR_MANAGER_NAME sensor_manager)
-set(SIGNING_PROXY_NAME signing_proxy)
-set(SIGNING_SERVICE_NAME signing_service)
-add_gaps_target(${SENSOR_MANAGER_NAME} ${LEVEL_HIGH} "m")
-add_gaps_target(${SIGNING_PROXY_NAME} ${LEVEL_HIGH} "")
-add_gaps_target(${SIGNING_SERVICE_NAME} ${LEVEL_LOW} "")
+set(SENSOR_MANAGER sensor_manager)
+set(SIGNING_PROXY signing_proxy)
+set(SIGNING_SERVICE signing_service)
+add_gaps_target(${SENSOR_MANAGER} ${LEVEL_HIGH} "m")
+add_gaps_target(${SIGNING_PROXY} ${LEVEL_HIGH} "")
+add_gaps_target(${SIGNING_SERVICE} ${LEVEL_LOW} "")
 
 # Configuration resources
 set(CONF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/conf)
@@ -96,13 +96,36 @@ add_custom_command(
 )
 add_custom_target(TSA_TGT ALL DEPENDS ${TSA_OUT} ${TSA_CA_OUT})
 
+# Combined timestamp binary
+set(TS_DEMO_NAME ts_demo)
+set(TS_DEMO_HIGH "${PROJECT_BINARY_DIR}/${LEVEL_HIGH}/${TS_DEMO_NAME}")
+set(TS_DEMO_LOW "${PROJECT_BINARY_DIR}/${LEVEL_LOW}/${TS_DEMO_NAME}")
+set(TS_DEMO_OUT ${TS_DEMO_HIGH} ${TS_DEMO_LOW})
+set(DEVICE_FILE .dev_id)
+set(PLATFORM_GAPS_TOOL_DIR ${PROJECT_SOURCE_DIR}/../platform-gaps)
+set(PLATFORM_GAPS_TOOL ${PLATFORM_GAPS_TOOL_DIR}/platform.py)
+
+add_custom_command(
+    OUTPUT ${TS_DEMO_OUT}
+    COMMAND ${PLATFORM_GAPS_TOOL} ${TS_DEMO_HIGH} ${DEVICE_FILE} ${PROJECT_BINARY_DIR}/${LEVEL_HIGH}/${SENSOR_MANAGER} ${SENSOR_MANAGER} ${PROJECT_BINARY_DIR}/${LEVEL_HIGH}/${SIGNING_PROXY} ${SIGNING_PROXY} ${PROJECT_BINARY_DIR}/${LEVEL_LOW}/${SIGNING_SERVICE} ${SIGNING_SERVICE}
+    COMMAND cp -p ${TS_DEMO_HIGH} ${TS_DEMO_LOW}
+    COMMAND echo "${SENSOR_MANAGER}" > ${PROJECT_BINARY_DIR}/${LEVEL_HIGH}/${DEVICE_FILE}
+    COMMAND echo "${SIGNING_SERVICE}" > ${PROJECT_BINARY_DIR}/${LEVEL_LOW}/${DEVICE_FILE}
+    WORKING_DIRECTORY ${PLATFORM_GAPS_TOOL_DIR}
+    COMMENT "Generating combined application binary"
+    DEPENDS ${SENSOR_MANAGER} ${SIGNING_PROXY} ${SIGNING_SERVICE}
+    VERBATIM
+)
+add_custom_target(TS_DEMO_TGT ALL DEPENDS ${TS_DEMO_OUT})
+
+
 # Test
 set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 set(TS_TEST_SCRIPT ${SCRIPTS_DIR}/ts_test.sh)
 configure_file(${TS_TEST_SCRIPT} ${PROJECT_BINARY_DIR}/${LEVEL_LOW} COPYONLY)
 
-set(TS_TEST_NAME ts_test)
-add_gaps_target(${TS_TEST_NAME} ${LEVEL_LOW} "")
+set(TS_TEST ts_test)
+add_gaps_target(${TS_TEST} ${LEVEL_LOW} "")
 
-set(UART_TEST_NAME uart_test)
-add_gaps_target(${UART_TEST_NAME} ${LEVEL_LOW} "")
+set(UART_TEST uart_test)
+add_gaps_target(${UART_TEST} ${LEVEL_LOW} "")
