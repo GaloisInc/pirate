@@ -24,6 +24,7 @@ set(COMMON_SRC
 
 set(LEVEL_HIGH "high")
 set(LEVEL_LOW "low")
+set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 function(add_gaps_target TGT LVL TGT_LIBS)
     set(TGT_SRC "${PROJECT_SOURCE_DIR}/src/${TGT}.c")
@@ -57,6 +58,9 @@ file(MAKE_DIRECTORY
     ${PKI_DIR_LOW_PRIV}
 )
 configure_file(${CONF_TSA} ${PKI_DIR_LOW} COPYONLY)
+
+set(TS_VERIFY_SCRIPT ${SCRIPTS_DIR}/ts_verify.sh)
+configure_file(${TS_VERIFY_SCRIPT} ${PROJECT_BINARY_DIR}/${LEVEL_HIGH} COPYONLY)
 
 # Crypto tool
 set(CRYPTO_KIT openssl)
@@ -120,7 +124,6 @@ add_custom_target(TS_DEMO_TGT ALL DEPENDS ${TS_DEMO_OUT})
 
 
 # Test
-set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 set(TS_TEST_SCRIPT ${SCRIPTS_DIR}/ts_test.sh)
 configure_file(${TS_TEST_SCRIPT} ${PROJECT_BINARY_DIR}/${LEVEL_LOW} COPYONLY)
 
