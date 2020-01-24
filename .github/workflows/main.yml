@@ -23,8 +23,3 @@ jobs:
         make test
         make valgrind
         popd
-    - name: simple_demo tests
-      run: |        
-        pushd simple_demo
-        ./integration_test.py
-        popd
