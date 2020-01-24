@@ -26,5 +26,5 @@ jobs:
     - name: simple_demo tests
       run: |        
         pushd simple_demo
-        ./integration_test
+        ./integration_test.py
         popd
