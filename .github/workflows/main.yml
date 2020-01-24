@@ -1,0 +1,25 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: install dependencies
+      run: sudo apt-get install -y clang valgrind
+    - name: build
+      run: |
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .
+        make clean
+        make
+    - name: libpirate tests
+      run: |
+        pushd libpirate
+        cmake .
+        make test
+        make valgrind
+        popd
