@@ -14,16 +14,8 @@
  */
 
 #include <argp.h>
-#include <stdio.h>
 #include <math.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/limits.h>
 
 #include "gaps_packet.h"
 #include "ts_crypto.h"
@@ -121,6 +113,32 @@ static void read_xy_sensor(xy_sensor_data_t *d) {
 }
 
 
+/* Save sensor data to a file */
+static int save_xy_sensor(const char *dir, uint32_t idx, 
+    const xy_sensor_data_t *data) {
+    int rv = 0;
+    char path[PATH_MAX];
+    FILE *f_out = NULL;
+
+    if (dir == NULL) {
+        return -1;
+    }
+
+    snprintf(path, sizeof(path) - 1, "%s/%04u.data", dir, idx);
+
+    if ((f_out = fopen(path, "wb")) == NULL) {
+        ts_log(ERROR, "Failed to open sensor output file");
+        return -1;
+    }
+
+    if (fwrite(data, sizeof(xy_sensor_data_t), 1, f_out) != 1) {
+        ts_log(ERROR, "Failed to save sensor content");
+        rv = -1;
+    }
+
+    return rv;
+}
+
 /* Save timestamp sign response to a file */
 static int save_ts_response(const char *dir, uint32_t idx, 
     const tsa_response_t* rsp ) {
@@ -134,7 +152,6 @@ static int save_ts_response(const char *dir, uint32_t idx,
         return 0;
     }
 
-
     snprintf(path, sizeof(path) - 1, "%s/%04u.tsr", dir, idx);
 
     if ((f_out = fopen(path, "wb")) == NULL) {
@@ -143,7 +160,7 @@ static int save_ts_response(const char *dir, uint32_t idx,
     }
 
     if (fwrite(rsp->ts, rsp->len, 1, f_out) != 1) {
-        ts_log(ERROR, "Failed to open TSR content");
+        ts_log(ERROR, "Failed to save TSR content");
         rv = -1;
     }
 
@@ -170,6 +187,13 @@ static void *client_thread(void *arg) {
     while (gaps_running()) {
         /* Read sensor data */
         read_xy_sensor(&data);
+
+        /* Save sensor data */
+        if (save_xy_sensor(client->tsr_dir, idx, &data)) {
+            ts_log(ERROR, "Failed to save XY sensor data");
+            gaps_terminate();
+            continue;
+        }
 
         /* Compose a request */
         if (ts_create_request_from_data(&data, data_len, &req) != 0) {
