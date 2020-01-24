@@ -37,6 +37,10 @@ The build script for simple_demo includes an experiment that builds
 a single executable that contains both the low-side and high-side
 executables.
 
+### time_demo
+
+Trusted timestamping is the process of tracking the time that data was created or modified. A trusted timestamp generally identifies the data that timestamped (typically by a secure hash of the data), the time that the data was timestamped, and a digital signature or other evidence that the timestamp should be trusted. This is typically a digitial signature signed by a trusted third party, but could include additional evidence such as information needed to locate the timestamp in a blockchain ledger. The additional information could be used to provide alternate methods of establishing trust if the private key associated with the digital signature is lost.
+
 ### device drivers
 
 #### cusegaps
