@@ -11,7 +11,7 @@ SET(DEMO_LIBS "pirateprims-static" "pthread")
 SET(DEMO_SOURCES "demo.c" "tiny.c")
 SET(ELF_O_SUFFIX "elf.o")
 
-try_compile(HAS_GAPS ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/check_gaps.c")
+try_compile(HAS_GAPS ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/gaps/check_gaps.c")
 
 set(HIGH_ELF "high")
 add_executable(${HIGH_ELF} ${DEMO_SOURCES})
