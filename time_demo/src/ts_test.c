@@ -111,7 +111,7 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
     tsa_response_t tsa_rsp;
 
     /* Create digest */
-    if (ts_create_request(path, &proxy_req) != 0) {
+    if (ts_create_request_from_file(path, &proxy_req) != 0) {
         ts_log(ERROR, "Failed to create data digest");
         return -1;
     }
@@ -133,7 +133,7 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
     log_tsa_rsp(ts_test->verbosity, "Timestamp sign response", &tsa_rsp);
 
     /* Verify */
-    if (ts_verify(path, ts_test->ca_path, &tsa_rsp) != 0) {
+    if (ts_verify_file(path, ts_test->ca_path, &tsa_rsp) != 0) {
         ts_log(ERROR, "Failed to verify response");
         return -1;
     }

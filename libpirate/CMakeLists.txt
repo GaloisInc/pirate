@@ -27,7 +27,14 @@ endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(. ../include)
 
-add_executable(primitives_test ${PIRATE_SOURCES} test/primitives_test.c test/shmem_test.c test/shmem_udp_test.c test/uio_test.c)
+add_executable(primitives_test 
+    ${PIRATE_SOURCES}
+    test/primitives_test.c
+    test/serial_test.c
+    test/shmem_test.c
+    test/shmem_udp_test.c
+    test/uio_test.c
+)
 
 add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
 add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)

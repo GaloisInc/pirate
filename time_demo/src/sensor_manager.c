@@ -14,26 +14,12 @@
  */
 
 #include <argp.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdint.h>
+#include <math.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/limits.h>
 
 #include "gaps_packet.h"
 #include "ts_crypto.h"
 #include "common.h"
-
-#define MAX_INPUT_COUNT 128
-
-typedef struct {
-    char path[PATH_MAX];
-    uint32_t len;
-} client_data_t;
 
 typedef struct {
     verbosity_t verbosity;
@@ -43,20 +29,26 @@ typedef struct {
     const char *tsr_dir;
 
     gaps_app_t app;
-
-    uint32_t count;
-    client_data_t data[MAX_INPUT_COUNT];
 } client_t;
+
+#pragma pack(1)
+typedef struct {
+    int32_t x;
+    int32_t y;
+} xy_sensor_data_t;
+#pragma pack()
 
 const char *argp_program_version = DEMO_VERSION;
 static struct argp_option options[] = {
-    { "ca_path",   'C', "PATH", 0, "CA Path",                                  0 },
-    { "validate",  'V', NULL,   0, "Validate timestamp signatures",            0 },
-    { "save",      's', "PATH", 0, "Save timestamp signatures to a directory", 0 },
-    { "req_delay", 'd', "MS",   0, "Request delay in milliseconds",            0 },
-    { "verbose",   'v', NULL,   0, "Increase verbosity level",                 0 },
+    { "ca_path",   'C', "PATH", 0, "CA Path",                          0 },
+    { "verify",    'V', NULL,   0, "Verify timestamp signatures",      0 },
+    { "save_path", 's', "PATH", 0, "TSR output directory",             0 },
+    { "req_delay", 'd', "MS",   0, "Request delay in milliseconds",    0 },
+    { "verbose",   'v', NULL,   0, "Increase verbosity level",         0 },
     { 0 }
 };
+
+#define DEFAULT_TSR_OUT_DIR "."
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     client_t *client = (client_t*) state->input;
@@ -85,33 +77,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         }
         break;
 
-    case ARGP_KEY_ARG:
-    {
-        struct stat sb;
-        client_data_t *d = NULL;
-        if (client->count >=  MAX_INPUT_COUNT) {
-            argp_failure(state, 1, 0, "exceeded input limit");
-        }
-
-        d = &client->data[client->count++];
-        if (realpath(arg, d->path) == NULL) {
-            argp_failure(state, 1, 0, "failed to resolve %s path\n", arg);
-        }
-
-        if (stat(d->path, &sb) != 0) {
-            argp_failure(state, 1, 0, "Failed to stat %s\n", d->path);
-        }
-
-        d->len = sb.st_size;
-    }
-        break;
-
-    case ARGP_KEY_END:
-        if (client->count == 0) {
-            argp_failure(state, 1, 0, "no input files");
-        }
-        break;
-
     default:
         break;
     }
@@ -135,34 +100,67 @@ static void parse_args(int argc, char *argv[], client_t *client) {
 }
 
 
-/* Save timestamp sign response to a file */
-static int save_ts_response(const char *in_path, const char *out_dir, 
-    uint32_t idx, const tsa_response_t* rsp ) {
+/* Generate sensor data */
+static void read_xy_sensor(xy_sensor_data_t *d) {
+    static const double RADIUS = 100000;
+    static const double NOISE = 100;
+    static const double PI = 3.14159265;
+    static uint32_t idx = 0;
+
+    d->x = RADIUS * cos((idx * PI) / 180) + (NOISE * rand()) / RAND_MAX;
+    d->y = RADIUS * sin((idx * PI) / 180) + (NOISE * rand()) / RAND_MAX;
+    idx++;
+}
+
+
+/* Save sensor data to a file */
+static int save_xy_sensor(const char *dir, uint32_t idx, 
+    const xy_sensor_data_t *data) {
     int rv = 0;
-    const char *in_file = in_path + strlen(in_path);
-    char out_path[PATH_MAX];
+    char path[PATH_MAX];
     FILE *f_out = NULL;
 
-    if ((out_dir == NULL) || 
+    if (dir == NULL) {
+        return -1;
+    }
+
+    snprintf(path, sizeof(path) - 1, "%s/%04u.data", dir, idx);
+
+    if ((f_out = fopen(path, "wb")) == NULL) {
+        ts_log(ERROR, "Failed to open sensor output file");
+        return -1;
+    }
+
+    if (fwrite(data, sizeof(xy_sensor_data_t), 1, f_out) != 1) {
+        ts_log(ERROR, "Failed to save sensor content");
+        rv = -1;
+    }
+
+    return rv;
+}
+
+/* Save timestamp sign response to a file */
+static int save_ts_response(const char *dir, uint32_t idx, 
+    const tsa_response_t* rsp ) {
+    int rv = 0;
+    char path[PATH_MAX];
+    FILE *f_out = NULL;
+
+    if ((dir == NULL) || 
         (rsp->status != OK) || 
         (rsp->status > sizeof(rsp->ts))) {
         return 0;
     }
 
-    do {
-        in_file--;
-    } while((in_path < in_file) && (*(in_file - 1) != '/'));
+    snprintf(path, sizeof(path) - 1, "%s/%04u.tsr", dir, idx);
 
-    snprintf(out_path, sizeof(out_path) - 1, "%s/%04u_%s.tsr", 
-        out_dir, idx, in_file);
-
-    if ((f_out = fopen(out_path, "wb")) == NULL) {
+    if ((f_out = fopen(path, "wb")) == NULL) {
         ts_log(ERROR, "Failed to open TSR output file");
         return -1;
     }
 
     if (fwrite(rsp->ts, rsp->len, 1, f_out) != 1) {
-        ts_log(ERROR, "Failed to open TSR content");
+        ts_log(ERROR, "Failed to save TSR content");
         rv = -1;
     }
 
@@ -178,20 +176,27 @@ static void *client_thread(void *arg) {
     proxy_request_t req = PROXY_REQUEST_INIT;
     tsa_response_t rsp = TSA_RESPONSE_INIT;
 
+    xy_sensor_data_t data = { 0, 0 };
+    const uint32_t data_len = sizeof(data);
+
     const struct timespec ts = {
         .tv_sec = client->request_delay_ms / 1000,
         .tv_nsec = (client->request_delay_ms % 1000) * 1000000
     };
 
     while (gaps_running()) {
-        client_data_t *d = &client->data[idx % client->count];
+        /* Read sensor data */
+        read_xy_sensor(&data);
 
-        if (client->request_delay_ms != 0) {
-            nanosleep(&ts, NULL);
+        /* Save sensor data */
+        if (save_xy_sensor(client->tsr_dir, idx, &data)) {
+            ts_log(ERROR, "Failed to save XY sensor data");
+            gaps_terminate();
+            continue;
         }
 
         /* Compose a request */
-        if (ts_create_request(d->path, &req) != 0) {
+        if (ts_create_request_from_data(&data, data_len, &req) != 0) {
             ts_log(ERROR, "Failed to generate TS request");
             gaps_terminate();
             continue;
@@ -221,7 +226,7 @@ static void *client_thread(void *arg) {
 
         /* Optionally validate the signature */
         if (client->validate != 0) {
-            if (ts_verify(d->path, client->ca_path, &rsp) == 0) {
+            if (ts_verify_data(&data, data_len, client->ca_path, &rsp) == 0) {
                 ts_log(INFO, BCLR(GREEN, "Timestamp VERIFIED"));
             } else {
                 ts_log(WARN, BCLR(RED, "FAILED to validate the timestamp"));
@@ -229,11 +234,15 @@ static void *client_thread(void *arg) {
             fflush(stdout);
         }
 
-        /* Optionally save the timestamp signature */
-        if (save_ts_response(d->path, client->tsr_dir, idx, &rsp) != 0) {
+        /* Save the timestamp signature */
+        if (save_ts_response(client->tsr_dir, idx, &rsp) != 0) {
             ts_log(ERROR, "Failed to save timestamp response");
             gaps_terminate();
             continue;
+        }
+
+        if (client->request_delay_ms != 0) {
+            nanosleep(&ts, NULL);
         }
 
         idx++;
@@ -248,7 +257,7 @@ int main(int argc, char *argv[]) {
         .validate = 0,
         .request_delay_ms = 0,
         .ca_path = DEFAULT_CA_PATH,
-        .tsr_dir = NULL,
+        .tsr_dir = DEFAULT_TSR_OUT_DIR,
 
         .app = {
             .threads = {
@@ -263,9 +272,7 @@ int main(int argc, char *argv[]) {
                             "client<-proxy"),
                 GAPS_CHANNEL_END
             }
-        },
-
-        .count = 0
+        }
     };
 
     parse_args(argc, argv, &client);

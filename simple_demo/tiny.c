@@ -136,10 +136,8 @@ void client_request_info(const client_t* ci, request_t* ri) {
     } while(strncmp(ri->buf, "\r\n", 3));
 
     /* parse the uri [crufty] */
-    const char * const filepart
-       = strnlen(ri->uri, 2) < 2
-       ? "/index.html"
-       : ri->uri;
+    const char *const filepart =
+      (strnlen(ri->uri, 2) < 2) ? "/index.html" : ri->uri;
 
     snprintf(ri->filename, sizeof(ri->filename), ".%s", filepart);
 }

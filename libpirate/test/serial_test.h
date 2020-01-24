@@ -13,12 +13,11 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __SERIAL_H
-#define __SERIAL_H
+#ifndef __PRIMITIVES_TEST_SERIAL_H
+#define __PRIMITIVES_TEST_SERIAL_H
 
-#include "primitives.h"
+#include "greatest.h"
 
-int pirate_serial_open(int gd, int flags, pirate_channel_t *channels);
-int pirate_serial_write(int gd, pirate_channel_t *writers, const void *buf,
-    size_t count);
+enum greatest_test_res test_communication_pthread_serial();
+
 #endif
