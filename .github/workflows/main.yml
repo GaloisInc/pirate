@@ -13,7 +13,7 @@ jobs:
       run: sudo apt-get install -y clang valgrind
     - name: build
       run: |
-        cmake .
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .
         make clean
         make
     - name: libpirate tests
