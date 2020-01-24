@@ -17,7 +17,7 @@ SET(PIRATE_SOURCES
     "uio.c"
 )
 
-SET(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic)
+SET(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
 
 if(PIRATE_SHMEM_FEATURE)
 add_definitions(-DPIRATE_SHMEM_FEATURE=1)

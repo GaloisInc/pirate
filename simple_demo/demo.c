@@ -28,6 +28,14 @@
 #include "primitives.h"
 #include "tiny.h"
 
+#ifdef __GAPS__
+#pragma enclave declare(high)
+#pragma enclave declare(low)
+#define GAPS_MAIN(name) __attribute__((gaps_enclave_main(name)))
+#else
+#define GAPS_MAIN(name)
+#endif
+
 #define HIGH_TO_LOW_CH 0
 #define LOW_TO_HIGH_CH 1
 
@@ -351,7 +359,8 @@ static pthread_alloc_t run_webserver(webserver_t *webargs) {
     return ret;
 }
 
-int main_high(int argc, char* argv[]) {
+int main_high(int argc, char* argv[]) GAPS_MAIN("high")
+{
     int retval = 0, signal_fd;
     sigset_t mask;
     pthread_alloc_t gaps, webserver;
@@ -456,7 +465,8 @@ int main_high(int argc, char* argv[]) {
 }
 
 
-int main_low(int argc, char* argv[]) {
+int main_low(int argc, char* argv[]) GAPS_MAIN("low")
+{
     int retval = 0, signal_fd;
     sigset_t mask;
     pthread_alloc_t webserver;
@@ -539,6 +549,7 @@ int main_low(int argc, char* argv[]) {
 }
 
 
+#ifndef __GAPS__
 int main(int argc, char* argv[]) {
 #ifdef HIGH
     return main_high(argc, argv);
@@ -548,3 +559,4 @@ int main(int argc, char* argv[]) {
     return main_low(argc, argv);
 #endif
 }
+#endif
