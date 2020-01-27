@@ -7,7 +7,7 @@ OPTION(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
 
 find_package(OpenSSL REQUIRED)
 
-include_directories(./include ../libpirate ${OPENSSL_INCLUDE_DIR})
+include_directories(./include ../../libpirate ${OPENSSL_INCLUDE_DIR})
 
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"' -g")
@@ -113,7 +113,7 @@ set(TS_DEMO_HIGH "${LEVEL_HIGH_DIR}/${TS_DEMO_NAME}")
 set(TS_DEMO_LOW "${LEVEL_LOW_DIR}/${TS_DEMO_NAME}")
 set(TS_DEMO_OUT ${TS_DEMO_HIGH} ${TS_DEMO_LOW})
 set(DEVICE_FILE .dev_id)
-set(PLATFORM_GAPS_TOOL_DIR ${PROJECT_SOURCE_DIR}/../single-binary)
+set(PLATFORM_GAPS_TOOL_DIR ${PROJECT_SOURCE_DIR}/../../single-binary)
 set(PLATFORM_GAPS_TOOL ${PLATFORM_GAPS_TOOL_DIR}/platform.py)
 
 add_custom_command(

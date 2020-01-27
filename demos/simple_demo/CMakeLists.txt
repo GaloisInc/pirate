@@ -4,7 +4,7 @@ project(simple_demo)
 
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
-include_directories(../libpirate)
+include_directories(../../libpirate)
 
 SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections")
 SET(DEMO_LIBS "pirateprims-static" "pthread")

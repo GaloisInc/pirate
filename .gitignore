@@ -3,10 +3,10 @@ CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
-simple_demo/low
-simple_demo/high
-simple_demo/both
-simple_demo/*.o
+demos/simple_demo/low
+demos/simple_demo/high
+demos/simple_demo/both
+demos/simple_demo/*.o
 libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_bench_thr
