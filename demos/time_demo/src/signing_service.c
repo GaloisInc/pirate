@@ -105,9 +105,16 @@ static void *signer_thread(void *arg) {
         ts_sign(signer->ts.tsa, &req, &rsp);
 
         /* Reply */
-        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp, sizeof(rsp)) != 0) {
+        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
             if (gaps_running()) {
-                ts_log(ERROR, "Failed to send sign response");
+                ts_log(ERROR, "Failed to send sign response header");
+                gaps_terminate();
+            }
+            continue;
+        }
+        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp.ts, rsp.hdr.len) != 0) {
+            if (gaps_running()) {
+                ts_log(ERROR, "Failed to send sign response body");
                 gaps_terminate();
             }
             continue;

@@ -237,14 +237,14 @@ static void *request_receive(void *argp) {
 
         if ((entry = request_queue_pop(&proxy->queue.free)) == NULL) {
             tsa_response_t rsp = {
-                .status = BUSY,
-                .len = 0,
+                .hdr.status = BUSY,
+                .hdr.len = 0,
                 .ts = { 0 }
             };
 
-            if (gaps_packet_write(PROXY_TO_CLIENT, &rsp, sizeof(rsp)) != 0) {
+            if (gaps_packet_write(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
                 if (gaps_running()) {
-                    ts_log(ERROR, "Failed to send busy response");
+                    ts_log(ERROR, "Failed to send response header");
                     gaps_terminate();
                 }
                 continue;
@@ -308,10 +308,18 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp, sizeof(rsp));
-        if (len != sizeof(rsp)) {
+        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp.hdr, sizeof(rsp.hdr));
+        if (len != sizeof(rsp.hdr)) {
             if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive timestamp response");
+                ts_log(ERROR, "Failed to receive timestamp response header");
+                gaps_terminate();
+            }
+            continue;
+        }
+        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp.ts, rsp.hdr.len);
+        if (len != rsp.hdr.len) {
+            if (gaps_running()) {
+                ts_log(ERROR, "Failed to receive timestamp response body");
                 gaps_terminate();
             }
             continue;
@@ -322,10 +330,19 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp, sizeof(rsp));
+        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
         if (sts != 0) {
             if (gaps_running()) {
-                ts_log(ERROR, "Failed to send response");
+                ts_log(ERROR, "Failed to send response header");
+                gaps_terminate();
+            }
+            continue;
+        }
+
+        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
+        if (sts != 0) {
+            if (gaps_running()) {
+                ts_log(ERROR, "Failed to send response body");
                 gaps_terminate();
             }
             continue;

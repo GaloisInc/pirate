@@ -453,7 +453,7 @@ void ts_term(void *ctx) {
 
 
 void ts_sign(void *ctx, const tsa_request_t *req, tsa_response_t *rsp) {
-    rsp->status = ERR;
+    rsp->hdr.status = ERR;
     TS_RESP_CTX *ts_ctx = (TS_RESP_CTX *)ctx;
     TS_RESP *ts_rsp = NULL;
     BIO *ts_req_bio = NULL;
@@ -479,13 +479,13 @@ void ts_sign(void *ctx, const tsa_request_t *req, tsa_response_t *rsp) {
         goto end;
     }
 
-    if ((rsp->len = BIO_read(ts_rsp_bio, rsp->ts, sizeof(rsp->ts))) < 0) {
+    if ((rsp->hdr.len = BIO_read(ts_rsp_bio, rsp->ts, sizeof(rsp->ts))) < 0) {
         goto end;
     }
 
-    rsp->status = OK;
+    rsp->hdr.status = OK;
 end:
-    if (rsp->status != OK) {
+    if (rsp->hdr.status != OK) {
         print_err("Failed to sign the timestamp request");
     }
 
@@ -510,7 +510,7 @@ int ts_verify_bio(BIO *data, const char *ca, tsa_response_t* rsp) {
 
     int f = TS_VFY_VERSION | TS_VFY_SIGNER | TS_VFY_DATA | TS_VFY_SIGNATURE;
 
-    if ((ts_req_bio = BIO_new_mem_buf(rsp->ts, rsp->len)) == NULL) {
+    if ((ts_req_bio = BIO_new_mem_buf(rsp->ts, rsp->hdr.len)) == NULL) {
         goto end;
     }
 
@@ -656,7 +656,7 @@ int ts_print_tsa_rsp(FILE* out, const tsa_response_t *rsp) {
     BIO *rsp_bio = NULL;
     BIO *rsp_bio_print = NULL;
 
-    if ((rsp_bio = BIO_new_mem_buf(rsp->ts, rsp->len)) == NULL) {
+    if ((rsp_bio = BIO_new_mem_buf(rsp->ts, rsp->hdr.len)) == NULL) {
         goto end;
     }
 
@@ -676,7 +676,7 @@ int ts_print_tsa_rsp(FILE* out, const tsa_response_t *rsp) {
         goto end;
     }
 
-    fprintf(out, "%d\n%s", rsp->len, buf);
+    fprintf(out, "%d\n%s", rsp->hdr.len, buf);
     ret = 0;
 end:
     if (ret != 0) {

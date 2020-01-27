@@ -126,7 +126,7 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
 
     /* Create TS response */
     ts_sign(ts_test->ts_ctx, &tsa_req, &tsa_rsp);
-    if (tsa_rsp.status != OK) {
+    if (tsa_rsp.hdr.status != OK) {
         ts_log(ERROR, "Failed to generate response");
         return -1;
     }

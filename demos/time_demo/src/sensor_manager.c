@@ -146,9 +146,9 @@ static int save_ts_response(const char *dir, uint32_t idx,
     char path[PATH_MAX];
     FILE *f_out = NULL;
 
-    if ((dir == NULL) || 
-        (rsp->status != OK) || 
-        (rsp->status > sizeof(rsp->ts))) {
+    if ((dir == NULL) ||
+        (rsp->hdr.status != OK) ||
+        (rsp->hdr.status > sizeof(rsp->ts))) {
         return 0;
     }
 
@@ -159,7 +159,7 @@ static int save_ts_response(const char *dir, uint32_t idx,
         return -1;
     }
 
-    if (fwrite(rsp->ts, rsp->len, 1, f_out) != 1) {
+    if (fwrite(rsp->ts, rsp->hdr.len, 1, f_out) != 1) {
         ts_log(ERROR, "Failed to save TSR content");
         rv = -1;
     }
@@ -214,10 +214,18 @@ static void *client_thread(void *arg) {
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
         /* Get response */
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp, sizeof(rsp));
-        if (sts != sizeof(rsp)) {
+        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
+        if (sts != sizeof(rsp.hdr)) {
             if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response");
+                ts_log(ERROR, "Failed to receive response header");
+                gaps_terminate();
+            }
+            continue;
+        }
+        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
+        if (sts != ((int) rsp.hdr.len)) {
+            if (gaps_running()) {
+                ts_log(ERROR, "Failed to receive response body");
                 gaps_terminate();
             }
             continue;
