@@ -65,6 +65,7 @@ All demo components are built by following instructions provided
   take a noticeable amount of time.
 * To build time demo with serial GAPS channels between the proxy and the signing
   service, use ```cmake .. -DGAPS_SERIAL=ON```
+* To build time demo with a single executable across enclaves, use ```cmake .. -DSINGLE_BINARY=ON```
 * All build artifacts are located in ```build/time_demo``` directory
 
 ```

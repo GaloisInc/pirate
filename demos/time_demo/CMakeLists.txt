@@ -4,6 +4,7 @@ project(time_demo)
 set(VERSION 0.0.1)
 
 OPTION(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
+OPTION(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 
 find_package(OpenSSL REQUIRED)
 
@@ -116,6 +117,7 @@ set(DEVICE_FILE .dev_id)
 set(PLATFORM_GAPS_TOOL_DIR ${PROJECT_SOURCE_DIR}/../../single-binary)
 set(PLATFORM_GAPS_TOOL ${PLATFORM_GAPS_TOOL_DIR}/platform.py)
 
+IF(SINGLE_BINARY)
 add_custom_command(
     OUTPUT ${TS_DEMO_OUT}
     COMMAND ${PLATFORM_GAPS_TOOL} ${TS_DEMO_HIGH} ${DEVICE_FILE} ${LEVEL_HIGH_DIR}/${SENSOR_MANAGER} ${SENSOR_MANAGER} ${LEVEL_HIGH_DIR}/${SIGNING_PROXY} ${SIGNING_PROXY} ${LEVEL_LOW_DIR}/${SIGNING_SERVICE} ${SIGNING_SERVICE}
@@ -128,7 +130,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(TS_DEMO_TGT ALL DEPENDS ${TS_DEMO_OUT})
-
+ENDIF(SINGLE_BINARY)
 
 # Test
 set(TS_TEST_SCRIPT ${SCRIPTS_DIR}/ts_test.sh)
