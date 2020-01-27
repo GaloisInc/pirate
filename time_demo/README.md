@@ -59,7 +59,7 @@ repository, in particular, from ```apps/ts.c```
 
 ## Building
 All demo components are built by following instructions provided
-[in the main project README](https://github.com/GaloisInc/pirate-demos/blob/master/README.md).
+[in the main project README](/README.md).
 * The build process generates PKI components, which include creation of two
   private/public key pairs. On a machine with limited resources this step may
   take a noticeable amount of time.
@@ -67,8 +67,37 @@ All demo components are built by following instructions provided
   service, use ```cmake .. -DGAPS_SERIAL=ON```
 * All build artifacts are located in ```build/time_demo``` directory
 
+```
+$ cd pirate-demos
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+## Running
+
+The default command-line options use paths relative to the directory
+of the binary. The default PKI configuration files also use relative paths.
+Run three terminals for each of the three executables.
+
+```
+cd build/time_demo/low
+./signing_service -v
+```
+
+```
+cd build/time_demo/high
+./signing_proxy -v
+```
+
+```
+cd build/time_demo/high
+./sensor_manager -v
+```
+
 ### Dependencies
-* [libpirate](https://github.com/GaloisInc/pirate-demos/tree/master/libpirate)
+* [libpirate](/libpirate)
 * [OpenSSL](https://www.openssl.org/)
 * [Valgrind](https://valgrind.org/)
 
