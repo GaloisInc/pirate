@@ -14,7 +14,7 @@
 #include "primitives.h"
 
 static int tcp_socket_reader_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, err, enable, buffer_size, server_fd;
+  int fd, rv, err, enable, port, buffer_size, server_fd;
   struct sockaddr_in addr;
 
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -22,10 +22,15 @@ static int tcp_socket_reader_open(int gd, pirate_channel_t *channels) {
     return server_fd;
   }
 
+  port = channels[gd].port_number;
+  if (port <= 0) {
+    port = PIRATE_PORT_NUMBER + gd;
+  }
+
   memset(&addr, 0, sizeof(struct sockaddr_in));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
+  addr.sin_port = htons(port);
 
   enable = 1;
   rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -78,13 +83,18 @@ static int tcp_socket_reader_open(int gd, pirate_channel_t *channels) {
 }
 
 static int tcp_socket_writer_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, buffer_size, err;
+  int fd, rv, port, buffer_size, err;
   struct sockaddr_in addr;
   struct timespec req;
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd < 0) {
     return fd;
+  }
+
+  port = channels[gd].port_number;
+  if (port <= 0) {
+    port = PIRATE_PORT_NUMBER + gd;
   }
 
   buffer_size = channels[gd].buffer_size;
@@ -101,7 +111,7 @@ static int tcp_socket_writer_open(int gd, pirate_channel_t *channels) {
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = inet_addr(channels[gd].pathname);
-  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
+  addr.sin_port = htons(port);
 
   for (;;) {
     rv = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
