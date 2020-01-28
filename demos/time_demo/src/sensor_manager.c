@@ -154,7 +154,7 @@ static int save_ts_response(const char *dir, uint32_t idx,
 
     if ((dir == NULL) ||
         (rsp->hdr.status != OK) ||
-        (rsp->hdr.status > sizeof(rsp->ts))) {
+        (rsp->hdr.len > sizeof(rsp->ts))) {
         return 0;
     }
 
