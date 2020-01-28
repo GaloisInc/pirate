@@ -236,11 +236,8 @@ static void *request_receive(void *argp) {
         log_proxy_req(proxy->verbosity, "Client request received", &req);
 
         if ((entry = request_queue_pop(&proxy->queue.free)) == NULL) {
-            tsa_response_t rsp = {
-                .hdr.status = BUSY,
-                .hdr.len = 0,
-                .ts = { 0 }
-            };
+            tsa_response_t rsp = TSA_RESPONSE_INIT;
+            rsp.hdr.status = BUSY;
 
             if (gaps_packet_write(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
                 if (gaps_running()) {
