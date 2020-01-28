@@ -389,6 +389,8 @@ int main(int argc, char *argv[]) {
     /* Parse command-line options */
     parse_args(argc, argv, &proxy);
 
+    ts_log(INFO, "Starting signing proxy");
+
     if (queues_init(&proxy) != 0) {
         ts_log(ERROR, "Failed to initialize proxy queues");
         return -1;

@@ -229,7 +229,7 @@ int ts_create_query(proxy_request_t *req, tsa_request_t *tsa_req) {
         goto end;
     }
 
-    if (TS_REQ_set_cert_req(ts_req, 1) != 1) {
+    if (TS_REQ_set_cert_req(ts_req, 0) != 1) {
         goto end;
     }
 
@@ -500,7 +500,7 @@ static int ts_verify_cb(int ok, X509_STORE_CTX *ctx) {
     return ok;
 }
 
-int ts_verify_bio(BIO *data, const char *ca, tsa_response_t* rsp) {
+int ts_verify_bio(BIO *data, const char *ca, const char *cert, tsa_response_t* rsp) {
     int ret = 1;
     BIO *ts_req_bio = NULL;
     TS_RESP *ts_resp = NULL;
@@ -509,6 +509,16 @@ int ts_verify_bio(BIO *data, const char *ca, tsa_response_t* rsp) {
     X509_LOOKUP *lkp = NULL;
 
     int f = TS_VFY_VERSION | TS_VFY_SIGNER | TS_VFY_DATA | TS_VFY_SIGNATURE;
+
+    if (ca == NULL) {
+        fprintf(stderr, "CA path must be specified\n");
+        return ret;
+    }
+
+    if (cert == NULL) {
+        fprintf(stderr, "Signing certificate path must be specified\n");
+        return ret;
+    }
 
     if ((ts_req_bio = BIO_new_mem_buf(rsp->ts, rsp->hdr.len)) == NULL) {
         goto end;
@@ -546,6 +556,11 @@ int ts_verify_bio(BIO *data, const char *ca, tsa_response_t* rsp) {
     if (TS_VERIFY_CTX_set_store(ctx, cert_ctx) == NULL) {
         goto end;
     }
+
+    if (TS_VERIFY_CTS_set_certs(ctx, TS_CONF_load_certs(cert)) == NULL) {
+        goto end;
+    }
+
     cert_ctx = NULL;     /* Freed by TS_VERIFY_CTX_free */
 
     if (!TS_RESP_verify_response(ctx, ts_resp)) {
@@ -568,7 +583,7 @@ end:
 }
 
 int ts_verify_data(const void *data, uint32_t len, 
-    const char *ca, tsa_response_t* rsp) {
+    const char *ca, const char *cert, tsa_response_t* rsp) {
     int ret = 1;
     BIO *data_bio = NULL;
 
@@ -577,7 +592,7 @@ int ts_verify_data(const void *data, uint32_t len,
     }
 
     // data_bio is freed in the ts_verify_bio call
-    ret = ts_verify_bio(data_bio, ca, rsp);
+    ret = ts_verify_bio(data_bio, ca, cert, rsp);
 end:
     if (ret) {
         print_err("Failed to validate response for data in a file");
@@ -586,7 +601,7 @@ end:
     return ret;
 }
 
-int ts_verify_file(const char *path, const char *ca, tsa_response_t* rsp) {
+int ts_verify_file(const char *path, const char *ca, const char *cert, tsa_response_t* rsp) {
     int ret = 1;
     BIO *data_bio = NULL;
 
@@ -595,7 +610,7 @@ int ts_verify_file(const char *path, const char *ca, tsa_response_t* rsp) {
     }
 
     // data_bio is freed in the ts_verify_bio call
-    ret = ts_verify_bio(data_bio, ca, rsp);
+    ret = ts_verify_bio(data_bio, ca, cert, rsp);
 end:
     if (ret) {
         print_err("Failed to validate response for data in a file");

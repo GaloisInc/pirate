@@ -167,6 +167,8 @@ int main(int argc, char *argv[]) {
 
     parse_args(argc, argv, &signer);
 
+    ts_log(INFO, "Starting signing service");
+
     /* Initialize signer crypto resources */
     signer.ts.tsa = ts_init(signer.ts.conf_file, signer.ts.conf_sect);
     if (signer.ts.tsa == NULL) {
