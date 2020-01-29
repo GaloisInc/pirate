@@ -17,7 +17,7 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static int udp_socket_reader_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, err, enable, buffer_size;
+  int fd, rv, err, enable, port, buffer_size;
   struct sockaddr_in addr;
 
   fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -25,10 +25,15 @@ static int udp_socket_reader_open(int gd, pirate_channel_t *channels) {
     return fd;
   }
 
+  port = channels[gd].port_number;
+  if (port <= 0) {
+    port = PIRATE_PORT_NUMBER + gd;
+  }
+
   memset(&addr, 0, sizeof(struct sockaddr_in));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
+  addr.sin_port = htons(port);
 
   enable = 1;
   rv = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -63,12 +68,17 @@ static int udp_socket_reader_open(int gd, pirate_channel_t *channels) {
 }
 
 static int udp_socket_writer_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, buffer_size, err;
+  int fd, rv, port, buffer_size, err;
   struct sockaddr_in addr;
 
   fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) {
     return fd;
+  }
+
+  port = channels[gd].port_number;
+  if (port <= 0) {
+    port = PIRATE_PORT_NUMBER + gd;
   }
 
   buffer_size = channels[gd].buffer_size;
@@ -86,7 +96,7 @@ static int udp_socket_writer_open(int gd, pirate_channel_t *channels) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = inet_addr(channels[gd].pathname);
-  addr.sin_port = htons(PIRATE_PORT_NUMBER + gd);
+  addr.sin_port = htons(port);
   rv = connect(fd, (const struct sockaddr*) &addr, sizeof(addr));
 
   if (rv < 0) {

@@ -228,24 +228,30 @@ SUITE(pirate_tcp_sockets) {
     char pathname[PIRATE_LEN_NAME];
     memset(pathname, 0, PIRATE_LEN_NAME);
     channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
+    int prev_port = pirate_get_port_number(HIGH_TO_LOW_CH);
     pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
     pirate_set_channel_type(HIGH_TO_LOW_CH, TCP_SOCKET);
     pirate_set_pathname(HIGH_TO_LOW_CH, "127.0.0.1");
+    pirate_set_port_number(HIGH_TO_LOW_CH, 2626);
     RUN_TEST(test_communication_pthread);
     pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
     pirate_set_pathname(HIGH_TO_LOW_CH, pathname);
+    pirate_set_port_number(HIGH_TO_LOW_CH, prev_port);
 }
 
 SUITE(pirate_udp_sockets) {
     char pathname[PIRATE_LEN_NAME];
     memset(pathname, 0, PIRATE_LEN_NAME);
     channel_t prev = pirate_get_channel_type(HIGH_TO_LOW_CH);
+    int prev_port = pirate_get_port_number(HIGH_TO_LOW_CH);
     pirate_get_pathname(HIGH_TO_LOW_CH, pathname);
     pirate_set_channel_type(HIGH_TO_LOW_CH, UDP_SOCKET);
     pirate_set_pathname(HIGH_TO_LOW_CH, "127.0.0.1");
+    pirate_set_port_number(HIGH_TO_LOW_CH, 0);
     RUN_TEST(test_communication_pthread);
     pirate_set_channel_type(HIGH_TO_LOW_CH, prev);
     pirate_set_pathname(HIGH_TO_LOW_CH, pathname);
+    pirate_set_port_number(HIGH_TO_LOW_CH, prev_port);
 }
 
 SUITE(pirate_pthread_shmem) {

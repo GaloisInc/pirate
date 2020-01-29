@@ -36,9 +36,9 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, 0, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, 0, NULL, 0}};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, 0, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, 0, NULL, 0}};
 
 // gaps descriptors must be opened from smallest to largest
 int pirate_open(int gd, int flags) {
@@ -527,6 +527,24 @@ int pirate_get_pathname(int gd, char *pathname) {
     strncpy(pathname, readers[gd].pathname, PIRATE_LEN_NAME);
   }
   return 0;
+}
+
+int pirate_set_port_number(int gd, int port) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  readers[gd].port_number = port;
+  writers[gd].port_number = port;
+  return 0;
+}
+
+int pirate_get_port_number(int gd) {
+  if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
+    errno = EBADF;
+    return -1;
+  }
+  return readers[gd].port_number;
 }
 
 int pirate_set_buffer_size(int gd, int buffer_size) {

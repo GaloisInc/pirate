@@ -47,14 +47,16 @@ typedef enum {
   // where %d is the gaps descriptor.
   UNIX_SOCKET,
   // The gaps channel is implemented by using TCP sockets.
-  // The port number is (26427 + d) where d is the gaps descriptor.
   // The writer must use pirate_set_pathname(int, char *)
   // to specify the hostname.
+  // The port number is specified using pirate_set_port_number(int, int)
+  // or defaults to (26427 + d) where d is the gaps descriptor.
   TCP_SOCKET,
   // The gaps channel is implemented by using UDP sockets.
-  // The port number is (26427 + d) where d is the gaps descriptor.
   // The writer must use pirate_set_pathname(int, char *)
   // to specify the hostname.
+  // The port number is specified using pirate_set_port_number(int, int)
+  // or defaults to (26427 + d) where d is the gaps descriptor.
   UDP_SOCKET,
   // The gaps channel is implemented using shared memory.
   // This feature is disabled by default. It must be enabled
@@ -80,6 +82,7 @@ typedef struct {
   int fd;                       // file descriptor
   channel_t channel;            // channel type
   char *pathname;               // optional device path
+  int port_number;              // optional port number (TCP_SOCKET or UDP_SOCKET)
   int buffer_size;              // optional memory buffer size
   size_t packet_size;           // optional packet size (SHMEM_UDP)
   size_t packet_count;          // optional packet count (SHMEM_UDP)
@@ -138,19 +141,32 @@ int pirate_set_channel_type(int gd, channel_t channel_type);
 // of the channel descriptor. Returns INVALID on error.
 channel_t pirate_get_channel_type(int gd);
 
-// Sets the pathname for the read and write ends
+// Sets the pathname or hostname for the read and write ends
 // of the gaps descriptor. Only valid if the channel
-// type is DEVICE. Returns zero on success.
+// type is DEVICE, TCP_SOCKET, or UDP_SOCKET. Returns zero on success.
 // On error -1 is returned, and errno is set appropriately.
 // If pathname is NULL, then the memory allocated
 // for the channel pathname is free'd.
 int pirate_set_pathname(int gd, const char *pathname);
 
-// Gets the pathname for the read and write ends
+// Gets the pathname or hostname for the read and write ends
 // of the gaps descriptor. There must be PIRATE_LEN_NAME
 // bytes allocated at pathname. Returns zero on success.
 // On error -1 is returned, and errno is set appropriately.
 int pirate_get_pathname(int gd, char *pathname);
+
+// Sets the port number for the read and write ends
+// of the gaps descriptor. Only valid if the channel
+// type is TCP_SOCKET or UDP_SOCKET. Returns zero on success.
+// On error -1 is returned, and errno is set appropriately.
+// If pathname is NULL, then the memory allocated
+// for the channel pathname is free'd.
+int pirate_set_port_number(int gd, int port);
+
+// Gets the port number for the read and write ends
+// of the gaps descriptor. On error -1 is returned,
+// and errno is set appropriately.
+int pirate_get_port_number(int gd);
 
 // Sets the memory buffer size for the gaps channel.
 // Only valid if the channel type is SHMEM or UNIX_SOCKET.
