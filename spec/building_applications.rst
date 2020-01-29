@@ -31,7 +31,7 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     $ mkdir llvm-ninja
     $ cd llvm-ninja
     $ cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
-      -DLLVM_ENABLE_PROJECTS=clang\;lld ../private-llvm/llvm
+      -DLLVM_ENABLE_PROJECTS=clang\;lld ../pirate-llvm/llvm
     $ ninja clang lld
 
     # leave build directory
