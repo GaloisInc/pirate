@@ -25,6 +25,7 @@
 
 #include "greatest.h"
 #include "primitives.h"
+#include "mercury_test.h"
 #include "serial_test.h"
 #include "shmem_test.h"
 #include "shmem_udp_test.h"
@@ -266,6 +267,10 @@ SUITE(pirate_pthread_uio) {
     RUN_TEST(test_communication_pthread_uio);
 }
 
+SUITE(pirate_pthread_mercury) {
+    RUN_TEST(test_communication_pthread_mercury);
+}
+
 SUITE(pirate_pthread_serial) {
     RUN_TEST(test_communication_pthread_serial);
 }
@@ -302,6 +307,7 @@ int main(int argc, char **argv) {
 #endif
     RUN_SUITE(pirate_pthread_uio);
     RUN_SUITE(pirate_pthread_serial);
+    RUN_SUITE(pirate_pthread_mercury);
 
     pid_t ch_pid = fork();
     switch (ch_pid) {

@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "primitives.h"
+#include "mercury.h"
 #include "serial.h"
 #include "shmem_interface.h"
 #include "shmem_udp_interface.h"
@@ -134,6 +135,8 @@ int pirate_open(int gd, int flags) {
       return -1;
     }
     return pirate_serial_open(gd, flags, channels);
+  case MERCURY:
+    return pirate_mercury_open(gd, flags, channels);
   case INVALID:
     errno = EINVAL;
     return -1;
@@ -177,6 +180,8 @@ int pirate_close(int gd, int flags) {
     uio_buffer_close(flags, channels[gd].shmem_buffer);
     channels[gd].shmem_buffer = NULL;
     break;
+  case MERCURY:
+    return pirate_mercury_close(gd, channels);
   default:
     break;
   }
@@ -211,6 +216,8 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     return uio_buffer_read(readers[gd].shmem_buffer, buf, count);
   case UDP_SOCKET:
     return pirate_udp_socket_read(gd, readers, buf, count);
+  case MERCURY:
+    return pirate_mercury_read(gd, readers, buf, count);
   default:
     break;
   }
@@ -263,6 +270,8 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return pirate_udp_socket_write(gd, writers, buf, count);
   case SERIAL:
     return pirate_serial_write(gd, writers, buf, count);
+  case MERCURY:
+    return pirate_mercury_write(gd, writers, buf, count);
   default:
     break;
   }

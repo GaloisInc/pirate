@@ -74,6 +74,10 @@ typedef enum {
   // The gaps channel is implemented over a /dev/tty* interface
   // Baud rate = 230400, no error detection or correction
   SERIAL,
+  // The gaps channel for Mercury System PCI-E device
+  // Maximum packet size 256 bytes
+  // Maximim data size 236 bytes
+  MERCURY,
   // The gaps channel is unavailable for operations.
   INVALID,
 } channel_t;

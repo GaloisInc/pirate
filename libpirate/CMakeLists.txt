@@ -8,6 +8,7 @@ SET(PIRATE_SHMEM_FEATURE 0)
 
 SET(PIRATE_SOURCES
     "primitives.c"
+    "mercury.c"
     "serial.c"
     "shmem_interface.c"
     "shmem_udp_interface.c"
@@ -30,6 +31,7 @@ include_directories(. ../include)
 add_executable(primitives_test 
     ${PIRATE_SOURCES}
     test/primitives_test.c
+    test/mercury_test.c
     test/serial_test.c
     test/shmem_test.c
     test/shmem_udp_test.c
