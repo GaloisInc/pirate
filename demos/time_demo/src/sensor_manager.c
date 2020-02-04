@@ -26,6 +26,7 @@ typedef struct {
     uint32_t validate;
     uint32_t request_delay_ms;
     const char *ca_path;
+    const char *cert_path;
     const char *tsr_dir;
 
     gaps_app_t app;
@@ -40,9 +41,10 @@ typedef struct {
 
 const char *argp_program_version = DEMO_VERSION;
 static struct argp_option options[] = {
-    { "ca_path",   'C', "PATH", 0, "CA Path",                          0 },
+    { "ca_path",   'C', "PATH", 0, "CA path",                          0 },
+    { "cert_path", 'S', "PATH", 0, "Signing certificate path",         0 },
     { "verify",    'V', NULL,   0, "Verify timestamp signatures",      0 },
-    { "save_path", 's', "PATH", 0, "TSR output directory",             0 },
+    { "save_path", 'O', "PATH", 0, "TSR output directory",             0 },
     { "req_delay", 'd', "MS",   0, "Request delay in milliseconds",    0 },
     { "verbose",   'v', NULL,   0, "Increase verbosity level",         0 },
     { 0 }
@@ -59,11 +61,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         client->ca_path = arg;
         break;
 
+    case 'S':
+        client->cert_path = arg;
+        break;
+
     case 'V':
         client->validate = 1;
         break;
 
-    case 's':
+    case 'O':
         client->tsr_dir = arg;
         break;
 
@@ -146,9 +152,9 @@ static int save_ts_response(const char *dir, uint32_t idx,
     char path[PATH_MAX];
     FILE *f_out = NULL;
 
-    if ((dir == NULL) || 
-        (rsp->status != OK) || 
-        (rsp->status > sizeof(rsp->ts))) {
+    if ((dir == NULL) ||
+        (rsp->hdr.status != OK) ||
+        (rsp->hdr.len > sizeof(rsp->ts))) {
         return 0;
     }
 
@@ -159,7 +165,7 @@ static int save_ts_response(const char *dir, uint32_t idx,
         return -1;
     }
 
-    if (fwrite(rsp->ts, rsp->len, 1, f_out) != 1) {
+    if (fwrite(rsp->ts, rsp->hdr.len, 1, f_out) != 1) {
         ts_log(ERROR, "Failed to save TSR content");
         rv = -1;
     }
@@ -214,10 +220,18 @@ static void *client_thread(void *arg) {
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
         /* Get response */
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp, sizeof(rsp));
-        if (sts != sizeof(rsp)) {
+        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
+        if (sts != sizeof(rsp.hdr)) {
             if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response");
+                ts_log(ERROR, "Failed to receive response header");
+                gaps_terminate();
+            }
+            continue;
+        }
+        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
+        if (sts != ((int) rsp.hdr.len)) {
+            if (gaps_running()) {
+                ts_log(ERROR, "Failed to receive response body");
                 gaps_terminate();
             }
             continue;
@@ -226,7 +240,7 @@ static void *client_thread(void *arg) {
 
         /* Optionally validate the signature */
         if (client->validate != 0) {
-            if (ts_verify_data(&data, data_len, client->ca_path, &rsp) == 0) {
+            if (ts_verify_data(&data, data_len, client->ca_path, client->cert_path, &rsp) == 0) {
                 ts_log(INFO, BCLR(GREEN, "Timestamp VERIFIED"));
             } else {
                 ts_log(WARN, BCLR(RED, "FAILED to validate the timestamp"));
@@ -277,10 +291,12 @@ int main(int argc, char *argv[]) {
 
     parse_args(argc, argv, &client);
 
+    ts_log(INFO, "Starting sensor manager");
+
     if (gaps_app_run(&client.app) != 0) {
         ts_log(ERROR, "Failed to initialize the timestamp client");
         return -1;
     }
 
-    return gaps_app_wait_exit(&client.app);;
+    return gaps_app_wait_exit(&client.app);
 }

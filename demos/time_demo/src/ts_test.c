@@ -29,6 +29,7 @@ typedef struct {
     const char *conf_path;
     const char *conf_sect;
     const char *ca_path;
+    const char *cert_path;
     uint32_t loops;
     verbosity_t verbosity;
 
@@ -99,6 +100,7 @@ static void parse_args(int argc, char * argv[], ts_test_t *ts_test) {
     ts_test->conf_path = DEFAULT_CONF_PATH;
     ts_test->conf_sect = DEFAULT_CONF_SECTION;
     ts_test->ca_path = DEFAULT_CA_PATH;
+    ts_test->cert_path = DEFAULT_CERT_PATH;
     ts_test->loops = 1;
     ts_test->verbosity = VERBOSITY_NONE;
     argp_parse(&argp, argc, argv, 0 ,0, ts_test);
@@ -126,14 +128,14 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
 
     /* Create TS response */
     ts_sign(ts_test->ts_ctx, &tsa_req, &tsa_rsp);
-    if (tsa_rsp.status != OK) {
+    if (tsa_rsp.hdr.status != OK) {
         ts_log(ERROR, "Failed to generate response");
         return -1;
     }
     log_tsa_rsp(ts_test->verbosity, "Timestamp sign response", &tsa_rsp);
 
     /* Verify */
-    if (ts_verify_file(path, ts_test->ca_path, &tsa_rsp) != 0) {
+    if (ts_verify_file(path, ts_test->ca_path, ts_test->cert_path, &tsa_rsp) != 0) {
         ts_log(ERROR, "Failed to verify response");
         return -1;
     }
