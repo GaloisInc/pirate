@@ -104,7 +104,7 @@ file(MAKE_DIRECTORY
 configure_file(${CONF_TSA} ${PKI_DIR_PURPLE} COPYONLY)
 
 set(TS_VERIFY_SCRIPT ${SCRIPTS_DIR}/ts_verify.sh)
-configure_file(${TS_VERIFY_SCRIPT} ${LEVEL_ORANGE_DIR} COPYONLY)
+configure_file(${TS_VERIFY_SCRIPT} ${ORANGE_DIR} COPYONLY)
 
 # Certificate Authority
 set(TSA_CA_DIR ${PROJECT_BINARY_DIR}/ca)
