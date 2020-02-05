@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 
 project(simple_demo)
 
@@ -40,7 +40,7 @@ add_custom_target(LOW_POST_BUILD
 
 set(BOTH_ELF "both")
 add_executable(${BOTH_ELF}
-    gaps_wrapper.c 
+    gaps_wrapper.c
     ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
     ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
 )

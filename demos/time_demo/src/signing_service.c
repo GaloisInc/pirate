@@ -20,6 +20,8 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#pragma enclave declare(purple)
+
 typedef struct {
     verbosity_t verbosity;
 
@@ -126,10 +128,12 @@ static void signer_term(signer_t *signer) {
 }
 
 
-int main(int argc, char *argv[]) {
+int signing_service_main(int argc, char *argv[])
+    __attribute__((gaps_enclave_main("orange")))
+{
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
-        
+
         .ts = {
             .conf_file = DEFAULT_CONF_PATH,
             .conf_sect = DEFAULT_CONF_SECTION
@@ -143,14 +147,14 @@ int main(int argc, char *argv[]) {
 
             .ch = {
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, 
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL,
                     PROXY_TO_SIGNER_RD, "proxy->signer"),
                 GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL,
                     SIGNER_TO_PROXY_WR, "proxy<-signer"),
 #else
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, NULL,
                             "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL, 
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL,
                             "proxy<-signer"),
 #endif
                 GAPS_CHANNEL_END
@@ -175,9 +179,15 @@ int main(int argc, char *argv[]) {
     }
 
     int rv = gaps_app_wait_exit(&signer.app);
-    
+
     /* Release signer crypto resources */
     ts_term(signer.ts.tsa);
     signer.ts.tsa = NULL;
     return rv;
 }
+
+#ifndef GAPS_ENABLE
+int main(int argc, char *argv[]) {
+    return signing_service_main(argc, argv);
+}
+#endif

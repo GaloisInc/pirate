@@ -133,7 +133,7 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
 
         pirate_close(c->num, c->flags);
     }
-    
+
     // Stop worker threads
     for (int i = 0; i < MAX_APP_THREADS; i++) {
         thread_ctx_t *t = &ctx->threads[i];
@@ -284,7 +284,7 @@ void log_tsa_req(verbosity_t v, const char* msg, const tsa_request_t *req) {
 
 void log_tsa_rsp(verbosity_t v, const char* msg, const tsa_response_t* rsp) {
     if (v >= VERBOSITY_MIN) {
-        ts_log(INFO, BCLR(MAGENTA, "%s : status %s"), msg, 
+        ts_log(INFO, BCLR(MAGENTA, "%s : status %s"), msg,
             ts_status_str(rsp->status));
         if (v >= VERBOSITY_MAX) {
             char *msg = NULL;

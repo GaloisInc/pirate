@@ -51,7 +51,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     ts_test_t *ts_test = (ts_test_t *) state->input;
 
     switch (key) {
-        
+
         case 'c':
             ts_test->conf_path = arg;
             break;
@@ -116,7 +116,7 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
         return -1;
     }
     log_proxy_req(ts_test->verbosity, "Proxy request generated", &proxy_req);
-    
+
     /* Create query */
     if (ts_create_query(&proxy_req, &tsa_req) != 0) {
         ts_log(ERROR, "Failed to create query");

@@ -5,7 +5,7 @@ set -x
 IN=${0}
 REQ=/tmp/${IN}.req
 TSR=/tmp/${IN}.tsr
-CONF=pki/tsa.conf
+CONF=../purple/pki/tsa.conf
 TSA_CA=../ca/tsa_ca.pem
 SECT=tsa
 TS_TEST_BIN=./ts_test

@@ -3,13 +3,11 @@ project(enclave_demo)
 
 set(CMAKE_C_COMPILER "clang")
 
-include_directories(../../libpirate)
-
-function(add_gaps_target TGT SRC) 
+function(add_gaps_target TGT SRC)
     SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
     add_executable(${TGT} ${SRC})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
-    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld") 
+    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld")
 endfunction()
 
 if(GAPS_ENABLE)
@@ -20,4 +18,3 @@ if(GAPS_ENABLE)
 else()
     message(STATUS "GAPS clang not present")
 endif()
-

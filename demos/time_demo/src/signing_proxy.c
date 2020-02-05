@@ -24,6 +24,8 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#pragma enclave declare(yellow)
+
 /* Default values */
 #define DEFAULT_POLL_PERIOD_MS      1000
 #define DEFAULT_REQUEST_QUEUE_LEN   4
@@ -104,7 +106,7 @@ static void parse_args(int argc, char *argv[], proxy_t *proxy) {
 }
 
 /* Push an intem on a queue */
-static void request_queue_push(request_queue_t *queue, 
+static void request_queue_push(request_queue_t *queue,
     proxy_request_entry_t *entry) {
     pthread_mutex_lock(&queue->lock);
     STAILQ_INSERT_TAIL(&queue->head, entry, entry);
@@ -174,7 +176,7 @@ static void queues_term(proxy_t *proxy) {
 /* Thread for generating simulated requests */
 static void *sim_request_gen(void *argp) {
     proxy_t *proxy = (proxy_t *)argp;
-    
+
     /* Generate simulated requests at 1/2 * poll period */
     const uint64_t gen_period_ns = proxy->poll_period_ms * (10000000 / 2);
     const struct timespec ts = {
@@ -189,7 +191,7 @@ static void *sim_request_gen(void *argp) {
         pthread_mutex_lock(&proxy->queue.req.lock);
         entry = STAILQ_FIRST(&proxy->queue.req.head);
         pthread_mutex_unlock(&proxy->queue.req.lock);
-        
+
         if (entry != NULL) {
             continue;
         }
@@ -289,7 +291,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
         log_proxy_req(proxy->verbosity, "Processing next request", &entry->req);
-        
+
         /* Use the timestamp service to sign */
         if (ts_create_query(&entry->req, &req) != 0) {
             ts_log(ERROR, "Failed to generate timestamp sign query");
@@ -317,7 +319,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
         log_tsa_rsp(proxy->verbosity, "Timestamp response received", &rsp);
-    
+
         if (entry->simulated != 0) {
             continue;
         }
@@ -331,7 +333,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        log_tsa_rsp(proxy->verbosity, "Timestamp response sent to client", 
+        log_tsa_rsp(proxy->verbosity, "Timestamp response sent to client",
             &rsp);
     }
 
@@ -339,7 +341,9 @@ static void *proxy_thread(void *arg) {
 }
 
 
-int main(int argc, char *argv[]) {
+int signing_proxy_main(int argc, char *argv[])
+    __attribute__((gaps_enclave_main("yellow")))
+{
     proxy_t proxy = {
         .poll_period_ms = DEFAULT_POLL_PERIOD_MS,
         .queue_len = DEFAULT_REQUEST_QUEUE_LEN,
@@ -353,20 +357,20 @@ int main(int argc, char *argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL, 
+                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL,
                     "client->proxy"),
                 GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, PIPE, NULL,
                     "client<-proxy"),
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL, 
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL,
                     PROXY_TO_SIGNER_WR, "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL, 
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL,
                     SIGNER_TO_PROXY_RD, "proxy<-signer")
 #else
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, NULL, 
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, NULL,
                     "proxy->signer"),
                 GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, PIPE, NULL,
-                    "proxy<-signer")   
+                    "proxy<-signer")
 #endif
             }
         }
@@ -390,3 +394,9 @@ int main(int argc, char *argv[]) {
     queues_term(&proxy);
     return rv;
 }
+
+#ifndef GAPS_ENABLE
+int main(int argc, char *argv[]) {
+    return signing_proxy_main(argc, argv);
+}
+#endif
