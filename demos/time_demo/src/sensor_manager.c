@@ -137,6 +137,7 @@ static int save_xy_sensor(const char *dir, uint32_t idx,
         rv = -1;
     }
 
+    fclose(f_out);
     return rv;
 }
 
