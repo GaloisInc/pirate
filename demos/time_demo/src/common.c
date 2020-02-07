@@ -26,6 +26,8 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+const char *argp_program_version = DEMO_VERSION;
+
 volatile sig_atomic_t terminated = 0;
 
 // Register an empty signal handler for SIGUSR1.

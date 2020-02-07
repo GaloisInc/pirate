@@ -35,7 +35,7 @@ typedef struct {
 } signer_t;
 
 /* Command-line options */
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "conf",      'c', "PATH",    0, "Configuration file path",    0 },
     { "conf_sect", 's', "SECTION", 0, "Configuration section",      0 },
@@ -129,7 +129,7 @@ static void signer_term(signer_t *signer) {
 
 
 int signing_service_main(int argc, char *argv[])
-    __attribute__((gaps_enclave_main("orange")))
+    __attribute__((gaps_enclave_main("purple")))
 {
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,

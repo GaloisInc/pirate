@@ -39,7 +39,8 @@ typedef struct {
 } xy_sensor_data_t;
 #pragma pack()
 
-const char *argp_program_version = DEMO_VERSION;
+/* Command-line options */
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "ca_path",   'C', "PATH", 0, "CA Path",                          0 },
     { "verify",    'V', NULL,   0, "Verify timestamp signatures",      0 },
@@ -254,7 +255,7 @@ static void *client_thread(void *arg) {
 }
 
 int sensor_manager_main(int argc, char *argv[])
-    __attribute__((gaps_enclave_main("purple")))
+    __attribute__((gaps_enclave_main("orange")))
 {
     client_t client = {
         .verbosity = VERBOSITY_NONE,

@@ -58,11 +58,14 @@ set(COMMON_SRC
 
 set(TGT_SRC
     "${SRC_DIR}/${SENSOR_MANAGER}.c"
+    "${SRC_DIR}/${SIGNING_PROXY}.c"
+    "${SRC_DIR}/${SIGNING_SERVICE}.c"
 )
 set(ALL_SRC ${COMMON_SRC} ${TGT_SRC})
 
 function(add_gaps_target TGT SRC LVL)
     add_executable(${TGT} ${SRC})
+    target_link_libraries(${TGT} ${COMMON_LIB})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
     target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${LVL}" "-fuse-ld=lld")
     set_target_properties(

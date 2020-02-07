@@ -37,7 +37,7 @@ typedef struct {
 
 static ts_test_t ts_test_g;
 
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "config",    'c', "PATH",       0, "Configuration file",        0 },
     { "ca_path",   'C', "PATH",       0, "CA Path",                   0 },

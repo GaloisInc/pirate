@@ -56,7 +56,7 @@ typedef struct {
 } proxy_t;
 
 /* Command-line options */
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "period",    'p', "MS",  0, "Request polling period",      0 },
     { "queue-len", 'q', "LEN", 0, "Request queue length",        0 },
