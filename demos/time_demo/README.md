@@ -76,6 +76,14 @@ $ cmake ..
 $ make
 ```
 
+#### Additional cmake Options
+Invoke with
+```
+$ cmake -D<OPTION_NAME>=ON ..
+```
+ * ```GAPS_SERIAL``` use **UART** GAPS channels for *proxy<->signing service* instead of **PIPE**
+
+
 ## Running
 
 The default command-line options use paths relative to the directory
