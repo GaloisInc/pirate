@@ -28,7 +28,7 @@
 #include "primitives.h"
 #include "tiny.h"
 
-#ifdef __GAPS__
+#ifdef GAPS_ENABLE
 #pragma enclave declare(high)
 #pragma enclave declare(low)
 #define GAPS_MAIN(name) __attribute__((gaps_enclave_main(name)))
@@ -64,14 +64,7 @@ static volatile sig_atomic_t terminated = 0;
 
 #define LOW_NAME  "\033[1;32mLOW\033[0m"
 #define HIGH_NAME "\033[1;31mHIGH\033[0m"
-
-#ifdef HIGH
-#define NAME                HIGH_NAME
-#elif LOW
-#define NAME                LOW_NAME
-#else
-#define NAME                "undefined"
-#endif /* LOW */
+static const char *NAME = NULL;
 
 // Register an empty signal handler for SIGUSR1.
 // Replaces the default action for SIGUSR1
@@ -170,7 +163,7 @@ static int load_web_content(data_t* data, char *path, level_e level) {
     switch (level) {
         case LEVEL_HIGH:
             return load_web_content_high(data, path);
-    
+
         case LEVEL_LOW:
             return load_web_content_low(data, path);
 
@@ -361,6 +354,7 @@ static pthread_alloc_t run_webserver(webserver_t *webargs) {
 
 int main_high(int argc, char* argv[]) GAPS_MAIN("high")
 {
+    NAME = HIGH_NAME;
     int retval = 0, signal_fd;
     sigset_t mask;
     pthread_alloc_t gaps, webserver;
@@ -467,6 +461,7 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
 
 int main_low(int argc, char* argv[]) GAPS_MAIN("low")
 {
+    NAME = LOW_NAME;
     int retval = 0, signal_fd;
     sigset_t mask;
     pthread_alloc_t webserver;
@@ -549,14 +544,14 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
 }
 
 
-#ifndef __GAPS__
+#ifndef GAPS_ENABLE
 int main(int argc, char* argv[]) {
 #ifdef HIGH
     return main_high(argc, argv);
-#endif
-
-#ifdef LOW
+#elif LOW
     return main_low(argc, argv);
+#else
+    #error "Must specify application type"
 #endif
 }
 #endif

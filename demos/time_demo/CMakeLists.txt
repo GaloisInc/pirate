@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(time_demo)
 set(CMAKE_C_COMPILER "clang")
+set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Build version
 set(VERSION 0.0.2)
@@ -9,7 +10,6 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"')
 
 # Options
 option(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
-option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 
 if(GAPS_SERIAL)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_SERIAL")
