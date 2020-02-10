@@ -4,7 +4,7 @@ project(libpirate)
 set(CMAKE_C_COMPILER "clang")
 
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
-SET(PIRATE_SHMEM_FEATURE 0)
+OPTION(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 
 SET(PIRATE_SOURCES
     "primitives.c"
