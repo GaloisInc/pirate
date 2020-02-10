@@ -74,16 +74,22 @@ needed for each independent machine running enclaves, and although not
 required, one can use multiple application runners on the same machine
 to, for example, startup processes as different users.
 
-A configuration file has two top-level keys: ``executables`` and
-``resources``. The ``executables`` key contains a list of ``executable``
-objects, each of which defines an executable to run, and a ``resources`` key
-that contains a list of ``resource`` objects.
+A configuration file has three top-level keys: ``executables``,
+``resources``, and ``config``. The ``executables`` key contains a list
+of ``executable`` objects, each of which defines an executable to run;
+the ``resources`` key contains a list of ``resource`` objects,
+describing resources to be initialized by the runner; and the
+``config`` key contains an object with options for runner
+configuration.
 
 ``executables``
     A list of ``executable`` objects.
 
 ``resources``
     A list of ``resource`` objects.
+    
+``config``
+    A ``config`` object with information on runner configuration.
 
 An ``executable`` object has the following fields:
 
@@ -98,6 +104,13 @@ An ``executable`` object has the following fields:
 ``environment``
     A set of key-value pairs to add to the executable's environment. This
     key may be omitted if no environment variables are needed.
+    
+``clear_env``
+    A boolean value describing whether the runner should clear the
+    environment when running the executable. If this is ``true``, the
+    program's environment will contain only the keys specified in
+    ``environment``. Otherwise it will inherit environment variables from
+    the runner.
 
 [Note: Although these are the only fields here at present, in the future,
 we could use other fields to specify how the executable should be run,
@@ -106,12 +119,11 @@ activation for some executables.]
 
 All ``resource`` objects have a ``name`` field described below, and will
 typically have other fields depending on the type of the resource in
-the source (e.g. See `Channel Resources` for a list of channels).
+the source (e.g. See `Channel Resources` for a list).
 
 ``name``
     The user-defined name of the resource. This should match the name the
-    user gave the resource in source-file annotations.  Resources with the
-    same name in multiple enclaves
+    user gave the resource in source-file annotations.
 
 The application initialization will report an error if the YAML file
 contains a resource object with a name that is not in any enclave, or
@@ -121,6 +133,20 @@ unsupported type is found, or if the same resource name is associated
 with incompatible source types or parameters (e.g., a channel with
 datagram semantics in one enclave and stream semantics in another
 enclave).
+
+A ``config`` object has the following fields:
+
+``log_level``
+    How much logging information the runner should produce:
+    
+    ``default``
+        Print only fatal errors.
+        
+    ``info``
+        Additionally print warnings and informative messages.
+        
+    ``debug``
+        Print copious information about the runner's operation.
 
 Example
 ^^^^^^^
@@ -197,7 +223,7 @@ source code:
 
 .. code-block:: c
 
-   const int clockFD
+   const fd_channel_t clockFD
    __attribute__((gaps_resource(channel_clock, fd_channel)));
 
 ``gaps_channel``
@@ -208,7 +234,7 @@ source code:
 
 .. code-block:: c
 
-   const int clockGCD
+   const gaps_channel_t clockGCD
    __attribute__((gaps_resource(channel_clock, gaps_channel)));
 
 File Descriptor Channels
@@ -328,3 +354,83 @@ fields:
 ``rate``
     The baud rate for serial channels. This may be omitted, in which case
     a default rate of 9600 will be used.
+
+
+GAPS Runner
+^^^^^^^^^^^
+
+The GAPS runner allows multiple GAPS executables to be run as a single
+application and handles runtime configuration of resources such as
+channels. The executables to be run and the configuration of their
+resources are supplied using a YAML configuration using the schema
+described above, which must be supplied to the runner as its sole
+command-line argument, e.g. ``gaps-run os_1.yml``. Alternatively, the
+path to the runner may be added to the top of the YAML configuration
+file in a shebang, e.g. ``#!/usr/bin/gaps-run``.
+
+Runner Internals
+----------------
+
+[NOTE: This section is under development and may change.]
+
+Upon execution, the runner parses its configuration file and, for each
+file in the ``executables`` section, compiles a list of resources to
+be configured by reading that file's ``.gaps.res`` section. It then
+attempts to match each resource found in this way with one in the
+``resources`` section of the configuration file by comparing
+``res_name`` with the name field in the YAML. If any resource in
+``.gaps.res`` lacks a YAML resource configuration, the runner reports
+an error. However, since not all resources will be present in all
+executables, extraneous resources mentioned in the YAML do not cause
+an error.
+
+Once all resource information has been gathered, the runner iterates
+through each resource, consulting its table of resource handlers for
+one that matches the type name given in ``res_type``. If no handler
+is found, the handler reports an error. Otherwise, the handler is
+called to fill in the information that will be copied into the
+executable at the annotated symbol when it is run. The runner
+additionally checks to ensure that the symbol size in the executable's
+symtab matches the expected size for a resource of the given type,
+reporting an error otherwise.
+
+Finally, the runner calls ``PTRACE_TRACEME`` and ``exec``s the file
+supplying it with any arguments or environment variables given in the
+configuration. Before calling ``PTRACE_DETACH`` and allowing the
+executable to run, it writes the data supplied by the handler into the
+executable at the annotated symbol.
+
+Resource Initialization
+-----------------------
+
+The linker supports resource initialization by exposing an array
+``void *__gaps_res_<resource_type>`` for each resource type in the
+file. Each resource annotated with the corresponding type is pointed
+to by an element of the array. E.g., ``void *__gaps_res_gaps_channel``
+is an array of pointers to all the ``gaps_channel_t``s annotated with
+the resource type ``gaps_channel``.
+
+Using the resource-pointer arrays exposed in this way, a library can
+declare a program constructor that iterates through the resource
+objects of a given type. Since this occurs after the runner has
+written configuration data to them, the constructor can read this
+data and perform whatever resource initialization is required.
+
+[NOTE: A consequence of the above is that linking will fail if we
+try to link a resource initializer in to a program that doesn't have
+any resources of the corresponding type, since in that case, the
+linker doesn't know to expose the correct symbol. This could be
+solved by requiring resources to be declared before they are used.]
+
+[NOTE: In order for the runner to write configuration data into the
+running executable, the memory it will be written into must already
+be present. Since the compiler toolchain does not know how much space
+a given resource type requires, the source-code annotation specifying
+a resource must be applied to an object of the correct size to hold
+the configuration data. Although the runner can check the size of the
+symbol against a table of sizes corresponding to resource types, it
+would be nice if the error of applying a resource annotation to the
+wrong kind of object could be corrected or prevented at compile time.
+Perhaps we could have an annotation that declares a resource type and
+specifies the object type it may be applied to, e.g.
+``#pragma resource declare(gaps_channel, gaps_channel_t)``.]
