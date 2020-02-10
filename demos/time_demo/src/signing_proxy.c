@@ -24,7 +24,9 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#ifdef GAPS_ENABLE
 #pragma enclave declare(yellow)
+#endif
 
 /* Default values */
 #define DEFAULT_POLL_PERIOD_MS      1000
@@ -355,9 +357,7 @@ static void *proxy_thread(void *arg) {
 }
 
 
-int signing_proxy_main(int argc, char *argv[])
-    __attribute__((gaps_enclave_main("yellow")))
-{
+int signing_proxy_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("yellow") {
     proxy_t proxy = {
         .poll_period_ms = DEFAULT_POLL_PERIOD_MS,
         .queue_len = DEFAULT_REQUEST_QUEUE_LEN,

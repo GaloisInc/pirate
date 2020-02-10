@@ -20,7 +20,9 @@
 #include "ts_crypto.h"
 #include "common.h"
 
+#ifdef GAPS_ENABLE
 #pragma enclave declare(orange)
+#endif
 
 typedef struct {
     verbosity_t verbosity;
@@ -95,6 +97,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 
 static void parse_args(int argc, char *argv[], client_t *client) {
     struct argp argp = {
+
         .options = options,
         .parser = parse_opt,
         .args_doc = "[FILE] [FILE] ...",
@@ -268,9 +271,7 @@ static void *client_thread(void *arg) {
     return 0;
 }
 
-int sensor_manager_main(int argc, char *argv[])
-    __attribute__((gaps_enclave_main("orange")))
-{
+int sensor_manager_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("orange") {
     client_t client = {
         .verbosity = VERBOSITY_NONE,
         .validate = 0,

@@ -20,7 +20,9 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#ifdef GAPS_ENABLE
 #pragma enclave declare(purple)
+#endif
 
 typedef struct {
     verbosity_t verbosity;
@@ -135,9 +137,7 @@ static void signer_term(signer_t *signer) {
 }
 
 
-int signing_service_main(int argc, char *argv[])
-    __attribute__((gaps_enclave_main("purple")))
-{
+int signing_service_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("purple") {
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
 
