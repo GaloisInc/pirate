@@ -394,9 +394,9 @@ additionally checks to ensure that the symbol size in the executable's
 symtab matches the expected size for a resource of the given type,
 reporting an error otherwise.
 
-Finally, the runner calls ``PTRACE_TRACEME`` and ``exec``s the file
-supplying it with any arguments or environment variables given in the
-configuration. Before calling ``PTRACE_DETACH`` and allowing the
+Finally, the runner calls ``PTRACE_TRACEME`` and calls ``exec`` on the
+file supplying it with any arguments or environment variables given in
+the configuration. Before calling ``PTRACE_DETACH`` and allowing the
 executable to run, it writes the data supplied by the handler into the
 executable at the annotated symbol.
 
@@ -407,8 +407,8 @@ The linker supports resource initialization by exposing an array
 ``void *__gaps_res_<resource_type>`` for each resource type in the
 file. Each resource annotated with the corresponding type is pointed
 to by an element of the array. E.g., ``void *__gaps_res_gaps_channel``
-is an array of pointers to all the ``gaps_channel_t``s annotated with
-the resource type ``gaps_channel``.
+is an array of pointers to each ``gaps_channel_t`` annotated with the
+resource type ``gaps_channel``.
 
 Using the resource-pointer arrays exposed in this way, a library can
 declare a program constructor that iterates through the resource
