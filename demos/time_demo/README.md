@@ -102,6 +102,10 @@ as the input source. If the video device cannot be opened then
 stock images will be used instead. Use the flag `-D [filepath]`
 to specify a different video device.
 
+![timestamp of stock image 1](/demos/time_demo/example1.jpg)
+
+![timestamp of stock image 2](/demos/time_demo/example2.jpg)
+
 Use the flag `-x` to run the sensor manager in headless mode.
 The sensor manager in headless mode will use the stock images
 as the input source. The images will not be displayed in
