@@ -6,7 +6,7 @@ set -x
 IN=${0}
 REQ=/tmp/${IN}.req
 TSR=/tmp/${IN}.tsr
-CONF=../purple/tsa/tsa.conf
+CONF=../purple/.priv/tsa.conf
 TSA_CERT=../tsa/tsa_cert.pem
 TSA_CA=../tsa/tsa_ca.pem
 SECT=tsa
