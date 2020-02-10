@@ -94,32 +94,31 @@ else()
     add_non_gaps_target(${SIGNING_SERVICE} ${PURPLE_DIR})
 endif(GAPS_ENABLE)
 
-# OpenSSL configuration resources
+# TSA directories
+set(CA_DIR ${PROJECT_BINARY_DIR}/ca)
+set(CA_PRIV_DIR ${CA_DIR}/.priv)
+set(TSA_DIR ${PROJECT_BINARY_DIR}/tsa)
+set(TSA_PRIV_DIR ${PURPLE_DIR}/.priv)
+file(MAKE_DIRECTORY ${CA_DIR} ${CA_PRIV_DIR} ${TSA_DIR} ${TSA_PRIV_DIR})
+
+# TSA configuration resources
 set(CONF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/conf)
 set(CONF_CA ${CONF_DIR}/tsa_ca.conf)
 set(CONF_TSA ${CONF_DIR}/tsa.conf)
-set(PKI_DIR_PURPLE ${PURPLE_DIR}/pki)
-set(PKI_DIR_PURPLE_PRIV ${PKI_DIR_PURPLE}/priv)
-file(MAKE_DIRECTORY
-    ${PKI_DIR_PURPLE}
-    ${PKI_DIR_PURPLE_PRIV}
-)
-configure_file(${CONF_TSA} ${PKI_DIR_PURPLE} COPYONLY)
+configure_file(${CONF_TSA} ${TSA_PRIV_DIR} COPYONLY)
 
+# Timestamp verification script
 set(TS_VERIFY_SCRIPT ${SCRIPTS_DIR}/ts_verify.sh)
 configure_file(${TS_VERIFY_SCRIPT} ${ORANGE_DIR} COPYONLY)
 
 # Certificate Authority
-set(TSA_CA_DIR ${PROJECT_BINARY_DIR}/ca)
-set(TSA_CA_PRIV_DIR ${TSA_CA_DIR}/priv)
-file(MAKE_DIRECTORY ${TSA_CA_DIR} ${TSA_CA_PRIV_DIR})
-set(TSA_CA ${TSA_CA_DIR}/tsa_ca.pem)
-set(TSA_CA_KEY ${TSA_CA_PRIV_DIR}/tsa_ca_key.pem)
-set(TSA_CA_OUT ${TSA_CA} ${TSA_CA_KEY})
+set(TSA_CA_CERT ${TSA_DIR}/tsa_ca.pem)
+set(TSA_CA_KEY ${CA_PRIV_DIR}/tsa_ca_key.pem)
+set(TSA_CA_OUT ${TSA_CA_CERT} ${TSA_CA_KEY})
 
 add_custom_command(
     OUTPUT ${TSA_CA_OUT}
-    COMMAND ${CRYPTO_KIT} req -new -x509 -nodes -config ${CONF_CA} -out ${TSA_CA} -keyout ${TSA_CA_KEY}
+    COMMAND ${CRYPTO_KIT} req -new -x509 -nodes -config ${CONF_CA} -out ${TSA_CA_CERT} -keyout ${TSA_CA_KEY}
     WORKING_DIRECTORY ${TSA_CA_DIR}
     COMMENT "Generating Certificate Authority"
     DEPENDS ${CONF_CA}
@@ -128,15 +127,15 @@ add_custom_command(
 add_custom_target(TSA_CA_TGT ALL DEPENDS ${TSA_CA_OUT})
 
 # Timestamp Authority
-set(TSA_REQ ${PKI_DIR_PURPLE_PRIV}/tsa_req.pem)
-set(TSA_KEY ${PKI_DIR_PURPLE_PRIV}/tsa_key.pem)
-set(TSA_CERT ${PKI_DIR_PURPLE}/tsa_cert.pem)
+set(TSA_REQ ${TSA_PRIV_DIR}/tsa_req.pem)
+set(TSA_KEY ${TSA_PRIV_DIR}/tsa_key.pem)
+set(TSA_CERT ${TSA_DIR}/tsa_cert.pem)
 set(TSA_OUT ${TSA_REQ} ${TSA_KEY} ${TSA_CERT})
 
 add_custom_command(
     OUTPUT ${TSA_OUT}
     COMMAND DN_SECTION="tsa" ${CRYPTO_KIT} req -new -config ${CONF_CA} -out ${TSA_REQ} -keyout ${TSA_KEY}
-    COMMAND DN_SECTION="tsa" ${CRYPTO_KIT} x509 -req -in ${TSA_REQ} -out ${TSA_CERT} -CA ${TSA_CA} -CAkey ${TSA_CA_KEY} -CAcreateserial -extfile ${CONF_CA} -extensions tsa_cert
+    COMMAND DN_SECTION="tsa" ${CRYPTO_KIT} x509 -req -in ${TSA_REQ} -out ${TSA_CERT} -CA ${TSA_CA_CERT} -CAkey ${TSA_CA_KEY} -CAcreateserial -extfile ${CONF_CA} -extensions tsa_cert
     WORKING_DIRECTORY ${TSA_CA_DIR}
     COMMENT "Generating Timestamp Authority Certificate"
     DEPENDS ${TSA_CA_TGT} ${TSA_CA_OUT}

@@ -18,12 +18,11 @@
 
 #include "common.h"
 
-#define DEFAULT_CONF_PATH    "../purple/pki/tsa.conf"
+#define DEFAULT_CONF_PATH    "../purple/.priv/tsa.conf"
 #define DEFAULT_CONF_SECTION "tsa"
-#define DEFAULT_CA_PATH      "../ca/tsa_ca.pem"
-#define DEFAULT_CERT_PATH    "../purple/pki/tsa_cert.pem"
 #define OID_SECTION          "oids"
-
+#define DEFAULT_CA_PATH      "../tsa/tsa_ca.pem"
+#define DEFAULT_CERT_PATH    "../tsa/tsa_cert.pem"
 
 /* Client */
 int ts_create_request_from_data(const void *data, uint32_t len,

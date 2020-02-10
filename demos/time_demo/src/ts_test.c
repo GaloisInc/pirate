@@ -161,6 +161,8 @@ int main(int argc, char *argv[]) {
     /* Parse command-line options */
     parse_args(argc, argv, &ts_test_g);
 
+    ts_log(INFO, "Starting trusted timestamp test");
+
     /* Initialize the timestamp test */
     ts_test_g.ts_ctx = ts_init(ts_test_g.conf_path, ts_test_g.conf_sect);
     if (ts_test_g.ts_ctx == 0) {
@@ -177,6 +179,8 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup the timestamp test */
     ts_term(ts_test_g.ts_ctx);
+
+    ts_log(INFO, "Trusted timestamp test - SUCCESS");
 
     return 0;
 }
