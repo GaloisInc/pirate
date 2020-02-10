@@ -43,7 +43,7 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
 
     # see that the example worked
     $ llvm-ninja/bin/llvm-readobj --gaps-info enclave.o
-    
+
     # link the example to produce an executable for each enclave
     $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
       -fuse-ld=lld -Xlinker -enclave -Xlinker alpha
@@ -51,7 +51,7 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
       -fuse-ld=lld -Xlinker -enclave -Xlinker beta
 
 Trivial Example: `enclave.c`
-----
+----------------------------
 
 .. code-block:: c
 

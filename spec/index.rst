@@ -72,21 +72,25 @@ baddition that multiple executables may be produced from the same set of
 source files, and executables may be launched from a configuration
 file that simultaneously launches and configures several executables.
 
-As an example, we show below a simple Pirate system consisting of three
-enclaves running in two execution environments.  In this diagram, the
-three enclaves correspond to a device driver that reads from a sensor,
-a filter that processes sensor data to compute a state estimation, and
-a server process on a separate machine that may further aggregrate
-state estimates.  Although separate runtime components, there may
-be considerable overlap in the underlying libraries used to implement
-each component.
-
+As an example, we show below a diagram illustrating a Pirate system
+consisting of three enclaves running in two execution environments.
+The source files are shown in the left of the diagram, and arrows show
+how object files and then executables are constructed.  On the
+right-hand side we show how executables can be grouped into common
+execution environements.
 
 .. figure:: architecture.png
   :width: 1000
   :alt: Compilation Toolchain Overview
 
-In the rest of this document,
+In this diagram, the three enclaves correspond to a device driver that
+reads from a sensor, a filter that processes sensor data to compute a
+state estimation, and a server process on a separate machine that may
+further aggregrate state estimates.  Although separate runtime
+components, there may be considerable overlap in the underlying
+libraries used to implement each component.
+
+Additional information about Pirate is in the sections below:
 
 .. toctree::
    :maxdepth: 2
