@@ -357,7 +357,7 @@ fields:
 
 
 GAPS Runner
-^^^^^^^^^^^
+-----------
 
 The GAPS runner allows multiple GAPS executables to be run as a single
 application and handles runtime configuration of resources such as
@@ -369,7 +369,7 @@ path to the runner may be added to the top of the YAML configuration
 file in a shebang, e.g. ``#!/usr/bin/gaps-run``.
 
 Runner Internals
-----------------
+^^^^^^^^^^^^^^^^
 
 [NOTE: This section is under development and may change.]
 
@@ -401,7 +401,7 @@ executable to run, it writes the data supplied by the handler into the
 executable at the annotated symbol.
 
 Resource Initialization
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The linker supports resource initialization by exposing an array
 ``void *__gaps_res_<resource_type>`` for each resource type in the
