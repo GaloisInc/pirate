@@ -44,6 +44,7 @@ typedef struct {
     gaps_channel_ctx_t ch[MAX_APP_GAPS_CHANNELS];
     thread_ctx_t threads[MAX_APP_THREADS];
     int signal_fd;
+    void (*on_shutdown) (void);
 } gaps_app_t;
 #define GAPS_CHANNEL(n, f, t, p, d) \
 {                                   \
@@ -94,6 +95,7 @@ typedef enum {
 
 #define NONCE_LENGTH    8
 #define MAX_REQ_LEN     128
+#define TS_PATH_MAX     128
 #define MAX_TS_LEN      (8 << 10)
 
 /* Structure passed from the client to the proxy */

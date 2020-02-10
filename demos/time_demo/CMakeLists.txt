@@ -8,6 +8,16 @@ OPTION(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 
 find_package(OpenSSL REQUIRED)
 
+find_library(JPEG_LIB jpeg)
+if(NOT JPEG_LIB)
+  message(FATAL_ERROR "jpeg library not found")
+endif()
+
+find_library(X11_LIB X11)
+if(NOT X11_LIB)
+  message(FATAL_ERROR "X11 library not found")
+endif()
+
 include_directories(./include ../../libpirate ${OPENSSL_INCLUDE_DIR})
 
 set(CMAKE_C_COMPILER "clang")
@@ -37,7 +47,7 @@ file(MAKE_DIRECTORY
 function(add_gaps_target TGT LVL TGT_LIBS)
     set(TGT_SRC "${PROJECT_SOURCE_DIR}/src/${TGT}.c")
     add_executable(${TGT} ${TGT_SRC} ${COMMON_SRC})
-    target_link_libraries(${TGT} ${PIRATE_LIB} ${OPENSSL_LIBRARIES} ${TGT_LIBS} "pthread")
+    target_link_libraries(${TGT} ${PIRATE_LIB} ${OPENSSL_LIBRARIES} ${TGT_LIBS} "X11" "jpeg" "pthread")
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
     set_target_properties(
         ${TGT}
@@ -69,6 +79,7 @@ configure_file(${CONF_TSA} ${PKI_DIR_LOW} COPYONLY)
 
 set(TS_VERIFY_SCRIPT ${SCRIPTS_DIR}/ts_verify.sh)
 configure_file(${TS_VERIFY_SCRIPT} ${LEVEL_HIGH_DIR} COPYONLY)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/stock DESTINATION ${LEVEL_HIGH_DIR})
 
 # Crypto tool
 set(CRYPTO_KIT openssl)

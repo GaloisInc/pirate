@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
                 THREAD_ADD(signer_thread, &signer, "ts_signer"),
                 THREAD_END
             },
-
+            .on_shutdown = NULL,
             .ch = {
 #ifdef GAPS_SERIAL
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, 

@@ -97,6 +97,16 @@ cd build/time_demo/high
 ./sensor_manager -v
 ```
 
+The sensor manager will use the `/dev/video0` camera by default
+as the input source. If the video device cannot be opened then
+stock images will be used instead. Use the flag `-D [filepath]`
+to specify a different video device.
+
+Use the flag `-x` to run the sensor manager in headless mode.
+The sensor manager in headless mode will use the stock images
+as the input source. The images will not be displayed in
+an X window.
+
 ### Dependencies
 * [libpirate](/libpirate)
 * [OpenSSL](https://www.openssl.org/)

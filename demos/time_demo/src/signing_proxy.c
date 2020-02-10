@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
                 THREAD_ADD(request_receive, &proxy, "rx_request"),
                 THREAD_ADD(proxy_thread, &proxy, "proxy"),
             },
-
+            .on_shutdown = NULL,
             .ch = {
                 GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL, 
                     "client->proxy"),
