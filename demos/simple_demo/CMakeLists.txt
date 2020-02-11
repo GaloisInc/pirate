@@ -1,61 +1,98 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 
 project(simple_demo)
-
+set(CMAKE_C_COMPILER "clang")
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
+# Options
+if (GAPS_ENABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
+endif(GAPS_ENABLE)
+
+# Dependencies
 include_directories(../../libpirate)
+SET(LIBS "pirateprims-static" "pthread")
 
-SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections")
-SET(DEMO_LIBS "pirateprims-static" "pthread")
-SET(DEMO_SOURCES "demo.c" "tiny.c")
-SET(ELF_O_SUFFIX "elf.o")
+# Sensitivity levels and output binary names
+set(HIGH "high")
+set(LOW "low")
 
-try_compile(HAS_GAPS ${CMAKE_BINARY_DIR} "${CMAKE_SOURCE_DIR}/gaps/check_gaps.c")
+# Output directories
+set(HIGH_DIR ${PROJECT_BINARY_DIR}/${HIGH})
+set(LOW_DIR ${PROJECT_BINARY_DIR}/${LOW})
+file(MAKE_DIRECTORY ${HIGH_DIR} ${LOW_DIR})
 
-set(HIGH_ELF "high")
-add_executable(${HIGH_ELF} ${DEMO_SOURCES})
-target_link_libraries(${HIGH_ELF} ${DEMO_LIBS})
-target_compile_options(${HIGH_ELF} PRIVATE ${BUILD_FLAGS} -DHIGH)
-
-set(HIGH_ELF_O "${HIGH_ELF}_${ELF_O_SUFFIX}")
-add_custom_target(HIGH_POST_BUILD
-    COMMAND ld -r -b binary -o ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O} ${HIGH_ELF}
-    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
-    DEPENDS ${HIGH_ELF}
-)
-
-set(LOW_ELF "low")
-add_executable(${LOW_ELF} ${DEMO_SOURCES})
-target_link_libraries(${LOW_ELF} ${DEMO_LIBS})
-target_compile_options(${LOW_ELF} PRIVATE ${BUILD_FLAGS} -DLOW)
-
-
-set(LOW_ELF_O "${LOW_ELF}_${ELF_O_SUFFIX}")
-add_custom_target(LOW_POST_BUILD
-    COMMAND ld -r -b binary -o ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O} ${LOW_ELF}
-    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
-    DEPENDS ${LOW_ELF}
-)
-
-set(BOTH_ELF "both")
-add_executable(${BOTH_ELF}
-    gaps_wrapper.c 
-    ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
-    ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
-)
-target_compile_options(${BOTH_ELF} PRIVATE ${BUILD_FLAGS} "-D_GNU_SOURCE")
-add_dependencies(${BOTH_ELF} HIGH_POST_BUILD LOW_POST_BUILD)
-
-if(HAS_GAPS)
-  target_link_options(${HIGH_ELF} PRIVATE "LINKER:-enclave" "LINKER:high" "-fuse-ld=lld")
-  target_link_options(${LOW_ELF}  PRIVATE "LINKER:-enclave" "LINKER:low"  "-fuse-ld=lld")
-endif()
-
+# Resources
+set(RES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res)
 set(STATIC_HTML "index.html")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${STATIC_HTML} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+set(FAV_ICON "favicon.ico")
+set(FAV_ICON_HIGH "favicon_high.ico")
+set(FAV_ICON_LOW "favicon_low.ico")
+configure_file(${RES_DIR}/${STATIC_HTML} ${HIGH_DIR} COPYONLY)
+configure_file(${RES_DIR}/${FAV_ICON_HIGH} ${HIGH_DIR}/${FAV_ICON} COPYONLY)
+configure_file(${RES_DIR}/${FAV_ICON_LOW} ${LOW_DIR}/${FAV_ICON} COPYONLY)
 
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/${HIGH_ELF_O}
-    ${CMAKE_CURRENT_BINARY_DIR}/${LOW_ELF_O}
-)
+# Build flags
+set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
+if (GAPS_ENABLE)
+    set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
+endif(GAPS_ENABLE)
+
+# Source files
+SET(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
+SET(SRCS "${SRC_DIR}/demo.c" "${SRC_DIR}/tiny.c")
+
+function(add_gaps_target TGT OUT_DIR)
+    add_executable(${TGT} ${SRCS})
+    target_link_libraries(${TGT} ${LIBS})
+    target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
+    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld")
+    set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
+endfunction()
+
+function(add_non_gaps_target TGT OUT_DIR)
+    string(TOUPPER ${TGT} TGT_FLAG)
+    add_executable(${TGT} ${SRCS})
+    target_link_libraries(${TGT} ${LIBS})
+    target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS} "-D${TGT_FLAG}")
+    set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
+endfunction()
+
+if (GAPS_ENABLE)
+    add_gaps_target(${HIGH} ${HIGH_DIR})
+    add_gaps_target(${LOW} ${LOW_DIR})
+else()
+    add_non_gaps_target(${HIGH} ${HIGH_DIR})
+    add_non_gaps_target(${LOW} ${LOW_DIR})
+endif(GAPS_ENABLE)
+
+# Combined binary
+if (SINGLE_BINARY)
+    set(DEMO demo)
+    set(DEMO_HIGH "${HIGH_DIR}/${DEMO}")
+    set(DEMO_LOW "${LOW_DIR}/${DEMO}")
+    set(DEMO_OUT ${DEMO_HIGH} ${DEMO_LOW})
+    set(DEVICE_FILE .dev_id)
+    set(PLATFORM_GAPS_TOOL_DIR ${PROJECT_SOURCE_DIR}/../../single-binary)
+    set(PLATFORM_GAPS_TOOL ${PLATFORM_GAPS_TOOL_DIR}/platform.py)
+
+    add_custom_command(
+        OUTPUT ${DEMO_OUT}
+        COMMAND ${PLATFORM_GAPS_TOOL} ${DEMO_HIGH} ${DEVICE_FILE} ${HIGH_DIR}/${HIGH} ${HIGH} ${LOW_DIR}/${LOW} ${LOW}
+        COMMAND cp -p ${DEMO_HIGH} ${DEMO_LOW}
+        COMMAND echo "${HIGH}" > ${HIGH_DIR}/${DEVICE_FILE}
+        COMMAND echo "${LOW}" > ${LOW_DIR}/${DEVICE_FILE}
+        WORKING_DIRECTORY ${PLATFORM_GAPS_TOOL_DIR}
+        COMMENT "Generating combined application binary"
+        DEPENDS ${HIGH} ${LOW}
+        VERBATIM
+    )
+    add_custom_target(DEMO_TGT ALL DEPENDS ${DEMO_OUT})
+endif (SINGLE_BINARY)
+
+# Test
+set(TEST_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
+set(TEST_OUT_DIR ${PROJECT_BINARY_DIR}/test)
+file(MAKE_DIRECTORY ${TEST_OUT_DIR})
+configure_file(${TEST_SRC_DIR}/index.filtered.html ${TEST_OUT_DIR} COPYONLY)
+configure_file(${TEST_SRC_DIR}/integration_test.py ${TEST_OUT_DIR} COPYONLY)

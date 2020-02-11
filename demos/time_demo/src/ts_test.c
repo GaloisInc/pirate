@@ -38,7 +38,7 @@ typedef struct {
 
 static ts_test_t ts_test_g;
 
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "config",    'c', "PATH",       0, "Configuration file",        0 },
     { "ca_path",   'C', "PATH",       0, "CA Path",                   0 },
@@ -52,7 +52,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     ts_test_t *ts_test = (ts_test_t *) state->input;
 
     switch (key) {
-        
+
         case 'c':
             ts_test->conf_path = arg;
             break;
@@ -118,7 +118,7 @@ static int ts_req_sign_verify(ts_test_t *ts_test, const char* path) {
         return -1;
     }
     log_proxy_req(ts_test->verbosity, "Proxy request generated", &proxy_req);
-    
+
     /* Create query */
     if (ts_create_query(&proxy_req, &tsa_req) != 0) {
         ts_log(ERROR, "Failed to create query");
@@ -161,6 +161,8 @@ int main(int argc, char *argv[]) {
     /* Parse command-line options */
     parse_args(argc, argv, &ts_test_g);
 
+    ts_log(INFO, "Starting trusted timestamp test");
+
     /* Initialize the timestamp test */
     ts_test_g.ts_ctx = ts_init(ts_test_g.conf_path, ts_test_g.conf_sect);
     if (ts_test_g.ts_ctx == 0) {
@@ -177,6 +179,8 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup the timestamp test */
     ts_term(ts_test_g.ts_ctx);
+
+    ts_log(INFO, "Trusted timestamp test - SUCCESS");
 
     return 0;
 }
