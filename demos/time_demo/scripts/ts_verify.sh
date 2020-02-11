@@ -2,4 +2,4 @@
 
 set -x
 
-openssl ts -verify -in $1.tsr -data $1.data -CAfile ../ca/tsa_ca.pem -untrusted ../low/pki/tsa_cert.pem
+openssl ts -verify -in $1.tsr -data $1.data -CAfile ../tsa/tsa_ca.pem -untrusted ../tsa/tsa_cert.pem

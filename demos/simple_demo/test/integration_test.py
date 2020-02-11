@@ -4,16 +4,19 @@ import pathlib
 import subprocess
 import sys
 import time
-
 import requests
 
 def main():
     high = subprocess.Popen(
-        ["valgrind", "--leak-check=full", "--error-exitcode=1", "./high", "26081"])
+        ["valgrind", "--leak-check=full", "--error-exitcode=1", "./high", "26081"],
+        cwd="../high"
+    )
     low = subprocess.Popen(
-        ["valgrind", "--leak-check=full", "--error-exitcode=1", "./low", "26080"])
-    expected_high = pathlib.Path("index.html").read_text()
-    expected_low = pathlib.Path("index.filtered.html").read_text()
+        ["valgrind", "--leak-check=full", "--error-exitcode=1", "./low", "26080"],\
+        cwd="../low"
+    )
+    expected_high = pathlib.Path("../high/index.html").read_text()
+    expected_low = pathlib.Path("./index.filtered.html").read_text()
     time.sleep(1)
     req_high = requests.get('http://localhost:26081')
     req_low = requests.get('http://localhost:26080')
@@ -33,7 +36,6 @@ def main():
         sys.exit(low.returncode)
     if high.returncode != 0:
         sys.exit(high.returncode)
-
 
 if __name__ == "__main__":
     main()

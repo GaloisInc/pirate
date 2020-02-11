@@ -9,6 +9,14 @@ $ cmake ..
 $ make
 ```
 
+#### Additional cmake Options
+Invoke with
+```
+$ cmake -D<OPTION_NAME>=ON ..
+```
+ * ```GAPS_ENABLE``` enable compilation with GAPS annotations
+ * ```SINGLE_BINARY``` encrypt and combine application binaries into a single executable
+
 ### libpirate
 
 Pirate primitives layer. The PIRATE core primitives layer

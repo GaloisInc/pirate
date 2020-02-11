@@ -29,6 +29,6 @@ jobs:
         popd
     - name: time_demo tests
       run: |
-        pushd build/demos/time_demo/low
+        pushd build/demos/time_demo/test
         ./ts_test.sh
         popd

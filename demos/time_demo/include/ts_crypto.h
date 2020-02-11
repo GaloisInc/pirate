@@ -18,15 +18,14 @@
 
 #include "common.h"
 
-#define DEFAULT_CONF_PATH    "pki/tsa.conf"
+#define DEFAULT_CONF_PATH    "../purple/.priv/tsa.conf"
 #define DEFAULT_CONF_SECTION "tsa"
-#define DEFAULT_CA_PATH      "../ca/tsa_ca.pem"
-#define DEFAULT_CERT_PATH    "pki/tsa_cert.pem"
 #define OID_SECTION          "oids"
-
+#define DEFAULT_CA_PATH      "../tsa/tsa_ca.pem"
+#define DEFAULT_CERT_PATH    "../tsa/tsa_cert.pem"
 
 /* Client */
-int ts_create_request_from_data(const void *data, uint32_t len, 
+int ts_create_request_from_data(const void *data, uint32_t len,
     proxy_request_t *req);
 int ts_create_request_from_file(const char *path, proxy_request_t *req);
 
@@ -41,7 +40,7 @@ void ts_sign(void *ctx, const tsa_request_t *req, tsa_response_t *rsp);
 
 
 /* Verify */
-int ts_verify_data(const void *data, uint32_t len, 
+int ts_verify_data(const void *data, uint32_t len,
     const char *ca, const char *cert, tsa_response_t* rsp);
 int ts_verify_file(const char *path,
     const char *ca, const char *cert, tsa_response_t* rsp);

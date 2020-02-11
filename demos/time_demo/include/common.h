@@ -20,6 +20,12 @@
 #include <openssl/sha.h>
 #include "primitives.h"
 
+#ifdef GAPS_ENABLE
+#define GAPS_ENCLAVE_MAIN(e)  __attribute__((gaps_enclave_main(e)))
+#else
+#define GAPS_ENCLAVE_MAIN(e)
+#endif
+
 #define MAX_APP_THREADS         3
 #define MAX_APP_GAPS_CHANNELS   4
 typedef struct {

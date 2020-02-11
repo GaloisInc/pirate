@@ -16,10 +16,13 @@
 #include <argp.h>
 #include <math.h>
 #include <stdlib.h>
-
 #include "gaps_packet.h"
 #include "ts_crypto.h"
 #include "common.h"
+
+#ifdef GAPS_ENABLE
+#pragma enclave declare(orange)
+#endif
 
 typedef struct {
     verbosity_t verbosity;
@@ -39,7 +42,8 @@ typedef struct {
 } xy_sensor_data_t;
 #pragma pack()
 
-const char *argp_program_version = DEMO_VERSION;
+/* Command-line options */
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "ca_path",   'C', "PATH", 0, "CA path",                          0 },
     { "cert_path", 'S', "PATH", 0, "Signing certificate path",         0 },
@@ -86,13 +90,14 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     default:
         break;
     }
-    
+
     return 0;
 }
 
 
 static void parse_args(int argc, char *argv[], client_t *client) {
     struct argp argp = {
+
         .options = options,
         .parser = parse_opt,
         .args_doc = "[FILE] [FILE] ...",
@@ -120,7 +125,7 @@ static void read_xy_sensor(xy_sensor_data_t *d) {
 
 
 /* Save sensor data to a file */
-static int save_xy_sensor(const char *dir, uint32_t idx, 
+static int save_xy_sensor(const char *dir, uint32_t idx,
     const xy_sensor_data_t *data) {
     int rv = 0;
     char path[PATH_MAX];
@@ -142,11 +147,12 @@ static int save_xy_sensor(const char *dir, uint32_t idx,
         rv = -1;
     }
 
+    fclose(f_out);
     return rv;
 }
 
 /* Save timestamp sign response to a file */
-static int save_ts_response(const char *dir, uint32_t idx, 
+static int save_ts_response(const char *dir, uint32_t idx,
     const tsa_response_t* rsp ) {
     int rv = 0;
     char path[PATH_MAX];
@@ -265,7 +271,7 @@ static void *client_thread(void *arg) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int sensor_manager_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("orange") {
     client_t client = {
         .verbosity = VERBOSITY_NONE,
         .validate = 0,
@@ -280,7 +286,7 @@ int main(int argc, char *argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_WRONLY, PIPE, NULL, 
+                GAPS_CHANNEL(CLIENT_TO_PROXY, O_WRONLY, PIPE, NULL,
                             "client->proxy"),
                 GAPS_CHANNEL(PROXY_TO_CLIENT, O_RDONLY, PIPE, NULL,
                             "client<-proxy"),
@@ -300,3 +306,9 @@ int main(int argc, char *argv[]) {
 
     return gaps_app_wait_exit(&client.app);
 }
+
+#ifndef GAPS_ENALBLE
+int main(int argc, char *argv[]) {
+    return sensor_manager_main(argc, argv);
+}
+#endif

@@ -20,6 +20,10 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#ifdef GAPS_ENABLE
+#pragma enclave declare(purple)
+#endif
+
 typedef struct {
     verbosity_t verbosity;
 
@@ -33,7 +37,7 @@ typedef struct {
 } signer_t;
 
 /* Command-line options */
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "conf",      'c', "PATH",    0, "Configuration file path",    0 },
     { "conf_sect", 's', "SECTION", 0, "Configuration section",      0 },
@@ -133,10 +137,10 @@ static void signer_term(signer_t *signer) {
 }
 
 
-int main(int argc, char *argv[]) {
+int signing_service_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("purple") {
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
-        
+
         .ts = {
             .conf_file = DEFAULT_CONF_PATH,
             .conf_sect = DEFAULT_CONF_SECTION
@@ -150,14 +154,14 @@ int main(int argc, char *argv[]) {
 
             .ch = {
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL, 
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL,
                     PROXY_TO_SIGNER_RD, "proxy->signer"),
                 GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL,
                     SIGNER_TO_PROXY_WR, "proxy<-signer"),
 #else
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, NULL,
                             "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL, 
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL,
                             "proxy<-signer"),
 #endif
                 GAPS_CHANNEL_END
@@ -184,9 +188,15 @@ int main(int argc, char *argv[]) {
     }
 
     int rv = gaps_app_wait_exit(&signer.app);
-    
+
     /* Release signer crypto resources */
     ts_term(signer.ts.tsa);
     signer.ts.tsa = NULL;
     return rv;
 }
+
+#ifndef GAPS_ENABLE
+int main(int argc, char *argv[]) {
+    return signing_service_main(argc, argv);
+}
+#endif
