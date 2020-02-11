@@ -27,7 +27,7 @@ typedef enum {
 
 #define REQ_CH_PATH       "/tmp/mercury_req"
 
-#define MAX_TEST_LEN      236      
+#define MAX_TEST_LEN      220
 #define TOTAL_TEST_LEN    (((MAX_TEST_LEN) * (MAX_TEST_LEN + 1)) >> 2)
 
 static int open_gaps(int gd, channel_t type, int flags, const char *path,
@@ -82,7 +82,7 @@ static int validate(const uint8_t *buf, uint32_t len) {
 }
 
 TEST test_mercury_request() {
-    uint8_t buf[MAX_TEST_LEN] = { 0 }; 
+    uint8_t buf[MAX_TEST_LEN] = { 0 };
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
@@ -112,7 +112,7 @@ TEST test_mercury_request() {
 }
 
 TEST test_mercury_echo() {
-    uint8_t buf[MAX_TEST_LEN] = { 0 }; 
+    uint8_t buf[MAX_TEST_LEN] = { 0 };
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
@@ -128,7 +128,7 @@ TEST test_mercury_echo() {
         len = pirate_write(E_TO_R, buf, len);
         ASSERT_EQ_FMT(len, test_len, "%zd");
     }
-    
+
     rv = close_gaps(R_TO_E, O_RDONLY, prev[R_TO_E]);
     ASSERT_EQ_FMT(0, rv, "%d");
     rv = close_gaps(E_TO_R, O_WRONLY, prev[E_TO_R]);

@@ -18,8 +18,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
+#include <endian.h>
 #include <sys/stat.h>
 #include "mercury.h"
 
@@ -30,10 +29,12 @@ typedef struct {
     uint32_t message_tlv;
     uint32_t data_tag;
     uint32_t data_len;
+    uint64_t master_ts;
+    uint64_t slave_ts;
 } mercury_header_t;
 #pragma pack()
 
-static int mercury_message_pack(void *buf, const void *data, 
+static int mercury_message_pack(void *buf, const void *data,
                                     const mercury_header_t *hdr) {
     mercury_header_t *msg_hdr = (mercury_header_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(mercury_header_t);
@@ -43,25 +44,30 @@ static int mercury_message_pack(void *buf, const void *data,
         return -1;
     }
 
-    msg_hdr->session_tag = ntohl(hdr->session_tag);
-    msg_hdr->message_tag = ntohl(hdr->message_tag);
-    msg_hdr->message_tlv = ntohl(hdr->message_tlv);
-    msg_hdr->data_tag    = ntohl(hdr->data_tag);
-    msg_hdr->data_len    = ntohl(hdr->data_len);
+    msg_hdr->session_tag = htobe32(hdr->session_tag);
+    msg_hdr->message_tag = htobe32(hdr->message_tag);
+    msg_hdr->message_tlv = htobe32(hdr->message_tlv);
+    msg_hdr->data_tag    = htobe32(hdr->data_tag);
+    msg_hdr->data_len    = htobe32(hdr->data_len);
+    msg_hdr->master_ts   = htobe64(0x4d41535445525453);
+    msg_hdr->slave_ts    = htobe64(0x534c4156455f5453);
+
     memcpy(msg_data, data, hdr->data_len);
     return 0;
 }
 
-static int mercury_message_unpack(const void *buf, void *data, 
+static int mercury_message_unpack(const void *buf, void *data,
                                 size_t data_buf_len, mercury_header_t *hdr) {
     const mercury_header_t *msg_hdr = (mercury_header_t *)buf;
     const uint8_t *msg_data = (uint8_t *)buf + sizeof(mercury_header_t);
 
-    hdr->session_tag = htonl(msg_hdr->session_tag);
-    hdr->message_tag = htonl(msg_hdr->message_tag);
-    hdr->message_tlv = htonl(msg_hdr->message_tlv);
-    hdr->data_tag    = htonl(msg_hdr->data_tag);
-    hdr->data_len    = htonl(msg_hdr->data_len);
+    hdr->session_tag = be32toh(msg_hdr->session_tag);
+    hdr->message_tag = be32toh(msg_hdr->message_tag);
+    hdr->message_tlv = be32toh(msg_hdr->message_tlv);
+    hdr->data_tag    = be32toh(msg_hdr->data_tag);
+    hdr->data_len    = be32toh(msg_hdr->data_len);
+    hdr->master_ts   = be64toh(msg_hdr->master_ts);
+    hdr->slave_ts    = be64toh(msg_hdr->slave_ts);
 
     if ((hdr->data_len > data_buf_len) ||
         (hdr->data_len > (MERCURY_MTU - sizeof(mercury_header_t)))) {
@@ -108,7 +114,7 @@ int pirate_mercury_close(int gd, pirate_channel_t *channels) {
     return rv;
 }
 
-ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf, 
+ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
                                 size_t count) {
     uint8_t rd_buf[MERCURY_MTU] = { 0 };
     size_t rd_len = 0;
