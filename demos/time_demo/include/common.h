@@ -113,9 +113,13 @@ typedef struct {
 typedef struct {
     ts_status_t status;
     uint32_t len;
+} tsa_response_header;
+
+typedef struct {
+    tsa_response_header hdr;
     unsigned char ts[MAX_TS_LEN];
 } tsa_response_t;
-#define TSA_RESPONSE_INIT { .status = UNKNOWN, .len = 0, .ts = { 0 } }
+#define TSA_RESPONSE_INIT { .hdr.status = UNKNOWN, .hdr.len = 0, .ts = { 0 } }
 
 
 #define _BLACK       "30"

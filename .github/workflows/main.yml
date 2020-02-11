@@ -13,13 +13,22 @@ jobs:
       run: sudo apt-get install -y clang valgrind
     - name: build
       run: |
-        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON .
+        mkdir build
+        pushd build
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make clean
         make
+        popd
     - name: libpirate tests
       run: |
         pushd libpirate
         cmake .
+        make
         make test
         make valgrind
+        popd
+    - name: time_demo tests
+      run: |
+        pushd build/demos/time_demo/low
+        ./ts_test.sh
         popd
