@@ -29,6 +29,9 @@
 #include "tiny.h"
 
 #ifdef GAPS_ENABLE
+#ifndef __GAPS__
+#error "gaps compiler must be used"
+#endif
 #pragma enclave declare(high)
 #pragma enclave declare(low)
 #define GAPS_MAIN(name) __attribute__((gaps_enclave_main(name)))

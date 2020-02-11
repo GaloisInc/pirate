@@ -21,6 +21,9 @@
 #include "primitives.h"
 
 #ifdef GAPS_ENABLE
+#ifndef __GAPS__
+#error "gaps compiler must be used"
+#endif
 #define GAPS_ENCLAVE_MAIN(e)  __attribute__((gaps_enclave_main(e)))
 #else
 #define GAPS_ENCLAVE_MAIN(e)
