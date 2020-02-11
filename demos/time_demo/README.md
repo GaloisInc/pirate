@@ -1,6 +1,6 @@
 # Trusted Timestamp Example
 
-## Desig Goals
+## Design Goals
  - Implement a design experiment that is well-suited for integrating and testing
    GAPS technology. Furthermore, this experiment will serve as a test ground for
    exploring potential not asked questions related to GAPS hardware and software
@@ -91,17 +91,17 @@ of the binary. The default PKI configuration files also use relative paths.
 Run three terminals for each of the three executables.
 
 ```
-cd build/time_demo/low
+cd build/demos/time_demo/purple
 ./signing_service -v
 ```
 
 ```
-cd build/time_demo/high
+cd build/demos/time_demo/yellow
 ./signing_proxy -v
 ```
 
 ```
-cd build/time_demo/high
+cd build/demos/time_demo/orange
 ./sensor_manager -v
 ```
 
