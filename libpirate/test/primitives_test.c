@@ -25,6 +25,7 @@
 
 #include "greatest.h"
 #include "primitives.h"
+#include "ge_eth_test.h"
 #include "mercury_test.h"
 #include "serial_test.h"
 #include "shmem_test.h"
@@ -269,6 +270,10 @@ SUITE(pirate_pthread_uio) {
 
 SUITE(pirate_pthread_mercury) {
     RUN_TEST(test_communication_pthread_mercury);
+}
+
+SUITE(pirate_pthread_ge_eth) {
+    RUN_TEST(test_communication_pthread_ge_eth);
 }
 
 SUITE(pirate_pthread_serial) {

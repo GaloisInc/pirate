@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "primitives.h"
+#include "ge_eth.h"
 #include "mercury.h"
 #include "serial.h"
 #include "shmem_interface.h"
@@ -137,6 +138,8 @@ int pirate_open(int gd, int flags) {
     return pirate_serial_open(gd, flags, channels);
   case MERCURY:
     return pirate_mercury_open(gd, flags, channels);
+  case GE_ETH:
+    return pirate_ge_eth_open(gd, flags, channels);
   case INVALID:
     errno = EINVAL;
     return -1;
@@ -218,6 +221,8 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     return pirate_udp_socket_read(gd, readers, buf, count);
   case MERCURY:
     return pirate_mercury_read(gd, readers, buf, count);
+  case GE_ETH:
+    return pirate_ge_eth_read(gd, readers, buf, count);
   default:
     break;
   }
@@ -272,6 +277,8 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return pirate_serial_write(gd, writers, buf, count);
   case MERCURY:
     return pirate_mercury_write(gd, writers, buf, count);
+  case GE_ETH:
+    return pirate_ge_eth_write(gd, writers, buf, count);
   default:
     break;
   }

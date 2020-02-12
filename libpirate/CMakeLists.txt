@@ -8,13 +8,14 @@ OPTION(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 
 SET(PIRATE_SOURCES
     "primitives.c"
+    "ge_eth.c"
     "mercury.c"
     "serial.c"
     "shmem_interface.c"
     "shmem_udp_interface.c"
-    "tcp_socket.c" 
-    "udp_socket.c" 
-    "unix_socket.c" 
+    "tcp_socket.c"
+    "udp_socket.c"
+    "unix_socket.c"
     "uio.c"
 )
 
@@ -28,9 +29,10 @@ endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(. ../include)
 
-add_executable(primitives_test 
+add_executable(primitives_test
     ${PIRATE_SOURCES}
     test/primitives_test.c
+    test/ge_eth_test.c
     test/mercury_test.c
     test/serial_test.c
     test/shmem_test.c

@@ -79,7 +79,9 @@ typedef enum {
   // Maximim data size 236 bytes
   MERCURY,
   // The gaps channel is unavailable for operations.
-  INVALID,
+  GE_ETH,
+  // The gaps channel for GRC Ethernet devices
+  INVALID
 } channel_t;
 
 typedef struct {
