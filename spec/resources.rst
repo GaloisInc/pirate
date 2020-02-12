@@ -223,7 +223,7 @@ source code:
 
 .. code-block:: c
 
-   const fd_channel_t clockFD
+   extern const int clockFD
    __attribute__((gaps_resource(channel_clock, fd_channel)));
 
 ``gaps_channel``
@@ -234,7 +234,7 @@ source code:
 
 .. code-block:: c
 
-   const gaps_channel_t clockGCD
+   extern const int clockGCD
    __attribute__((gaps_resource(channel_clock, gaps_channel)));
 
 File Descriptor Channels
@@ -403,34 +403,17 @@ executable at the annotated symbol.
 Resource Initialization
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The linker supports resource initialization by exposing an array
-``void *__gaps_res_<resource_type>`` for each resource type in the
-file. Each resource annotated with the corresponding type is pointed
-to by an element of the array. E.g., ``void *__gaps_res_gaps_channel``
-is an array of pointers to each ``gaps_channel_t`` annotated with the
-resource type ``gaps_channel``.
+The linker supports resource initialization for any resource type that
+was declared with an associated config type. It does so by exposing an
+array ``<cfg_type> *__gaps_res_<resource_type>`` for each such resource
+type. The config object of each resource annotated with the
+corresponding type is pointed to by an element of the array. E.g.,
+``struct gaps_channel_cfg *__gaps_res_gaps_channel`` is an array of
+pointers to the ``struct gaps_channel_cfg`` config objects associated
+with each resource annotated with the resource type ``gaps_channel``.
 
 Using the resource-pointer arrays exposed in this way, a library can
 declare a program constructor that iterates through the resource
 objects of a given type. Since this occurs after the runner has
 written configuration data to them, the constructor can read this
 data and perform whatever resource initialization is required.
-
-[NOTE: A consequence of the above is that linking will fail if we
-try to link a resource initializer in to a program that doesn't have
-any resources of the corresponding type, since in that case, the
-linker doesn't know to expose the correct symbol. This could be
-solved by requiring resources to be declared before they are used.]
-
-[NOTE: In order for the runner to write configuration data into the
-running executable, the memory it will be written into must already
-be present. Since the compiler toolchain does not know how much space
-a given resource type requires, the source-code annotation specifying
-a resource must be applied to an object of the correct size to hold
-the configuration data. Although the runner can check the size of the
-symbol against a table of sizes corresponding to resource types, it
-would be nice if the error of applying a resource annotation to the
-wrong kind of object could be corrected or prevented at compile time.
-Perhaps we could have an annotation that declares a resource type and
-specifies the object type it may be applied to, e.g.
-``#pragma resource declare(gaps_channel, gaps_channel_t)``.]
