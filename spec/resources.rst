@@ -40,7 +40,7 @@ both.
 
 .. code-block:: c
 
-  const var_type var  __attribute__((gaps_resource(<name>, <type>)));
+  extern const var_type var  __attribute__((gaps_resource(<name>, <type>)));
 
 This attribute on a global variable declares that ``var`` is a variable
 with program type ``var_type`` that is associated with the resource
@@ -61,6 +61,16 @@ additional information from the source file about the resource being
 configured.  For example, communication channels can set the
 ``permissions`` parameter to indicate if the file descriptor should be
 read only, write only, or read-write.
+
+Before a resource type can be used, it must be declared. This
+declaration specifies the name of a resource type, the type it is
+allowed to annotate, and optionally a type that can be used by the
+runner to store runtime configuration information (see `GAPS Runner`_).
+
+.. code-block:: c
+
+   #pragma resource_type declare(<resource_type>, <type_to_annotate>)
+   #pragma resource_type declare(<resource_type>, <type_to_annotate>, <config_data_type>)
 
 Resource Configuration
 ----------------------
