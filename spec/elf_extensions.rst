@@ -175,12 +175,12 @@ Encodes information about a PIRATE initialized resource.
                     Elf64_Word res_type;
                     Elf64_Word res_param;
                     Elf64_Half res_sym;
-                    Elf64_Half res_padding;
+                    Elf64_Half res_cfg_index;
                 } Elf64_GAPS_res;
 
 ``res_name``
-    The offset of a ``.gaps.res.strtab`` entry for the user-defined name
-    of the resource.
+    The offset of a ``.gaps.res.strtab`` entry for the user-defined
+    name of the resource.
 
 ``res_type``
     The index into ``.gaps.res.types`` representing the type of this
@@ -191,8 +191,16 @@ Encodes information about a PIRATE initialized resource.
     parameter for this resource.
 
 ``res_sym``
-    The index into ``.symtab`` identifying the variable
-    this resource is associated with.
+    The index into ``.symtab`` identifying the symbol this resource
+    is associated with. The symbol this points to should be undefined
+    in relocatable ELFs. It will be defined by the linker when
+    creating an executable ELF.
+    
+``res_cfg_index``
+    An index into the resource config array referenced in ``res_type``
+    where config data for this resource can be found. This should be
+    zero and is ignored in relocatable ELFs. It will be filled in by
+    the linker when creating an executable ELF.
     
 ``Elf64_GAPS_res_type``
 =======================
@@ -203,16 +211,25 @@ Encodes information about a PIRATE resource type.
 
                 typedef struct {
                     Elf64_Word rtype_name;
-                    Elf64_Word rtype_cfg_size;
+                    Elf64_Word rtype_cfg_entsize;
+                    Elf64_Half rtype_cfg_sym;
+                    Elf64_Half rtype_padding;
                 } Elf64_GAPS_res_type;
                 
 ``rtype_name``
     The offset into ``.gaps.res.strtab`` for the name of this
     resource type.
     
-``rtype_cfg_size``
-    How much space the linker should allocate for configuration
-    data for resources of this type.
+``rtype_cfg_entsize``
+    The size of a config object for this resource type. This may
+    be zero to indicate that no config data is required for
+    resources of this type.
+    
+``rtype_cfg_sym``
+    The symbol created by the linker to contain config data for
+    each resource of this type in executable ELFs if
+    ``cfg_entsize`` is non-zero. This should be zero and is
+    ignored in relocatable ELFs.
 
 ``Elf64_GAPS_res_param``
 ========================
