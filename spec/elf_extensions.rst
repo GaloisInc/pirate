@@ -65,12 +65,18 @@ so the ``sh_type`` fields in their section headers should be set to
 ``.gaps.res``
     An array of ``Elf64_GAPS_res`` listing the resources to be managed
     by GAPS in the object file.
+    
+``.gaps.res.types``
+    An array of ``Elf64_GAPS_res_type`` listing the allowed resource
+    types, along with the size of the configuration object to be
+    allocated by the linker.
 
 ``.gaps.res.params``
     An array of ``Elf64_GAPS_res_param`` values listing the parameters
     for resources.  Parameters are a contiguous sequence of
-    ``Elf64_GAPS_res_param`` values terminated by a ``Elf64_GAPS_res_param`` struct
-    with an empty name (i.e., ``param_name = 0``).
+    ``Elf64_GAPS_res_param`` values terminated by a
+    ``Elf64_GAPS_res_param`` struct with an empty name (i.e.,
+    ``param_name = 0``).
 
 ``.gaps.res.strtab``
     A string table consisting of vector of zero-terminated strings to
@@ -160,7 +166,7 @@ attributes of a symbol.
 ``Elf64_GAPS_res``
 ==================
 
-Encodes information about a PIRATE initialized resource
+Encodes information about a PIRATE initialized resource.
 
  .. code-block:: c
 
@@ -177,8 +183,8 @@ Encodes information about a PIRATE initialized resource
     of the resource.
 
 ``res_type``
-    The offset of a ``.gaps.res.strtab`` entry for the type
-    of the resource.
+    The index into ``.gaps.res.types`` representing the type of this
+    resource.
 
 ``res_param``
     The index into the ``.gaps.res.params`` array for the first
@@ -187,11 +193,32 @@ Encodes information about a PIRATE initialized resource
 ``res_sym``
     The index into ``.symtab`` identifying the variable
     this resource is associated with.
+    
+``Elf64_GAPS_res_type``
+=======================
+
+Encodes information about a PIRATE resource type.
+
+ .. code-block:: c
+
+                typedef struct {
+                    Elf64_Word rtype_name;
+                    Elf64_Word rtype_cfg_size;
+                } Elf64_GAPS_res_type;
+                
+``rtype_name``
+    The offset into ``.gaps.res.strtab`` for the name of this
+    resource type.
+    
+``rtype_cfg_size``
+    How much space the linker should allocate for configuration
+    data for resources of this type.
 
 ``Elf64_GAPS_res_param``
 ========================
 
-Encodes information about a parameter for a PIRATE initialized resource.
+Encodes information about a parameter for a PIRATE initialized
+resource.
 
  .. code-block:: c
 
