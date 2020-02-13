@@ -369,7 +369,7 @@ int signing_proxy_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("yellow") {
                 THREAD_ADD(request_receive, &proxy, "rx_request"),
                 THREAD_ADD(proxy_thread, &proxy, "proxy"),
             },
-
+            .on_shutdown = NULL,
             .ch = {
                 GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL,
                     "client->proxy"),

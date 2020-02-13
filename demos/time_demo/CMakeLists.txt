@@ -21,9 +21,17 @@ endif(GAPS_ENABLE)
 
 # Dependencies
 find_package(OpenSSL REQUIRED)
+find_library(JPEG_LIB jpeg)
+if(NOT JPEG_LIB)
+  message(FATAL_ERROR "jpeg library not found")
+endif()
+find_library(X11_LIB X11)
+if(NOT X11_LIB)
+  message(FATAL_ERROR "X11 library not found")
+endif()
 set(CRYPTO_KIT openssl)
 include_directories(./include ../../libpirate ${OPENSSL_INCLUDE_DIR})
-set(COMMON_LIB ${OPENSSL_LIBRARIES} "pirateprims-static" "pthread" "m")
+set(COMMON_LIB ${OPENSSL_LIBRARIES} "pirateprims-static" "pthread" "X11" "jpeg")
 set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 
@@ -54,6 +62,8 @@ set(COMMON_SRC
     "${SRC_DIR}/gaps_packet.c"
     "${SRC_DIR}/common.c"
     "${SRC_DIR}/ts_crypto.c"
+    "${SRC_DIR}/video_sensor.c"
+    "${SRC_DIR}/xwin_display.c"
 )
 
 set(TGT_SRC
@@ -110,6 +120,7 @@ configure_file(${CONF_TSA} ${TSA_PRIV_DIR} COPYONLY)
 # Timestamp verification script
 set(TS_VERIFY_SCRIPT ${SCRIPTS_DIR}/ts_verify.sh)
 configure_file(${TS_VERIFY_SCRIPT} ${ORANGE_DIR} COPYONLY)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/stock DESTINATION ${ORANGE_DIR})
 
 # Certificate Authority
 set(TSA_CA_CERT ${TSA_DIR}/tsa_ca.pem)

@@ -43,13 +43,14 @@ int gaps_app_run(gaps_app_t *ctx) {
     sigset_t mask;
     struct sigaction saction;
 
-    // Block the SIGINT and SIGTERM signals in the parent thread.
+    // Block the SIGINT, SIGTERM, and SIGPIPE signals in the parent thread.
     // A new thread inherits a copy of its creator's signal mask.
     // The main thread will wait on signalfd() to handle
-    // SIGINT and SIGTERM signals.
+    // the signals.
     sigemptyset(&mask);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGPIPE);
     if (pthread_sigmask(SIG_BLOCK, &mask, NULL) < 0) {
         ts_log(ERROR, "sigprocmask failed");
         return -1;
@@ -124,6 +125,8 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
         rv = -1;
     }
 
+    ts_log(INFO, "received a shutdown signal");
+
     gaps_terminate();
 
     // Close GAPS channels
@@ -159,6 +162,10 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
             ts_log(ERROR, "pthread_join '%s'", t->name);
             rv = -1;
         }
+    }
+
+    if (ctx->on_shutdown != NULL) {
+        ctx->on_shutdown();
     }
 
     return rv;
