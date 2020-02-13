@@ -62,6 +62,8 @@ set(COMMON_SRC
     "${SRC_DIR}/gaps_packet.c"
     "${SRC_DIR}/common.c"
     "${SRC_DIR}/ts_crypto.c"
+    "${SRC_DIR}/video_sensor.c"
+    "${SRC_DIR}/xwin_display.c"
 )
 
 set(TGT_SRC
