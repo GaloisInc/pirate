@@ -21,10 +21,8 @@ jobs:
         popd
     - name: libpirate tests
       run: |
-        pushd libpirate
-        cmake .
-        make
-        make test
+        pushd build/libpirate
+        ./primitives_test -v
         make valgrind
         popd
     - name: time_demo tests
