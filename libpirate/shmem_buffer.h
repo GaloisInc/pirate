@@ -18,9 +18,15 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdatomic.h>
 #include <stdint.h>
 #include <sys/types.h>
+
+#ifdef __cplusplus
+#include <atomic>
+using namespace std;
+#else
+#include <stdatomic.h>
+#endif
 
 typedef struct {
   atomic_uint_fast64_t position;
