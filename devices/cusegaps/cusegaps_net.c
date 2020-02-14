@@ -147,6 +147,7 @@ static void writer_open(fuse_req_t req, struct fuse_file_info *fi) {
   }
   while (connect(writer_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) {
     if (errno == ECONNREFUSED) {
+      errno = 0;
       if (!nanosleep(&tim, NULL)) {
         continue;
       }

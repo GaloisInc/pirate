@@ -20,15 +20,14 @@ jobs:
         make
         popd
     - name: libpirate tests
+      timeout-minutes: 1
       run: |
-        pushd libpirate
-        cmake .
-        make
-        make test
+        pushd build/libpirate
+        ./primitives_test -v
         make valgrind
         popd
     - name: time_demo tests
       run: |
-        pushd build/demos/time_demo/low
+        pushd build/demos/time_demo/test
         ./ts_test.sh
         popd

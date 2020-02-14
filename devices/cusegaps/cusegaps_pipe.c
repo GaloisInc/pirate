@@ -72,9 +72,13 @@ static void cusegaps_open(fuse_req_t req, struct fuse_file_info *fi) {
 
   snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, dev_name);
   rv = mkfifo(pathname, 0660);
-  if ((rv == -1) && (errno != EEXIST)) {
-    fuse_reply_err(req, errno);
-    return;
+  if (rv == -1) {
+    if (errno == EEXIST) {
+      errno = 0;
+    } else {
+      fuse_reply_err(req, errno);
+      return;
+    }
   }
 
   *fd_p = open(pathname, flags);
