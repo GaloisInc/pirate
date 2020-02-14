@@ -18,10 +18,6 @@ if (GAPS_ENABLE)
     set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
 endif(GAPS_ENABLE)
 
-# Source files
-SET(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-SET(SRCS "${SRC_DIR}/demo.c" "${SRC_DIR}/tiny.c")
-
 ADD_EXECUTABLE(reader reader.cpp)
 ADD_EXECUTABLE(writer writer.cpp)
 
