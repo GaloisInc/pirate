@@ -73,8 +73,12 @@ int pirate_open(int gd, int flags) {
     /* Create a named pipe, if one does not exist */
     snprintf(pathname, PIRATE_LEN_NAME, PIRATE_FILENAME, gd);
     rv = mkfifo(pathname, 0660);
-    if ((rv == -1) && (errno != EEXIST)) {
-      return -1;
+    if (rv == -1) {
+      if (errno == EEXIST) {
+        errno = 0;
+      } else {
+        return -1;
+      }
     }
     break;
   case DEVICE:
