@@ -82,22 +82,26 @@ TEST test_high_to_low_comm() {
         perror("unable to open HIGH_TO_LOW_CH for writing");
     }
     ASSERT_EQ_FMT(HIGH_TO_LOW_CH, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_open(LOW_TO_HIGH_CH, O_RDONLY);
     if (rv < 0) {
         perror("unable to open LOW_TO_HIGH_CH for reading");
     }
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     // test double-open
     rv = pirate_open(LOW_TO_HIGH_CH, O_RDONLY);
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_write(HIGH_TO_LOW_CH, &data, sizeof(data));
     if (rv < 0) {
         perror("pirate HIGH_TO_LOW_CH write error");
     }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_read(LOW_TO_HIGH_CH, &data, sizeof(data));
     if (rv < 0) {
@@ -105,12 +109,15 @@ TEST test_high_to_low_comm() {
     }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
     ASSERT_EQ_FMT(~TEST_DATA, data, "%u");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_close(HIGH_TO_LOW_CH, O_WRONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_close(LOW_TO_HIGH_CH, O_RDONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     PASS();
 }
@@ -124,12 +131,14 @@ TEST test_low_to_high_comm() {
         perror("unable to open HIGH_TO_LOW_CH for reading");
     }
     ASSERT_EQ_FMT(HIGH_TO_LOW_CH, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_open(LOW_TO_HIGH_CH, O_WRONLY);
     if (rv < 0) {
         perror("unable to open LOW_TO_HIGH_CH for writing");
     }
     ASSERT_EQ_FMT(LOW_TO_HIGH_CH, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_read(HIGH_TO_LOW_CH, &data, sizeof(data));
     if (rv < 0) {
@@ -137,6 +146,7 @@ TEST test_low_to_high_comm() {
     }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
     ASSERT_EQ_FMT(TEST_DATA, data, "%u");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     data = ~data;
     rv = pirate_write(LOW_TO_HIGH_CH, &data, sizeof(data));
@@ -144,12 +154,15 @@ TEST test_low_to_high_comm() {
         perror("pirate LOW_TO_HIGH_CH write error");
     }
     ASSERT_EQ_FMT((int)sizeof(data), rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_close(HIGH_TO_LOW_CH, O_RDONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     rv = pirate_close(LOW_TO_HIGH_CH, O_WRONLY);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     PASS();
 }

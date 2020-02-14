@@ -97,6 +97,7 @@ static int unix_socket_writer_open(int gd, pirate_channel_t *channels) {
     rv = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
     if (rv < 0) {
       if ((errno == ENOENT) || (errno == ECONNREFUSED)) {
+        errno = 0;
         req.tv_sec = 0;
         req.tv_nsec = 1e8;
         rv = nanosleep(&req, NULL);
