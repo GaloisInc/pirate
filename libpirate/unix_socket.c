@@ -35,6 +35,8 @@ static int unix_socket_reader_open(int gd, pirate_channel_t *channels) {
   }
 
   unlink(pathname);
+  // ignore unlink error if file does not exist
+  errno = 0;
   rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
   if (rv < 0) {
     err = errno;
