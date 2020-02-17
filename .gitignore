@@ -3,10 +3,6 @@ CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
-demos/simple_demo/low
-demos/simple_demo/high
-demos/simple_demo/both
-demos/simple_demo/*.o
 libpirate/libpirate.a
 libpirate/libpirate.so
 libpirate/primitives_bench_thr
@@ -21,7 +17,5 @@ libpirate/bench/*.png
 devices/cusegaps/cusegaps_net
 devices/cusegaps/cusegaps_pipe
 devices/cusegaps/cusegaps_test
-platform-gaps/hello
-platform-gaps/world
 .vscode
 /build/*

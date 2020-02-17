@@ -22,6 +22,10 @@
 
 #include "shmem_buffer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PIRATE_FILENAME "/tmp/gaps.channel.%d"
 #define PIRATE_DOMAIN_FILENAME "/tmp/gaps.channel.%d.sock"
 #define PIRATE_PORT_NUMBER 26427
@@ -231,5 +235,9 @@ int pirate_getsockopt(int gd, int flags, int level, int optname, void *optval,
 // Invoke setsockopt() on the underlying socket
 int pirate_setsockopt(int gd, int flags, int level, int optname,
                       const void *optval, socklen_t optlen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__PIRATE_PRIMITIVES_H
