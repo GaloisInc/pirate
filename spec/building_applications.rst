@@ -31,8 +31,8 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     $ mkdir llvm-ninja
     $ cd llvm-ninja
     $ cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
-      -DLLVM_ENABLE_PROJECTS=clang\;lld ../private-llvm/llvm
-    $ ninja clang lld
+      -DLLVM_ENABLE_PROJECTS=clang\;lld ../pirate-llvm/llvm
+    $ ninja clang lld llvm-readobj
 
     # leave build directory
     $ cd ..
@@ -47,7 +47,7 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
     # link the example to produce an executable for each enclave
     $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
       -fuse-ld=lld -Xlinker -enclave -Xlinker alpha
-    $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
+    $ llvm-ninja/bin/clang enclave.o -o enclave_beta \
       -fuse-ld=lld -Xlinker -enclave -Xlinker beta
 
 Trivial Example: `enclave.c`
