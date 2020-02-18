@@ -326,6 +326,7 @@ int main(int argc, char **argv) {
     RUN_SUITE(pirate_pthread_uio);
     RUN_SUITE(pirate_pthread_serial);
     RUN_SUITE(pirate_pthread_mercury);
+    RUN_SUITE(pirate_pthread_ge_eth);
 
     pid_t ch_pid = fork();
     switch (ch_pid) {
