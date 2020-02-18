@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 #define _POSIX_C_SOURCE 200809L
