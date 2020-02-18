@@ -251,14 +251,14 @@ enum greatest_test_res test_communication_pthread_serial() {
 
     if (((greatest_test_res)req_sts) == GREATEST_TEST_RES_FAIL) {
         if (GREATEST_ABORT_ON_FAIL()) {
-        abort();
+            abort();
         }
         return GREATEST_TEST_RES_FAIL;
     }
 
     if (((greatest_test_res)echo_sts) == GREATEST_TEST_RES_FAIL) {
         if (GREATEST_ABORT_ON_FAIL()) {
-        abort();
+            abort();
         }
         return GREATEST_TEST_RES_FAIL;
     }
@@ -274,5 +274,3 @@ enum greatest_test_res test_communication_pthread_serial() {
 
     PASS();
 }
-
-

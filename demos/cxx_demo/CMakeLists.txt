@@ -18,8 +18,11 @@ if (GAPS_ENABLE)
     set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
 endif(GAPS_ENABLE)
 
-ADD_EXECUTABLE(reader reader.cpp)
-ADD_EXECUTABLE(writer writer.cpp)
+SET(READER_TGT reader_cxx)
+SET(WRITER_TGT writer_cxx)
 
-TARGET_LINK_LIBRARIES(reader LINK_PUBLIC ${LIBS})
-TARGET_LINK_LIBRARIES(writer LINK_PUBLIC ${LIBS})
+ADD_EXECUTABLE(${READER_TGT} reader.cpp)
+ADD_EXECUTABLE(${WRITER_TGT} writer.cpp)
+
+TARGET_LINK_LIBRARIES(${READER_TGT} LINK_PUBLIC ${LIBS})
+TARGET_LINK_LIBRARIES(${WRITER_TGT} LINK_PUBLIC ${LIBS})
