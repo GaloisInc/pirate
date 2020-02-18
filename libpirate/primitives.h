@@ -82,9 +82,9 @@ typedef enum {
   // Maximum packet size 256 bytes
   // Maximim data size 236 bytes
   MERCURY,
-  // The gaps channel is unavailable for operations.
-  GE_ETH,
   // The gaps channel for GRC Ethernet devices
+  GE_ETH,
+  // The gaps channel is unavailable for operations
   INVALID
 } channel_t;
 
