@@ -11,6 +11,31 @@ Provide a simple and flexible framework for
 * Facilitating hardware integration
 * Debugging
 
+## Building and Testing
+Dependencies
+* ```cmake``` version **3.13** or higher
+* ```clang```
+
+```
+$ git clone https://github.com/GaloisInc/pirate-demos.git
+$ cd pirate-demos
+$ mkdir build
+$ cd build
+$ cmake --target channel_demo ..
+$ make writer reader
+```
+
+Output artifacts are located in ```pirate-demos/build/demos/channel_demo```
+
+Test the functionality with a GAPS unix pipe channel
+```
+$ ./reader -l 10,20,1 -C pipe -v
+```
+in a separate terminal window
+```
+$ ./writer -l 10,20,1 -C pipe -v
+```
+
 ## Implementation Overview
 The GAPS channel demo contains two components:
 
@@ -157,37 +182,10 @@ Test utility for reading deterministic GAPS packets
 
 ```
 
-
-## Building and Testing
-Dependencies
-* ```cmake``` version **3.13** or higher
-* ```clang-10```
-
-```
-$ git clone https://github.com/GaloisInc/pirate-demos.git
-$ cd pirate-demos
-$ git checkout hw_integration
-$ mkdir build
-$ cd build
-$ cmake --target channel_demo ..
-$ make writer reader
-```
-
-Output artifacts are located in ```pirate-demos/build/demos/channel_demo```
-
-Test the functionality with a GAPS unix pipe channel
-```
-$ ./reader -l 10,20,1 -C pipe -v
-```
-in a separate terminal window
-```
-$ ./writer -l 10,20,1 -C pipe -v
-```
-
 ## Hardware Integration
 
-This section provides source code tips for hardware manufactures for integrating
-new hardware devices.
+This section provides useful locations (filenames and function names)
+for integrating hardware devices.
 
 ### GE Ethernet
 #### Channel Configuration and Initialization
