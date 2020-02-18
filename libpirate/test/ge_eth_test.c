@@ -31,8 +31,7 @@ typedef enum {
 #define GE_ETH_IP_ADDR    "127.0.0.1"
 #define GE_ETH_IP_PORT    0x4745
 
-static int open_gaps(int gd, channel_t type, int flags, const char *ip_addr,
-    int port, channel_t *prev) {
+static int open_gaps(int gd, channel_t type, int flags, channel_t *prev) {
     int rv = -1;
 
     *prev = pirate_get_channel_type(gd);
@@ -40,20 +39,6 @@ static int open_gaps(int gd, channel_t type, int flags, const char *ip_addr,
     rv = pirate_set_channel_type(gd, type);
     if (rv != 0) {
         return rv;
-    }
-
-    if (ip_addr != NULL) {
-        rv = pirate_set_pathname(gd, ip_addr);
-        if (rv != 0) {
-            return rv;
-        }
-    }
-
-    if (port != 0) {
-        rv = pirate_set_port_number(gd, port);
-        if (rv != 0) {
-            return rv;
-        }
     }
 
     return pirate_open(gd, flags);
@@ -65,7 +50,6 @@ static int close_gaps(int gd, int flags, channel_t prev) {
         return rv;
     }
 
-    rv = pirate_set_pathname(gd, NULL);
     pirate_set_channel_type(gd, prev);
     return rv;
 }
@@ -94,10 +78,9 @@ TEST test_ge_eth_request() {
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
-    rv = open_gaps(R_TO_E, GE_ETH, O_WRONLY, GE_ETH_IP_ADDR, GE_ETH_IP_PORT,
-                    &prev[R_TO_E]);
+    rv = open_gaps(R_TO_E, GE_ETH, O_WRONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
-    rv = open_gaps(E_TO_R, PIPE, O_RDONLY, NULL, 0, &prev[E_TO_R]);
+    rv = open_gaps(E_TO_R, PIPE, O_RDONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
@@ -126,10 +109,9 @@ TEST test_ge_eth_echo() {
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
-    rv = open_gaps(R_TO_E, GE_ETH, O_RDONLY, GE_ETH_IP_ADDR, GE_ETH_IP_PORT,
-        &prev[R_TO_E]);
+    rv = open_gaps(R_TO_E, GE_ETH, O_RDONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
-    rv = open_gaps(E_TO_R, PIPE, O_WRONLY, NULL, 0, &prev[E_TO_R]);
+    rv = open_gaps(E_TO_R, PIPE, O_WRONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
@@ -161,6 +143,12 @@ enum greatest_test_res test_communication_pthread_ge_eth()  {
     pthread_t req_id, echo_id;
     void *req_sts, *echo_sts;
 
+    rv = pirate_set_pathname(R_TO_E, GE_ETH_IP_ADDR);
+    ASSERT_EQ_FMT(0, rv, "%d");
+
+    rv = pirate_set_port_number(R_TO_E, GE_ETH_IP_PORT);
+    ASSERT_EQ_FMT(0, rv, "%d");
+
     rv = pthread_create(&req_id, NULL, test_ge_eth_request_thread, NULL);
     if (rv != 0) {
         FAILm(strerror(rv));
@@ -180,6 +168,12 @@ enum greatest_test_res test_communication_pthread_ge_eth()  {
     if (rv != 0) {
         FAILm(strerror(rv));
     }
+
+    rv = pirate_set_pathname(R_TO_E, NULL);
+    ASSERT_EQ_FMT(0, rv, "%d");
+
+    rv = pirate_set_port_number(R_TO_E, 0);
+    ASSERT_EQ_FMT(0, rv, "%d");
 
     if (((greatest_test_res)req_sts) == GREATEST_TEST_RES_FAIL) {
         if (GREATEST_ABORT_ON_FAIL()) {

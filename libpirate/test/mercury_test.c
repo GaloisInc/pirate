@@ -30,8 +30,7 @@ typedef enum {
 #define MAX_TEST_LEN      220
 #define TOTAL_TEST_LEN    (((MAX_TEST_LEN) * (MAX_TEST_LEN + 1)) >> 2)
 
-static int open_gaps(int gd, channel_t type, int flags, const char *path,
-                        channel_t *prev) {
+static int open_gaps(int gd, channel_t type, int flags, channel_t *prev) {
     int rv = -1;
 
     *prev = pirate_get_channel_type(gd);
@@ -39,13 +38,6 @@ static int open_gaps(int gd, channel_t type, int flags, const char *path,
     rv = pirate_set_channel_type(gd, type);
     if (rv != 0) {
         return rv;
-    }
-
-    if (path != NULL) {
-        rv = pirate_set_pathname(gd, path);
-        if (rv != 0) {
-            return rv;
-        }
     }
 
     return pirate_open(gd, flags);
@@ -57,7 +49,6 @@ static int close_gaps(int gd, int flags, channel_t prev) {
         return rv;
     }
 
-    rv = pirate_set_pathname(gd, NULL);
     pirate_set_channel_type(gd, prev);
     return rv;
 }
@@ -86,9 +77,9 @@ TEST test_mercury_request() {
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
-    rv = open_gaps(R_TO_E, MERCURY, O_WRONLY, REQ_CH_PATH, &prev[R_TO_E]);
+    rv = open_gaps(R_TO_E, MERCURY, O_WRONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
-    rv = open_gaps(E_TO_R, PIPE, O_RDONLY, NULL, &prev[E_TO_R]);
+    rv = open_gaps(E_TO_R, PIPE, O_RDONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
@@ -116,9 +107,9 @@ TEST test_mercury_echo() {
     int rv = -1;
     channel_t prev[CHANNEL_COUNT];
 
-    rv = open_gaps(R_TO_E, MERCURY, O_RDONLY, REQ_CH_PATH, &prev[R_TO_E]);
+    rv = open_gaps(R_TO_E, MERCURY, O_RDONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
-    rv = open_gaps(E_TO_R, PIPE, O_WRONLY, NULL, &prev[E_TO_R]);
+    rv = open_gaps(E_TO_R, PIPE, O_WRONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
@@ -150,6 +141,9 @@ enum greatest_test_res test_communication_pthread_mercury() {
     pthread_t req_id, echo_id;
     void *req_sts, *echo_sts;
 
+    rv = pirate_set_pathname(R_TO_E, REQ_CH_PATH);
+    ASSERT_EQ_FMT(0, rv, "%d");
+
     rv = pthread_create(&req_id, NULL, test_mercury_request_thread, NULL);
     if (rv != 0) {
         FAILm(strerror(rv));
@@ -169,6 +163,9 @@ enum greatest_test_res test_communication_pthread_mercury() {
     if (rv != 0) {
         FAILm(strerror(rv));
     }
+
+    rv = pirate_set_pathname(R_TO_E, REQ_CH_PATH);
+    ASSERT_EQ_FMT(0, rv, "%d");
 
     if (((greatest_test_res)req_sts) == GREATEST_TEST_RES_FAIL) {
         if (GREATEST_ABORT_ON_FAIL()) {
