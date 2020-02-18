@@ -14,6 +14,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#include <errno.h>
 #include <unistd.h>
 #include "greatest.h"
 #include "primitives.h"
@@ -79,17 +80,21 @@ TEST test_mercury_request() {
 
     rv = open_gaps(R_TO_E, MERCURY, O_WRONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     rv = open_gaps(E_TO_R, PIPE, O_RDONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
         fill(buf, test_len);
 
         ssize_t len = pirate_write(R_TO_E, buf, test_len);
         ASSERT_EQ_FMT(len, test_len, "%zd");
+        ASSERT_EQ_FMT(0, errno, "%d");
 
         len = pirate_read(E_TO_R, buf, len);
         ASSERT_EQ_FMT(len, test_len, "%zd");
+        ASSERT_EQ_FMT(0, errno, "%d");
 
         rv = validate(buf, test_len);
         ASSERT_EQ_FMT(0, rv, "%d");
@@ -97,8 +102,10 @@ TEST test_mercury_request() {
 
     rv = close_gaps(R_TO_E, O_WRONLY, prev[R_TO_E]);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     rv = close_gaps(E_TO_R, O_RDONLY, prev[E_TO_R]);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     PASS();
 }
 
@@ -109,21 +116,27 @@ TEST test_mercury_echo() {
 
     rv = open_gaps(R_TO_E, MERCURY, O_RDONLY, &prev[R_TO_E]);
     ASSERT_EQ_FMT(R_TO_E, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     rv = open_gaps(E_TO_R, PIPE, O_WRONLY, &prev[E_TO_R]);
     ASSERT_EQ_FMT(E_TO_R, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
 
     for (ssize_t test_len = 1; test_len <= MAX_TEST_LEN; test_len++) {
         ssize_t len = pirate_read(R_TO_E, buf, MAX_TEST_LEN);
         ASSERT_EQ_FMT(len, test_len, "%zd");
+        ASSERT_EQ_FMT(0, errno, "%d");
 
         len = pirate_write(E_TO_R, buf, len);
         ASSERT_EQ_FMT(len, test_len, "%zd");
+        ASSERT_EQ_FMT(0, errno, "%d");
     }
 
     rv = close_gaps(R_TO_E, O_RDONLY, prev[R_TO_E]);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     rv = close_gaps(E_TO_R, O_WRONLY, prev[E_TO_R]);
     ASSERT_EQ_FMT(0, rv, "%d");
+    ASSERT_EQ_FMT(0, errno, "%d");
     PASS();
 }
 

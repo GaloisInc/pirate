@@ -89,8 +89,12 @@ int pirate_mercury_open(int gd, int flags, pirate_channel_t *channels) {
     }
 
     rv = mkfifo(ch->pathname, 0660);
-    if ((rv == -1) && (errno != EEXIST)) {
+    if (rv == -1) {
+      if (errno == EEXIST) {
+        errno = 0;
+      } else {
         return -1;
+      }
     }
 
     if ((ch->fd = open(ch->pathname, flags)) < 0) {
