@@ -41,20 +41,20 @@ jobs:
     - name: build
       run: |
         mkdir build
-        pushd build
+        cd build
         cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGAPS_ENABLE=ON ..
         make clean
         make
-        popd
+        cd ..
     - name: libpirate tests
       timeout-minutes: 1
       run: |
-        pushd build/libpirate
+        cd build/libpirate
         ./primitives_test -v
         make valgrind
-        popd
+        cd ../..
     - name: time_demo tests
       run: |
-        pushd build/demos/time_demo/test
+        cd build/demos/time_demo/test
         ./ts_test.sh
-        popd
+        cd ../../../..
