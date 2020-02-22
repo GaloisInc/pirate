@@ -32,7 +32,7 @@ ending in ``CAP_NULL``.
 Special Sections
 ----------------
 
-We add six new special sections to the relocatable ELF format. Like
+We add five new special sections to the relocatable ELF format. Like
 Linux special sections, these are identified by their section names,
 so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
@@ -61,28 +61,17 @@ so the ``sh_type`` fields in their section headers should be set to
     A vector of zero-terminated strings to hold the names
     of enclaves and capabilities.  Offset zero contains a null byte,
     to signify the empty string.
-
-``.gaps.res``
-    An array of ``Elf64_GAPS_res`` listing the resources to be managed
-    by GAPS in the object file.
     
-``.gaps.res.types``
-    An array of ``Elf64_GAPS_res_type`` listing the allowed resource
-    types, along with the size of the configuration object to be
-    allocated by the linker.
+In addition, for each resource type declared in the source file using
+the ``resource_type declare`` pragma, we define a section that appears
+in both the relocatable and executable elf formats. In the executable
+ELF, it is loaded into the `text` segment, along with ``.rodata``.
 
-``.gaps.res.params``
-    An array of ``Elf64_GAPS_res_param`` values listing the parameters
-    for resources.  Parameters are a contiguous sequence of
-    ``Elf64_GAPS_res_param`` values terminated by a
-    ``Elf64_GAPS_res_param`` struct with an empty name (i.e.,
-    ``param_name = 0``).
-
-``.gaps.res.strtab``
-    A string table consisting of vector of zero-terminated strings to
-    hold the names of resource names and types along with resource
-    parameter names and values.  Offset zero contains a null byte, to
-    signify the empty string.
+``.gaps.res.<resource_type>``
+   An array of ``struct gaps_resource``, terminated by a
+   ``struct gaps_resource`` with all fields set to zero. The data in
+   this struct is handled by relocations, to be filled in by the
+   linker. The data in each field is stored in ``.rodata``.
 
 Structures
 ----------
@@ -163,75 +152,34 @@ attributes of a symbol.
 ``req_sym``
     The symtab index of the symbol with these requirements.
 
-``Elf64_GAPS_res``
+``struct gaps_resource``
 ==================
 
 Encodes information about a PIRATE initialized resource.
 
  .. code-block:: c
 
-                typedef struct {
-                    Elf64_Word res_name;
-                    Elf64_Word res_type;
-                    Elf64_Word res_param;
-                    Elf64_Half res_sym;
-                    Elf64_Half res_cfg_index;
-                } Elf64_GAPS_res;
+                struct gaps_resource {
+                    char *gr_name;
+                    char *gr_type;
+                    void *gr_obj;
+                    struct gaps_resource_param *gr_params;
+                };
 
-``res_name``
-    The offset of a ``.gaps.res.strtab`` entry for the user-defined
-    name of the resource.
+``gr_name``
+    The name of the resource.
 
-``res_type``
-    The index into ``.gaps.res.types`` representing the type of this
-    resource.
-
-``res_param``
-    The index into the ``.gaps.res.params`` array for the first
-    parameter for this resource.
-
-``res_sym``
-    The index into ``.symtab`` identifying the symbol this resource
-    is associated with. The symbol this points to should be undefined
-    in relocatable ELFs. It will be defined by the linker when
-    creating an executable ELF.
+``gr_type``
+    The type of the resource for validating runtime configuration.
     
-``res_cfg_index``
-    An index into the resource config array referenced in ``res_type``
-    where config data for this resource can be found. This should be
-    zero and is ignored in relocatable ELFs. It will be filled in by
-    the linker when creating an executable ELF.
-    
-``Elf64_GAPS_res_type``
-=======================
+``gr_obj``
+    A pointer the the object this resource corresponds to.
 
-Encodes information about a PIRATE resource type.
+``gr_param``
+    An array of ``struct gaps_resource_param`` storing key-value
+    pairs representing static resource configuration.
 
- .. code-block:: c
-
-                typedef struct {
-                    Elf64_Word rtype_name;
-                    Elf64_Word rtype_cfg_entsize;
-                    Elf64_Half rtype_cfg_sym;
-                    Elf64_Half rtype_padding;
-                } Elf64_GAPS_res_type;
-                
-``rtype_name``
-    The offset into ``.gaps.res.strtab`` for the name of this
-    resource type.
-    
-``rtype_cfg_entsize``
-    The size of a config object for this resource type. This may
-    be zero to indicate that no config data is required for
-    resources of this type.
-    
-``rtype_cfg_sym``
-    The symbol created by the linker to contain config data for
-    each resource of this type in executable ELFs if
-    ``cfg_entsize`` is non-zero. This should be zero and is
-    ignored in relocatable ELFs.
-
-``Elf64_GAPS_res_param``
+``struct gaps_resource_param``
 ========================
 
 Encodes information about a parameter for a PIRATE initialized
@@ -239,19 +187,36 @@ resource.
 
  .. code-block:: c
 
-                typedef struct {
-                    Elf64_Word param_name;
-                    Elf64_Word param_value;
-                } Elf64_GAPS_res_param;
+                typedef struct gaps_resource_param {
+                    char *gpr_name;
+                    char *gpr_value;
+                };
 
-``param_name``
-    The offset of a ``.gaps.res.strtab`` entry for the name
-    of the resource parameter.  If this is ``0``, then this
-    terminates the parameter list for the current resource.
+``gpr_name``
+    The name of the parameter.
 
-``param_value``
-    The offset of a ``.gaps.res.strtab`` entry for the value of
-    of the resource parameter.
+``gpr_value``
+    The value of the parameter.
+    
+Linker-defined Symbols
+----------------------
+
+In addition, for each ``.gaps.res.<resource_type>`` section, the linker
+defines a symbol that a library or application can access as an array,
+if it wishes to find the resources of a particular type.
+
+.. code-block:: c
+
+                struct gaps_resources *__<resource_type>_gaps_resources;
+
+A library or application can gain access to this array by including the
+``gaps_resources.h`` header file and declaring an ``extern`` variable
+with the appropriate name and type:
+
+.. code-block:: c
+               #include <gaps_resources.h>
+
+               extern struct gaps_resources *__<resource_type>_gaps_resources;
 
 Linking Examples
 ----------------
