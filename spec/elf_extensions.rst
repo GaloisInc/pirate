@@ -61,6 +61,17 @@ so the ``sh_type`` fields in their section headers should be set to
     A vector of zero-terminated strings to hold the names
     of enclaves and capabilities.  Offset zero contains a null byte,
     to signify the empty string.
+    
+In addition, for each resource type declared in the source file using
+the ``resource_type declare`` pragma, we define a section that appears
+in both the relocatable and executable elf formats. In the executable
+ELF, it is loaded into the `text` segment, along with ``.rodata``.
+
+``.gaps.res.<resource_type>``
+   An array of ``struct gaps_resource``, terminated by a
+   ``struct gaps_resource`` with all fields set to zero. The data in
+   this struct is handled by relocations, to be filled in by the
+   linker. The data in each field is stored in ``.rodata``.
 
 Structures
 ----------
@@ -140,6 +151,72 @@ attributes of a symbol.
 
 ``req_sym``
     The symtab index of the symbol with these requirements.
+
+``struct gaps_resource``
+==================
+
+Encodes information about a PIRATE initialized resource.
+
+ .. code-block:: c
+
+                struct gaps_resource {
+                    char *gr_name;
+                    char *gr_type;
+                    void *gr_obj;
+                    struct gaps_resource_param *gr_params;
+                };
+
+``gr_name``
+    The name of the resource.
+
+``gr_type``
+    The type of the resource for validating runtime configuration.
+    
+``gr_obj``
+    A pointer the the object this resource corresponds to.
+
+``gr_param``
+    An array of ``struct gaps_resource_param`` storing key-value
+    pairs representing static resource configuration.
+
+``struct gaps_resource_param``
+========================
+
+Encodes information about a parameter for a PIRATE initialized
+resource.
+
+ .. code-block:: c
+
+                typedef struct gaps_resource_param {
+                    char *gpr_name;
+                    char *gpr_value;
+                };
+
+``gpr_name``
+    The name of the parameter.
+
+``gpr_value``
+    The value of the parameter.
+    
+Linker-defined Symbols
+----------------------
+
+In addition, for each ``.gaps.res.<resource_type>`` section, the linker
+defines a symbol that a library or application can access as an array,
+if it wishes to find the resources of a particular type.
+
+.. code-block:: c
+
+                struct gaps_resources *__<resource_type>_gaps_resources;
+
+A library or application can gain access to this array by including the
+``gaps_resources.h`` header file and declaring an ``extern`` variable
+with the appropriate name and type:
+
+.. code-block:: c
+               #include <gaps_resources.h>
+
+               extern struct gaps_resources *__<resource_type>_gaps_resources;
 
 Linking Examples
 ----------------
