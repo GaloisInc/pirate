@@ -69,9 +69,10 @@ ELF, it is loaded into the `text` segment, along with ``.rodata``.
 
 ``.gaps.res.<resource_type>``
    An array of ``struct gaps_resource``, terminated by a
-   ``struct gaps_resource`` with all fields set to zero. The data in
-   this struct is handled by relocations, to be filled in by the
-   linker. The data in each field is stored in ``.rodata``.
+   ``struct gaps_resource`` with all fields except ``gr_sym`` set to
+   zero. The data in this struct is handled by relocations, to be
+   filled in by the linker. The data in each field is stored in
+   ``.rodata``.
 
 Structures
 ----------
@@ -155,7 +156,10 @@ attributes of a symbol.
 ``struct gaps_resource``
 ==================
 
-Encodes information about a PIRATE initialized resource.
+Encodes information about a PIRATE initialized resource. With the
+exception of ``gr_sym``, all fields should be zero in the relocatable
+ELF, to be filled in using relocations. ``gr_sym`` should be zero and
+is ignored in the executable ELF.
 
  .. code-block:: c
 
@@ -164,6 +168,9 @@ Encodes information about a PIRATE initialized resource.
                     char *gr_type;
                     void *gr_obj;
                     struct gaps_resource_param *gr_params;
+                    Elf64_Word gr_pad1;
+                    Elf64_Half gr_pad2;
+                    Elf64_Half gr_sym;
                 };
 
 ``gr_name``
@@ -178,6 +185,13 @@ Encodes information about a PIRATE initialized resource.
 ``gr_param``
     An array of ``struct gaps_resource_param`` storing key-value
     pairs representing static resource configuration.
+    
+``gr_sym``
+    An index into the executable's symbol table corresponding to
+    the variable that was annotated to create this resource. This
+    should be the index of an undefined symbol in the relocatable
+    ELF. The linker will create a corresponding defined symbol in
+    the ``.bss`` section of the executable ELF.
 
 ``struct gaps_resource_param``
 ========================
@@ -201,7 +215,11 @@ resource.
 Linker-defined Symbols
 ----------------------
 
-In addition, for each ``.gaps.res.<resource_type>`` section, the linker
+For each entry in a ``.gaps.res.<resource_type>`` section of a
+relocatable ELF, the linker defines a symbol corresponding to the
+undefined symbol indexed in its ``gr_sym`` field.
+
+In addition , for each ``.gaps.res.<resource_type>`` section, the linker
 defines a symbol that a library or application can access as an array,
 if it wishes to find the resources of a particular type.
 
@@ -220,9 +238,6 @@ with the appropriate name and type:
 
 Linking Examples
 ----------------
-
-[Note: It would be nice to have an example with more meaningful file
-and enclave names]
 
 Compiling and linking an executable with two enclaves, ``foo`` and
 ``baz``, given two annotated source files ``zip.c`` and ``zap.c``,
