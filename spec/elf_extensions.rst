@@ -165,7 +165,6 @@ is ignored in the executable ELF.
 
                 struct gaps_resource {
                     char *gr_name;
-                    char *gr_type;
                     void *gr_obj;
                     struct gaps_resource_param *gr_params;
                     Elf64_Word gr_pad1;
@@ -175,9 +174,6 @@ is ignored in the executable ELF.
 
 ``gr_name``
     The name of the resource.
-
-``gr_type``
-    The type of the resource for validating runtime configuration.
     
 ``gr_obj``
     A pointer the the object this resource corresponds to.
