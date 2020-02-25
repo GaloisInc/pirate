@@ -68,11 +68,9 @@ in both the relocatable and executable elf formats. In the executable
 ELF, it is loaded into the `text` segment, along with ``.rodata``.
 
 ``.gaps.res.<resource_type>``
-   An array of ``struct gaps_resource``, terminated by a
-   ``struct gaps_resource`` with all fields except ``gr_sym`` set to
-   zero. The data in this struct is handled by relocations, to be
-   filled in by the linker. The data in each field is stored in
-   ``.rodata``.
+   An array of ``Elf64_GAPS_res``. The data in this struct is handled
+   by relocations, to be filled in by the linker. The data to be
+   relocated into each field is stored in ``.rodata``.
 
 Structures
 ----------
@@ -153,24 +151,32 @@ attributes of a symbol.
 ``req_sym``
     The symtab index of the symbol with these requirements.
 
-``struct gaps_resource``
-==================
+``struct gaps_resource`` and ``Elf64_GAPS_res``
+===============================================
 
 Encodes information about a PIRATE initialized resource. With the
 exception of ``gr_sym``, all fields should be zero in the relocatable
 ELF, to be filled in using relocations. ``gr_sym`` should be zero and
-is ignored in the executable ELF.
+is ignored in the executable ELF. The two different structs represent
+the application's view and the toolchain's view of the data,
+respectively.
 
  .. code-block:: c
 
-                struct gaps_resource {
+                struct gaps_resource __attribute__((packed)) {
                     char *gr_name;
                     void *gr_obj;
                     struct gaps_resource_param *gr_params;
-                    Elf64_Word gr_pad1;
-                    Elf64_Half gr_pad2;
-                    Elf64_Half gr_sym;
+                    unsigned char padding[8];
                 };
+                
+                typedef struct {
+                    Elf64_Addr gr_name;
+                    Elf64_Addr gr_obj;
+                    Elf64_Addr gr_params;
+                    Elf64_Half gr_sym;
+                    unsigned char padding[6];
+                } Elf64_GAPS_res;
 
 ``gr_name``
     The name of the resource.
@@ -190,7 +196,7 @@ is ignored in the executable ELF.
     the ``.bss`` section of the executable ELF.
 
 ``struct gaps_resource_param``
-========================
+==============================
 
 Encodes information about a parameter for a PIRATE initialized
 resource.
