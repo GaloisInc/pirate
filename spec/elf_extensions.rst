@@ -163,12 +163,12 @@ respectively.
 
  .. code-block:: c
 
-                struct gaps_resource __attribute__((packed)) {
+                struct gaps_resource {
                     char *gr_name;
                     void *gr_obj;
                     struct gaps_resource_param *gr_params;
                     unsigned char padding[8];
-                };
+                } __attribute__((packed));
                 
                 typedef struct {
                     Elf64_Addr gr_name;
@@ -204,14 +204,14 @@ resource.
  .. code-block:: c
 
                 struct gaps_resource_param {
-                    char *gpr_name;
-                    char *gpr_value;
+                    char *grp_name;
+                    char *grp_value;
                 };
 
-``gpr_name``
+``grp_name``
     The name of the parameter.
 
-``gpr_value``
+``grp_value``
     The value of the parameter.
     
 Linker-defined Symbols
