@@ -27,7 +27,15 @@ set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "shmem_udp.c" "checksum.c")
 SET(PIRATE_C_FLAGS ${PIRATE_C_FLAGS} -mavx2)
 endif(PIRATE_SHMEM_FEATURE)
 
-include_directories(. ../include)
+include_directories(.)
+
+add_library(libpirate_static STATIC ${PIRATE_SOURCES})
+set_target_properties(libpirate_static PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(libpirate_static PRIVATE ${PIRATE_C_FLAGS})
+
+add_library(libpirate_shared SHARED ${PIRATE_SOURCES})
+set_target_properties(libpirate_shared PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(libpirate_shared PRIVATE ${PIRATE_C_FLAGS})
 
 add_executable(primitives_test
     ${PIRATE_SOURCES}
@@ -46,15 +54,6 @@ add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat
 add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
 set_target_properties(primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles PROPERTIES EXCLUDE_FROM_ALL 1)
 add_custom_target(bench DEPENDS primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles)
-
-add_library(pirateprims-static STATIC ${PIRATE_SOURCES})
-set_target_properties(pirateprims-static PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
-
-add_library(pirateprims-shared SHARED ${PIRATE_SOURCES})
-set_target_properties(pirateprims-shared PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
-
-target_compile_options(pirateprims-static PRIVATE ${PIRATE_C_FLAGS})
-target_compile_options(pirateprims-shared PRIVATE ${PIRATE_C_FLAGS})
 
 target_compile_options(primitives_test PRIVATE ${PIRATE_C_FLAGS})
 target_compile_options(primitives_bench_thr PRIVATE ${PIRATE_C_FLAGS})
@@ -91,3 +90,7 @@ add_custom_target(testing COMMAND ${CMAKE_CTEST_COMMAND}
     --error-exitcode=1
     ./primitives_test
 )
+
+install(FILES primitives.h shmem_buffer.h DESTINATION include)
+install(TARGETS libpirate_shared DESTINATION lib)
+install(TARGETS libpirate_static DESTINATION lib)

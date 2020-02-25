@@ -6,9 +6,7 @@ set(VERSION 0.0.1)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Dependencies
-set(LIBPIRATE pirateprims-static)
-set(LIBPIRATE_DIR ../../libpirate)
-include_directories(${LIBPIRATE_DIR})
+set(LIBPIRATE pirate)
 
 # Build flags
 SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O0" "-g")
