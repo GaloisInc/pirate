@@ -4,9 +4,7 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
@@ -31,3 +29,32 @@ jobs:
         pushd build/demos/time_demo/test
         ./ts_test.sh
         popd
+  gaps:
+    runs-on: ubuntu-latest
+    container: docker://pirateteam/ubuntu-llvm:latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install dependencies
+      run: |
+        apt-get update
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGAPS_ENABLE=ON ..
+        make clean
+        make
+        cd ..
+    - name: libpirate tests
+      timeout-minutes: 1
+      run: |
+        cd build/libpirate
+        ./primitives_test -v
+        make valgrind
+        cd ../..
+    - name: time_demo tests
+      run: |
+        cd build/demos/time_demo/test
+        ./ts_test.sh
+        cd ../../../..
