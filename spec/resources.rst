@@ -30,19 +30,16 @@ available parameters for channels (see `Channel Resources`_).
 Resource Declarations
 ---------------------
 
-Resources managed by Pirate are defined by declaring global variables
-annotated with the ``gaps_resource`` attribute described below.
-Resources have a name and type with the type provides information
-about the program variable needed to initialize it.  Many resources
-may need additional information, and this can be provided via
-parameters specified using pragmas.  These parameters are used to, for
-example, describe whether a channel is a stream or series of
-datagrams, and whether the channel can be read from, written to, or
-both.
+Resources managed by Pirate are created by declaring external global
+variables annotated with the ``gaps_resource`` attribute described
+below.  Resources have a name and type with the type provides
+information about the program variable needed to initialize it.  The
+linker will define each variable annotated in this way so the
+corresponding variable definition should not appear in the source.
 
 .. code-block:: c
 
-  extern const var_type var  __attribute__((gaps_resource(<name>, <type>)));
+  extern var_type var __attribute__((gaps_resource("<name>", "<resource_type>")));
 
 This attribute on a global variable declares that ``var`` is a variable
 with program type ``var_type`` that is associated with the resource
@@ -52,27 +49,38 @@ what type of value is being initialized.  Multiple enclaves may have
 resources with the same name, but this represents that the underlying
 resource is the same.
 
+Before a resource type can be used, it must be declared. This
+declaration specifies the name of a resource type, the type it is
+allowed to annotate.  Annotating a variable of a different type causes
+the compiler to emit an error.
+
+.. code-block:: c
+
+   #pragma resource_type declare("<resource_type>", <c_type>)
+   
+This pragma declares a resource type that can be applied (only) to
+variables with the type ``<c_type>``.  In addition, it will cause the
+linker to define a symbol ``__<resource_type>_gaps_resources`` that
+points to an array of ``struct gaps_resource`` listing all resources
+of the given type annotated in the source (see ``ELF Extensions``).
+
+Many resources may need additional information, and this can be
+provided via parameters specified using pragmas.  These parameters
+are used to, for example, describe whether a channel is a stream or
+series of datagrams, and whether the channel can be read from,
+written to, or both.
+
 .. code-block:: c
 
    #pragma resource <resource_name> <param_name> <param_value>
 
-This pragma declares that the parameter assignment
-``<param_name>=<param_value>`` should be provided to the resource with
-name ``<resource_name>``.  This is typically used to provide
+This pragma indicates that the parameter assignment
+``<param_name>=<param_value>`` should be provided to the resource
+with name ``<resource_name>``.  This is typically used to provide
 additional information from the source file about the resource being
 configured.  For example, communication channels can set the
 ``permissions`` parameter to indicate if the file descriptor should be
 read only, write only, or read-write.
-
-Before a resource type can be used, it must be declared. This
-declaration specifies the name of a resource type, the type it is
-allowed to annotate, and optionally a type that can be used by the
-runner to store runtime configuration information (see `GAPS Runner`_).
-
-.. code-block:: c
-
-   #pragma resource_type declare(<resource_type>, <type_to_annotate>)
-   #pragma resource_type declare(<resource_type>, <type_to_annotate>, <config_data_type>)
 
 Resource Configuration
 ----------------------
@@ -124,14 +132,20 @@ An ``executable`` object has the following fields:
     ``environment``. Otherwise it will inherit environment variables from
     the runner.
 
+``resources``
+    An array of ``resource`` objects whose values override those in the
+    top-level resource object. This can be used, for example, to set the
+    connection information of a TCP or UDP channel, which will be
+    different for different executables.
+
 [Note: Although these are the only fields here at present, in the future,
 we could use other fields to specify how the executable should be run,
 e.g., which user it should run as. We could even have systemd-style socket
 activation for some executables.]
 
-All ``resource`` objects have a ``name`` field described below, and will
-typically have other fields depending on the type of the resource in
-the source (e.g. See `Channel Resources` for a list).
+A ``resource`` object has, at a minimum, ``name`` and ``type`` fields, as
+described below. The remaining fields vary, depending on the ``type``. See
+`Channel Resources` for a list).
 
 ``name``
     The user-defined name of the resource. This should match the name the
@@ -196,20 +210,26 @@ The configuration file ``os_1.yml`` might look like this:
         environment:
           VAR1: value1
           VAR2: value2
+        resources:
+          - name: proxy_to_signserv_1
+            type: gaps_channel
+            local:
+              host: 10.0.0.1
+              port: 9001
+            remote:
+              host: os2.localdomain
+              port: 9002
     resources:
       - name: app_to_proxy
-        type: unix_socket
+        type: gaps_channel
+        channel_type: unix_socket
         path: /var/run/tts/app_to_proxy.sock
       - name: proxy_to_signserv_1
-        type: udp_socket
-        local:
-          host: 10.0.0.1
-          port: 9001
-        remote:
-          host: os2.localdomain
-          port: 9002
+        type: gaps_channel
+        channel_type: udp_socket
       - name: proxy_to_signserv_2
-        type: device
+        type: gaps_channel
+        channel_type: device
         path: /dev/ttyS0
 
 
@@ -235,7 +255,7 @@ source code:
 
 .. code-block:: c
 
-   extern const int clockFD
+   extern int clockFD
    __attribute__((gaps_resource(channel_clock, fd_channel)));
 
 ``gaps_channel``
@@ -246,7 +266,7 @@ source code:
 
 .. code-block:: c
 
-   extern const int clockGCD
+   extern int clockGCD
    __attribute__((gaps_resource(channel_clock, gaps_channel)));
 
 File Descriptor Channels
@@ -270,24 +290,26 @@ The following attributes may appear in the source file annotations.
    semantics in :doc:`unidirectional_channels` are allowed.
    Valid options are ``true`` and ``false``.
    If this attribute is omitted, it is assumed ``unidirectional=false``.
+   
+[NOTE: Isn't ``unidirectional`` redundant, since it's implied by
+``readonly`` or ``writeonly``]
 
 GAPS Channels
 ^^^^^^^^^^^^^
 
-This section is still under development.
+[This section is still under development.]
 
-Runtime configuration
-^^^^^^^^^^^^^^^^^^^^^
+Type-dependent Resource Configuration
+-------------------------------------
 
-To promote interoperability between the different source types, all
-channels types use similiar runtime configuration fields in the YAML
-``resource`` objects.  Channels resource objects have the following
-fields:
+GAPS Channels and FD Channels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``name``
-    The user-defined name of the resource.
+To promote interoperability, resources of type ``gaps_channel`` and
+``fd_channel`` use the same runtime configuration fields in the YAML
+``resource`` objects:
 
-``type``
+``channel_type``
     Permissible types are as follows:
 
     ``tcp_socket``
@@ -321,8 +343,8 @@ fields:
         documentation for more information.
 
 ``path``
-    The contents of this field differs depending on the ``type`` field as
-    follows:
+    The contents of this field differs depending on the ``channel_type``
+    field as follows:
 
     * If ``type`` is ``unix_socket`` or ``path``, this is the path to the
       file to be created or used. This may be an absolute path, or relative
@@ -331,8 +353,7 @@ fields:
 
 ``local``
     An object representing the local address to bind to for a channel of
-    type ``tcp_socket`` or ``udp_socket``. This is ignored and may be
-    omitted for ``gaps_channel`` resources. It has the following fields:
+    type ``tcp_socket`` or ``udp_socket``.  It has the following fields:
 
     ``host``
         A hostname or IP address.
@@ -348,8 +369,7 @@ fields:
         A hostname or IP address.
 
     ``port``
-        A port number. This is ignored and may be omitted for
-        ``gaps_channel`` resources.
+        A port number.
 
 ``buffer``
     The size of the shared-memory buffer for channels of type ``shmem`` or
