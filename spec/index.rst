@@ -97,7 +97,6 @@ Additional information about Pirate is in the sections below:
    :caption: Contents:
 
    enclave_overview
-   resources
    building_applications
    elf_extensions
    unidirectional_channels
