@@ -32,7 +32,7 @@ ending in ``CAP_NULL``.
 Special Sections
 ----------------
 
-We add six new special sections to the relocatable ELF format. Like
+We add five new special sections to the relocatable ELF format. Like
 Linux special sections, these are identified by their section names,
 so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
