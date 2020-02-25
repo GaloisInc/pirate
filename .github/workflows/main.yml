@@ -37,11 +37,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get -y install apt-transport-https ca-certificates gnupg software-properties-common wget
-        wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add -
-        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-        apt-get update
-        apt-get install -y make cmake valgrind g++
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
     - name: build
       run: |
         mkdir build
