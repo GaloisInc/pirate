@@ -203,7 +203,7 @@ resource.
 
  .. code-block:: c
 
-                typedef struct gaps_resource_param {
+                struct gaps_resource_param {
                     char *gpr_name;
                     char *gpr_value;
                 };
