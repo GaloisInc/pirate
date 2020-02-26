@@ -2,7 +2,7 @@
 
 ### Building
 ```
-$ cd pirate-demos
+$ cd pirate
 $ mkdir build
 $ cd build
 $ cmake ..
@@ -29,7 +29,7 @@ cleanup / data wipe on termination.
 libpirate currently implements GAPS channels using Linux named pipes,
 a character device driver, a Unix domain socket, shared memory,
 network communication, or userspace IO. Benchmarks are available on
-the [wiki](https://github.com/GaloisInc/pirate-demos/wiki/libpirate-benchmarks).
+the [wiki](https://github.com/GaloisInc/pirate/wiki/libpirate-benchmarks).
 
 ### demos
 

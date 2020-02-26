@@ -17,15 +17,15 @@ Dependencies
 * ```clang```
 
 ```
-$ git clone https://github.com/GaloisInc/pirate-demos.git
-$ cd pirate-demos
+$ git clone https://github.com/GaloisInc/pirate.git
+$ cd pirate
 $ mkdir build
 $ cd build
 $ cmake --target channel_demo ..
 $ make writer reader
 ```
 
-Output artifacts are located in ```pirate-demos/build/demos/channel_demo```
+Output artifacts are located in ```pirate/build/demos/channel_demo```
 
 Test the functionality with a GAPS unix pipe channel
 ```
@@ -191,23 +191,23 @@ for integrating hardware devices.
 #### Channel Configuration and Initialization
 Command-line option processing:
 ```
-pirate-demos/demos/channel_demo/src/common.c:parse_channel_opt()
-pirate-demos/demos/channel_demo/src/common.c:open_gaps_ge_eth()
-pirate-demos/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
-pirate-demos/libpirate/ge_eth.c/pirate_ge_eth_open()
+pirate/demos/channel_demo/src/common.c:parse_channel_opt()
+pirate/demos/channel_demo/src/common.c:open_gaps_ge_eth()
+pirate/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
+pirate/libpirate/ge_eth.c/pirate_ge_eth_open()
 ```
 #### Write
 GE Ethernet header packing and socket send
 ```
-pirate-demos/libpirate/ge_eth.c:ge_message_pack()
-pirate-demos/libpirate/ge_eth.c:pirate_ge_eth_write()
+pirate/libpirate/ge_eth.c:ge_message_pack()
+pirate/libpirate/ge_eth.c:pirate_ge_eth_write()
 ```
 
 #### Read
 GE Ethernet header unpacking and socket received
 ```
-pirate-demos/libpirate/ge_eth.c:ge_message_unpack()
-pirate-demos/libpirate/ge_eth.c:pirate_ge_eth_read()
+pirate/libpirate/ge_eth.c:ge_message_unpack()
+pirate/libpirate/ge_eth.c:pirate_ge_eth_read()
 ```
 
 ### Mercury
@@ -215,20 +215,20 @@ pirate-demos/libpirate/ge_eth.c:pirate_ge_eth_read()
 Command-line option processing:
 
 ```
-pirate-demos/demos/channel_demo/src/common.c:parse_channel_opt()
-pirate-demos/demos/channel_demo/src/common.c:open_gaps_mercury()
-pirate-demos/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
-pirate-demos/libpirate/mercury.c/pirate_mercury_open()
+pirate/demos/channel_demo/src/common.c:parse_channel_opt()
+pirate/demos/channel_demo/src/common.c:open_gaps_mercury()
+pirate/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
+pirate/libpirate/mercury.c/pirate_mercury_open()
 ```
 
 #### Write
 ```
-pirate-demos/libpirate/mercury.c:mercury_message_pack()
-pirate-demos/libpirate/mercury.c:pirate_mercury_write()
+pirate/libpirate/mercury.c:mercury_message_pack()
+pirate/libpirate/mercury.c:pirate_mercury_write()
 ```
 
 #### Read
 ```
-pirate-demos/libpirate/mercury.c:mercury_message_unpack()
-pirate-demos/libpirate/mercury.c:pirate_mercury_read()
+pirate/libpirate/mercury.c:mercury_message_unpack()
+pirate/libpirate/mercury.c:pirate_mercury_read()
 ```
