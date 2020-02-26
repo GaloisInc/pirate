@@ -1,11 +1,24 @@
 ## Project structure
 
 ### Building
+
+To build the libpirate library:
+
 ```
 $ cd pirate
 $ mkdir build
 $ cd build
 $ cmake ..
+$ make
+```
+
+To build the demo applications that use libpirate:
+
+```
+$ cd pirate
+$ mkdir build
+$ cd build
+$ cmake -DGAPS_DEMOS=ON ..
 $ make
 ```
 

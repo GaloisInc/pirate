@@ -11,33 +11,25 @@ jobs:
       run: sudo apt-get install -y clang valgrind
     - name: build libpirate
       run: |
-        srcdir="`pwd`"
-        distdir="`pwd`/dist"
-        mkdir -p build/libpirate
-        cd build/libpirate
-        cmake -DCMAKE_INSTALL_PREFIX=$distdir $srcdir/libpirate
-        make install
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        make primitives_test
         ./primitives_test -v
         make valgrind
     - name: Build demos
       run: |
-        srcdir="`pwd`"
-        distdir="`pwd`/dist"
-        mkdir -p build/demos
-        cd build/demos
-        CFLAGS=-I$distdir/include LDFLAGS=-L$distdir/lib \
-          cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON $srcdir/demos
+        cd build
+        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
-        distdir="`pwd`/dist"
         cd build/demos/time_demo/test
-        LD_LIBRARY_PATH=$distdir/lib ./ts_test.sh
+        ./ts_test.sh
   gaps:
     runs-on: ubuntu-latest
     container: docker://pirateteam/ubuntu-llvm:latest
@@ -49,30 +41,22 @@ jobs:
         apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
     - name: build libpirate
       run: |
-        srcdir="`pwd`"
-        distdir="`pwd`/dist"
-        mkdir -p build/libpirate
-        cd build/libpirate
-        cmake -DCMAKE_INSTALL_PREFIX=$distdir $srcdir/libpirate
-        make install
+        mkdir -p build
+        cd build
+        cmake -DGAPS_ENABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        make primitives_test
         ./primitives_test -v
         make valgrind
     - name: Build demos
       run: |
-        srcdir="`pwd`"
-        distdir="`pwd`/dist"
-        mkdir -p build/demos
-        cd build/demos
-        CFLAGS=-I$distdir/include LDFLAGS=-L$distdir/lib \
-          cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGAPS_ENABLE=ON $srcdir/demos
+        cd build
+        cmake -DGAPS_ENABLE=ON -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
-        distdir="`pwd`/dist"
         cd build/demos/time_demo/test
-        LD_LIBRARY_PATH=$distdir/lib ./ts_test.sh
+        ./ts_test.sh
