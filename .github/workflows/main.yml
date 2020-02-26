@@ -9,26 +9,35 @@ jobs:
     - uses: actions/checkout@v1
     - name: install dependencies
       run: sudo apt-get install -y clang valgrind
-    - name: build
+    - name: build libpirate
       run: |
-        mkdir build
-        pushd build
-        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make clean
-        make
-        popd
+        srcdir="`pwd`"
+        distdir="`pwd`/dist"
+        mkdir -p build/libpirate
+        cd build/libpirate
+        cmake -DCMAKE_INSTALL_PREFIX=$distdir $srcdir/libpirate
+        make install
     - name: libpirate tests
       timeout-minutes: 1
       run: |
-        pushd build/libpirate
+        cd build/libpirate
+        make primitives_test
         ./primitives_test -v
         make valgrind
-        popd
+    - name: Build demos
+      run: |
+        srcdir="`pwd`"
+        distdir="`pwd`/dist"
+        mkdir -p build/demos
+        cd build/demos
+        CFLAGS=-I$distdir/include LDFLAGS=-L$distdir/lib \
+          cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON $srcdir/demos
+        make
     - name: time_demo tests
       run: |
-        pushd build/demos/time_demo/test
-        ./ts_test.sh
-        popd
+        distdir="`pwd`/dist"
+        cd build/demos/time_demo/test
+        LD_LIBRARY_PATH=$distdir/lib ./ts_test.sh
   gaps:
     runs-on: ubuntu-latest
     container: docker://pirateteam/ubuntu-llvm:latest
@@ -38,23 +47,32 @@ jobs:
       run: |
         apt-get update
         apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
-    - name: build
+    - name: build libpirate
       run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGAPS_ENABLE=ON ..
-        make clean
-        make
-        cd ..
+        srcdir="`pwd`"
+        distdir="`pwd`/dist"
+        mkdir -p build/libpirate
+        cd build/libpirate
+        cmake -DCMAKE_INSTALL_PREFIX=$distdir $srcdir/libpirate
+        make install
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
+        make primitives_test
         ./primitives_test -v
         make valgrind
-        cd ../..
+    - name: Build demos
+      run: |
+        srcdir="`pwd`"
+        distdir="`pwd`/dist"
+        mkdir -p build/demos
+        cd build/demos
+        CFLAGS=-I$distdir/include LDFLAGS=-L$distdir/lib \
+          cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGAPS_ENABLE=ON $srcdir/demos
+        make
     - name: time_demo tests
       run: |
+        distdir="`pwd`/dist"
         cd build/demos/time_demo/test
-        ./ts_test.sh
-        cd ../../../..
+        LD_LIBRARY_PATH=$distdir/lib ./ts_test.sh

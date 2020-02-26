@@ -6,7 +6,7 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Build version
 set(VERSION 0.0.2)
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"')
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"'")
 
 # Options
 option(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
@@ -30,8 +30,8 @@ if(NOT X11_LIB)
   message(FATAL_ERROR "X11 library not found")
 endif()
 set(CRYPTO_KIT openssl)
-include_directories(./include ../../libpirate ${OPENSSL_INCLUDE_DIR})
-set(COMMON_LIB ${OPENSSL_LIBRARIES} "pirateprims-static" "pthread" "X11" "jpeg")
+include_directories(./include ${OPENSSL_INCLUDE_DIR})
+set(COMMON_LIB ${OPENSSL_LIBRARIES} "pirate" "pthread" "X11" "jpeg")
 set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 
