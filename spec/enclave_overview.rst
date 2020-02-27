@@ -37,7 +37,7 @@ Enclave support is controlled via the following pragmas and attributes.
 
 .. code-block:: c
 
-                #pragma enclave declare(<enclave_name>)
+                #pragma pirate enclave declare(<enclave_name>)
 
 This pragma declares an enclave with the given name.  The enclave name
 is a string that uniquely identifies the enclave within the program.
@@ -45,7 +45,7 @@ is a string that uniquely identifies the enclave within the program.
 
 .. code-block:: c
 
-                __attribute__((enclave_main(<enclave_name>)))
+                __attribute__((pirate_enclave_main(<enclave_name>)))
 
 This attribute may be attached to function definitions, and indicates
 that the function provides the main method for the enclave with the
@@ -55,7 +55,7 @@ neither accepts arguments or returns).
 
 .. code-block:: c
 
-                __attribute__((enclave_only(<enclave_name>)))
+                __attribute__((pirate_enclave_only(<enclave_name>)))
 
 This attribute may be attached to global variables, function
 declarations, and function definitions.  On a function, it indicates
@@ -81,8 +81,8 @@ implicitly indicates that it requires the
 
 .. code-block:: c
 
-                #pragma capability declare(<new>)
-                #pragma capability declare(<new>, <parent>)
+                #pragma pirate capability declare(<new>)
+                #pragma pirate capability declare(<new>, <parent>)
 
 This declares a capability ``<new>``.  If the additional argument
 ``<parent>`` is provided, it must be a previously declared level, and
@@ -90,7 +90,7 @@ this indicates that ``<new>`` extends the ``<parent>`` capability.
 
 .. code-block:: c
 
-                __attribute__((capability(<level>)))
+                __attribute__((pirate_capability(<level>)))
 
 This attribute may be attached to declaration in the program,
 including function declarations and definitions, typedefs, compound
@@ -101,8 +101,8 @@ annotations may be added to a single declaration.
 
 .. code-block:: c
 
-                #pragma capability push(<level>, <level>, ...)
-                #pragma capability pop
+                #pragma pirate capability push(<level>, <level>, ...)
+                #pragma pirate capability pop
 
 This pragma indicates that all declarations between the ``push`` and
 ``pop`` pragmas are annotated with the given levels provided to
@@ -113,7 +113,7 @@ requirements.
 
 .. code-block:: c
 
-                #pragma enclave capability(<enclave>, <capability>)
+                #pragma pirate enclave capability(<enclave>, <capability>)
 
 This indicates that code running on the given enclave has the given
 capability.  In the absence of such an annotation, the linker will
