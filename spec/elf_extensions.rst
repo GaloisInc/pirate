@@ -236,6 +236,7 @@ A library or application can gain access to this array by including the
 with the appropriate name and type:
 
 .. code-block:: c
+
                #include <gaps_resources.h>
 
                 extern struct gaps_resource[] __start_gaps_res_<resource_type>;
