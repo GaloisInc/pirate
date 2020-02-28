@@ -174,8 +174,9 @@ respectively.
                     Elf64_Addr gr_name;
                     Elf64_Addr gr_obj;
                     Elf64_Addr gr_params;
+                    Elf64_Word gr_size;
+                    Elf64_Half gr_align;
                     Elf64_Half gr_sym;
-                    unsigned char padding[6];
                 } Elf64_GAPS_res;
 
 ``gr_name``
