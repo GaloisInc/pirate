@@ -1,6 +1,6 @@
 # pirate-annotations
 
-This contains design documentation for Galois efforts on GAPS.  
+This contains design documentation for Galois efforts on GAPS.
 
 The documentation is published online at https://pirate-annotations.readthedocs.io/
 
