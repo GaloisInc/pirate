@@ -223,12 +223,13 @@ relocatable ELF, the linker defines a symbol corresponding to the
 undefined symbol indexed in its ``gr_sym`` field.
 
 In addition , for each ``.gaps.res.<resource_type>`` section, the linker
-defines a symbol that a library or application can access as an array,
-if it wishes to find the resources of a particular type.
+defines a start and end symbol that a library or application can use to
+access an array of resources of that type:
 
 .. code-block:: c
 
-                struct gaps_resources *__<resource_type>_gaps_resources;
+                struct gaps_resource[] __start_gaps_res_<resource_type>;
+                struct gaps_resource[] __stop_gaps_res_<resource_type>;
 
 A library or application can gain access to this array by including the
 ``gaps_resources.h`` header file and declaring an ``extern`` variable
@@ -237,7 +238,8 @@ with the appropriate name and type:
 .. code-block:: c
                #include <gaps_resources.h>
 
-               extern struct gaps_resources *__<resource_type>_gaps_resources;
+                extern struct gaps_resource[] __start_gaps_res_<resource_type>;
+                extern struct gaps_resource[] __stop_gaps_res_<resource_type>;
 
 Linking Examples
 ----------------
