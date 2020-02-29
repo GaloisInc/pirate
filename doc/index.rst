@@ -4,64 +4,25 @@ The Pirate Framework
 Overview
 ========
 
-Pirate is a set of technologies designed to let developers build
-applications and systems out of a set of services that communicate via
-channels.  These services will be sandboxed to ensure they can
-communicate using approved channels, but not unintentionally interfere
-with each other.  Furthermore, we want to facilitate the development
-of system architectures that are resilient to attacks and can still
-prevent data breaches or loss of integrity even if some of the
-underlying services are compromised.
+Pirate is a set of technologies for making it easier to develop,
+configure, and maintain real-time secure distributed applications.
 
-The key technologies that are currently part of Pirate include:
+Pirate is under active development.  The main features in the
+current release include:
 
- * A set of attributes and pragmas to associate code with individual
-   enclaves that host services, and extensions to the LLVM compilation
-   and linking tools to support these annotations.
+ * A modified C compiler and linker for building multiple-enclave
+   partitioned applications out of a single source file.  The extensions
+   include a capability model for ensuring code runs in the correct
+   operating environment.
 
- * A lightweight resource management framework that lets developers
-   export variables associated with externally visible enclave
-   resources such as communication channels, and an application
-   launcher that initializes these resources to a particular platform
-   configuration based on the ultimate execution environment.
+ * A low-level communication channel library that abstracts over a
+   variety of different hardware communication channels.
 
- * A communication channel library that abstracts over different
-   hardware communication channels.
-
-In addition to these core components, we plan to extend development
-tools, debugging tools, and IDEs to better support developers of
-Pirate applications.
-
-This technology should be usable across multiple enclave technologies,
-and make it easy for system developers to change how multi-enclave
-code is mapped into the physical hardware architecture.  Spliting a
-given capability across enclaves will almost always require developer
-involvement, but mapping multiple enclaves defined in the source code
-to the same physical proceessor will not require changes to the
-application.  Furthermore, we envision that on many hardware enclave
-technologies developers or system admistrators will have the ability
-to insert transformations such as filters between enclaves without
-changing the application logic.
-
-An extensible attribute system will be provided so that the developers
-can annotate that environment requirements.  For example, the code may
-require specific features are available in the hardware prior to
-execution or that certain code or data is highly sensitive, and not
-for disclosure to untrusted hardware or software.  This will allow the
-build process and deployment tools to check that required hardware is
-available in the system during the application build process, or
-during deployment for software designed to run in multiple
-environments.
-
-The Pirate language extensions are designed to facilitate the
-development of multi-enclave systems via common interfaces and modest
-compiler extensions to support annotations.  These annotations will
-not prevent buffer overflows, return-oriented-programming exploits or
-other security vulnerabilities in application code.  Rather they are
-intended to help developers decompose applications into multiple
-computing enclaves that may be isolated from each other via physical
-isolation boundaries, virtual machines or processor-specific
-technologies such as Intel SGX and ARM TrustZone.
+The next release will include a resource management framework
+to make a consistent interface for system integrators to configure
+enclaves built using the PIRATE technology.  Later releases will
+include plugins to integrate PIRATE into the VSCode environment
+and tools for debugging and profiling applications.
 
 Pirate Workflow
 -----------------
