@@ -137,7 +137,7 @@ static void signer_term(signer_t *signer) {
 }
 
 
-int signing_service_main(int argc, char *argv[]) pirate_enclave_MAIN("purple") {
+int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
 
