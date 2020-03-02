@@ -59,6 +59,8 @@ TEST(ChannelDeviceTest, Configuration) {
 }
 
 TEST(ChannelDeviceTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_device_param_t *device_param = &param.device;
     channel_t channel;
@@ -70,14 +72,14 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(INVALID, channel);
     ASSERT_EQ(EINVAL, errno);
     errno = 0;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(DEVICE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);
@@ -85,7 +87,7 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(DEVICE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);

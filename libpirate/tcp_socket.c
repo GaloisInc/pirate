@@ -26,10 +26,7 @@
 #include "pirate_common.h"
 #include "tcp_socket.h"
 
-#define DEFAULT_TCP_IP_ADDR     "127.0.0.1"
-#define PIRATE_TCP_PORT_BASE    26427
-
-int pirate_tcp_socket_init_param(int gd, int flags, 
+int pirate_tcp_socket_init_param(int gd, int flags,
                                     pirate_tcp_socket_param_t *param) {
     (void) flags;
     snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
@@ -39,29 +36,25 @@ int pirate_tcp_socket_init_param(int gd, int flags,
     return 0;
 }
 
-int pirate_tcp_socket_parse_param(char *str,
+int pirate_tcp_socket_parse_param(int gd, int flags, char *str,
                                     pirate_tcp_socket_param_t *param) {
     char *ptr = NULL;
 
-    pirate_tcp_socket_init_param(0, 0, param);
+    pirate_tcp_socket_init_param(gd, flags, param);
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "tcp_socket") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->addr, ptr, sizeof(param->addr));
     }
-    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->port = strtol(ptr, NULL, 10);
     }
-    param->port = strtol(ptr, NULL, 10);
-
+    
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
     }
@@ -208,12 +201,14 @@ static int tcp_socket_writer_open(pirate_tcp_socket_ctx_t *ctx) {
 }
 
 int pirate_tcp_socket_open(int gd, int flags, pirate_tcp_socket_ctx_t *ctx) {
-    (void) gd;
+    int rv = -1;
     if (flags == O_RDONLY) {
-        return tcp_socket_reader_open(ctx);
+        rv = tcp_socket_reader_open(ctx);
+    } else if (flags == O_WRONLY) {
+        rv = tcp_socket_writer_open(ctx);
     }
 
-    return tcp_socket_writer_open(ctx);
+    return rv == 0 ? gd : rv;
 }
 
 int pirate_tcp_socket_close(pirate_tcp_socket_ctx_t *ctx) {

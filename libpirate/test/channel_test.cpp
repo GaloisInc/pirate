@@ -74,14 +74,14 @@ void ChannelTest::WriterChannelOpen()
 {
     int rv = pirate_open(Writer.channel, O_WRONLY);
     ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
+    ASSERT_EQ(Writer.channel, rv);
 }
 
 void ChannelTest::ReaderChannelOpen()
 {
     int rv = pirate_open(Reader.channel, O_RDONLY);
     ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
+    ASSERT_EQ(Reader.channel, rv);
 }
 
 void ChannelTest::WriterChannelClose()

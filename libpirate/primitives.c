@@ -116,49 +116,61 @@ int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
     return -1;
 }
 
-channel_t pirate_parse_channel_param(char *str, pirate_channel_param_t *param) {
-    if (strncmp("device", str, strlen("device")) == 0) {
-        if (pirate_device_parse_param(str, &param->device) == 0) {
+channel_t pirate_parse_channel_param(int gd, int flags, const char *str, 
+                                        pirate_channel_param_t *param) {
+    (void) gd, (void) flags;
+
+    // Channel configuration function is allowed to modify the string
+    // while braking it into delimiter-separated tokens
+    char opt[256];
+    strncpy(opt, str, sizeof(opt));
+  
+    if (strncmp("device", opt, strlen("device")) == 0) {
+        if (pirate_device_parse_param(gd, flags, opt, &param->device) == 0) {
             return DEVICE;
         }
-    } else if (strncmp("pipe", str, strlen("pipe")) == 0) {
-        if (pirate_pipe_parse_param(str, &param->pipe) == 0) {
+    } else if (strncmp("pipe", opt, strlen("pipe")) == 0) {
+        if (pirate_pipe_parse_param(gd, flags, opt, &param->pipe) == 0) {
             return PIPE;
         }
-    } else if (strncmp("unix_socket", str, strlen("unix_socket")) == 0) {
-        if (pirate_unix_socket_parse_param(str, &param->unix_socket) == 0) {
+    } else if (strncmp("unix_socket", opt, strlen("unix_socket")) == 0) {
+        if (pirate_unix_socket_parse_param(gd, flags, opt,
+                                            &param->unix_socket) == 0) {
             return UNIX_SOCKET;
         }
-    } else if (strncmp("tcp_socket", str, strlen("tcp_socket")) == 0) {
-        if (pirate_tcp_socket_parse_param(str, &param->tcp_socket) == 0) {
+    } else if (strncmp("tcp_socket", opt, strlen("tcp_socket")) == 0) {
+        if (pirate_tcp_socket_parse_param(gd, flags, opt,
+                                            &param->tcp_socket) == 0) {
             return TCP_SOCKET;
         }
-    } else if (strncmp("udp_socket", str, strlen("udp_socket")) == 0) {
-        if (pirate_udp_socket_parse_param(str, &param->udp_socket) == 0) {
+    } else if (strncmp("udp_socket", opt, strlen("udp_socket")) == 0) {
+        if (pirate_udp_socket_parse_param(gd, flags, opt,
+                                            &param->udp_socket) == 0) {
             return UDP_SOCKET;
         }
-    } else if (strncmp("shmem", str, strlen("shmem")) == 0) {
-        if (pirate_shmem_parse_param(str, &param->shmem) == 0) {
+    } else if (strncmp("shmem", opt, strlen("shmem")) == 0) {
+        if (pirate_shmem_parse_param(gd, flags, opt, &param->shmem) == 0) {
             return SHMEM;
         }
-    } else if (strncmp("udp_shmem", str, strlen("udp_shmem")) == 0) {
-        if (pirate_udp_shmem_parse_param(str, &param->udp_shmem) == 0) {
+    } else if (strncmp("udp_shmem", opt, strlen("udp_shmem")) == 0) {
+        if (pirate_udp_shmem_parse_param(gd, flags, opt, 
+                                            &param->udp_shmem) == 0) {
             return UDP_SHMEM;
         }
-    } else if (strncmp("uio", str, strlen("uio")) == 0) {
-        if (pirate_uio_parse_param(str, &param->uio) == 0) {
+    } else if (strncmp("uio", opt, strlen("uio")) == 0) {
+        if (pirate_uio_parse_param(gd, flags, opt, &param->uio) == 0) {
             return UIO_DEVICE;
         }
-    } else if (strncmp("serial", str, strlen("serial")) == 0) {
-        if (pirate_serial_parse_param(str, &param->serial) == 0) {
+    } else if (strncmp("serial", opt, strlen("serial")) == 0) {
+        if (pirate_serial_parse_param(gd, flags, opt, &param->serial) == 0) {
             return SERIAL;
         }
-    } else if (strncmp("mercury", str, strlen("mercury")) == 0) {
-        if (pirate_mercury_parse_param(str, &param->mercury) == 0) {
+    } else if (strncmp("mercury", opt, strlen("mercury")) == 0) {
+        if (pirate_mercury_parse_param(gd, flags, opt, &param->mercury) == 0) {
             return MERCURY;
         }
-    } else if (strncmp("ge_eth", str, strlen("ge_eth")) == 0) {
-        if (pirate_ge_eth_parse_param(str, &param->ge_eth) == 0) {
+    } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
+        if (pirate_ge_eth_parse_param(gd, flags, opt, &param->ge_eth) == 0) {
             return GE_ETH;
         }
     }

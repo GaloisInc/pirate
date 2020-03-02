@@ -19,7 +19,8 @@
 #include "shmem_interface.h"
 
 int shmem_buffer_init_param(int gd, int flags, pirate_shmem_param_t *param);
-int shmem_buffer_parse_param(char *str,  pirate_shmem_param_t *param);
+int shmem_buffer_parse_param(int gd, int flags, char *str, 
+                                pirate_shmem_param_t *param);
 int shmem_buffer_open(int gd, int flags, pirate_shmem_ctx_t *ctx);
 int shmem_buffer_close(pirate_shmem_ctx_t *ctx);
 ssize_t shmem_buffer_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count);

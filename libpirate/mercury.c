@@ -25,8 +25,6 @@
 #include "pirate_common.h"
 #include "mercury.h"
 
-#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
-
 #pragma pack(4)
 typedef struct {
     uint32_t session_tag;
@@ -94,10 +92,11 @@ int pirate_mercury_init_param(int gd, int flags,
     return 0;
 }
 
-int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
+int pirate_mercury_parse_param(int gd, int flags, char *str,
+                                pirate_mercury_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_mercury_init_param(0, 0, param) != 0) {
+    if (pirate_mercury_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -106,11 +105,9 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->mtu = strtol(ptr, NULL, 10);
@@ -137,7 +134,6 @@ int pirate_mercury_get_param(const pirate_mercury_ctx_t *ctx,
 }
 
 int pirate_mercury_open(int gd, int flags, pirate_mercury_ctx_t *ctx) {
-    (void) gd;
     int rv = -1;
 
     // Current implementation uses pipe as a loopback
@@ -160,7 +156,7 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_ctx_t *ctx) {
         return -1;
     }
 
-    return 0;
+    return gd;
 }
 
 int pirate_mercury_close(pirate_mercury_ctx_t *ctx) {

@@ -18,12 +18,13 @@
 
 #include "udp_shmem_interface.h"
 
-int udp_shmem_buffer_init_param(int gd, int flags, 
+int udp_shmem_buffer_init_param(int gd, int flags,
                                 pirate_udp_shmem_param_t *param);
-int udp_shmem_buffer_parse_param(char *str,  pirate_udp_shmem_param_t *param);
+int udp_shmem_buffer_parse_param(int gd, int flags, char *str, 
+                                    pirate_udp_shmem_param_t *param);
 int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_ctx_t *ctx);
 int udp_shmem_buffer_close(pirate_udp_shmem_ctx_t *ctx);
-ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf, 
+ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
                             size_t count);
 ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf, 
                             size_t count);

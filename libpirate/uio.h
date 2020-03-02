@@ -34,15 +34,16 @@ typedef struct {
 } pirate_uio_ctx_t;
 
 int pirate_uio_init_param(int gd, int flags, pirate_uio_param_t *param);
-int pirate_uio_parse_param(char *str, pirate_uio_param_t *param);
-int pirate_uio_set_param(pirate_uio_ctx_t *ctx, 
+int pirate_uio_parse_param(int gd, int flags, char *str,
+                            pirate_uio_param_t *param);
+int pirate_uio_set_param(pirate_uio_ctx_t *ctx,
                             const pirate_uio_param_t *param);
 int pirate_uio_get_param(const pirate_uio_ctx_t *ctx,
                             pirate_uio_param_t *param);
 int pirate_uio_open(int gd, int flags, pirate_uio_ctx_t *ctx);
 int pirate_uio_close(pirate_uio_ctx_t *ctx);
 ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf, 
+ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf,
                             size_t count);
 
 #endif /* __PIRATE_CHANNEL_UIO_H */

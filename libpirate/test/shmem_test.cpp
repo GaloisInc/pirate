@@ -32,8 +32,11 @@ TEST(ChannelShmemTest, Configuration)
     pirate_channel_param_t param;
     int rv = pirate_init_channel_param(SHMEM, channel, flags, &param);
 #if PIRATE_SHMEM_FEATURE
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, channel);
+
     pirate_shmem_param_t *shmem_param = &param.shmem;
-    ASSERT_STREQ("/gaps.channel.0", shmem_param->path);
+    ASSERT_STREQ(default_path, shmem_param->path);
     ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     // Apply configuration
@@ -64,6 +67,8 @@ TEST(ChannelShmemTest, Configuration)
 }
 
 TEST(ChannelShmemTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     channel_t channel;
 
@@ -73,34 +78,40 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     const uint32_t buffer_size = 42 * 42;
 
 #if PIRATE_SHMEM_FEATURE
+    const pirate_shmem_param_t *shmem_param = &param.shmem;
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, ch_num);
+
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(SHMEM, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, shmem_param->path);
+    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(SHMEM, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(path, shmem_param->path);
+    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(SHMEM, channel);
     ASSERT_EQ(0, errno);
-    const pirate_shmem_param_t *shmem_param = &param.shmem;
     ASSERT_STREQ(path, shmem_param->path);
     ASSERT_EQ(buffer_size, shmem_param->buffer_size);
 #else
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(INVALID, channel);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
+    errno = 0;
 #endif
 }
 

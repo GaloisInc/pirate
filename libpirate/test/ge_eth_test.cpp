@@ -34,7 +34,7 @@ TEST(ChannelGeEthTest, Configuration)
     int rv = pirate_init_channel_param(GE_ETH, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("127.0.0.1", ge_eth_param->addr);
+    ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
     ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + channel, ge_eth_param->port);
     ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
@@ -64,6 +64,9 @@ TEST(ChannelGeEthTest, Configuration)
 }
 
 TEST(ChannelGeEthTest, ConfigurationParser) {
+
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_ge_eth_param_t *ge_eth_param = &param.ge_eth;
     channel_t channel;
@@ -76,32 +79,38 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(GE_ETH, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
+    ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
+    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
-
-    memset(&param, 0, sizeof(param));
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(GE_ETH, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, ge_eth_param->addr);
+    ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
+    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+
+    memset(&param, 0, sizeof(param));
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(GE_ETH, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(addr, ge_eth_param->addr);
+    ASSERT_EQ(port, ge_eth_param->port);
     ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, mtu);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(GE_ETH, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, ge_eth_param->addr);
+    ASSERT_EQ(port, ge_eth_param->port);
     ASSERT_EQ(mtu, ge_eth_param->mtu);
 }
 

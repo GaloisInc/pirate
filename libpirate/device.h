@@ -31,7 +31,8 @@ typedef struct {
 } pirate_device_ctx_t;
 
 int pirate_device_init_param(int gd, int flags, pirate_device_param_t *param);
-int pirate_device_parse_param(char *str, pirate_device_param_t *param);
+int pirate_device_parse_param(int gd, int flags, char *str,
+                                pirate_device_param_t *param);
 int pirate_device_set_param(pirate_device_ctx_t *ctx,
                             const pirate_device_param_t *param);
 int pirate_device_get_param(const pirate_device_ctx_t *ctx,

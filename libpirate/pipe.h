@@ -23,15 +23,18 @@
 #define PIRATE_PIPE_NAME        "/tmp/gaps.channel.%d"
 
 typedef struct {
-    pirate_device_param_t dev;
+    char path[PIRATE_PIPE_NAME_LEN];
+    unsigned iov_len;
 } pirate_pipe_param_t;
 
 typedef struct {
-    pirate_device_ctx_t dev;
+    int fd;
+    pirate_pipe_param_t param;
  } pirate_pipe_ctx_t;
 
 int pirate_pipe_init_param(int gd, int flags, pirate_pipe_param_t *param);
-int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param);
+int pirate_pipe_parse_param(int gd, int flags, char *str,
+                            pirate_pipe_param_t *param);
 int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx,
                             const pirate_pipe_param_t *param);
 int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx, 

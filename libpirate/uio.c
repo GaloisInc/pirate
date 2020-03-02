@@ -70,10 +70,11 @@ int pirate_uio_init_param(int gd, int flags, pirate_uio_param_t *param) {
     return 0;
 }
 
-int pirate_uio_parse_param(char *str, pirate_uio_param_t *param) {
+int pirate_uio_parse_param(int gd, int flags, char *str,
+                            pirate_uio_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_uio_init_param(0, 0, param) != 0) {
+    if (pirate_uio_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -82,12 +83,10 @@ int pirate_uio_parse_param(char *str, pirate_uio_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->path, ptr, sizeof(param->path));
-
+    
     return 0;
 }
 
@@ -124,11 +123,6 @@ int pirate_uio_open(int gd, int flags, pirate_uio_ctx_t *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
 
-    if (gd > 3) {
-        errno = ENODEV;
-        return -1;
-    }
-
     ctx->fd = open("/dev/uio0", O_RDWR | O_SYNC);
     if (ctx->fd < 0) {
         ctx->buf = NULL;
@@ -163,7 +157,7 @@ int pirate_uio_open(int gd, int flags, pirate_uio_ctx_t *ctx) {
     }
 
     ctx->flags = flags;
-    return 0;
+    return gd;
 error:
     err = errno;
     close(ctx->fd);

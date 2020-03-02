@@ -18,6 +18,9 @@
 
 #include <arpa/inet.h>
 
+#define DEFAULT_TCP_IP_ADDR     "127.0.0.1"
+#define PIRATE_TCP_PORT_BASE    26427
+
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -30,9 +33,9 @@ typedef struct {
     pirate_tcp_socket_param_t param;
 } pirate_tcp_socket_ctx_t;
 
-int pirate_tcp_socket_init_param(int gd, int flags, 
+int pirate_tcp_socket_init_param(int gd, int flags,
                                     pirate_tcp_socket_param_t *param);
-int pirate_tcp_socket_parse_param(char *str,
+int pirate_tcp_socket_parse_param(int gd, int flags, char *str,
                                     pirate_tcp_socket_param_t *param);
 int pirate_tcp_socket_set_param(pirate_tcp_socket_ctx_t *ctx,
                                     const pirate_tcp_socket_param_t *param);

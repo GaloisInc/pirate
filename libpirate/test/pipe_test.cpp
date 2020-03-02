@@ -29,20 +29,23 @@ TEST(ChannelPipeTest, Configuration)
     const int channel = ChannelTest::TEST_CHANNEL;
     const int flags = O_RDONLY;
 
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_PIPE_NAME, channel);
+
     // Default configuration
     pirate_channel_param_t param;
     pirate_pipe_param_t *pipe_param = &param.pipe;
     int rv = pirate_init_channel_param(PIPE, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("/tmp/gaps.channel.0", pipe_param->dev.path);
-    ASSERT_EQ(0, pipe_param->dev.iov_len);
+    ASSERT_STREQ(default_path, pipe_param->path);
+    ASSERT_EQ(0, pipe_param->iov_len);
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
     const int iov_len = 42;
-    strncpy(pipe_param->dev.path, test_path, sizeof(pipe_param->dev.path) - 1);
-    pipe_param->dev.iov_len = iov_len;
+    strncpy(pipe_param->path, test_path, sizeof(pipe_param->path) - 1);
+    pipe_param->iov_len = iov_len;
 
     pirate_set_channel_param(PIPE, channel, flags, &param);
     ASSERT_EQ(0, rv);
@@ -55,14 +58,19 @@ TEST(ChannelPipeTest, Configuration)
     channel_t ch =  pirate_get_channel_param(channel, flags, &param_get);
     ASSERT_EQ(PIPE, ch);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ(test_path, pipe_param_get->dev.path);
-    ASSERT_EQ(iov_len, pipe_param_get->dev.iov_len);
+    ASSERT_STREQ(test_path, pipe_param_get->path);
+    ASSERT_EQ(iov_len, pipe_param_get->iov_len);
 }
 
 TEST(ChannelPipeTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_pipe_param_t *pipe_param = &param.pipe;
     channel_t channel;
+
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_PIPE_NAME, ch_num);
 
     char opt[128];
     const char *name = "pipe";
@@ -71,26 +79,27 @@ TEST(ChannelPipeTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(PIPE, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, pipe_param->path);
+    ASSERT_EQ(0, pipe_param->iov_len);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(PIPE, channel);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ(path, pipe_param->dev.path);
-    ASSERT_EQ(0, pipe_param->dev.iov_len);
+    ASSERT_STREQ(path, pipe_param->path);
+    ASSERT_EQ(0, pipe_param->iov_len);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(PIPE, channel);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ(path, pipe_param->dev.path);
-    ASSERT_EQ(iov_len, pipe_param->dev.iov_len);
+    ASSERT_STREQ(path, pipe_param->path);
+    ASSERT_EQ(iov_len, pipe_param->iov_len);
 }
 
 class PipeTest : public ChannelTest, public WithParamInterface<int>
@@ -103,7 +112,7 @@ public:
         rv = pirate_init_channel_param(PIPE, Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-        param.pipe.dev.iov_len = GetParam();
+        param.pipe.iov_len = GetParam();
 
         rv = pirate_set_channel_param(PIPE, Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
@@ -115,7 +124,6 @@ public:
         ASSERT_EQ(0, errno);
     }
 };
-
 
 TEST_P(PipeTest, Run)
 {

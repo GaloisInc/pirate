@@ -62,8 +62,8 @@ typedef enum {
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe). 
     // Configuration parameters - pirate_pipe_param_t
-    //  - dev.path    - if "" then PIRATE_FILENAME format is used instead
-    //  - dev.iov_len - I/O vector chunk length
+    //  - path    - if "" then PIRATE_FILENAME format is used instead
+    //  - iov_len - I/O vector chunk length
     PIPE,
 
     // The name of the socket is formatted with PIRATE_DOMAIN_FILENAME
@@ -204,8 +204,8 @@ int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
 // Return:
 //  channel type on success
 //  INVALID on failure
-channel_t pirate_parse_channel_param(char *str, 
-                                    pirate_channel_param_t *param);
+channel_t pirate_parse_channel_param(int gd, int flags, const char *str, 
+                                        pirate_channel_param_t *param);
 
 // Channel-agnostic method for setting channel-specific parameters. After a
 // successful execution the channel type will for the channel number 'gd' will

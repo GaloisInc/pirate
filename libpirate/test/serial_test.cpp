@@ -29,13 +29,17 @@ TEST(ChannelSerialTest, Configuration)
     const int channel = ChannelTest::TEST_CHANNEL;
     const int flags = O_RDONLY;
 
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SERIAL_NAME_FMT,
+                channel);
+
     // Default configuration
     pirate_channel_param_t param;
     pirate_serial_param_t *serial_param = &param.serial;
     int rv = pirate_init_channel_param(SERIAL, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("/dev/ttyUSB0", serial_param->path);
+    ASSERT_STREQ(default_path, serial_param->path);
     ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
 
@@ -64,9 +68,15 @@ TEST(ChannelSerialTest, Configuration)
 }
 
 TEST(ChannelSerialTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_serial_param_t *serial_param = &param.serial;
     channel_t channel;
+
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SERIAL_NAME_FMT,
+                ch_num);
 
     char opt[128];
     const char *name = "serial";
@@ -78,14 +88,16 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(SERIAL, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, serial_param->path);
+    ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
+    ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(SERIAL, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
@@ -94,7 +106,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(SERIAL, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
@@ -103,7 +115,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(SERIAL, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
@@ -113,7 +125,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, 
                 invalid_baud_str, mtu);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(INVALID, channel);
     ASSERT_EQ(EINVAL, errno);
     errno = 0;

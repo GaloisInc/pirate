@@ -72,7 +72,8 @@ static inline int get_time(char ts[TIMESTAMP_STR_LEN], const char *fmt) {
 static int parse_channel_opt(char *str, int flags) {
     int rv;
     pirate_channel_param_t param;
-    channel_t channel = pirate_parse_channel_param(str, &param);
+    channel_t channel = pirate_parse_channel_param(GAPS_CHANNEL, flags, str,
+                                                    &param);
     if (channel == INVALID) {
         log_msg(ERROR, "failed to parse channel options '%s'", str);
         return -1;

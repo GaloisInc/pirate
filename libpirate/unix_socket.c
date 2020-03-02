@@ -25,7 +25,7 @@
 #include "pirate_common.h"
 #include "unix_socket.h"
 
-int pirate_unix_socket_init_param(int gd, int flags, 
+int pirate_unix_socket_init_param(int gd, int flags,
                                     pirate_unix_socket_param_t *param) {
     (void) flags;
     snprintf(param->path, PIRATE_UNIX_SOCKET_LEN_NAME - 1, 
@@ -35,22 +35,20 @@ int pirate_unix_socket_init_param(int gd, int flags,
     return 0;
 }
 
-int pirate_unix_socket_parse_param(char *str, 
+int pirate_unix_socket_parse_param(int gd, int flags, char *str, 
                                     pirate_unix_socket_param_t *param) {
     char *ptr = NULL;
 
-    pirate_unix_socket_init_param(0, 0, param);
+    pirate_unix_socket_init_param(gd, flags, param);
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "unix_socket") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -193,11 +191,15 @@ static int unix_socket_writer_open(int gd, pirate_unix_socket_ctx_t *ctx) {
 }
 
 int pirate_unix_socket_open(int gd, int flags, pirate_unix_socket_ctx_t *ctx) {
+    int rv = -1;
+
     if (flags == O_RDONLY) {
-        return unix_socket_reader_open(ctx);
+        rv = unix_socket_reader_open(ctx);
+    } else if (flags == O_WRONLY) {
+        rv = unix_socket_writer_open(gd, ctx);
     }
     
-    return unix_socket_writer_open(gd, ctx);
+    return rv == 0 ? gd : rv;
 }
 
 

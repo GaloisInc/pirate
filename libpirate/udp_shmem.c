@@ -99,7 +99,7 @@ static inline int is_empty(uint64_t value) {
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
 
-int udp_shmem_buffer_init_param(int gd, int flags, 
+int udp_shmem_buffer_init_param(int gd, int flags,
                                 pirate_udp_shmem_param_t *param) {
     (void) flags;
     snprintf(param->path, PIRATE_SHMEM_LEN_NAME - 1,  
@@ -110,10 +110,11 @@ int udp_shmem_buffer_init_param(int gd, int flags,
     return 0;
 }
 
-int udp_shmem_buffer_parse_param(char *str,  pirate_udp_shmem_param_t *param) {
+int udp_shmem_buffer_parse_param(int gd, int flags, char *str,
+                                    pirate_udp_shmem_param_t *param) {
     char *ptr = NULL;
 
-    if (udp_shmem_buffer_init_param(0, 0, param) != 0) {
+    if (udp_shmem_buffer_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -122,17 +123,13 @@ int udp_shmem_buffer_parse_param(char *str,  pirate_udp_shmem_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->path, ptr, sizeof(param->path));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->buffer_size = strtol(ptr, NULL, 10);
     }
-    param->buffer_size = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->packet_size = strtol(ptr, NULL, 10);
@@ -258,7 +255,6 @@ error:
 }
 
 int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_ctx_t *ctx) {
-    (void) gd;
     int err;
     uint_fast64_t init_pid = 0;
 
@@ -316,7 +312,7 @@ int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_ctx_t *ctx) {
     }
 
     ctx->flags = flags;
-    return 0;
+    return gd;
 error:
     err = errno;
     ctx->buf = NULL;

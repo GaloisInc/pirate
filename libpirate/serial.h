@@ -35,7 +35,8 @@ typedef struct {
 } pirate_serial_ctx_t;
 
 int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param);
-int pirate_serial_parse_param(char *str, pirate_serial_param_t *param);
+int pirate_serial_parse_param(int gd, int flags, char *str,
+                                pirate_serial_param_t *param);
 int pirate_serial_set_param(pirate_serial_ctx_t *ctx, 
                             const pirate_serial_param_t *param);
 int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,

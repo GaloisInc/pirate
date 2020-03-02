@@ -24,9 +24,6 @@
 #include "pirate_common.h"
 #include "udp_socket.h"
 
-#define DEFAULT_UDP_IP_ADDR     "127.0.0.1"
-#define PIRATE_UDP_PORT_BASE    26427
-
 int pirate_udp_socket_init_param(int gd, int flags, 
                                     pirate_udp_socket_param_t *param) {
     (void) flags;
@@ -37,28 +34,24 @@ int pirate_udp_socket_init_param(int gd, int flags,
     return 0;
 }
 
-int pirate_udp_socket_parse_param(char *str, 
+int pirate_udp_socket_parse_param(int gd, int flags, char *str, 
                                     pirate_udp_socket_param_t *param) {
     char *ptr = NULL;
 
-    pirate_udp_socket_init_param(0, 0, param);
+    pirate_udp_socket_init_param(gd, flags, param);
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "udp_socket") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->addr, ptr, sizeof(param->addr));
     }
-    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->port = strtol(ptr, NULL, 10);
     }
-    param->port = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -176,12 +169,14 @@ static int udp_socket_writer_open(pirate_udp_socket_ctx_t *ctx) {
 }
 
 int pirate_udp_socket_open(int gd, int flags, pirate_udp_socket_ctx_t *ctx) {
-    (void) gd;
+    int rv = -1;
     if (flags == O_RDONLY) {
-        return udp_socket_reader_open(ctx);
+        rv = udp_socket_reader_open(ctx);
+    } else if (flags == O_WRONLY) {
+        rv = udp_socket_writer_open(ctx);
     }
 
-    return udp_socket_writer_open(ctx);
+    return rv == 0 ? gd : rv;
 }
 
 int pirate_udp_socket_close(pirate_udp_socket_ctx_t *ctx) {

@@ -14,9 +14,11 @@
  */
 
 #include <stdio.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "pirate_common.h"
@@ -24,15 +26,16 @@
 
 int pirate_pipe_init_param(int gd, int flags, pirate_pipe_param_t *param) {
     (void) flags;
-    snprintf(param->dev.path, PIRATE_PIPE_NAME_LEN, PIRATE_PIPE_NAME, gd);
-    param->dev.iov_len = 0;
+    snprintf(param->path, PIRATE_PIPE_NAME_LEN, PIRATE_PIPE_NAME, gd);
+    param->iov_len = 0;
     return 0;
 }
 
-int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
+int pirate_pipe_parse_param(int gd, int flags, char *str,   
+                            pirate_pipe_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_pipe_init_param(0, 0, param) != 0) {
+    if (pirate_pipe_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -41,14 +44,12 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->dev.path, ptr, sizeof(param->dev.path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->dev.iov_len = strtol(ptr, NULL, 10);
+        param->iov_len = strtol(ptr, NULL, 10);
     }
 
     return 0;
@@ -56,16 +57,23 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
 
 int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx, 
                             const pirate_pipe_param_t *param) {
-    return pirate_device_set_param(&ctx->dev, &param->dev);
+    if (param == NULL) {
+        memset(&ctx->param, '\0', sizeof(ctx->param));
+    } else {
+        ctx->param = *param;
+    }
+    
+    return 0;
 }
 
 int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx,
                             pirate_pipe_param_t *param) {
-    return pirate_device_get_param(&ctx->dev, &param->dev);
+    *param  = ctx->param;
+    return 0;
 }
 
 int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx) {
-    if (mkfifo(ctx->dev.param.path, 0660) == -1) {
+    if (mkfifo(ctx->param.path, 0660) == -1) {
         if (errno == EEXIST) {
             errno = 0;
         } else {
@@ -73,18 +81,36 @@ int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx) {
         }
     }
 
-    return pirate_device_open(gd, flags, &ctx->dev);
+    if (ctx->fd > 0) {
+        errno = EBUSY;
+        return -1;
+    }
+
+    if ((ctx->fd = open(ctx->param.path, flags)) < 0) {
+        return -1;
+    }
+    
+    return gd;
 }
 
 int pirate_pipe_close(pirate_pipe_ctx_t *ctx) {
-    return pirate_device_close(&ctx->dev);
+    int rv = -1;
+
+    if (ctx->fd <= 0) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    rv = close(ctx->fd);
+    ctx->fd = -1;
+    return rv;
 }
 
 ssize_t pirate_pipe_read(pirate_pipe_ctx_t *ctx, void *buf, size_t count) {
-    return pirate_device_read(&ctx->dev, buf, count);
+    return pirate_fd_read(ctx->fd, buf, count, ctx->param.iov_len);
 }
 
 ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf, 
                             size_t count) {
-    return pirate_device_write(&ctx->dev, buf, count);
+    return pirate_fd_write(ctx->fd, buf, count, ctx->param.iov_len);
 }

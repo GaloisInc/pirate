@@ -29,13 +29,17 @@ TEST(ChannelUnixSocketTest, Configuration)
     const int channel = ChannelTest::TEST_CHANNEL;
     const int flags = O_RDONLY;
 
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_UNIX_SOCKET_FILENAME,
+                channel);
+
     // Default configuration
     pirate_channel_param_t param;
     pirate_unix_socket_param_t *us_param = &param.unix_socket;
     int rv = pirate_init_channel_param(UNIX_SOCKET, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("/tmp/gaps.channel.0.sock", us_param->path);
+    ASSERT_STREQ(default_path, us_param->path);
     ASSERT_EQ(0, us_param->iov_len);
     ASSERT_EQ(0, us_param->buffer_size);
 
@@ -64,9 +68,15 @@ TEST(ChannelUnixSocketTest, Configuration)
 }
 
 TEST(ChannelUnixSocketTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_unix_socket_param_t *unix_socket_param = &param.unix_socket;
     channel_t channel;
+
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_UNIX_SOCKET_FILENAME,
+                ch_num);
 
     char opt[128];
     const char *name = "unix_socket";
@@ -76,14 +86,16 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(UNIX_SOCKET, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, unix_socket_param->path);
+    ASSERT_EQ(0, unix_socket_param->iov_len);
+    ASSERT_EQ(0, unix_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UNIX_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, unix_socket_param->path);
@@ -92,7 +104,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UNIX_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, unix_socket_param->path);
@@ -102,7 +114,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len, 
             buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UNIX_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, unix_socket_param->path);

@@ -18,7 +18,6 @@
 
 namespace GAPS
 {
-
 using ::testing::WithParamInterface;
 using ::testing::TestWithParam;
 using ::testing::Values;
@@ -35,7 +34,10 @@ TEST(ChannelUdpShmemTest, Configuration)
     int rv = pirate_init_channel_param(UDP_SHMEM, channel, flags, &param);
 #if PIRATE_SHMEM_FEATURE
     pirate_udp_shmem_param_t *udp_shmem_param = &param.udp_shmem;
-    ASSERT_STREQ("/gaps.channel.0", udp_shmem_param->path);
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, channel);
+
+    ASSERT_STREQ(default_path, udp_shmem_param->path);
     ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
@@ -75,6 +77,8 @@ TEST(ChannelUdpShmemTest, Configuration)
 }
 
 TEST(ChannelUdpShmemTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     channel_t channel;
 
@@ -84,29 +88,35 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     const uint32_t buffer_size = 42 * 42;
 
 #if PIRATE_SHMEM_FEATURE
+    const pirate_udp_shmem_param_t *udp_shmem_param = &param.udp_shmem;
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, ch_num);
     const uint32_t packet_size = 4242;
     const uint32_t packet_count = 4224;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, udp_shmem_param->path);
+    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
+    ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
+    ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(path, udp_shmem_param->path);
+    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
+    ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
+    ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SHMEM, channel);
     ASSERT_EQ(0, errno);
-    const pirate_udp_shmem_param_t *udp_shmem_param = &param.udp_shmem;
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
@@ -115,7 +125,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, buffer_size, 
                 packet_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SHMEM, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, udp_shmem_param->path);
@@ -127,18 +137,17 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, path, buffer_size,
                 packet_size, packet_count);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SHMEM, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
     ASSERT_EQ(packet_size, udp_shmem_param->packet_size);
     ASSERT_EQ(packet_count, udp_shmem_param->packet_count);
-
 #else
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(INVALID, channel);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
     errno = 0;

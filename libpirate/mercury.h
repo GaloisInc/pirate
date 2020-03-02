@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
 #define PIRATE_MERCURY_LEN_NAME      64
 #define PIRATE_MERCURY_DEFAULT_MTU   256
 
@@ -34,7 +35,8 @@ typedef struct {
 
 int pirate_mercury_init_param(int gd, int flags,
                                 pirate_mercury_param_t *param);
-int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param);
+int pirate_mercury_parse_param(int gd, int flags, char *str,
+                                pirate_mercury_param_t *param);
 int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx, 
                                 const pirate_mercury_param_t *param);
 int pirate_mercury_get_param(const pirate_mercury_ctx_t *ctx,

@@ -35,7 +35,8 @@ typedef struct {
 } pirate_ge_eth_ctx_t;
 
 int pirate_ge_eth_init_param(int gd, int flags, pirate_ge_eth_param_t *param);
-int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param);
+int pirate_ge_eth_parse_param(int gd, int flags, char *str,
+                                pirate_ge_eth_param_t *param);
 int pirate_ge_eth_set_param(pirate_ge_eth_ctx_t *ctx,
                                     const pirate_ge_eth_param_t *param);
 int pirate_ge_eth_get_param(const pirate_ge_eth_ctx_t *ctx,

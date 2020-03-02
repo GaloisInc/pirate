@@ -30,10 +30,11 @@ int pirate_device_init_param(int gd, int flags, pirate_device_param_t *param) {
     return 0;
 }
 
-int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
+int pirate_device_parse_param(int gd, int flags, char *str,
+                                pirate_device_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_device_init_param(0, 0, param) != 0) {
+    if (pirate_device_init_param(gd, flags, param) != 0) {
         return -1;
     }
 

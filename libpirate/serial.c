@@ -36,10 +36,11 @@ int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param) {
     return 0;
 }
 
-int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
+int pirate_serial_parse_param(int gd, int flags, char *str,
+                                pirate_serial_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_serial_init_param(0, 0, param) != 0) {
+    if (pirate_serial_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -48,11 +49,9 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
     }
-    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         if (strncmp("4800", ptr, strlen("4800")) == 0) {
@@ -102,7 +101,6 @@ int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,
 }
 
 int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
-    (void) gd;
     struct termios attr;
 
     ctx->fd = open(ctx->param.path, flags | O_NOCTTY);
@@ -125,7 +123,7 @@ int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
         return -1;
     }
 
-    return 0;
+    return gd;
 }
 
 int pirate_serial_close(pirate_serial_ctx_t *ctx) {

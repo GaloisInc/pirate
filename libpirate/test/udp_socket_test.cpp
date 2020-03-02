@@ -35,8 +35,8 @@ TEST(ChannelUdpSocketTest, Configuration)
     int rv = pirate_init_channel_param(UDP_SOCKET, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("127.0.0.1", udp_param->addr);
-    ASSERT_EQ(26427 + channel, udp_param->port);
+    ASSERT_STREQ(DEFAULT_UDP_IP_ADDR, udp_param->addr);
+    ASSERT_EQ(PIRATE_UDP_PORT_BASE + channel, udp_param->port);
     ASSERT_EQ(0, udp_param->iov_len);
     ASSERT_EQ(0, udp_param->buffer_size);
 
@@ -69,6 +69,8 @@ TEST(ChannelUdpSocketTest, Configuration)
 }
 
 TEST(ChannelUdpSocketTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_udp_socket_param_t *udp_socket_param = &param.udp_socket;
     channel_t channel;
@@ -82,20 +84,27 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(UDP_SOCKET, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(DEFAULT_UDP_IP_ADDR, udp_socket_param->addr);
+    ASSERT_EQ(PIRATE_UDP_PORT_BASE + ch_num, udp_socket_param->port);
+    ASSERT_EQ(0, udp_socket_param->iov_len);
+    ASSERT_EQ(0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(UDP_SOCKET, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(addr, udp_socket_param->addr);
+    ASSERT_EQ(PIRATE_UDP_PORT_BASE + ch_num, udp_socket_param->port);
+    ASSERT_EQ(0, udp_socket_param->iov_len);
+    ASSERT_EQ(0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, udp_socket_param->addr);
@@ -105,7 +114,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, udp_socket_param->addr);
@@ -116,7 +125,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len, 
             buffer_size);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UDP_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, udp_socket_param->addr);

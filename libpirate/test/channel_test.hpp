@@ -71,7 +71,7 @@ public:
     ChannelTest();
     static void *WriterThreadS(void *param);
     static void *ReaderThreadS(void *param);
-    static const int TEST_CHANNEL = 0;
+    static const int TEST_CHANNEL = 2;
     static const int TEST_IOV_LEN = 16;
 
 };

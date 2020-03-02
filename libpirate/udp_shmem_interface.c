@@ -18,7 +18,7 @@
 #include "udp_shmem_interface.h"
 #include "udp_shmem.h"
 
-int pirate_udp_shmem_init_param(int gd, int flags, 
+int pirate_udp_shmem_init_param(int gd, int flags,
                                   pirate_udp_shmem_param_t *param) {
 #ifdef PIRATE_SHMEM_FEATURE
     return udp_shmem_buffer_init_param(gd, flags, param);
@@ -31,12 +31,12 @@ int pirate_udp_shmem_init_param(int gd, int flags,
 
 }
 
-int pirate_udp_shmem_parse_param(char *str, 
+int pirate_udp_shmem_parse_param(int gd, int flags, char *str,
                                     pirate_udp_shmem_param_t *param) {
 #if PIRATE_SHMEM_FEATURE
-    return  udp_shmem_buffer_parse_param(str, param);
+    return  udp_shmem_buffer_parse_param(gd, flags, str, param);
 #else
-    (void) str, (void) param;
+    (void) gd, (void) flags, (void) str, (void) param;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
@@ -59,7 +59,7 @@ int pirate_udp_shmem_set_param(pirate_udp_shmem_ctx_t *ctx,
 #endif
 }
 
-int pirate_udp_shmem_get_param(const pirate_udp_shmem_ctx_t *ctx, 
+int pirate_udp_shmem_get_param(const pirate_udp_shmem_ctx_t *ctx,
                             pirate_udp_shmem_param_t *param) {
 #ifdef PIRATE_SHMEM_FEATURE          
     *param  = ctx->param;
@@ -89,7 +89,7 @@ int pirate_udp_shmem_close(pirate_udp_shmem_ctx_t *ctx) {
 #endif
 }
 
-ssize_t pirate_udp_shmem_read(pirate_udp_shmem_ctx_t *ctx, void *buf, 
+ssize_t pirate_udp_shmem_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
                                 size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
     return udp_shmem_buffer_read(ctx, buf, count);

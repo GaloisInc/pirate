@@ -32,9 +32,9 @@ typedef struct {
     pirate_unix_socket_param_t param;
 } pirate_unix_socket_ctx_t;
 
-int pirate_unix_socket_init_param(int gd, int flags, 
+int pirate_unix_socket_init_param(int gd, int flags,
                                     pirate_unix_socket_param_t *param);
-int pirate_unix_socket_parse_param(char *str, 
+int pirate_unix_socket_parse_param(int gd, int flags, char *str,
                                     pirate_unix_socket_param_t *param);
 int pirate_unix_socket_set_param(pirate_unix_socket_ctx_t *ctx,
                                     const pirate_unix_socket_param_t *param);

@@ -50,6 +50,8 @@ TEST(ChannelUioTest, Configuration)
 }
 
 TEST(ChannelUioTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_uio_param_t *uio_param = &param.uio;
     channel_t channel;
@@ -60,14 +62,14 @@ TEST(ChannelUioTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(UIO_DEVICE, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(DEFAULT_UIO_DEVICE, uio_param->path);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UIO_DEVICE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, uio_param->path);

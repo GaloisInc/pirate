@@ -125,10 +125,11 @@ int pirate_ge_eth_init_param(int gd, int flags, pirate_ge_eth_param_t *param) {
     return 0;
 }
 
-int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
+int pirate_ge_eth_parse_param(int gd, int flags, char *str,
+                                pirate_ge_eth_param_t *param) {
     char *ptr = NULL;
 
-    if (pirate_ge_eth_init_param(0, 0, param) != 0) {
+    if (pirate_ge_eth_init_param(gd, flags, param) != 0) {
         return -1;
     }
 
@@ -137,17 +138,13 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->addr, ptr, sizeof(param->addr));
     }
-    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-        errno = EINVAL;
-        return -1;
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->port = strtol(ptr, NULL, 10);
     }
-    param->port = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->mtu = strtol(ptr, NULL, 10);
@@ -235,7 +232,7 @@ static int ge_eth_writer_open(pirate_ge_eth_ctx_t *ctx) {
 }
 
 int pirate_ge_eth_open(int gd, int flags, pirate_ge_eth_ctx_t *ctx) {
-    (void) gd;
+    int rv = -1;
 
     ctx->buf = (uint8_t *) malloc(ctx->param.mtu);
     if (ctx->buf == NULL) {
@@ -243,10 +240,12 @@ int pirate_ge_eth_open(int gd, int flags, pirate_ge_eth_ctx_t *ctx) {
     }
 
     if (flags == O_RDONLY) {
-        return ge_eth_reader_open(ctx);
+        rv = ge_eth_reader_open(ctx);
+    } else if (flags == O_WRONLY) {
+        rv = ge_eth_writer_open(ctx);
     }
 
-    return ge_eth_writer_open(ctx);
+    return rv == 0 ? gd : rv;
 }
 
 int pirate_ge_eth_close(pirate_ge_eth_ctx_t *ctx) {

@@ -28,13 +28,17 @@ TEST(ChannelMercuryTest, Configuration)
     const int channel = ChannelTest::TEST_CHANNEL;
     const int flags = O_RDONLY;
 
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_MERCURY_NAME_FMT,
+                channel);
+
     // Default configuration
     pirate_channel_param_t param;
     pirate_mercury_param_t *mercury_param = &param.mercury;
     int rv = pirate_init_channel_param(MERCURY, channel, flags, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("/tmp/gaps.mercury.0", mercury_param->path);
+    ASSERT_STREQ(default_path, mercury_param->path);
     ASSERT_EQ(PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
 
     // Apply configuration
@@ -59,9 +63,15 @@ TEST(ChannelMercuryTest, Configuration)
 }
 
 TEST(ChannelMercuryTest, ConfigurationParser) {
+    const int ch_num = ChannelTest::TEST_CHANNEL;
+    const int flags = O_RDONLY;
     pirate_channel_param_t param;
     const pirate_mercury_param_t *mercury_param = &param.mercury;
     channel_t channel;
+
+    char default_path[128];
+    snprintf(default_path, sizeof(default_path), PIRATE_MERCURY_NAME_FMT,
+                ch_num);
 
     char opt[128];
     const char *name = "mercury";
@@ -70,14 +80,15 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
+    ASSERT_EQ(MERCURY, channel);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(default_path, mercury_param->path);
+    ASSERT_EQ(PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(MERCURY, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, mercury_param->path);
@@ -85,7 +96,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, mtu);
-    channel = pirate_parse_channel_param(opt, &param);
+    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(MERCURY, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, mercury_param->path);

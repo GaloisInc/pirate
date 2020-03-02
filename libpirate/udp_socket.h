@@ -18,6 +18,9 @@
 
 #include <arpa/inet.h>
 
+#define DEFAULT_UDP_IP_ADDR     "127.0.0.1"
+#define PIRATE_UDP_PORT_BASE    26427
+
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -30,9 +33,9 @@ typedef struct {
     pirate_udp_socket_param_t param;
 } pirate_udp_socket_ctx_t;
 
-int pirate_udp_socket_init_param(int gd, int flags, 
+int pirate_udp_socket_init_param(int gd, int flags,
                                     pirate_udp_socket_param_t *param);
-int pirate_udp_socket_parse_param(char *str, 
+int pirate_udp_socket_parse_param(int gd, int flags, char *str, 
                                     pirate_udp_socket_param_t *param);
 int pirate_udp_socket_set_param(pirate_udp_socket_ctx_t *ctx,
                                     const pirate_udp_socket_param_t *param);
