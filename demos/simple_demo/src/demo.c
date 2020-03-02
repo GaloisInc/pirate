@@ -34,9 +34,9 @@
 #endif
 #pragma pirate enclave declare(high)
 #pragma pirate enclave declare(low)
-#define GAPS_MAIN(name) __attribute__((pirate_enclave_main(name)))
+#define PIRATE_ENCLAVE_MAIN(name) __attribute__((pirate_enclave_main(name)))
 #else
-#define GAPS_MAIN(name)
+#define PIRATE_ENCLAVE_MAIN(name)
 #endif
 
 #define HIGH_TO_LOW_CH 0
@@ -355,7 +355,7 @@ static pthread_alloc_t run_webserver(webserver_t *webargs) {
     return ret;
 }
 
-int main_high(int argc, char* argv[]) GAPS_MAIN("high")
+int main_high(int argc, char* argv[]) PIRATE_ENCLAVE_MAIN("high")
 {
     NAME = HIGH_NAME;
     int retval = 0, signal_fd;
@@ -462,7 +462,7 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
 }
 
 
-int main_low(int argc, char* argv[]) GAPS_MAIN("low")
+int main_low(int argc, char* argv[]) PIRATE_ENCLAVE_MAIN("low")
 {
     NAME = LOW_NAME;
     int retval = 0, signal_fd;
