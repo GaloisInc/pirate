@@ -25,7 +25,7 @@
 #include "ts_crypto.h"
 
 #ifdef GAPS_ENABLE
-#pragma enclave declare(yellow)
+#pragma pirate enclave declare(yellow)
 #endif
 
 /* Default values */

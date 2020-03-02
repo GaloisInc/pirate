@@ -21,7 +21,7 @@
 #include "ts_crypto.h"
 
 #ifdef GAPS_ENABLE
-#pragma enclave declare(purple)
+#pragma pirate enclave declare(purple)
 #endif
 
 typedef struct {
