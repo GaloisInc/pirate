@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(libpirate)
 
-set(CMAKE_C_COMPILER "clang")
-
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 OPTION(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 
