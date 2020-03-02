@@ -60,10 +60,11 @@ int pirate_serial_write(int gd, pirate_channel_t *writers, const void *buf,
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
+        int rv;
         uint32_t tx_buf_bytes = 0;
         size_t wr_len = remain > SERIAL_MTU ? SERIAL_MTU : remain;
-        wr_len = write(fd, wr_buf, wr_len);
-        if (wr_len < 0) {
+        rv = write(fd, wr_buf, wr_len);
+        if (rv < 0) {
             return -1;
         }
 
@@ -82,8 +83,8 @@ int pirate_serial_write(int gd, pirate_channel_t *writers, const void *buf,
 
         } while(tx_buf_bytes > 0);
 
-        remain -= wr_len;
-        wr_buf += wr_len;
+        remain -= rv;
+        wr_buf += rv;
     } while(remain > 0);
 
     return count;

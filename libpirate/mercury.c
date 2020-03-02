@@ -121,7 +121,7 @@ int pirate_mercury_close(int gd, pirate_channel_t *channels) {
 ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
                                 size_t count) {
     uint8_t rd_buf[MERCURY_MTU] = { 0 };
-    size_t rd_len = 0;
+    int rv;
     mercury_header_t hdr = { 0 };
     pirate_channel_t *ch = &readers[gd];
 
@@ -130,8 +130,10 @@ ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
         return -1;
     }
 
-    rd_len = read(ch->fd, rd_buf, MERCURY_MTU);
-    if (rd_len < sizeof(mercury_header_t)) {
+    rv = read(ch->fd, rd_buf, MERCURY_MTU);
+    if (rv < 0) {
+        return -1;
+    } else if (rv < ((int)sizeof(mercury_header_t))) {
         errno = EIO;
         return -1;
     }
