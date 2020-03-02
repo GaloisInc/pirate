@@ -21,7 +21,7 @@
 #include "ts_crypto.h"
 
 #ifdef GAPS_ENABLE
-#pragma enclave declare(purple)
+#pragma pirate enclave declare(purple)
 #endif
 
 typedef struct {
@@ -137,7 +137,7 @@ static void signer_term(signer_t *signer) {
 }
 
 
-int signing_service_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("purple") {
+int signing_service_main(int argc, char *argv[]) pirate_enclave_MAIN("purple") {
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
 

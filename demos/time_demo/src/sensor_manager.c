@@ -27,7 +27,7 @@
 #include "xwin_display.h"
 
 #ifdef GAPS_ENABLE
-#pragma enclave declare(orange)
+#pragma pirate enclave declare(orange)
 #endif
 
 typedef struct {
@@ -325,7 +325,7 @@ static void *client_thread(void *arg) {
     return 0;
 }
 
-int sensor_manager_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("orange") {
+int sensor_manager_main(int argc, char *argv[]) pirate_enclave_MAIN("orange") {
     client_t client = {
         .verbosity = VERBOSITY_NONE,
         .validate = 0,
