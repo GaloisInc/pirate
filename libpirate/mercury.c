@@ -179,7 +179,7 @@ int pirate_mercury_close(pirate_mercury_ctx_t *ctx) {
 
 ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf, 
                             size_t count) {
-    size_t rd_len = 0;
+    int rv;
     mercury_header_t hdr = { 0 };
     const pirate_mercury_param_t *param = &ctx->param;
 
@@ -188,8 +188,10 @@ ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf,
         return -1;
     }
 
-    rd_len = read(ctx->fd, ctx->buf, param->mtu);
-    if (rd_len < sizeof(mercury_header_t)) {
+    rv = read(ctx->fd, ctx->buf, param->mtu);
+    if (rv < 0) {
+        return -1;
+    } else if (rv < ((int)sizeof(mercury_header_t))) {
         errno = EIO;
         return -1;
     }
