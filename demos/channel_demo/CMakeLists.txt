@@ -6,12 +6,11 @@ set(VERSION 0.0.1)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Dependencies
-set(LIBPIRATE pirateprims-static)
 set(LIBPIRATE_DIR ../../libpirate)
 include_directories(${LIBPIRATE_DIR})
 
 # Build flags
-SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O0" "-g")
+SET(BUILD_FLAGS ${PIRATE_C_FLAGS} "-O0" "-g")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"'")
 
 # Common
@@ -20,7 +19,7 @@ set(COMMON_SRC ${SRC_DIR}/common.c)
 
 function(add_channel_test_target TGT)
     add_executable(${TGT} ${COMMON_SRC} ${SRC_DIR}/${TGT}.c)
-    target_link_libraries(${TGT} ${LIBPIRATE})
+    target_link_libraries(${TGT} ${PIRATE_APP_LIBS})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
 endfunction()
 

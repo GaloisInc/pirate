@@ -20,14 +20,25 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "shmem_buffer.h"
+#include "device.h"
+#include "pipe.h"
+#include "unix_socket.h"
+#include "tcp_socket.h"
+#include "udp_socket.h"
+#include "shmem_interface.h"
+#include "udp_shmem_interface.h"
+#include "uio.h"
+#include "serial.h"
+#include "mercury.h"
+#include "ge_eth.h"
+
+#include "pirate_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define PIRATE_FILENAME "/tmp/gaps.channel.%d"
-#define PIRATE_DOMAIN_FILENAME "/tmp/gaps.channel.%d.sock"
 #define PIRATE_PORT_NUMBER 26427
 #define PIRATE_SHM_NAME "/gaps.channel.%d"
 #define PIRATE_LEN_NAME 64
@@ -37,56 +48,126 @@ extern "C" {
 #define PIRATE_IOV_MAX 16
 
 typedef enum {
-  // The gaps channel is implemented using a FIFO special file
-  // (a named pipe). The name of the pipe is formatted
-  // with PIRATE_FILENAME where %d is the gaps descriptor.
-  PIPE,
-  // The gaps channel is implemented using a filepath.
-  // This filepath points to a character device or a
-  // named pipe. pirate_set_pathname(int, char *) must
-  // be used to specify the pathname.
-  DEVICE,
-  // The gaps channel is implemented by using Unix domain sockets.
-  // The name of the socket is formatted with PIRATE_DOMAIN_FILENAME
-  // where %d is the gaps descriptor.
-  UNIX_SOCKET,
-  // The gaps channel is implemented by using TCP sockets.
-  // The writer must use pirate_set_pathname(int, char *)
-  // to specify the hostname.
-  // The port number is specified using pirate_set_port_number(int, int)
-  // or defaults to (26427 + d) where d is the gaps descriptor.
-  TCP_SOCKET,
-  // The gaps channel is implemented by using UDP sockets.
-  // The writer must use pirate_set_pathname(int, char *)
-  // to specify the hostname.
-  // The port number is specified using pirate_set_port_number(int, int)
-  // or defaults to (26427 + d) where d is the gaps descriptor.
-  UDP_SOCKET,
-  // The gaps channel is implemented using shared memory.
-  // This feature is disabled by default. It must be enabled
-  // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
-  SHMEM,
-  // The gaps channel is implemented using UDP packets
-  // transmitted over shared memory. For measuring the
-  // cost of creating UDP packets in userspace.
-  // This feature is disabled by default. It must be enabled
-  // by setting PIRATE_SHMEM_FEATURE in CMakeLists.txt
-  SHMEM_UDP,
-  // The gaps channel is implemented using userspace io.
-  // The gaps uio device driver must be loaded.
-  UIO_DEVICE,
-  // The gaps channel is implemented over a /dev/tty* interface
-  // Baud rate = 230400, no error detection or correction
-  SERIAL,
-  // The gaps channel for Mercury System PCI-E device
-  // Maximum packet size 256 bytes
-  // Maximim data size 236 bytes
-  MERCURY,
-  // The gaps channel for GRC Ethernet devices
-  GE_ETH,
-  // The gaps channel is unavailable for operations
-  INVALID
+    // The gaps channel is unavailable for operations
+    INVALID = 0,
+
+    // The gaps channel is implemented using a filepath.
+    // This filepath points to a character device, named pipe, or a derived
+    // channel type.
+    // Configuration parameters - pirate_device_param_t
+    //  - path    - device path
+    //  - iov_len - I/O vector chunk length
+    DEVICE,
+
+    // The gaps channel is implemented using a FIFO special file
+    // (a named pipe). 
+    // Configuration parameters - pirate_pipe_param_t
+    //  - dev.path    - if "" then PIRATE_FILENAME format is used instead
+    //  - dev.iov_len - I/O vector chunk length
+    PIPE,
+
+    // The name of the socket is formatted with PIRATE_DOMAIN_FILENAME
+    // where %d is the gaps descriptor.
+    //  - path        - if "" then PIRATE_FILENAME format is used instead
+    //  - iov_len     - I/O vector chunk length
+    //  - buffer_size - unix socket buffer size
+    UNIX_SOCKET,
+
+    // The gaps channel is implemented by using TCP sockets.
+    // Configuration parameters - pirate_tcp_socket_param_t
+    //  - addr        - IP address, if empty then 127.0.0.1 is used
+    //  - port        - IP port, if empty, then 26427 + aps descriptor is used
+    //  - iov_len     - I/O vector chunk length
+    //  - buffer_size - TCP socket buffer size
+    TCP_SOCKET,
+
+    // The gaps channel is implemented by using TCP sockets.
+    // Configuration parameters - pirate_tcp_socket_param_t
+    //  - addr        - IP address, if empty then 127.0.0.1 is used
+    //  - port        - IP port, if empty, then 26427 + aps descriptor is used
+    //  - iov_len     - I/O vector chunk length
+    //  - buffer_size - UDP socket buffer size
+    UDP_SOCKET,
+  
+    // The gaps channel is implemented using shared memory.
+    // This feature is disabled by default. It must be enabled
+    // by setting PIRATE_SHMEM_FEATURE to ON
+    // Configuration parameters - pirate_shmem_param_t
+    //  - path        - location of the shared memory
+    //  - buffer_size - shared memory buffer size
+    SHMEM,
+
+    // The gaps channel is implemented using UDP packets
+    // transmitted over shared memory. For measuring the
+    // cost of creating UDP packets in userspace.
+    // This feature is disabled by default. It must be enabled
+    // by setting PIRATE_SHMEM_FEATURE to ON
+    // Configuration parameters - pirate_udp_shmem_param_t
+    //  - path         - location of the shared memory
+    //  - buffer_size  - shared memory buffer size
+    //  - packet_size  - optional packet size
+    //  - packet_count - optional packet count
+    UDP_SHMEM,
+
+    // The gaps channel is implemented using userspace io.
+    // The gaps uio device driver must be loaded.
+    // Configuration parameters - pirate_uio_param_t
+    //  - path         - device path
+    UIO_DEVICE,
+
+    // The gaps channel is implemented over a /dev/tty* interface
+    // Default baud 30400, no error detection or correction
+    // Configuration parameters - pirate_serial_param_t
+    //  - path - device path
+    //  - buad - baud rate, default 230400
+    //  - mtu  - max transmit chunk, 1024
+    SERIAL,
+  
+    // The gaps channel for Mercury System PCI-E device
+    // Configuration parameters - pirate_mercury_param_t
+    //  - path - device path
+    //  - mtu  - maximum frame length, default 256
+    MERCURY,
+
+    // The gaps channel for GRC Ethernet devices
+    // Configuration parameters - pirate_ge_eth_param_t
+    //  - addr - IP address, if empty then 127.0.0.1 is used
+    //  - port - IP port, if empty, then 0x4745 + aps descriptor is used
+    //  - mtu  - maximum frame length, default 1454
+    GE_ETH
 } channel_t;
+
+typedef union {
+    pirate_device_param_t           device;
+    pirate_pipe_param_t             pipe;
+    pirate_unix_socket_param_t      unix_socket;
+    pirate_tcp_socket_param_t       tcp_socket;
+    pirate_udp_socket_param_t       udp_socket;
+    pirate_shmem_param_t            shmem;
+    pirate_udp_shmem_param_t        udp_shmem;
+    pirate_uio_param_t              uio;
+    pirate_serial_param_t           serial;
+    pirate_mercury_param_t          mercury;
+    pirate_ge_eth_param_t           ge_eth;
+} pirate_channel_param_t;
+
+typedef struct {
+    channel_t type;
+  
+    union {
+        pirate_device_ctx_t         device;
+        pirate_pipe_ctx_t           pipe;
+        pirate_unix_socket_ctx_t    unix_socket;
+        pirate_tcp_socket_ctx_t     tcp_socket;
+        pirate_udp_socket_ctx_t     udp_socket;
+        pirate_shmem_ctx_t          shmem;
+        pirate_udp_shmem_ctx_t      udp_shmem;
+        pirate_uio_ctx_t            uio;
+        pirate_serial_ctx_t         serial;
+        pirate_mercury_ctx_t        mercury;
+        pirate_ge_eth_ctx_t         ge_eth;
+    };
+} pirate_channel_ctx_t;
 
 typedef struct {
   int fd;                       // file descriptor
@@ -104,6 +185,59 @@ typedef struct {
 // API
 //
 
+// Channel-specific default parameter initialization
+// Parameters:
+//  channel_type - GAPS channel type
+//  gd           - GAPS channel number
+//  flags        - O_RDONLY or O_WRONLY
+//  param        - channel-specific parameters to be initialized
+// Return:
+//  0 on success
+// -1 on failure, errno is set
+int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
+                                    pirate_channel_param_t *param);
+
+// Parse a string with gaps channel configuration options
+// Parameters:
+//  str   - gaps channel configuration string
+//  param - structure with configuration parameters
+// Return:
+//  channel type on success
+//  INVALID on failure
+channel_t pirate_parse_channel_param(char *str, 
+                                    pirate_channel_param_t *param);
+
+// Channel-agnostic method for setting channel-specific parameters. After a
+// successful execution the channel type will for the channel number 'gd' will
+// be set to 'channel_type'
+//
+// Parameters:
+//  gd           - GAPS channel number
+//  flags        - O_RDONLY or O_WRONLY
+//  channel_type - GAPS channel type
+//  param        - channel-specific parameters. If null then, channel
+//                 type will be set to INVALID
+// Return:
+//  0 on success
+// -1 on failure, errno is set
+
+int pirate_set_channel_param(channel_t channel_type, int gd, int flags,
+  const pirate_channel_param_t *param);
+
+// Channel-agnostic method for getting channel-specific parameters.
+//
+// Parameters
+//  gd           - GAPS channel number
+//  flags        - O_RDONLY or O_WRONLY
+//  param        - channel-specific parameters
+//
+// Return:
+//  channel type on success
+//  INVALID on failure, errno is set
+
+channel_t pirate_get_channel_param(int gd, int flags,
+                                    pirate_channel_param_t *param);
+
 // Opens the gaps channel specified by the gaps descriptor.
 //
 // Channels must be opened in order from smaller to largest
@@ -114,6 +248,7 @@ typedef struct {
 // error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must be O_RDONLY or O_WRONLY.
+
 int pirate_open(int gd, int flags);
 
 // pirate_read() attempts to read up to count bytes from

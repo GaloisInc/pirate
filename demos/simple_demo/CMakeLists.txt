@@ -11,7 +11,7 @@ endif(GAPS_ENABLE)
 
 # Dependencies
 include_directories(../../libpirate)
-SET(LIBS "pirateprims-static" "pthread")
+SET(LIBS "pirateprims-static" "pthread" "rt")
 
 # Sensitivity levels and output binary names
 set(HIGH "high")

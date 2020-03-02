@@ -10,7 +10,7 @@ endif(GAPS_ENABLE)
 
 # Dependencies
 include_directories(../../libpirate)
-SET(LIBS "pirateprims-static")
+SET(LIBS "pirateprims-static" rt pthread)
 
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
