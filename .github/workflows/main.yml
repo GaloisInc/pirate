@@ -4,30 +4,59 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
       run: sudo apt-get install -y clang valgrind
-    - name: build
+    - name: build libpirate
       run: |
-        mkdir build
-        pushd build
+        mkdir -p build
+        cd build
         cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make clean
         make
-        popd
     - name: libpirate tests
       timeout-minutes: 1
       run: |
-        pushd build/libpirate
+        cd build/libpirate
         ./primitives_test -v
         make valgrind
-        popd
+    - name: Build demos
+      run: |
+        cd build
+        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
     - name: time_demo tests
       run: |
-        pushd build/demos/time_demo/test
+        cd build/demos/time_demo/test
         ./ts_test.sh
-        popd
+  gaps:
+    runs-on: ubuntu-latest
+    container: docker://pirateteam/ubuntu-llvm:latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install dependencies
+      run: |
+        apt-get update
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+    - name: build libpirate
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DGAPS_ENABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
+    - name: libpirate tests
+      timeout-minutes: 1
+      run: |
+        cd build/libpirate
+        ./primitives_test -v
+        make valgrind
+    - name: Build demos
+      run: |
+        cd build
+        cmake -DGAPS_ENABLE=ON -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
+    - name: time_demo tests
+      run: |
+        cd build/demos/time_demo/test
+        ./ts_test.sh

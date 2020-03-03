@@ -26,7 +26,18 @@ if(PIRATE_SHMEM_FEATURE)
     set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "udp_shmem.c" "checksum.c")
 endif(PIRATE_SHMEM_FEATURE)
 
-include_directories(. ../include)
+include_directories(.)
+
+set(PIRATE_STATIC_LIB libpirate_static)
+set(PIRATE_SHARED_LIB libpirate_shared)
+
+add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
+set_target_properties(${PIRATE_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(${PIRATE_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
+
+add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
+set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
 add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
 add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
@@ -34,15 +45,6 @@ add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat
 add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
 set_target_properties(primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles PROPERTIES EXCLUDE_FROM_ALL 1)
 add_custom_target(bench DEPENDS primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles)
-
-add_library(pirateprims-static STATIC ${PIRATE_SOURCES})
-set_target_properties(pirateprims-static PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
-
-add_library(pirateprims-shared SHARED ${PIRATE_SOURCES})
-set_target_properties(pirateprims-shared PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
-
-target_compile_options(pirateprims-static PRIVATE ${PIRATE_C_FLAGS})
-target_compile_options(pirateprims-shared PRIVATE ${PIRATE_C_FLAGS})
 
 target_compile_options(primitives_bench_thr PRIVATE ${PIRATE_C_FLAGS})
 target_compile_options(primitives_bench_thr_vector PRIVATE ${PIRATE_C_FLAGS})
@@ -67,15 +69,15 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIR})
 
 set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS} -O0 -g)
-set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
+set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_STATIC_LIB} pthread)
 set(GAPS_CHANNELS_TEST gaps_channels_test)
 file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
 add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
 target_compile_options(${GAPS_CHANNELS_TEST} PRIVATE ${PIRATE_C_TEST_FLAGS})
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(${GAPS_CHANNELS_TEST} 
-    ${GTEST_MAIN_LIBRARY} 
+target_link_libraries(${GAPS_CHANNELS_TEST}
+    ${GTEST_MAIN_LIBRARY}
     ${GTEST_LIBRARIES}
     ${GAPS_CHANNELS_TEST_LIBS}
 )
@@ -98,3 +100,7 @@ add_test(
     NAME ${GAPS_CHANNELS_TEST}
     COMMAND ${GAPS_CHANNELS_TEST}
 )
+
+install(FILES primitives.h shmem_buffer.h DESTINATION include)
+install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)

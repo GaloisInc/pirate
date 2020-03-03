@@ -47,18 +47,4 @@ ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf, size_t count);
 ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf, 
                                 size_t count);
 
-
-#if 0
-#include "primitives.h"
-
-#define MERCURY_MTU 256
-
-int pirate_mercury_open(int gd, int flags, pirate_channel_t *channels);
-int pirate_mercury_close(int gd, pirate_channel_t *channels);
-ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf, 
-                                size_t count);
-ssize_t pirate_mercury_write(int gd, pirate_channel_t *writers, const void *buf,
-                                size_t count);
-#endif
-
 #endif /* __PIRATE_CHANNEL_MERCURY_H */

@@ -378,3 +378,4 @@ void print_hex(const char *msg, const uint8_t *buf, uint32_t len) {
     fprintf(stdout, "\n");
     fflush(stdout);
 }
+

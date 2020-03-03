@@ -18,4 +18,5 @@ devices/cusegaps/cusegaps_net
 devices/cusegaps/cusegaps_pipe
 devices/cusegaps/cusegaps_test
 .vscode
+.project
 /build/*

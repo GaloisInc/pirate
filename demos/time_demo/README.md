@@ -69,7 +69,7 @@ All demo components are built by following instructions provided
 * All build artifacts are located in ```build/time_demo``` directory
 
 ```
-$ cd pirate-demos
+$ cd pirate
 $ mkdir build
 $ cd build
 $ cmake ..
