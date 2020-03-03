@@ -22,7 +22,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
@@ -30,10 +30,10 @@ jobs:
         cd build/libpirate
         ./gaps_channels_test
         make valgrind
-    - name: build demos and unit test
+    - name: build demos
       run: |
         cd build
-        cmake -D GTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
@@ -52,7 +52,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -D GTEST_ROOT:PATH=$HOME/googletest -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
