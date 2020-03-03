@@ -38,18 +38,21 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev libgtest-dev
+        cd /usr/src/googletest
+        cmake .
+        cmake --build . --target install
     - name: build libpirate
       run: |
         mkdir -p build
         cd build
-        cmake -DGAPS_ENABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        ./primitives_test -v
+        ./gaps_channels_test
         make valgrind
     - name: Build demos
       run: |
