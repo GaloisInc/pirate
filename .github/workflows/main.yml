@@ -9,10 +9,15 @@ jobs:
     - uses: actions/checkout@v1
     - name: install dependencies
       run: |
-        sudo apt-get install -y clang valgrind libgtest-dev
-        cd /usr/src/googletest
-        cmake .
+        sudo apt-get install -y clang valgrind
+    - name: googletest
+      run: |
+        mkdir ~/googletest
+        pushd ~/googletest
+        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
+        popd
     - name: build libpirate
       run: |
         mkdir -p build
@@ -47,7 +52,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -D GTEST_ROOT:PATH=$HOME/googletest -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
