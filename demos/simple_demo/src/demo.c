@@ -364,6 +364,7 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
     webserver_t webargs;
     struct sigaction saction;
     struct signalfd_siginfo siginfo;
+    pirate_channel_param_t param;
 
     /* Validate and parse command-line options */
     if (argc != 2) {
@@ -402,6 +403,26 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
     webargs.port = atoi(argv[1]);
     webargs.level = LEVEL_HIGH;
     printf("\n%s web server on port %d\n\n", NAME, webargs.port);
+
+    if (pirate_init_channel_param(PIPE, HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
+        perror("channel parameter initialize: high->low");
+        return -1;
+    }
+
+    if (pirate_set_channel_param(PIPE, HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
+        perror("channel parameter set: high->low");
+        return -1;
+    }
+
+    if (pirate_init_channel_param(PIPE, LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
+        perror("channel parameter initialize: high<-low");
+        return -1;
+    }
+
+    if (pirate_set_channel_param(PIPE, LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
+        perror("channel parameter set: high<-low");
+        return -1;
+    }
 
     if (pirate_open(HIGH_TO_LOW_CH, O_WRONLY) < 0) {
         perror("open high to low channel in write-only mode");
@@ -471,6 +492,7 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
     webserver_t webargs;
     struct sigaction saction;
     struct signalfd_siginfo siginfo;
+    pirate_channel_param_t param;
 
     /* Validate and parse command-line options */
     if (argc != 2) {
@@ -502,6 +524,27 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
     webargs.port = atoi(argv[1]);
     webargs.level = LEVEL_LOW;
     printf("\n%s web server on port %d\n\n", NAME, webargs.port);
+
+
+    if (pirate_init_channel_param(PIPE, HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
+        perror("channel parameter initialize: high->low");
+        return -1;
+    }
+
+    if (pirate_set_channel_param(PIPE, HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
+        perror("channel parameter set: high->low");
+        return -1;
+    }
+
+    if (pirate_init_channel_param(PIPE, LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
+        perror("channel parameter initialize: high<-low");
+        return -1;
+    }
+
+    if (pirate_set_channel_param(PIPE, LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
+        perror("channel parameter set: high<-low");
+        return -1;
+    }
 
     if (pirate_open(HIGH_TO_LOW_CH, O_RDONLY) < 0) {
         perror("open high to low channel in read-only mode");
