@@ -30,10 +30,10 @@ jobs:
         cd build/libpirate
         ./gaps_channels_test
         make valgrind
-    - name: Build demos
+    - name: build demos and unit test
       run: |
         cd build
-        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -D GTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
