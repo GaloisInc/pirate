@@ -67,10 +67,17 @@ the ``resource_type declare`` pragma, we define a section that appears
 in both the relocatable and executable elf formats. In the executable
 ELF, it is loaded into the `text` segment, along with ``.rodata``.
 
-``.gaps.res.<resource_type>``
+``.gaps.res.<resource_type>.<enclave_name>``
    An array of ``Elf64_GAPS_res``. The data in this struct is handled
    by relocations, to be filled in by the linker. The data to be
-   relocated into each field is stored in ``.rodata``.
+   relocated into each field is stored in ``.rodata``. The
+   concatenation of all the arrays for a given resource type will be
+   made available to the named enclave.
+   
+[NOTE: We could potentially use ``.gaps.res.resource_type``, without
+an enclave, to indicate that the given resource is linked into all
+enclaves, and that the name is the same among all of them. Not sure if
+that's useful.]
 
 Structures
 ----------
@@ -189,6 +196,12 @@ respectively.
     An array of ``struct gaps_resource_param`` storing key-value
     pairs representing static resource configuration.
     
+``gr_size``
+    The size of the annotated symbol.
+    
+``gr_alignment``
+    The alignment of the annotated symbol.
+    
 ``gr_sym``
     An index into the executable's symbol table corresponding to
     the variable that was annotated to create this resource. This
@@ -228,8 +241,8 @@ access an array of resources of that type:
 
 .. code-block:: c
 
-                struct gaps_resource[] __start_gaps_res_<resource_type>;
-                struct gaps_resource[] __stop_gaps_res_<resource_type>;
+               struct gaps_resource[] __start_gaps_res_<resource_type>;
+               struct gaps_resource[] __stop_gaps_res_<resource_type>;
 
 A library or application can gain access to this array by including the
 ``gaps_resources.h`` header file and declaring an ``extern`` variable
@@ -239,8 +252,8 @@ with the appropriate name and type:
 
                #include <gaps_resources.h>
 
-                extern struct gaps_resource[] __start_gaps_res_<resource_type>;
-                extern struct gaps_resource[] __stop_gaps_res_<resource_type>;
+               extern struct gaps_resource[] __start_gaps_res_<resource_type>;
+               extern struct gaps_resource[] __stop_gaps_res_<resource_type>;
 
 Linking Examples
 ----------------
