@@ -64,43 +64,46 @@ target_link_libraries(primitives_bench_thr_vector ${PIRATE_LINK_LIBRARIES})
 target_link_libraries(primitives_bench_lat ${PIRATE_LINK_LIBRARIES})
 target_link_libraries(primitives_bench_lat_percentiles ${PIRATE_LINK_LIBRARIES})
 
-# GAPS channel unit test
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIR})
-
-set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS} -O0 -g)
-set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_STATIC_LIB} pthread)
-set(GAPS_CHANNELS_TEST gaps_channels_test)
-file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
-add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
-target_compile_options(${GAPS_CHANNELS_TEST} PRIVATE ${PIRATE_C_TEST_FLAGS})
-
-# Link test executable against gtest & gtest_main
-target_link_libraries(${GAPS_CHANNELS_TEST}
-    ${GTEST_MAIN_LIBRARY}
-    ${GTEST_LIBRARIES}
-    ${GAPS_CHANNELS_TEST_LIBS}
-)
-
-enable_testing()
-
-add_custom_target(testing COMMAND ${CMAKE_CTEST_COMMAND}
-    --force-new-ctest-process
-    --verbose
-    --output-on-failure
-)
-
- add_custom_target(valgrind COMMAND valgrind
-    --leak-check=full
-    --error-exitcode=1
-    ./${GAPS_CHANNELS_TEST}
-)
-
-add_test(
-    NAME ${GAPS_CHANNELS_TEST}
-    COMMAND ${GAPS_CHANNELS_TEST}
-)
-
 install(FILES primitives.h shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+
+# GAPS channel unit test
+option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
+if(PIRATE_UNIT_TEST)
+    find_package(GTest REQUIRED)
+    include_directories(${GTEST_INCLUDE_DIR})
+
+    set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS} -O0 -g)
+    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_STATIC_LIB} pthread)
+    set(GAPS_CHANNELS_TEST gaps_channels_test)
+    file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
+    add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
+    target_compile_options(${GAPS_CHANNELS_TEST} PRIVATE ${PIRATE_C_TEST_FLAGS})
+
+    # Link test executable against gtest & gtest_main
+    target_link_libraries(${GAPS_CHANNELS_TEST}
+        ${GTEST_MAIN_LIBRARY}
+        ${GTEST_LIBRARIES}
+        ${GAPS_CHANNELS_TEST_LIBS}
+    )
+
+    enable_testing()
+
+    add_custom_target(testing COMMAND ${CMAKE_CTEST_COMMAND}
+        --force-new-ctest-process
+        --verbose
+        --output-on-failure
+    )
+
+     add_custom_target(valgrind COMMAND valgrind
+        --leak-check=full
+        --error-exitcode=1
+        ./${GAPS_CHANNELS_TEST}
+    )
+
+    add_test(
+        NAME ${GAPS_CHANNELS_TEST}
+        COMMAND ${GAPS_CHANNELS_TEST}
+    )
+endif(PIRATE_UNIT_TEST)
