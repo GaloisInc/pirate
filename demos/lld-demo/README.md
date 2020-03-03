@@ -28,9 +28,9 @@ With a GAPS-aware `readelf`, the either of the following commands will print out
 the GAPS sections in an object file (in GNU or LLVM format, respectively):
 
 ```sh
-llvm-readelf --gaps-info lld-demo.o
+llvm-readelf --pirate-info lld-demo.o
 # or
-llvm-readobj --gaps-info lld-demo.o
+llvm-readobj --pirate-info lld-demo.o
 ```
 
 **BUG:** Creating sections in this way fails to correcty fill in the `sh_entsize`

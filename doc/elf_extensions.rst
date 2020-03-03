@@ -21,13 +21,13 @@ required capabilities, and optionally, the enclave that is allowed to
 run or access the symbol.
 
 Capabilities are identified internally by the index of their entry in
-``.gaps.captab`` and externally by their user-defined name, which must
-be unique within the compilation unit.  Extended capabilities are
+``.pirate.captab`` and externally by their user-defined name, which
+must be unique within the compilation unit.  Extended capabilities are
 capabilities that extend a previous capability, and these contain the
-index of a parent capability, with the intended meaning that any enclave
-with the extended capability also has its parent.  Lists of required or
-provided capabilities are specified as strings in ``.gaps.captab``,
-ending in ``CAP_NULL``.
+index of a parent capability, with the intended meaning that any
+enclave with the extended capability also has its parent.  Lists of
+required or provided capabilities are specified as strings in
+``.pirate.captab``, ending in ``CAP_NULL``.
 
 Special Sections
 ----------------
@@ -37,27 +37,27 @@ Linux special sections, these are identified by their section names,
 so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
 
-``.gaps.enclaves``
+``.pirate.enclaves``
     An array of ``Elf64_GAPS_enc`` listing the names, capabilities
     and main functions of each enclave declared in the source file.
     The first entry is unused and corresponds to ``ENC_UNDEF``.
 
-``.gaps.symreqs``
+``.pirate.symreqs``
     An array of ``Elf64_GAPS_req`` associating symbols with
     specific required capabities (and/or) tied to specific
     enclaves.
 
-``.gaps.capabilities``
+``.pirate.capabilities``
     An array of ``Elf64_GAPS_cap`` listing the capabilities defined
     in the source file. The first entry is unused and corresponds to
     ``CAP_NULL``.
 
-``.gaps.captab``
+``.pirate.captab``
     A vector of arrays of ``Elf64_Word`` indices into
-    ``.gaps.capabilities``, each terminated by ``CAP_NULL``. Offset
+    ``.pirate.capabilities``, each terminated by ``CAP_NULL``. Offset
     zero contains a 0 to signify an empty capacity list.
 
-``.gaps.strtab``
+``.pirate.strtab``
     A vector of zero-terminated strings to hold the names
     of enclaves and capabilities.  Offset zero contains a null byte,
     to signify the empty string.
@@ -67,14 +67,14 @@ the ``resource_type declare`` pragma, we define a section that appears
 in both the relocatable and executable elf formats. In the executable
 ELF, it is loaded into the `text` segment, along with ``.rodata``.
 
-``.gaps.res.<resource_type>.<enclave_name>``
+``.pirate.res.<resource_type>.<enclave_name>``
    An array of ``Elf64_GAPS_res``. The data in this struct is handled
    by relocations, to be filled in by the linker. The data to be
    relocated into each field is stored in ``.rodata``. The
    concatenation of all the arrays for a given resource type will be
    made available to the named enclave.
    
-[NOTE: We could potentially use ``.gaps.res.resource_type``, without
+[NOTE: We could potentially use ``.pirate.res.resource_type``, without
 an enclave, to indicate that the given resource is linked into all
 enclaves, and that the name is the same among all of them. Not sure if
 that's useful.]
@@ -97,12 +97,12 @@ Encodes information about an enclave
                 } Elf64_GAPS_enc;
 
 ``enc_name``
-    The offset of a ``.gaps.strtab`` entry for the user-defined name
+    The offset of a ``.pirate.strtab`` entry for the user-defined name
     of the enclave.
 
 ``enc_cap``
     The starting index of a string of capability indices in
-    ``.gaps.captab``, indicating capabilities for this enclave.
+    ``.pirate.captab``, indicating capabilities for this enclave.
 
 ``enc_main``
     The index of the entry in ``.symtab`` to be used as the main
@@ -122,7 +122,7 @@ Encodes information about capabilities.
                 } Elf64_GAPS_cap;
 
 ``cap_name``
-    The offset of a ``.gaps.strtab`` entry for the name of this
+    The offset of a ``.pirate.strtab`` entry for the name of this
     capability.
 
 ``cap_parent``
@@ -146,13 +146,13 @@ attributes of a symbol.
                 } Elf64_GAPS_req;
 
 ``req_cap``
-    The offset of a string of capability indices in ``.gaps.captab``
+    The offset of a string of capability indices in ``.pirate.captab``
     indicating capability for the ``.symtab`` entry with the
     corresponding index.
 
 ``req_enc``
     If this symbol was annotated with ``enclave_only(e)``, the index
-    into ``.gaps.enclaves`` of the enclave ``e``. Otherwise, this
+    into ``.pirate.enclaves`` of the enclave ``e``. Otherwise, this
     should be set to ``ENC_UNDEF``.
 
 ``req_sym``
@@ -231,22 +231,22 @@ resource.
 Linker-defined Symbols
 ----------------------
 
-For each entry in a ``.gaps.res.<resource_type>`` section of a
+For each entry in a ``.pirate.res.<resource_type>`` section of a
 relocatable ELF, the linker defines a symbol corresponding to the
 undefined symbol indexed in its ``gr_sym`` field.
 
-In addition , for each ``.gaps.res.<resource_type>`` section, the linker
-defines a start and end symbol that a library or application can use to
-access an array of resources of that type:
+In addition , for each ``.pirate.res.<resource_type>`` section, the
+linker defines a start and end symbol that a library or application
+can use to access an array of resources of that type:
 
 .. code-block:: c
 
                struct gaps_resource[] __start_gaps_res_<resource_type>;
                struct gaps_resource[] __stop_gaps_res_<resource_type>;
 
-A library or application can gain access to this array by including the
-``gaps_resources.h`` header file and declaring an ``extern`` variable
-with the appropriate name and type:
+A library or application can gain access to this array by including
+the ``gaps_resources.h`` header file and declaring an ``extern``
+variable with the appropriate name and type:
 
 .. code-block:: c
 
