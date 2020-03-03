@@ -48,15 +48,15 @@ typedef enum {
     ECHO_TO_REQ_RD = 3,
 } test_channels_t;
 
-#define REQ_TO_ECHO_WR_PATH     "/dev/ttyUSB0"
-#define REQ_TO_ECHO_RD_PATH     "/dev/ttyUSB1"
-#define ECHO_TO_REQ_WR_PATH     "/dev/ttyUSB2"
-#define ECHO_TO_REQ_RD_PATH     "/dev/ttyUSB3"
+#define REQ_TO_ECHO_WR_CFG     "serial,/dev/ttyUSB0"
+#define REQ_TO_ECHO_RD_CFG     "serial,/dev/ttyUSB1"
+#define ECHO_TO_REQ_WR_CFG     "serial,/dev/ttyUSB2"
+#define ECHO_TO_REQ_RD_CFG     "serial,/dev/ttyUSB3"
 
 #define DEFAULT_MAX_TEST_SIZE   (1 << 12)
 
 /* Command-line options */
-const char *argp_program_version = DEMO_VERSION;
+extern const char *argp_program_version;
 static struct argp_option options[] = {
     { "test_size", 't', "BITS", 0, "Max test size 1 << BITS",  0 },
     { "verbose",   'v', NULL,   0, "Increase verbosity level", 0 },
@@ -261,14 +261,14 @@ int main(int argc, char*argv[]) {
             },
 
             .ch = {
-                GAPS_CHANNEL(REQ_TO_ECHO_WR, O_WRONLY, SERIAL,
-                    REQ_TO_ECHO_WR_PATH, "R->E WR"),
-                GAPS_CHANNEL(REQ_TO_ECHO_RD, O_RDONLY, SERIAL,
-                    REQ_TO_ECHO_RD_PATH, "R->E RD"),
-                GAPS_CHANNEL(ECHO_TO_REQ_WR, O_WRONLY, SERIAL,
-                    ECHO_TO_REQ_WR_PATH, "E->R WR"),
-                GAPS_CHANNEL(ECHO_TO_REQ_RD, O_RDONLY, SERIAL,
-                    ECHO_TO_REQ_RD_PATH, "E->R RD")
+                GAPS_CHANNEL(REQ_TO_ECHO_WR, O_WRONLY, REQ_TO_ECHO_WR_CFG,
+                            "R->E WR"),
+                GAPS_CHANNEL(REQ_TO_ECHO_RD, O_RDONLY, REQ_TO_ECHO_RD_CFG,
+                            "R->E RD"),
+                GAPS_CHANNEL(ECHO_TO_REQ_WR, O_WRONLY, ECHO_TO_REQ_WR_CFG,
+                            "E->R WR"),
+                GAPS_CHANNEL(ECHO_TO_REQ_RD, O_RDONLY, ECHO_TO_REQ_RD_CFG,
+                            "E->R RD")
             }
         }
     };

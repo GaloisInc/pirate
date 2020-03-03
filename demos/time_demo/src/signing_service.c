@@ -154,14 +154,14 @@ int signing_service_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("purple") {
             .on_shutdown = NULL,
             .ch = {
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, SERIAL,
-                    PROXY_TO_SIGNER_RD, "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SERIAL,
-                    SIGNER_TO_PROXY_WR, "proxy<-signer"),
-#else
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PIPE, NULL,
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PROXY_TO_SIGNER_RD,
                             "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, PIPE, NULL,
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SIGNER_TO_PROXY_WR,
+                            "proxy<-signer"),
+#else
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, DEFAULT_GAPS_CHANNEL,
+                            "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, DEFAULT_GAPS_CHANNEL,
                             "proxy<-signer"),
 #endif
                 GAPS_CHANNEL_END
