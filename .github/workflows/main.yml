@@ -8,7 +8,11 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
-      run: sudo apt-get install -y clang valgrind
+      run: |
+        sudo apt-get install -y clang valgrind libgtest-dev
+        cd /usr/src/googletest
+        cmake .
+        cmake --build . --target install
     - name: build libpirate
       run: |
         mkdir -p build
@@ -19,7 +23,7 @@ jobs:
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        ./primitives_test -v
+        ./gaps_channels_test
         make valgrind
     - name: Build demos
       run: |
@@ -38,10 +42,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev libgtest-dev
-        cd /usr/src/googletest
-        cmake .
-        cmake --build . --target install
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev
     - name: build libpirate
       run: |
         mkdir -p build
