@@ -38,17 +38,17 @@ so the ``sh_type`` fields in their section headers should be set to
 ``SHT_NULL``.
 
 ``.pirate.enclaves``
-    An array of ``Elf64_GAPS_enc`` listing the names, capabilities
+    An array of ``Elf64_Pirate_enc`` listing the names, capabilities
     and main functions of each enclave declared in the source file.
     The first entry is unused and corresponds to ``ENC_UNDEF``.
 
 ``.pirate.symreqs``
-    An array of ``Elf64_GAPS_req`` associating symbols with
+    An array of ``Elf64_Pirate_req`` associating symbols with
     specific required capabities (and/or) tied to specific
     enclaves.
 
 ``.pirate.capabilities``
-    An array of ``Elf64_GAPS_cap`` listing the capabilities defined
+    An array of ``Elf64_Pirate_cap`` listing the capabilities defined
     in the source file. The first entry is unused and corresponds to
     ``CAP_NULL``.
 
@@ -63,12 +63,13 @@ so the ``sh_type`` fields in their section headers should be set to
     to signify the empty string.
     
 In addition, for each resource type declared in the source file using
-the ``resource_type declare`` pragma, we define a section that appears
-in both the relocatable and executable elf formats. In the executable
-ELF, it is loaded into the `text` segment, along with ``.rodata``.
+the ``pirate_resource_type declare`` pragma, we define a section that
+appears in both the relocatable and executable elf formats. In the
+executable ELF, it is loaded into the `text` segment, along with
+``.rodata``.
 
 ``.pirate.res.<resource_type>.<enclave_name>``
-   An array of ``Elf64_GAPS_res``. The data in this struct is handled
+   An array of ``Elf64_Pirate_res``. The data in this struct is handled
    by relocations, to be filled in by the linker. The data to be
    relocated into each field is stored in ``.rodata``. The
    concatenation of all the arrays for a given resource type will be
@@ -82,8 +83,8 @@ that's useful.]
 Structures
 ----------
 
-``Elf64_GAPS_enc``
-==================
+``Elf64_Pirate_enc``
+====================
 
 Encodes information about an enclave
 
@@ -94,7 +95,7 @@ Encodes information about an enclave
                     Elf64_Word enc_cap;
                     Elf64_Half enc_main;
                     Elf64_Half enc_padding;
-                } Elf64_GAPS_enc;
+                } Elf64_Pirate_enc;
 
 ``enc_name``
     The offset of a ``.pirate.strtab`` entry for the user-defined name
@@ -108,7 +109,7 @@ Encodes information about an enclave
     The index of the entry in ``.symtab`` to be used as the main
     function for this enclave.
 
-``Elf64_GAPS_cap``
+``Elf64_Pirate_cap``
 ==================
 
 Encodes information about capabilities.
@@ -119,7 +120,7 @@ Encodes information about capabilities.
                     Elf64_Addr cap_name;
                     Elf64_Word cap_parent;
                     Elf64_Word cap_padding;
-                } Elf64_GAPS_cap;
+                } Elf64_Pirate_cap;
 
 ``cap_name``
     The offset of a ``.pirate.strtab`` entry for the name of this
@@ -130,7 +131,7 @@ Encodes information about capabilities.
     the index of the parent capability.  Otherwise, this should be set
     to ``CAP_NULL``.
 
-``Elf64_GAPS_req``
+``Elf64_Pirate_req``
 ==================
 
 Encodes information about the capabilities and/or enclave
@@ -143,7 +144,7 @@ attributes of a symbol.
                     Elf64_Word req_enc;
                     Elf64_Half req_sym;
                     Elf64_Half req_padding;
-                } Elf64_GAPS_req;
+                } Elf64_Pirate_req;
 
 ``req_cap``
     The offset of a string of capability indices in ``.pirate.captab``
@@ -158,102 +159,102 @@ attributes of a symbol.
 ``req_sym``
     The symtab index of the symbol with these requirements.
 
-``struct gaps_resource`` and ``Elf64_GAPS_res``
+``struct pirate_resource`` and ``Elf64_Pirate_res``
 ===============================================
 
-Encodes information about a PIRATE initialized resource. With the
-exception of ``gr_sym``, all fields should be zero in the relocatable
-ELF, to be filled in using relocations. ``gr_sym`` should be zero and
+Encodes information about a Pirate-initialized resource. With the
+exception of ``pr_sym``, all fields should be zero in the relocatable
+ELF, to be filled in using relocations. ``pr_sym`` should be zero and
 is ignored in the executable ELF. The two different structs represent
 the application's view and the toolchain's view of the data,
 respectively.
 
  .. code-block:: c
 
-                struct gaps_resource {
-                    char *gr_name;
-                    void *gr_obj;
-                    struct gaps_resource_param *gr_params;
+                struct pirate_resource {
+                    char *pr_name;
+                    void *pr_obj;
+                    struct pirate_resource_param *pr_params;
                     unsigned char padding[8];
                 } __attribute__((packed));
                 
                 typedef struct {
-                    Elf64_Addr gr_name;
-                    Elf64_Addr gr_obj;
-                    Elf64_Addr gr_params;
-                    Elf64_Word gr_size;
-                    Elf64_Half gr_align;
-                    Elf64_Half gr_sym;
-                } Elf64_GAPS_res;
+                    Elf64_Addr pr_name;
+                    Elf64_Addr pr_obj;
+                    Elf64_Addr pr_params;
+                    Elf64_Word pr_size;
+                    Elf64_Half pr_align;
+                    Elf64_Half pr_sym;
+                } Elf64_Pirate_res;
 
-``gr_name``
+``pr_name``
     The name of the resource.
     
-``gr_obj``
+``pr_obj``
     A pointer the the object this resource corresponds to.
 
-``gr_param``
-    An array of ``struct gaps_resource_param`` storing key-value
-    pairs representing static resource configuration.
+``pr_param``
+    An array of ``struct pirate_resource_param`` storing
+    key-value pairs representing static resource configuration.
     
-``gr_size``
+``pr_size``
     The size of the annotated symbol.
     
-``gr_alignment``
+``pr_alignment``
     The alignment of the annotated symbol.
     
-``gr_sym``
+``pr_sym``
     An index into the executable's symbol table corresponding to
     the variable that was annotated to create this resource. This
     should be the index of an undefined symbol in the relocatable
     ELF. The linker will create a corresponding defined symbol in
     the ``.bss`` section of the executable ELF.
 
-``struct gaps_resource_param``
+``struct pirate_resource_param``
 ==============================
 
-Encodes information about a parameter for a PIRATE initialized
+Encodes information about a parameter for a Pirate-initialized
 resource.
 
  .. code-block:: c
 
-                struct gaps_resource_param {
-                    char *grp_name;
-                    char *grp_value;
+                struct pirate_resource_param {
+                    char *prp_name;
+                    char *prp_value;
                 };
 
-``grp_name``
+``prp_name``
     The name of the parameter.
 
-``grp_value``
+``prp_value``
     The value of the parameter.
     
 Linker-defined Symbols
 ----------------------
 
-For each entry in a ``.pirate.res.<resource_type>`` section of a
-relocatable ELF, the linker defines a symbol corresponding to the
-undefined symbol indexed in its ``gr_sym`` field.
+For each entry in the ``.pirate.res.<resource_type>.<enclave>`` sections
+of a relocatable ELF, the linker defines a symbol corresponding to the
+undefined symbol indexed in its ``pr_sym`` field.
 
-In addition , for each ``.pirate.res.<resource_type>`` section, the
-linker defines a start and end symbol that a library or application
-can use to access an array of resources of that type:
+In addition , for each resource type, the linker defines a start and end
+symbol that a library or application can use to access an array of
+resources of that type:
 
 .. code-block:: c
 
-               struct gaps_resource[] __start_gaps_res_<resource_type>;
-               struct gaps_resource[] __stop_gaps_res_<resource_type>;
+               struct pirate_resource[] __start_pirate_res_<resource_type>;
+               struct pirate_resource[] __stop_pirate_res_<resource_type>;
 
 A library or application can gain access to this array by including
-the ``gaps_resources.h`` header file and declaring an ``extern``
+the ``pirate_resources.h`` header file and declaring an ``extern``
 variable with the appropriate name and type:
 
 .. code-block:: c
 
-               #include <gaps_resources.h>
+               #include <pirate_resources.h>
 
-               extern struct gaps_resource[] __start_gaps_res_<resource_type>;
-               extern struct gaps_resource[] __stop_gaps_res_<resource_type>;
+               extern struct pirate_resource[] __start_pirate_res_<resource_type>;
+               extern struct pirate_resource[] __stop_pirate_res_<resource_type>;
 
 Linking Examples
 ----------------
