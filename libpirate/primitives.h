@@ -27,12 +27,6 @@
 extern "C" {
 #endif
 
-// TODO: remove
-#define PIRATE_FILENAME "/tmp/gaps.channel.%d"
-#define PIRATE_PORT_NUMBER 26427
-#define PIRATE_SHM_NAME "/gaps.channel.%d"
-
-
 #define PIRATE_LEN_NAME 64
 #define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
