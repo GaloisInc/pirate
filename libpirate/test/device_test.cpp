@@ -67,10 +67,12 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     const pirate_device_param_t *device_param = &param.device;
     channel_t channel;
 
+    const unsigned default_iov_len = 0;
+
     char opt[128];
     const char *name = "device";
     const char *path = "/tmp/test_device";
-    const uint32_t iov_len = 42;
+    const unsigned iov_len = 42;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -85,7 +87,7 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     ASSERT_EQ(DEVICE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);
-    ASSERT_EQ(0, device_param->iov_len);
+    ASSERT_EQ(default_iov_len, device_param->iov_len);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
