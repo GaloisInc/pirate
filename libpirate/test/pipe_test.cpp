@@ -43,7 +43,7 @@ TEST(ChannelPipeTest, Configuration)
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
-    const int iov_len = 42;
+    const unsigned iov_len = 42;
     strncpy(pipe_param->path, test_path, sizeof(pipe_param->path) - 1);
     pipe_param->iov_len = iov_len;
 
