@@ -16,18 +16,7 @@
 #ifndef __PIRATE_CHANNEL_SERIAL_H
 #define __PIRATE_CHANNEL_SERIAL_H
 
-#include <termios.h>
-
-#define PIRATE_SERIAL_LEN_NAME  64
-#define PIRATE_SERIAL_NAME_FMT  "/dev/ttyUSB%d"
-#define SERIAL_DEFAULT_BAUD     B230400
-#define SERIAL_DEFAULT_MTU      1024
-
-typedef struct {
-    char path[PIRATE_SERIAL_LEN_NAME];
-    speed_t baud;
-    unsigned mtu;
-} pirate_serial_param_t;
+#include "primitives.h"
 
 typedef struct {
     int fd;
@@ -37,14 +26,14 @@ typedef struct {
 int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param);
 int pirate_serial_parse_param(int gd, int flags, char *str,
                                 pirate_serial_param_t *param);
-int pirate_serial_set_param(pirate_serial_ctx_t *ctx, 
+int pirate_serial_set_param(pirate_serial_ctx_t *ctx,
                             const pirate_serial_param_t *param);
 int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,
                             pirate_serial_param_t *param);
 int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx);
 int pirate_serial_close(pirate_serial_ctx_t *ctx);
 ssize_t pirate_serial_read(pirate_serial_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_serial_write(pirate_serial_ctx_t *ctx, const void *buf, 
+ssize_t pirate_serial_write(pirate_serial_ctx_t *ctx, const void *buf,
                             size_t count);
 
 #endif /* __PIRATE_CHANNEL_SERIAL_H */

@@ -16,17 +16,7 @@
 #ifndef __PIRATE_CHANNEL_GE_ETH_H
 #define __PIRATE_CHANNEL_GE_ETH_H
 
-#include <arpa/inet.h>
-
-#define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
-#define DEFAULT_GE_ETH_IP_PORT  0x4745
-#define DEFAULT_GE_ETH_MTU      1454
-
-typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
-    unsigned mtu;
-} pirate_ge_eth_param_t;
+#include "primitives.h"
 
 typedef struct {
     int sock;

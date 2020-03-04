@@ -28,20 +28,19 @@
 int pirate_unix_socket_init_param(int gd, int flags,
                                     pirate_unix_socket_param_t *param) {
     (void) flags;
-    snprintf(param->path, PIRATE_UNIX_SOCKET_LEN_NAME - 1, 
-                PIRATE_UNIX_SOCKET_FILENAME, gd);
+    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT, gd);
     param->iov_len = 0;
     param->buffer_size = 0;
     return 0;
 }
 
-int pirate_unix_socket_parse_param(int gd, int flags, char *str, 
+int pirate_unix_socket_parse_param(int gd, int flags, char *str,
                                     pirate_unix_socket_param_t *param) {
     char *ptr = NULL;
 
     pirate_unix_socket_init_param(gd, flags, param);
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "unix_socket") != 0)) {
         return -1;
     }
@@ -68,11 +67,11 @@ int pirate_unix_socket_set_param(pirate_unix_socket_ctx_t *ctx,
     } else {
         ctx->param = *param;
     }
-    
+
     return 0;
 }
 
-int pirate_unix_socket_get_param(const pirate_unix_socket_ctx_t *ctx, 
+int pirate_unix_socket_get_param(const pirate_unix_socket_ctx_t *ctx,
                                     pirate_unix_socket_param_t *param) {
     *param  = ctx->param;
     return 0;
@@ -91,7 +90,7 @@ static int unix_socket_reader_open(pirate_unix_socket_ctx_t *ctx) {
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, param->path, PIRATE_UNIX_SOCKET_LEN_NAME - 1);
+    strncpy(addr.sun_path, param->path, PIRATE_LEN_NAME - 1);
 
     if (param->buffer_size > 0) {
         rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
@@ -149,10 +148,10 @@ static int unix_socket_writer_open(int gd, pirate_unix_socket_ctx_t *ctx) {
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     if (param->path[0] == '\0') {
-        snprintf(param->path, PIRATE_UNIX_SOCKET_LEN_NAME - 1, 
-                    PIRATE_UNIX_SOCKET_FILENAME, gd);
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT,
+                    gd);
     }
-    strncpy(addr.sun_path, param->path, PIRATE_UNIX_SOCKET_LEN_NAME - 1);
+    strncpy(addr.sun_path, param->path, PIRATE_LEN_NAME - 1);
 
     if (param->buffer_size > 0) {
         rv = setsockopt(ctx->sock, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
@@ -198,7 +197,7 @@ int pirate_unix_socket_open(int gd, int flags, pirate_unix_socket_ctx_t *ctx) {
     } else if (flags == O_WRONLY) {
         rv = unix_socket_writer_open(gd, ctx);
     }
-    
+
     return rv == 0 ? gd : rv;
 }
 

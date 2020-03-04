@@ -16,16 +16,7 @@
 #ifndef __PIRATE_CHANNEL_UNIX_SOCKET_H
 #define __PIRATE_CHANNEL_UNIX_SOCKET_H
 
-#include "device.h"
-
-#define PIRATE_UNIX_SOCKET_LEN_NAME         64
-#define PIRATE_UNIX_SOCKET_FILENAME         "/tmp/gaps.channel.%d.sock"
-
-typedef struct {
-    char path[PIRATE_DEVICE_LEN_NAME];
-    unsigned iov_len;
-    unsigned buffer_size;
-} pirate_unix_socket_param_t;
+#include "primitives.h"
 
 typedef struct {
     int sock;

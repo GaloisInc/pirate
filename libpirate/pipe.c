@@ -26,12 +26,12 @@
 
 int pirate_pipe_init_param(int gd, int flags, pirate_pipe_param_t *param) {
     (void) flags;
-    snprintf(param->path, PIRATE_PIPE_NAME_LEN, PIRATE_PIPE_NAME, gd);
+    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, gd);
     param->iov_len = 0;
     return 0;
 }
 
-int pirate_pipe_parse_param(int gd, int flags, char *str,   
+int pirate_pipe_parse_param(int gd, int flags, char *str,
                             pirate_pipe_param_t *param) {
     char *ptr = NULL;
 
@@ -39,7 +39,7 @@ int pirate_pipe_parse_param(int gd, int flags, char *str,
         return -1;
     }
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "pipe") != 0)) {
         return -1;
     }
@@ -55,14 +55,14 @@ int pirate_pipe_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx, 
+int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx,
                             const pirate_pipe_param_t *param) {
     if (param == NULL) {
         memset(&ctx->param, '\0', sizeof(ctx->param));
     } else {
         ctx->param = *param;
     }
-    
+
     return 0;
 }
 
@@ -89,7 +89,7 @@ int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx) {
     if ((ctx->fd = open(ctx->param.path, flags)) < 0) {
         return -1;
     }
-    
+
     return gd;
 }
 
@@ -110,7 +110,7 @@ ssize_t pirate_pipe_read(pirate_pipe_ctx_t *ctx, void *buf, size_t count) {
     return pirate_fd_read(ctx->fd, buf, count, ctx->param.iov_len);
 }
 
-ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf, 
+ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf,
                             size_t count) {
     return pirate_fd_write(ctx->fd, buf, count, ctx->param.iov_len);
 }

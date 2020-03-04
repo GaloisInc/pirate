@@ -16,16 +16,7 @@
 #ifndef __PIRATE_CHANNEL_MERCURY_H
 #define __PIRATE_CHANNEL_MERCURY_H
 
-#include <stdint.h>
-
-#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
-#define PIRATE_MERCURY_LEN_NAME      64
-#define PIRATE_MERCURY_DEFAULT_MTU   256
-
-typedef struct {
-    char path[PIRATE_MERCURY_LEN_NAME];
-    uint32_t mtu;
-} pirate_mercury_param_t;
+#include "primitives.h"
 
 typedef struct {
     int fd;
@@ -37,14 +28,14 @@ int pirate_mercury_init_param(int gd, int flags,
                                 pirate_mercury_param_t *param);
 int pirate_mercury_parse_param(int gd, int flags, char *str,
                                 pirate_mercury_param_t *param);
-int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx, 
+int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx,
                                 const pirate_mercury_param_t *param);
 int pirate_mercury_get_param(const pirate_mercury_ctx_t *ctx,
                                 pirate_mercury_param_t *param);
 int pirate_mercury_open(int gd, int flags, pirate_mercury_ctx_t *ctx);
 int pirate_mercury_close(pirate_mercury_ctx_t *ctx);
 ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf, 
+ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf,
                                 size_t count);
 
 #endif /* __PIRATE_CHANNEL_MERCURY_H */

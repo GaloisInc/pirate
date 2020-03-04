@@ -24,21 +24,6 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-#define OPT_DELIM ","
-#define GAPS_CHANNEL_OPTIONS                                                   \
-    "Supported channels:\n"                                                    \
-    "  DEVICE        device,path[,iov_len]\n"                                  \
-    "  PIPE          pipe[,path,iov_len]\n"                                    \
-    "  UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]\n"                 \
-    "  TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]\n"             \
-    "  UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]\n"             \
-    "  SHMEM         shmem[,path,buffer_size]\n"                               \
-    "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
-    "  UIO           uio[,path]\n"                                             \
-    "  SERIAL        serial[,path,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,path[,mtu]\n"                                     \
-    "  GE_ETH        ge_eth[,addr,port,mtu]\n"
-
 ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len);
 ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len);
 

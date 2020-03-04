@@ -87,7 +87,7 @@ static int mercury_message_unpack(const void *buf, void *data, uint32_t mtu,
 int pirate_mercury_init_param(int gd, int flags,
                                 pirate_mercury_param_t *param) {
     (void) flags;
-    snprintf(param->path, PIRATE_MERCURY_LEN_NAME, PIRATE_MERCURY_NAME_FMT, gd);
+    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_NAME_FMT, gd);
     param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
     return 0;
 }
@@ -100,7 +100,7 @@ int pirate_mercury_parse_param(int gd, int flags, char *str,
         return -1;
     }
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "mercury") != 0)) {
         return -1;
     }
@@ -116,14 +116,14 @@ int pirate_mercury_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx, 
+int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx,
                                 const pirate_mercury_param_t *param) {
     if (param == NULL) {
         memset(&ctx->param, '\0', sizeof(ctx->param));
     } else {
         ctx->param = *param;
     }
-    
+
     return 0;
 }
 
@@ -177,7 +177,7 @@ int pirate_mercury_close(pirate_mercury_ctx_t *ctx) {
     return rv;
 }
 
-ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf, 
+ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf,
                             size_t count) {
     int rv;
     mercury_header_t hdr = { 0 };
@@ -204,7 +204,7 @@ ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf,
     return hdr.data_len;
 }
 
-ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf, 
+ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf,
                                 size_t count) {
     const pirate_mercury_param_t *param = &ctx->param;
     mercury_header_t hdr = {

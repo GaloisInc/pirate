@@ -106,7 +106,7 @@ public:
                                         &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-        snprintf(param.device.path, PIRATE_DEVICE_LEN_NAME, "/tmp/gaps_dev");
+        snprintf(param.device.path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
         param.device.iov_len = GetParam();
 
         if (mkfifo(param.device.path, 0660) == -1) {

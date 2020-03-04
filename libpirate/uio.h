@@ -16,15 +16,8 @@
 #ifndef __PIRATE_CHANNEL_UIO_H
 #define __PIRATE_CHANNEL_UIO_H
 
-#include <sys/types.h>
+#include "primitives.h"
 #include "shmem_buffer.h"
-
-#define PIRATE_UIO_LEN_NAME 64
-#define DEFAULT_UIO_DEVICE  "/dev/uio0"
-
-typedef struct {
-    char path[PIRATE_UIO_LEN_NAME];
-} pirate_uio_param_t;
 
 typedef struct {
     int fd;

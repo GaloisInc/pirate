@@ -28,10 +28,6 @@ using namespace std;
 #include <stdatomic.h>
 #endif
 
-#define PIRATE_SHMEM_LEN_NAME   64
-#define DEFAULT_SMEM_BUF_LEN    (128 << 10)
-#define PIRATE_SHMEM_NAME       "/gaps.channel.%d"
-
 typedef struct {
     atomic_uint_fast64_t    position;
     atomic_uint_fast64_t    init;

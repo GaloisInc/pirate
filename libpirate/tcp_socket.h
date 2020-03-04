@@ -16,17 +16,7 @@
 #ifndef __PIRATE_CHANNEL_TCP_SOCKET_H
 #define __PIRATE_CHANNEL_TCP_SOCKET_H
 
-#include <arpa/inet.h>
-
-#define DEFAULT_TCP_IP_ADDR     "127.0.0.1"
-#define PIRATE_TCP_PORT_BASE    26427
-
-typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
-    unsigned iov_len;
-    unsigned buffer_size;
-} pirate_tcp_socket_param_t;
+#include "primitives.h"
 
 typedef struct {
     int sock;

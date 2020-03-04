@@ -25,16 +25,42 @@
 #include <unistd.h>
 
 #include "primitives.h"
-
-#include "ge_eth.h"
+#include "device.h"
+#include "pipe.h"
+#include "unix_socket.h"
+#include "tcp_socket.h"
+#include "udp_socket.h"
+#include "shmem_interface.h"
+#include "udp_shmem_interface.h"
+#include "uio.h"
+#include "serial.h"
 #include "mercury.h"
+#include "ge_eth.h"
+
+typedef struct {
+    channel_t type;
+
+    union {
+        pirate_device_ctx_t         device;
+        pirate_pipe_ctx_t           pipe;
+        pirate_unix_socket_ctx_t    unix_socket;
+        pirate_tcp_socket_ctx_t     tcp_socket;
+        pirate_udp_socket_ctx_t     udp_socket;
+        pirate_shmem_ctx_t          shmem;
+        pirate_udp_shmem_ctx_t      udp_shmem;
+        pirate_uio_ctx_t            uio;
+        pirate_serial_ctx_t         serial;
+        pirate_mercury_ctx_t        mercury;
+        pirate_ge_eth_ctx_t         ge_eth;
+    };
+} pirate_channel_ctx_t;
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static pirate_channel_t readers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, 0, 0, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, 0, 0}};
 static pirate_channel_t writers[PIRATE_NUM_CHANNELS] = {
-    {0, PIPE, NULL, 0, 0, 0, 0, NULL, 0}};
+    {0, PIPE, NULL, 0, 0, 0, 0, 0}};
 
 static struct {
     pirate_channel_ctx_t reader;
@@ -58,9 +84,9 @@ static inline pirate_channel_ctx_t *pirate_get_channel(int gd, int flags) {
 }
 
 
-int pirate_init_channel_param(channel_t channel_type, int gd, int flags, 
+int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
     pirate_channel_param_t *param) {
-    
+
     if (gd < 0 || gd >= PIRATE_NUM_CHANNELS) {
         errno = ENODEV;
         return -1;
@@ -116,7 +142,7 @@ int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
     return -1;
 }
 
-channel_t pirate_parse_channel_param(int gd, int flags, const char *str, 
+channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
                                         pirate_channel_param_t *param) {
     (void) gd, (void) flags;
 
@@ -124,7 +150,7 @@ channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
     // while braking it into delimiter-separated tokens
     char opt[256];
     strncpy(opt, str, sizeof(opt));
-  
+
     if (strncmp("device", opt, strlen("device")) == 0) {
         if (pirate_device_parse_param(gd, flags, opt, &param->device) == 0) {
             return DEVICE;
@@ -153,7 +179,7 @@ channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
             return SHMEM;
         }
     } else if (strncmp("udp_shmem", opt, strlen("udp_shmem")) == 0) {
-        if (pirate_udp_shmem_parse_param(gd, flags, opt, 
+        if (pirate_udp_shmem_parse_param(gd, flags, opt,
                                             &param->udp_shmem) == 0) {
             return UDP_SHMEM;
         }
@@ -198,17 +224,17 @@ int pirate_set_channel_param(channel_t channel_type, int gd, int flags,
         break;
 
     case UNIX_SOCKET:
-        rv = pirate_unix_socket_set_param(&channel->unix_socket, 
+        rv = pirate_unix_socket_set_param(&channel->unix_socket,
                                             &param->unix_socket);
         break;
 
     case TCP_SOCKET:
-        rv = pirate_tcp_socket_set_param(&channel->tcp_socket, 
+        rv = pirate_tcp_socket_set_param(&channel->tcp_socket,
                                             &param->tcp_socket);
         break;
 
     case UDP_SOCKET:
-        rv = pirate_udp_socket_set_param(&channel->udp_socket, 
+        rv = pirate_udp_socket_set_param(&channel->udp_socket,
                                             &param->udp_socket);
         break;
 
@@ -244,7 +270,7 @@ int pirate_set_channel_param(channel_t channel_type, int gd, int flags,
     if (rv == 0) {
         channel->type = channel_type;
     }
-    
+
     return rv;
 }
 
@@ -288,7 +314,7 @@ channel_t pirate_get_channel_param(int gd, int flags,
         break;
 
     case UDP_SHMEM:
-        sts = pirate_udp_shmem_get_param(&channel->udp_shmem, 
+        sts = pirate_udp_shmem_get_param(&channel->udp_shmem,
                                             &param->udp_shmem);
         break;
 

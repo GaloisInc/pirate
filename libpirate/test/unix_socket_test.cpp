@@ -30,7 +30,7 @@ TEST(ChannelUnixSocketTest, Configuration)
     const int flags = O_RDONLY;
 
     char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_UNIX_SOCKET_FILENAME,
+    snprintf(default_path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT,
                 channel);
 
     // Default configuration
@@ -75,7 +75,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     channel_t channel;
 
     char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_UNIX_SOCKET_FILENAME,
+    snprintf(default_path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT,
                 ch_num);
 
     char opt[128];

@@ -17,34 +17,24 @@
 #define __PIRATE_PRIMITIVES_H
 
 #include <fcntl.h>
+#include <stdint.h>
+#include <termios.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
-#include "device.h"
-#include "pipe.h"
-#include "unix_socket.h"
-#include "tcp_socket.h"
-#include "udp_socket.h"
-#include "shmem_interface.h"
-#include "udp_shmem_interface.h"
-#include "uio.h"
-#include "serial.h"
-#include "mercury.h"
-#include "ge_eth.h"
-
-#include "pirate_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// TODO: remove
 #define PIRATE_FILENAME "/tmp/gaps.channel.%d"
 #define PIRATE_PORT_NUMBER 26427
 #define PIRATE_SHM_NAME "/gaps.channel.%d"
+
+
 #define PIRATE_LEN_NAME 64
-
 #define PIRATE_NUM_CHANNELS 16
-
 #define PIRATE_IOV_MAX 16
 
 typedef enum {
@@ -54,13 +44,13 @@ typedef enum {
     // The gaps channel is implemented using a filepath.
     // This filepath points to a character device, named pipe, or a derived
     // channel type.
-    // Configuration parameters - pirate_device_param_t
+    // Configuration parameters -#include <termios.h> pirate_device_param_t
     //  - path    - device path
     //  - iov_len - I/O vector chunk length
     DEVICE,
 
     // The gaps channel is implemented using a FIFO special file
-    // (a named pipe). 
+    // (a named pipe).
     // Configuration parameters - pirate_pipe_param_t
     //  - path    - if "" then PIRATE_FILENAME format is used instead
     //  - iov_len - I/O vector chunk length
@@ -88,7 +78,7 @@ typedef enum {
     //  - iov_len     - I/O vector chunk length
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
-  
+
     // The gaps channel is implemented using shared memory.
     // This feature is disabled by default. It must be enabled
     // by setting PIRATE_SHMEM_FEATURE to ON
@@ -122,7 +112,7 @@ typedef enum {
     //  - buad - baud rate, default 230400
     //  - mtu  - max transmit chunk, 1024
     SERIAL,
-  
+
     // The gaps channel for Mercury System PCI-E device
     // Configuration parameters - pirate_mercury_param_t
     //  - path - device path
@@ -136,6 +126,99 @@ typedef enum {
     //  - mtu  - maximum frame length, default 1454
     GE_ETH
 } channel_t;
+
+// DEVICE parameters
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned iov_len;
+} pirate_device_param_t;
+
+// PIPE parameters
+#define PIRATE_PIPE_NAME_FMT                "/tmp/gaps.channel.%d"
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned iov_len;
+} pirate_pipe_param_t;
+
+// UNIX_SOCKET parameters
+#define PIRATE_UNIX_SOCKET_NAME_FMT         "/tmp/gaps.channel.%d.sock"
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned iov_len;
+    unsigned buffer_size;
+} pirate_unix_socket_param_t;
+
+// TCP_SOCKET parameters
+#define DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_TCP_PORT_BASE                26427
+typedef struct {
+    char addr[INET_ADDRSTRLEN];
+    short port;
+    unsigned iov_len;
+    unsigned buffer_size;
+} pirate_tcp_socket_param_t;
+
+// UDP_SOCKET parameters
+#define DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_UDP_PORT_BASE                26427
+typedef struct {
+    char addr[INET_ADDRSTRLEN];
+    short port;
+    unsigned iov_len;
+    unsigned buffer_size;
+} pirate_udp_socket_param_t;
+
+// SHMEM parameters
+#define DEFAULT_SMEM_BUF_LEN                (128 << 10)
+#define PIRATE_SHMEM_NAME_FMT               "/gaps.channel.%d"
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned buffer_size;
+} pirate_shmem_param_t;
+
+// UDP_SHMEM parameters
+#define DEFAULT_UDP_SHMEM_PACKET_COUNT      1000
+#define DEFAULT_UDP_SHMEM_PACKET_SIZE       1024
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned buffer_size;
+    size_t packet_size;
+    size_t packet_count;
+} pirate_udp_shmem_param_t;
+
+// UIO parameters
+#define DEFAULT_UIO_DEVICE  "/dev/uio0"
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+} pirate_uio_param_t;
+
+// SERIAL parameters
+#define PIRATE_SERIAL_NAME_FMT  "/dev/ttyUSB%d"
+#define SERIAL_DEFAULT_BAUD     B230400
+#define SERIAL_DEFAULT_MTU      1024
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    speed_t baud;
+    unsigned mtu;
+} pirate_serial_param_t;
+
+// MERCURY parameters
+#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
+#define PIRATE_MERCURY_DEFAULT_MTU   256
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    uint32_t mtu;
+} pirate_mercury_param_t;
+
+// GE_ETH parameters
+#define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
+#define DEFAULT_GE_ETH_IP_PORT  0x4745
+#define DEFAULT_GE_ETH_MTU      1454
+typedef struct {
+    char addr[INET_ADDRSTRLEN];
+    short port;
+    unsigned mtu;
+} pirate_ge_eth_param_t;
 
 typedef union {
     pirate_device_param_t           device;
@@ -152,24 +235,6 @@ typedef union {
 } pirate_channel_param_t;
 
 typedef struct {
-    channel_t type;
-  
-    union {
-        pirate_device_ctx_t         device;
-        pirate_pipe_ctx_t           pipe;
-        pirate_unix_socket_ctx_t    unix_socket;
-        pirate_tcp_socket_ctx_t     tcp_socket;
-        pirate_udp_socket_ctx_t     udp_socket;
-        pirate_shmem_ctx_t          shmem;
-        pirate_udp_shmem_ctx_t      udp_shmem;
-        pirate_uio_ctx_t            uio;
-        pirate_serial_ctx_t         serial;
-        pirate_mercury_ctx_t        mercury;
-        pirate_ge_eth_ctx_t         ge_eth;
-    };
-} pirate_channel_ctx_t;
-
-typedef struct {
   int fd;                       // file descriptor
   channel_t channel;            // channel type
   char *pathname;               // optional device path
@@ -177,7 +242,6 @@ typedef struct {
   int buffer_size;              // optional memory buffer size
   size_t packet_size;           // optional packet size (SHMEM_UDP)
   size_t packet_count;          // optional packet count (SHMEM_UDP)
-  shmem_buffer_t *shmem_buffer; // optional shared memory buffer (SHMEM)
   size_t iov_len;               // optional use readv/writev
 } pirate_channel_t;
 
@@ -204,8 +268,23 @@ int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
 // Return:
 //  channel type on success
 //  INVALID on failure
-channel_t pirate_parse_channel_param(int gd, int flags, const char *str, 
+channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
                                         pirate_channel_param_t *param);
+
+#define OPT_DELIM ","
+#define GAPS_CHANNEL_OPTIONS                                                   \
+    "Supported channels:\n"                                                    \
+    "  DEVICE        device,path[,iov_len]\n"                                  \
+    "  PIPE          pipe[,path,iov_len]\n"                                    \
+    "  UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]\n"                 \
+    "  TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]\n"             \
+    "  UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]\n"             \
+    "  SHMEM         shmem[,path,buffer_size]\n"                               \
+    "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
+    "  UIO           uio[,path]\n"                                             \
+    "  SERIAL        serial[,path,baud,mtu]\n"                                 \
+    "  MERCURY       mercury,path[,mtu]\n"                                     \
+    "  GE_ETH        ge_eth[,addr,port,mtu]\n"
 
 // Channel-agnostic method for setting channel-specific parameters. After a
 // successful execution the channel type will for the channel number 'gd' will

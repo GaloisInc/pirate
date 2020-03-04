@@ -17,13 +17,7 @@
 #define __PIRATE_CHANNEL_DEVICE_H
 
 #include <sys/types.h>
-
-#define PIRATE_DEVICE_LEN_NAME 64
-
-typedef struct {
-    char path[PIRATE_DEVICE_LEN_NAME];
-    unsigned iov_len;
-} pirate_device_param_t;
+#include "primitives.h"
 
 typedef struct {
     int fd;
@@ -40,7 +34,7 @@ int pirate_device_get_param(const pirate_device_ctx_t *ctx,
 int pirate_device_open(int gd, int flags, pirate_device_ctx_t *ctx);
 int pirate_device_close(pirate_device_ctx_t *ctx);
 ssize_t pirate_device_read(pirate_device_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_device_write(pirate_device_ctx_t *ctx, const void *buf, 
+ssize_t pirate_device_write(pirate_device_ctx_t *ctx, const void *buf,
                             size_t count);
 
 #endif /*__PIRATE_CHANNEL_DEVICE_H */

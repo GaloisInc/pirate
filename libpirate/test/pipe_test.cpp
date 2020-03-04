@@ -30,7 +30,7 @@ TEST(ChannelPipeTest, Configuration)
     const int flags = O_RDONLY;
 
     char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_PIPE_NAME, channel);
+    snprintf(default_path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, channel);
 
     // Default configuration
     pirate_channel_param_t param;
@@ -70,7 +70,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     channel_t channel;
 
     char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_PIPE_NAME, ch_num);
+    snprintf(default_path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, ch_num);
 
     char opt[128];
     const char *name = "pipe";

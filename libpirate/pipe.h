@@ -17,15 +17,7 @@
 #define __PIRATE_CHANNEL_PIPE_H
 
 #include <sys/types.h>
-#include "device.h"
-
-#define PIRATE_PIPE_NAME_LEN    64
-#define PIRATE_PIPE_NAME        "/tmp/gaps.channel.%d"
-
-typedef struct {
-    char path[PIRATE_PIPE_NAME_LEN];
-    unsigned iov_len;
-} pirate_pipe_param_t;
+#include "primitives.h"
 
 typedef struct {
     int fd;
@@ -37,12 +29,12 @@ int pirate_pipe_parse_param(int gd, int flags, char *str,
                             pirate_pipe_param_t *param);
 int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx,
                             const pirate_pipe_param_t *param);
-int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx, 
+int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx,
                             pirate_pipe_param_t *param);
 int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx);
 int pirate_pipe_close(pirate_pipe_ctx_t *ctx);
 ssize_t pirate_pipe_read(pirate_pipe_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf, 
+ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf,
                             size_t count);
 
 #endif /*__PIRATE_CHANNEL_PIPE_H */

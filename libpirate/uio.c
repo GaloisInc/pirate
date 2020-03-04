@@ -56,7 +56,7 @@ static inline uint64_t create_position(uint32_t write, uint32_t read,
     return (((uint64_t)status) << 56) | (((uint64_t)write) << 28) | read;
 }
 
-static inline int is_empty(uint64_t value) { 
+static inline int is_empty(uint64_t value) {
     return get_status(value) == 0;
 }
 
@@ -66,7 +66,7 @@ static inline int is_full(uint64_t value) {
 
 int pirate_uio_init_param(int gd, int flags, pirate_uio_param_t *param) {
     (void) gd, (void) flags;
-    snprintf(param->path, PIRATE_UIO_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
+    snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
     return 0;
 }
 
@@ -78,7 +78,7 @@ int pirate_uio_parse_param(int gd, int flags, char *str,
         return -1;
     }
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "uio") != 0)) {
         return -1;
     }
@@ -86,18 +86,18 @@ int pirate_uio_parse_param(int gd, int flags, char *str,
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         strncpy(param->path, ptr, sizeof(param->path));
     }
-    
+
     return 0;
 }
 
-int pirate_uio_set_param(pirate_uio_ctx_t *ctx, 
+int pirate_uio_set_param(pirate_uio_ctx_t *ctx,
                             const pirate_uio_param_t *param) {
     if (param == NULL) {
         memset(&ctx->param, 0, sizeof(ctx->param));
     } else {
         ctx->param = *param;
     }
-    
+
     return 0;
 }
 int pirate_uio_get_param(const pirate_uio_ctx_t *ctx,
@@ -107,7 +107,7 @@ int pirate_uio_get_param(const pirate_uio_ctx_t *ctx,
 }
 
 static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
-    shmem_buffer_t *uio_buffer = mmap(NULL, buffer_size(), 
+    shmem_buffer_t *uio_buffer = mmap(NULL, buffer_size(),
         PROT_READ | PROT_WRITE, MAP_SHARED, fd, gd * getpagesize());
 
     if (uio_buffer == MAP_FAILED) {
@@ -230,7 +230,7 @@ ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count) {
     }
 
     for (;;) {
-        uint64_t update = create_position(writer, 
+        uint64_t update = create_position(writer,
                                         (reader + nbytes) % buffer_size, 0);
         if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
                                             update)) {
@@ -242,7 +242,7 @@ ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count) {
     return nbytes;
 }
 
-ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf, 
+ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf,
                             size_t count) {
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;
