@@ -40,8 +40,8 @@ TEST(ChannelUnixSocketTest, Configuration)
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, us_param->path);
-    ASSERT_EQ(0, us_param->iov_len);
-    ASSERT_EQ(0, us_param->buffer_size);
+    ASSERT_EQ((unsigned)0, us_param->iov_len);
+    ASSERT_EQ((unsigned)0, us_param->buffer_size);
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
@@ -90,8 +90,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(UNIX_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, unix_socket_param->path);
-    ASSERT_EQ(0, unix_socket_param->iov_len);
-    ASSERT_EQ(0, unix_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, unix_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
@@ -99,8 +99,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(UNIX_SOCKET, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, unix_socket_param->path);
-    ASSERT_EQ(0, unix_socket_param->iov_len);
-    ASSERT_EQ(0, unix_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, unix_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
@@ -109,7 +109,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, unix_socket_param->path);
     ASSERT_EQ(iov_len, unix_socket_param->iov_len);
-    ASSERT_EQ(0, unix_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len,
@@ -157,7 +157,7 @@ TEST_P(UnixSocketTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest, 
+INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest,
     Combine(Values(0, ChannelTest::TEST_IOV_LEN),
             Values(0, UnixSocketTest::TEST_BUF_LEN)));
 

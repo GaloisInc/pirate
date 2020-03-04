@@ -39,7 +39,7 @@ TEST(ChannelMercuryTest, Configuration)
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, mercury_param->path);
-    ASSERT_EQ(PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
+    ASSERT_EQ((uint32_t)PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
 
     // Apply configuration
     const char *test_path = "/tmp/test_mercury_path";
@@ -84,7 +84,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     ASSERT_EQ(MERCURY, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, mercury_param->path);
-    ASSERT_EQ(PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
+    ASSERT_EQ((uint32_t)PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
@@ -92,7 +92,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     ASSERT_EQ(MERCURY, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, mercury_param->path);
-    ASSERT_EQ(PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
+    ASSERT_EQ((uint32_t)PIRATE_MERCURY_DEFAULT_MTU, mercury_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, mtu);
@@ -138,7 +138,7 @@ TEST_P(MercuryTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest, 
+INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,
     Values(0, MercuryTest::TEST_MTU));
 
 } // namespace

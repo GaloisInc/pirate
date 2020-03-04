@@ -25,7 +25,7 @@ typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
     unsigned iov_len;
-    int buffer_size;
+    unsigned buffer_size;
 } pirate_tcp_socket_param_t;
 
 typedef struct {

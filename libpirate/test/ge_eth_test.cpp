@@ -36,7 +36,7 @@ TEST(ChannelGeEthTest, Configuration)
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
     ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + channel, ge_eth_param->port);
-    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     // Apply configuration
     const char *ip_addr = "1.2.3.4";
@@ -75,7 +75,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     const char *name = "ge_eth";
     const char *addr = "1.2.3.4";
     const short port = 0x4242;
-    const uint32_t mtu = 42;
+    const unsigned mtu = 42;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -84,7 +84,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
     ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
-    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
@@ -93,7 +93,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
-    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
@@ -102,7 +102,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
-    ASSERT_EQ(DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, mtu);
@@ -114,7 +114,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(mtu, ge_eth_param->mtu);
 }
 
-class GeEthTest : public ChannelTest, public WithParamInterface<uint32_t>
+class GeEthTest : public ChannelTest, public WithParamInterface<unsigned>
 {
 public:
     void ChannelInit()
@@ -127,7 +127,7 @@ public:
                                             &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-        const uint32_t mtu = GetParam();
+        const unsigned mtu = GetParam();
         if (mtu) {
             param.ge_eth.mtu = mtu;
         }
@@ -142,7 +142,7 @@ public:
         ASSERT_EQ(0, errno);
     }
 
-    static const int TEST_MTU_LEN = DEFAULT_GE_ETH_MTU / 2;
+    static const unsigned TEST_MTU_LEN = DEFAULT_GE_ETH_MTU / 2;
 };
 
 
@@ -152,7 +152,7 @@ TEST_P(GeEthTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(GeEthFunctionalTest, GeEthTest, 
+INSTANTIATE_TEST_SUITE_P(GeEthFunctionalTest, GeEthTest,
                         Values(0, GeEthTest::TEST_MTU_LEN));
 
 } // namespace

@@ -37,7 +37,7 @@ TEST(ChannelShmemTest, Configuration)
 
     pirate_shmem_param_t *shmem_param = &param.shmem;
     ASSERT_STREQ(default_path, shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     // Apply configuration
     const char *path = "/tmp/gaps_shmem_test";
@@ -88,7 +88,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_EQ(SHMEM, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
@@ -96,7 +96,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_EQ(SHMEM, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, shmem_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
@@ -149,7 +149,7 @@ TEST_P(ShmemTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, ShmemTest, 
+INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, ShmemTest,
     Values(0, ShmemTest::TEST_BUF_LEN));
 #endif
 

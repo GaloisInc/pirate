@@ -36,8 +36,8 @@ TEST(ChannelTcpSocketTest, Configuration)
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_TCP_IP_ADDR, tcp_param->addr);
     ASSERT_EQ(PIRATE_TCP_PORT_BASE + channel, tcp_param->port);
-    ASSERT_EQ(0, tcp_param->iov_len);
-    ASSERT_EQ(0, tcp_param->buffer_size);
+    ASSERT_EQ((unsigned)0, tcp_param->iov_len);
+    ASSERT_EQ((unsigned)0, tcp_param->buffer_size);
 
     // Apply configuration
     const char *ip_addr = "1.2.3.4";
@@ -88,8 +88,8 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_TCP_IP_ADDR, tcp_socket_param->addr);
     ASSERT_EQ(PIRATE_TCP_PORT_BASE + ch_num, tcp_socket_param->port);
-    ASSERT_EQ(0, tcp_socket_param->iov_len);
-    ASSERT_EQ(0, tcp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
@@ -98,8 +98,8 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(PIRATE_TCP_PORT_BASE + ch_num, tcp_socket_param->port);
-    ASSERT_EQ(0, tcp_socket_param->iov_len);
-    ASSERT_EQ(0, tcp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
@@ -108,8 +108,8 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
-    ASSERT_EQ(0, tcp_socket_param->iov_len);
-    ASSERT_EQ(0, tcp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
@@ -119,7 +119,7 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
     ASSERT_EQ(iov_len, tcp_socket_param->iov_len);
-    ASSERT_EQ(0, tcp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, tcp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
@@ -158,7 +158,7 @@ public:
         ASSERT_EQ(0, errno);
     }
 
-    static const int TEST_BUF_LEN = 4096;
+    static const unsigned TEST_BUF_LEN = 4096;
 };
 
 TEST_P(TcpSocketTest, Run)
@@ -167,7 +167,7 @@ TEST_P(TcpSocketTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest, 
+INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
     Combine(Values(0, ChannelTest::TEST_IOV_LEN),
             Values(0, TcpSocketTest::TEST_BUF_LEN)));
 

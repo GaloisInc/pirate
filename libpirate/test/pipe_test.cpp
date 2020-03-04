@@ -39,7 +39,7 @@ TEST(ChannelPipeTest, Configuration)
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, pipe_param->path);
-    ASSERT_EQ(0, pipe_param->iov_len);
+    ASSERT_EQ((unsigned)0, pipe_param->iov_len);
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
@@ -83,7 +83,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(PIPE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, pipe_param->path);
-    ASSERT_EQ(0, pipe_param->iov_len);
+    ASSERT_EQ((unsigned)0, pipe_param->iov_len);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
@@ -91,7 +91,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(PIPE, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, pipe_param->path);
-    ASSERT_EQ(0, pipe_param->iov_len);
+    ASSERT_EQ((unsigned)0, pipe_param->iov_len);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);

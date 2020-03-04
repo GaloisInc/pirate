@@ -38,7 +38,7 @@ TEST(ChannelUdpShmemTest, Configuration)
     snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, channel);
 
     ASSERT_STREQ(default_path, udp_shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
 
@@ -99,7 +99,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, udp_shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
 
@@ -108,7 +108,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, udp_shmem_param->path);
-    ASSERT_EQ(DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)DEFAULT_SMEM_BUF_LEN, udp_shmem_param->buffer_size);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_COUNT, udp_shmem_param->packet_count);
     ASSERT_EQ(DEFAULT_UDP_SHMEM_PACKET_SIZE, udp_shmem_param->packet_size);
 
@@ -206,7 +206,7 @@ TEST_P(UdpShmemTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, UdpShmemTest, 
+INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, UdpShmemTest,
     Combine(Values(0, UdpShmemTest::TEST_BUF_LEN),
             Values(0, UdpShmemTest::TEST_PKT_CNT),
             Values(0, UdpShmemTest::TEST_PKT_SIZE)));

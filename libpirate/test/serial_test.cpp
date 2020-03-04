@@ -41,7 +41,7 @@ TEST(ChannelSerialTest, Configuration)
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, serial_param->path);
     ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     // Apply configuration
     const char *test_dev = "/dev/ttyUSB2";
@@ -93,7 +93,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, serial_param->path);
     ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
@@ -102,7 +102,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
@@ -111,7 +111,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
-    ASSERT_EQ(SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
@@ -193,7 +193,7 @@ TEST_P(SerialTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(SerialFunctionalTest, SerialTest, 
+INSTANTIATE_TEST_SUITE_P(SerialFunctionalTest, SerialTest,
     Combine(Values(0, SerialTest::TEST_BAUD),
             Values(0, SerialTest::TEST_MTU)));
 

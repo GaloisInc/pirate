@@ -23,8 +23,8 @@
 
 typedef struct {
     char path[PIRATE_DEVICE_LEN_NAME];
-    size_t iov_len;
-    int buffer_size;
+    unsigned iov_len;
+    unsigned buffer_size;
 } pirate_unix_socket_param_t;
 
 typedef struct {

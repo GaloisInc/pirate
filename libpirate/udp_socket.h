@@ -25,7 +25,7 @@ typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
     unsigned iov_len;
-    int buffer_size;
+    unsigned buffer_size;
 } pirate_udp_socket_param_t;
 
 typedef struct {
@@ -35,7 +35,7 @@ typedef struct {
 
 int pirate_udp_socket_init_param(int gd, int flags,
                                     pirate_udp_socket_param_t *param);
-int pirate_udp_socket_parse_param(int gd, int flags, char *str, 
+int pirate_udp_socket_parse_param(int gd, int flags, char *str,
                                     pirate_udp_socket_param_t *param);
 int pirate_udp_socket_set_param(pirate_udp_socket_ctx_t *ctx,
                                     const pirate_udp_socket_param_t *param);

@@ -37,8 +37,8 @@ TEST(ChannelUdpSocketTest, Configuration)
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_UDP_IP_ADDR, udp_param->addr);
     ASSERT_EQ(PIRATE_UDP_PORT_BASE + channel, udp_param->port);
-    ASSERT_EQ(0, udp_param->iov_len);
-    ASSERT_EQ(0, udp_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_param->iov_len);
+    ASSERT_EQ((unsigned)0, udp_param->buffer_size);
 
     // Apply configuration
     const char *ip_addr = "1.2.3.4";
@@ -89,8 +89,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(DEFAULT_UDP_IP_ADDR, udp_socket_param->addr);
     ASSERT_EQ(PIRATE_UDP_PORT_BASE + ch_num, udp_socket_param->port);
-    ASSERT_EQ(0, udp_socket_param->iov_len);
-    ASSERT_EQ(0, udp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
@@ -99,8 +99,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(PIRATE_UDP_PORT_BASE + ch_num, udp_socket_param->port);
-    ASSERT_EQ(0, udp_socket_param->iov_len);
-    ASSERT_EQ(0, udp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
@@ -109,8 +109,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
-    ASSERT_EQ(0, udp_socket_param->iov_len);
-    ASSERT_EQ(0, udp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
+    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
@@ -120,7 +120,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
     ASSERT_EQ(iov_len, udp_socket_param->iov_len);
-    ASSERT_EQ(0, udp_socket_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
@@ -172,7 +172,7 @@ TEST_P(UdpSocketTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(UdpSocketFunctionalTest, UdpSocketTest, 
+INSTANTIATE_TEST_SUITE_P(UdpSocketFunctionalTest, UdpSocketTest,
     Combine(Values(0, ChannelTest::TEST_IOV_LEN),
             Values(0, UdpSocketTest::TEST_BUF_LEN)));
 
