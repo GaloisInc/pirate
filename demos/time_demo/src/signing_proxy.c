@@ -25,7 +25,7 @@
 #include "ts_crypto.h"
 
 #ifdef GAPS_ENABLE
-#pragma enclave declare(yellow)
+#pragma pirate enclave declare(yellow)
 #endif
 
 /* Default values */
@@ -357,7 +357,7 @@ static void *proxy_thread(void *arg) {
 }
 
 
-int signing_proxy_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("yellow") {
+int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
     proxy_t proxy = {
         .poll_period_ms = DEFAULT_POLL_PERIOD_MS,
         .queue_len = DEFAULT_REQUEST_QUEUE_LEN,
@@ -371,19 +371,19 @@ int signing_proxy_main(int argc, char *argv[]) GAPS_ENCLAVE_MAIN("yellow") {
             },
             .on_shutdown = NULL,
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, PIPE, NULL,
+                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, DEFAULT_GAPS_CHANNEL,
                     "client->proxy"),
-                GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, PIPE, NULL,
+                GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, DEFAULT_GAPS_CHANNEL,
                     "client<-proxy"),
 #ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, SERIAL,
-                    PROXY_TO_SIGNER_WR, "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SERIAL,
-                    SIGNER_TO_PROXY_RD, "proxy<-signer")
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PROXY_TO_SIGNER_WR,
+                            "proxy->signer"),
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SIGNER_TO_PROXY_RD,
+                            "proxy<-signer")
 #else
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PIPE, NULL,
+                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, DEFAULT_GAPS_CHANNEL,
                     "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, PIPE, NULL,
+                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, DEFAULT_GAPS_CHANNEL,
                     "proxy<-signer")
 #endif
             }

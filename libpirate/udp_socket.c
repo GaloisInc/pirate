@@ -1,213 +1,276 @@
-#define _POSIX_C_SOURCE 200809L
-#define _GNU_SOURCE
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ */
 
-#include <arpa/inet.h>
+#define _GNU_SOURCE
+#include <fcntl.h>
 #include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
+#include "pirate_common.h"
+#include "udp_socket.h"
 
-#include "primitives.h"
+int pirate_udp_socket_init_param(int gd, int flags, 
+                                    pirate_udp_socket_param_t *param) {
+    (void) flags;
+    snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_UDP_IP_ADDR);
+    param->port = PIRATE_UDP_PORT_BASE + gd;
+    param->iov_len = 0;
+    param->buffer_size = 0;
+    return 0;
+}
 
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+int pirate_udp_socket_parse_param(int gd, int flags, char *str, 
+                                    pirate_udp_socket_param_t *param) {
+    char *ptr = NULL;
 
-static int udp_socket_reader_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, err, enable, port, buffer_size;
-  struct sockaddr_in addr;
+    pirate_udp_socket_init_param(gd, flags, param);
 
-  fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (fd < 0) {
-    return fd;
-  }
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+        (strcmp(ptr, "udp_socket") != 0)) {
+        return -1;
+    }
 
-  port = channels[gd].port_number;
-  if (port <= 0) {
-    port = PIRATE_PORT_NUMBER + gd;
-  }
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->addr, ptr, sizeof(param->addr));
+    }
 
-  memset(&addr, 0, sizeof(struct sockaddr_in));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(port);
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->port = strtol(ptr, NULL, 10);
+    }
 
-  enable = 1;
-  rv = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-  if (rv < 0) {
-    err = errno;
-    close(fd);
-    errno = err;
-    return rv;
-  }
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->iov_len = strtol(ptr, NULL, 10);
+    }
 
-  buffer_size = channels[gd].buffer_size;
-  if (buffer_size > 0) {
-    rv = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size,
-                    sizeof(buffer_size));
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->buffer_size = strtol(ptr, NULL, 10);
+    }
+
+    return 0;
+}
+             
+int pirate_udp_socket_set_param(pirate_udp_socket_ctx_t *ctx,
+                                    const pirate_udp_socket_param_t *param) {
+    if (param == NULL) {
+        memset(&ctx->param, 0, sizeof(ctx->param));
+    } else {
+        ctx->param = *param;
+    }
+    
+    return 0;
+}
+
+int pirate_udp_socket_get_param(const pirate_udp_socket_ctx_t *ctx,
+                                    pirate_udp_socket_param_t *param) {
+    *param  = ctx->param;
+    return 0;
+}
+
+static int udp_socket_reader_open(pirate_udp_socket_ctx_t *ctx) {
+    int rv;
+    struct sockaddr_in addr;
+
+    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (ctx->sock < 0) {
+        return ctx->sock;
+    }
+
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(ctx->param.port);
+
+    int enable = 1;
+    rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (rv < 0) {
-      err = errno;
-      close(fd);
-      errno = err;
-      return rv;
+        int err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
     }
-  }
 
-  rv = bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-  if (rv < 0) {
-    err = errno;
-    close(fd);
-    errno = err;
-    return rv;
-  }
+    if (ctx->param.buffer_size > 0) {
+        rv = setsockopt(ctx->sock, SOL_SOCKET, SO_RCVBUF, 
+                        &ctx->param.buffer_size, 
+                        sizeof(ctx->param.buffer_size));
+        if (rv < 0) {
+            int err = errno;
+            close(ctx->sock);
+            ctx->sock = -1;
+            errno = err;
+            return rv;
+        }
+    }
 
-  return fd;
-}
-
-static int udp_socket_writer_open(int gd, pirate_channel_t *channels) {
-  int fd, rv, port, buffer_size, err;
-  struct sockaddr_in addr;
-
-  fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (fd < 0) {
-    return fd;
-  }
-
-  port = channels[gd].port_number;
-  if (port <= 0) {
-    port = PIRATE_PORT_NUMBER + gd;
-  }
-
-  buffer_size = channels[gd].buffer_size;
-  if (buffer_size > 0) {
-    rv = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size,
-                    sizeof(buffer_size));
+    rv = bind(ctx->sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
-      err = errno;
-      close(fd);
-      errno = err;
-      return rv;
+        int err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
     }
-  }
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = inet_addr(channels[gd].pathname);
-  addr.sin_port = htons(port);
-  rv = connect(fd, (const struct sockaddr*) &addr, sizeof(addr));
+    return 0;
+}
 
-  if (rv < 0) {
-    err = errno;
-    close(fd);
-    errno = err;
+static int udp_socket_writer_open(pirate_udp_socket_ctx_t *ctx) {
+    int rv;
+    struct sockaddr_in addr;
+
+    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (ctx->sock < 0) {
+        return ctx->sock;
+    }
+
+    if (ctx->param.buffer_size > 0) {
+        rv = setsockopt(ctx->sock, SOL_SOCKET, SO_SNDBUF, 
+                        &ctx->param.buffer_size,
+                        sizeof(ctx->param.buffer_size));
+        if (rv < 0) {
+            int err = errno;
+            close(ctx->sock);
+            ctx->sock = -1;
+            errno = err;
+            return rv;
+        }
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(ctx->param.addr);
+    addr.sin_port = htons(ctx->param.port);
+    rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
+    if (rv < 0) {
+        int err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
+    }
+
+    return 0;
+}
+
+int pirate_udp_socket_open(int gd, int flags, pirate_udp_socket_ctx_t *ctx) {
+    int rv = -1;
+    if (flags == O_RDONLY) {
+        rv = udp_socket_reader_open(ctx);
+    } else if (flags == O_WRONLY) {
+        rv = udp_socket_writer_open(ctx);
+    }
+
+    return rv == 0 ? gd : rv;
+}
+
+int pirate_udp_socket_close(pirate_udp_socket_ctx_t *ctx) {
+    int rv = -1;
+
+    if (ctx->sock <= 0) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    rv = close(ctx->sock);
+    ctx->sock = -1;
     return rv;
-  }
-
-  return fd;
 }
 
-int pirate_udp_socket_open(int gd, int flags, pirate_channel_t *channels) {
-  if (flags == O_RDONLY) {
-    return udp_socket_reader_open(gd, channels);
-  } else {
-    return udp_socket_writer_open(gd, channels);
-  }
-}
 
-ssize_t pirate_udp_socket_read(int gd, pirate_channel_t *readers, void *buf,
-                               size_t count) {
-  int i, rv, fd, vlen;
-  struct mmsghdr msgvec[PIRATE_IOV_MAX];
-  struct iovec iov[PIRATE_IOV_MAX];
-  unsigned char *iov_base;
-  size_t iov_len;
-  ssize_t numbytes = 0;
-
-  fd = readers[gd].fd;
-  if (fd <= 0) {
-    errno = EBADF;
-    return -1;
-  }
-
-
-  if ((readers[gd].iov_len > 0) && (count > readers[gd].iov_len)) {
-    vlen = count / readers[gd].iov_len;
-    if ((count % readers[gd].iov_len) != 0) {
-      vlen += 1;
+static int pirate_make_msgvec(void *buf, size_t count, size_t iov_len, 
+                             struct mmsghdr *msgvec, struct iovec *iov) {
+    unsigned char *iov_base = buf;
+    int vlen = count / iov_len;
+    if (count > iov_len * vlen) {
+        ++vlen;
     }
+
     vlen = MIN(vlen, PIRATE_IOV_MAX);
-    iov_base = buf;
-    memset(msgvec, 0, sizeof(msgvec));
-    for (i = 0; i < vlen; i++) {
-      iov_len = MIN(count, readers[gd].iov_len);
-      iov[i].iov_base = iov_base;
-      iov[i].iov_len = iov_len;
-      msgvec[i].msg_hdr.msg_name = NULL;
-      msgvec[i].msg_hdr.msg_namelen = 0;
-      msgvec[i].msg_hdr.msg_iov = &iov[i];
-      msgvec[i].msg_hdr.msg_iovlen = 1;
-      iov_base += iov_len;
-      count -= iov_len;
+    memset(msgvec, 0, sizeof(struct mmsghdr) * PIRATE_IOV_MAX);
+
+    for (int i = 0; i < vlen; i++) {
+        iov[i].iov_base = iov_base;
+        iov[i].iov_len = MIN(count, iov_len);
+        msgvec[i].msg_hdr.msg_name = NULL;
+        msgvec[i].msg_hdr.msg_namelen = 0;
+        msgvec[i].msg_hdr.msg_iov = &iov[i];
+        msgvec[i].msg_hdr.msg_iovlen = 1;
+        iov_base += iov[i].iov_len;
+        count -= iov[i].iov_len;
     }
-    rv = recvmmsg(fd, msgvec, vlen, 0, NULL);
-    if (rv < 0) {
-      return rv;
-    }
-    for (i = 0; i < rv; i++) {
-      numbytes += iov[i].iov_len;
-    }
-    return numbytes;
-  } else {
-    return recv(fd, buf, count, 0);
-  }
+
+    return vlen;
 }
 
-ssize_t pirate_udp_socket_write(int gd, pirate_channel_t *writers,
-                                const void *buf, size_t count) {
-  int i, rv, fd, vlen;
-  struct mmsghdr msgvec[PIRATE_IOV_MAX];
-  struct iovec iov[PIRATE_IOV_MAX];
-  unsigned char *iov_base;
-  size_t iov_len;
-  ssize_t numbytes = 0;
+ssize_t pirate_udp_socket_read(pirate_udp_socket_ctx_t *ctx, void *buf,
+                                size_t count) {
+    if (ctx->sock <= 0) {
+        errno = EBADF;
+        return -1;
+    }
 
-  fd = writers[gd].fd;
-  if (fd <= 0) {
-    errno = EBADF;
-    return -1;
-  }
+    if ((ctx->param.iov_len > 0) && (ctx->param.iov_len)) {
+        struct mmsghdr msgvec[PIRATE_IOV_MAX];
+        struct iovec iov[PIRATE_IOV_MAX];
+        int vlen = pirate_make_msgvec(buf, count, ctx->param.iov_len, 
+            msgvec, iov);
+        int rd_bytes = 0;
 
-  if ((writers[gd].iov_len > 0) && (count > writers[gd].iov_len)) {
-    vlen = count / writers[gd].iov_len;
-    if ((count % writers[gd].iov_len) != 0) {
-      vlen += 1;
+        int rv = recvmmsg(ctx->sock, msgvec, vlen, 0, NULL);
+        if (rv < 0) {
+            return rv;
+        }
+        
+        for (int i = 0; i < rv; i++) {
+            rd_bytes += iov[i].iov_len;
+        }
+        return rd_bytes;
     }
-    vlen = MIN(vlen, PIRATE_IOV_MAX);
-    iov_base = (unsigned char*) buf;
-    memset(msgvec, 0, sizeof(msgvec));
-    for (i = 0; i < vlen; i++) {
-      iov_len = MIN(count, writers[gd].iov_len);
-      iov[i].iov_base = iov_base;
-      iov[i].iov_len = iov_len;
-      msgvec[i].msg_hdr.msg_name = NULL;
-      msgvec[i].msg_hdr.msg_namelen = 0;
-      msgvec[i].msg_hdr.msg_iov = &iov[i];
-      msgvec[i].msg_hdr.msg_iovlen = 1;
-      iov_base += iov_len;
-      count -= iov_len;
+
+    return recv(ctx->sock, buf, count, 0);
+}
+
+ssize_t pirate_udp_socket_write(pirate_udp_socket_ctx_t *ctx, const void *buf,
+                                    size_t count) {
+    if (ctx->sock <= 0) {
+        errno = EBADF;
+        return -1;
     }
-    rv = sendmmsg(fd, msgvec, vlen, 0);
-    if (rv < 0) {
-      return rv;
+
+    if ((ctx->param.iov_len > 0) && (ctx->param.iov_len)) {
+        struct mmsghdr msgvec[PIRATE_IOV_MAX];
+        struct iovec iov[PIRATE_IOV_MAX];
+        int vlen = pirate_make_msgvec((void *)buf, count, ctx->param.iov_len, 
+            msgvec, iov);
+        int wr_bytes = 0;
+
+        int rv = sendmmsg(ctx->sock, msgvec, vlen, 0);
+        if (rv < 0) {
+            return rv;
+        }
+
+        for (int i = 0; i < rv; i++) {
+            wr_bytes += iov[i].iov_len;
+        }
+        
+        return wr_bytes;
     }
-    for (i = 0; i < rv; i++) {
-      numbytes += iov[i].iov_len;
-    }
-    return numbytes;
-  } else {
-    return send(fd, buf, count, 0);
-  }
+
+    return send(ctx->sock, buf, count, 0);
 }

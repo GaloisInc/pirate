@@ -13,18 +13,29 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __PIRATE_MERCURY_H
-#define __PIRATE_MERCURY_H
+#ifndef __PIRATE_CHANNEL_MERCURY_H
+#define __PIRATE_CHANNEL_MERCURY_H
 
 #include "primitives.h"
 
-#define MERCURY_MTU 256
+typedef struct {
+    int fd;
+    uint8_t *buf;
+    pirate_mercury_param_t param;
+} pirate_mercury_ctx_t;
 
-int pirate_mercury_open(int gd, int flags, pirate_channel_t *channels);
-int pirate_mercury_close(int gd, pirate_channel_t *channels);
-ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf, 
-                                size_t count);
-ssize_t pirate_mercury_write(int gd, pirate_channel_t *writers, const void *buf,
+int pirate_mercury_init_param(int gd, int flags,
+                                pirate_mercury_param_t *param);
+int pirate_mercury_parse_param(int gd, int flags, char *str,
+                                pirate_mercury_param_t *param);
+int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx,
+                                const pirate_mercury_param_t *param);
+int pirate_mercury_get_param(const pirate_mercury_ctx_t *ctx,
+                                pirate_mercury_param_t *param);
+int pirate_mercury_open(int gd, int flags, pirate_mercury_ctx_t *ctx);
+int pirate_mercury_close(pirate_mercury_ctx_t *ctx);
+ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf, size_t count);
+ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf,
                                 size_t count);
 
-#endif /* __PIRATE_MERCURY_H */
+#endif /* __PIRATE_CHANNEL_MERCURY_H */

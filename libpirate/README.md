@@ -118,14 +118,36 @@ Example usage:
 
 ## Tests
 
-Run the unit tests:
+### Dependencies
+
+[Google Test](https://github.com/google/googletest)
 
 ```
-make test
+$ git clone https://github.com/google/googletest.git
+$ cd googletest
+$ git checkout v1.10.x
+$ cmake -DCMAKE_BUILD_TYPE=Release googletest-release-1.10.x .
+$ sudo cmake --build . --target install
 ```
 
-Run the unit tests under valgrind:
+### Build
+Enable **PIRATE_UNIT_TEST** option:
+```
+$ mkdir build
+$ cd build
+$ cmake -DPIRATE_UNIT_TEST=ON ..
+$ make
+```
+
+### Run
+```
+$ cd build
+$ ./libpirate/gaps_channels_test
+```
+
+### Run with [valgrind](https://valgrind.org/)
 
 ```
-make valgrind
+$ cd build
+$ make valgrind
 ```

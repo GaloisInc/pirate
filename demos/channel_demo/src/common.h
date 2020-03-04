@@ -23,13 +23,6 @@
 
 #define OPT_DELIM ","
 
-#define CHANNEL_OPT_DESCRIPTION                                                \
-    "Supported channels:\n"                                                    \
-    "    PIPE:          pipe\n"                                                \
-    "    UDP SOCKET:    udp,<ip_addr>,<ip_port>\n"                             \
-    "    MERCURY        mercury,<path>\n"                                      \
-    "    GE ETHERNET:   ge_eth,<ip_addr>,<ip_port>"
-
 /* Verbosity levels */
 typedef enum {
     VERBOSITY_NONE = 0,
@@ -95,8 +88,8 @@ typedef struct {
     { "input",   'i', "PATH", 0, "Binary input file path",           0 },      \
     { "save",    's', "DIR",  0, "Save test packets in a directory", 0 },      \
     { "verbose", 'v', NULL,   0, "Increase verbosity level",         0 },      \
-    { "channel", 'C', "CH",   0, "channel,options,...  ",            0 },      \
-    { NULL,       0,  NULL,   0, CHANNEL_OPT_DESCRIPTION,            0 }
+    { "channel", 'C', "CH",   0, "<channel options>",                0 },      \
+    { NULL,       0,  NULL,   0, GAPS_CHANNEL_OPTIONS,               0 }
 
 int parse_common_options(int key, char *arg, channel_test_t *test,
                             struct argp_state *state, int ch_flags);

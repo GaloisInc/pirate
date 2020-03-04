@@ -9,7 +9,7 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 set(LIBPIRATE pirate)
 
 # Build flags
-SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O0" "-g")
+SET(BUILD_FLAGS ${PIRATE_C_FLAGS} "-O0" "-g")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"'")
 
 # Common

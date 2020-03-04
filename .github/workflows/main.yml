@@ -8,20 +8,29 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
-      run: sudo apt-get install -y clang valgrind
+      run: |
+        sudo apt-get install -y clang valgrind
+    - name: googletest
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake --build . --target install
+        cd ..
     - name: build libpirate
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        ./primitives_test -v
+        ./gaps_channels_test
         make valgrind
-    - name: Build demos
+    - name: build demos
       run: |
         cd build
         cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
@@ -32,24 +41,32 @@ jobs:
         ./ts_test.sh
   gaps:
     runs-on: ubuntu-latest
-    container: docker://pirateteam/ubuntu-llvm:latest
+    container: docker://pirateteam/llvm-ubuntu:latest
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
       run: |
         apt-get update
         apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+    - name: googletest
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake --build . --target install
+        cd ..
     - name: build libpirate
       run: |
         mkdir -p build
         cd build
-        cmake -DGAPS_ENABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: libpirate tests
       timeout-minutes: 1
       run: |
         cd build/libpirate
-        ./primitives_test -v
+        ./gaps_channels_test
         make valgrind
     - name: Build demos
       run: |

@@ -26,6 +26,19 @@ static char buffer[BUF_SIZE];
 
 int main(int argc, char* argv[]) {
     int rv, len;
+    pirate_channel_param_t param;
+
+    rv = pirate_init_channel_param(PIPE, 0, O_RDONLY, &param);
+    if (rv < 0) {
+        perror("pirate_init_channel_param");
+        return 1;
+    }
+
+    rv = pirate_set_channel_param(PIPE, 0, O_RDONLY, &param);
+    if (rv < 0) {
+        perror("pirate_init_channel_param");
+        return 1;
+    }
 
     rv = pirate_open(0, O_RDONLY);
     if (rv < 0) {

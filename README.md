@@ -23,11 +23,16 @@ $ make
 ```
 
 #### Additional cmake Options
+
 Invoke with
+
 ```
 $ cmake -D<OPTION_NAME>=ON ..
 ```
+
+ * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests (requires googletest v1.10 or greater)
  * ```GAPS_ENABLE``` enable compilation with GAPS annotations
+ * ```GAPS_DEMOS``` enable compilation of GAPS demo applications
  * ```SINGLE_BINARY``` encrypt and combine application binaries into a single executable
 
 ### libpirate

@@ -10,11 +10,11 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __SHMEM_BUFFER_H
-#define __SHMEM_BUFFER_H
+#ifndef __PIRATE_SHMEM_BUFFER_H
+#define __PIRATE_SHMEM_BUFFER_H
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -29,19 +29,19 @@ using namespace std;
 #endif
 
 typedef struct {
-  atomic_uint_fast64_t position;
-  atomic_uint_fast64_t init;
-  atomic_uint_fast64_t reader_pid;
-  atomic_uint_fast64_t writer_pid;
-  sem_t reader_open_wait;
-  sem_t writer_open_wait;
-  pthread_mutex_t mutex;
-  pthread_cond_t is_not_empty;
-  pthread_cond_t is_not_full;
-  int size;
-  size_t packet_size;
-  size_t packet_count;
-  unsigned char buffer[];
+    atomic_uint_fast64_t    position;
+    atomic_uint_fast64_t    init;
+    atomic_uint_fast64_t    reader_pid;
+    atomic_uint_fast64_t    writer_pid;
+    sem_t                   reader_open_wait;
+    sem_t                   writer_open_wait;
+    pthread_mutex_t         mutex;
+    pthread_cond_t          is_not_empty;
+    pthread_cond_t          is_not_full;
+    int                     size;
+    size_t                  packet_size;
+    size_t                  packet_count;
+    unsigned char           *buffer;
 } shmem_buffer_t;
 
-#endif
+#endif /* __PIRATE_SHMEM_BUFFER_H */

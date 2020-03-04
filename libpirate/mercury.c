@@ -14,12 +14,15 @@
  */
 
 #include <errno.h>
+#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <endian.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include "pirate_common.h"
 #include "mercury.h"
 
 #pragma pack(4)
@@ -34,15 +37,17 @@ typedef struct {
 } mercury_header_t;
 #pragma pack()
 
-static int mercury_message_pack(void *buf, const void *data,
+static int mercury_message_pack(void *buf, const void *data, uint32_t mtu,
                                     const mercury_header_t *hdr) {
     mercury_header_t *msg_hdr = (mercury_header_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(mercury_header_t);
 
-    if (hdr->data_len > (MERCURY_MTU - sizeof(mercury_header_t))) {
+    if (hdr->data_len > (mtu - sizeof(mercury_header_t))) {
         errno = ENOBUFS;
         return -1;
     }
+
+    memset(buf, 0, mtu);
 
     msg_hdr->session_tag = htobe32(hdr->session_tag);
     msg_hdr->message_tag = htobe32(hdr->message_tag);
@@ -56,7 +61,7 @@ static int mercury_message_pack(void *buf, const void *data,
     return 0;
 }
 
-static int mercury_message_unpack(const void *buf, void *data,
+static int mercury_message_unpack(const void *buf, void *data, uint32_t mtu,
                                 size_t data_buf_len, mercury_header_t *hdr) {
     const mercury_header_t *msg_hdr = (mercury_header_t *)buf;
     const uint8_t *msg_data = (uint8_t *)buf + sizeof(mercury_header_t);
@@ -70,7 +75,7 @@ static int mercury_message_unpack(const void *buf, void *data,
     hdr->slave_ts    = be64toh(msg_hdr->slave_ts);
 
     if ((hdr->data_len > data_buf_len) ||
-        (hdr->data_len > (MERCURY_MTU - sizeof(mercury_header_t)))) {
+        (hdr->data_len > (mtu - sizeof(mercury_header_t)))) {
         errno = ENOBUFS;
         return -1;
     }
@@ -79,58 +84,111 @@ static int mercury_message_unpack(const void *buf, void *data,
     return 0;
 }
 
-int pirate_mercury_open(int gd, int flags, pirate_channel_t *channels) {
-    pirate_channel_t *ch = &channels[gd];
+int pirate_mercury_init_param(int gd, int flags,
+                                pirate_mercury_param_t *param) {
+    (void) flags;
+    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_NAME_FMT, gd);
+    param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
+    return 0;
+}
+
+int pirate_mercury_parse_param(int gd, int flags, char *str,
+                                pirate_mercury_param_t *param) {
+    char *ptr = NULL;
+
+    if (pirate_mercury_init_param(gd, flags, param) != 0) {
+        return -1;
+    }
+
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
+        (strcmp(ptr, "mercury") != 0)) {
+        return -1;
+    }
+
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
+    }
+
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        param->mtu = strtol(ptr, NULL, 10);
+    }
+
+    return 0;
+}
+
+int pirate_mercury_set_param(pirate_mercury_ctx_t *ctx,
+                                const pirate_mercury_param_t *param) {
+    if (param == NULL) {
+        memset(&ctx->param, '\0', sizeof(ctx->param));
+    } else {
+        ctx->param = *param;
+    }
+
+    return 0;
+}
+
+int pirate_mercury_get_param(const pirate_mercury_ctx_t *ctx,
+                                pirate_mercury_param_t *param) {
+    *param  = ctx->param;
+    return 0;
+}
+
+int pirate_mercury_open(int gd, int flags, pirate_mercury_ctx_t *ctx) {
     int rv = -1;
 
-    if (ch->pathname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    rv = mkfifo(ch->pathname, 0660);
+    // Current implementation uses pipe as a loopback
+    // Remove pipe creation once it is no longer needed
+    rv = mkfifo(ctx->param.path, 0660);
     if (rv == -1) {
-      if (errno == EEXIST) {
-        errno = 0;
-      } else {
-        return -1;
-      }
+        if (errno == EEXIST) {
+            errno = 0;
+        } else {
+            return -1;
+        }
     }
 
-    if ((ch->fd = open(ch->pathname, flags)) < 0) {
+    ctx->buf = (uint8_t *) malloc(ctx->param.mtu);
+    if (ctx->buf == NULL) {
+        return -1;
+    }
+
+    if ((ctx->fd = open(ctx->param.path, flags)) < 0) {
         return -1;
     }
 
     return gd;
 }
 
-int pirate_mercury_close(int gd, pirate_channel_t *channels) {
-    pirate_channel_t *ch = &channels[gd];
+int pirate_mercury_close(pirate_mercury_ctx_t *ctx) {
     int rv = -1;
 
-    if (ch->fd <= 0) {
+    if (ctx->buf != NULL) {
+        free(ctx->buf);
+        ctx->buf = NULL;
+    }
+
+    if (ctx->fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    rv = close(ch->fd);
-    ch->fd = 0;
+    rv = close(ctx->fd);
+    ctx->fd = -1;
     return rv;
 }
 
-ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
-                                size_t count) {
-    uint8_t rd_buf[MERCURY_MTU] = { 0 };
+ssize_t pirate_mercury_read(pirate_mercury_ctx_t *ctx, void *buf,
+                            size_t count) {
     int rv;
     mercury_header_t hdr = { 0 };
-    pirate_channel_t *ch = &readers[gd];
+    const pirate_mercury_param_t *param = &ctx->param;
 
-    if (ch->fd <= 0) {
+    if (ctx->fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    rv = read(ch->fd, rd_buf, MERCURY_MTU);
+    rv = read(ctx->fd, ctx->buf, param->mtu);
     if (rv < 0) {
         return -1;
     } else if (rv < ((int)sizeof(mercury_header_t))) {
@@ -138,7 +196,7 @@ ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
         return -1;
     }
 
-    if (mercury_message_unpack(rd_buf, buf, count, &hdr) != 0) {
+    if (mercury_message_unpack(ctx->buf, buf, param->mtu, count, &hdr) != 0) {
         errno = ENOMSG;
         return -1;
     }
@@ -146,9 +204,9 @@ ssize_t pirate_mercury_read(int gd, pirate_channel_t *readers, void *buf,
     return hdr.data_len;
 }
 
-ssize_t pirate_mercury_write(int gd, pirate_channel_t *writers, const void *buf,
+ssize_t pirate_mercury_write(pirate_mercury_ctx_t *ctx, const void *buf,
                                 size_t count) {
-    pirate_channel_t *ch = &writers[gd];
+    const pirate_mercury_param_t *param = &ctx->param;
     mercury_header_t hdr = {
         .session_tag = 1,
         .message_tag = 1,
@@ -156,19 +214,18 @@ ssize_t pirate_mercury_write(int gd, pirate_channel_t *writers, const void *buf,
         .data_tag = 1,
         .data_len = count
     };
-    uint8_t wr_buf[MERCURY_MTU] = { 0 };
 
-    if (ch->fd <= 0) {
+    if (ctx->fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    if (mercury_message_pack(wr_buf, buf, &hdr) != 0) {
+    if (mercury_message_pack(ctx->buf, buf, param->mtu, &hdr) != 0) {
         errno = ENOMSG;
         return -1;
     }
 
-    if (write(ch->fd, wr_buf, MERCURY_MTU) != MERCURY_MTU) {
+    if (write(ctx->fd, ctx->buf, param->mtu) != param->mtu) {
         return -1;
     }
 

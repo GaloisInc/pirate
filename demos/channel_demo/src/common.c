@@ -69,134 +69,28 @@ static inline int get_time(char ts[TIMESTAMP_STR_LEN], const char *fmt) {
     return 0;
 }
 
-static int open_gaps_pipe(int flags) {
-    if (pirate_set_channel_type(GAPS_CHANNEL, PIPE) != 0) {
-        log_msg(ERROR, "Failed to set channel type to pipe");
-        return -1;
-    }
-
-    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
-        log_msg(ERROR, "Failed to open pipe GAPS channel");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int open_gaps_udp_socket(int flags, const char *addr, short port) {
-    if (pirate_set_channel_type(GAPS_CHANNEL, UDP_SOCKET) != 0) {
-        log_msg(ERROR, "Failed to set channel type to UDP socket");
-        return -1;
-    }
-
-    if (pirate_set_pathname(GAPS_CHANNEL, addr) != 0) {
-        log_msg(ERROR, "Failed to set UDP channel IP address");
-        return -1;
-    }
-
-    if (pirate_set_port_number(GAPS_CHANNEL, port) != 0) {
-        log_msg(ERROR, "Failed to set UDP channel IP port");
-        return -1;
-    }
-
-    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
-        log_msg(ERROR, "Failed to open UDP socket GAPS channel");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int open_gaps_mercury(int flags, const char *path) {
-    if (pirate_set_channel_type(GAPS_CHANNEL, MERCURY) != 0) {
-        log_msg(ERROR, "Failed to set channel type to mercury");
-        return -1;
-    }
-
-    if (pirate_set_pathname(GAPS_CHANNEL, path) != 0) {
-        log_msg(ERROR, "Failed to set mercury device path");
-        return -1;
-    }
-
-    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
-        log_msg(ERROR, "Failed to open mercury device");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int open_gaps_ge_eth(int flags, const char *addr, short port) {
-    if (pirate_set_channel_type(GAPS_CHANNEL, GE_ETH) != 0) {
-        log_msg(ERROR, "Failed to set channel type to GE Ethernet");
-        return -1;
-    }
-
-    if (pirate_set_pathname(GAPS_CHANNEL, addr) != 0) {
-        log_msg(ERROR, "Failed to set GE Ethernet IP address");
-        return -1;
-    }
-
-    if (pirate_set_port_number(GAPS_CHANNEL, port) != 0) {
-        log_msg(ERROR, "Failed to set GE Ethernet IP port");
-        return -1;
-    }
-
-    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
-        log_msg(ERROR, "Failed to open GE Ethernet GAPS channel");
-        return -1;
-    }
-
-    return 0;
-}
-
 static int parse_channel_opt(char *str, int flags) {
-    char *ptr = NULL;
-
-    if ((ptr = strtok(str, OPT_DELIM)) == NULL) {
+    int rv;
+    pirate_channel_param_t param;
+    channel_t channel = pirate_parse_channel_param(GAPS_CHANNEL, flags, str,
+                                                    &param);
+    if (channel == INVALID) {
+        log_msg(ERROR, "failed to parse channel options '%s'", str);
         return -1;
     }
 
-    if (strcmp(ptr, "pipe") == 0) {
-        return open_gaps_pipe(flags);
-    } else if (strcmp(ptr, "udp") == 0) {
-        const char *ip_addr = NULL;
-        if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-            log_msg(ERROR, "must specify IP address in '%s'", str);
-            return -1;
-        }
-        ip_addr = ptr;
-
-        if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-            log_msg(ERROR, "must specify port in '%s'", str);
-            return -1;
-        }
-
-        return open_gaps_udp_socket(flags, ip_addr, strtol(ptr, NULL, 10));
-    } else if (strcmp(ptr, "mercury") == 0) {
-        if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-            log_msg(ERROR, "must specify device path in '%s'", str);
-            return -1;
-        }
-
-        return open_gaps_mercury(flags, ptr);
-    } else if (strcmp(ptr, "ge_eth") == 0) {
-        const char *ip_addr = NULL;
-        if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-            log_msg(ERROR, "must specify IP address in '%s'", str);
-            return -1;
-        }
-        ip_addr = ptr;
-
-        if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
-            log_msg(ERROR, "must specify port in '%s'", str);
-            return -1;
-        }
-
-        return open_gaps_ge_eth(flags, ip_addr, strtol(ptr, NULL, 10));
+    rv = pirate_set_channel_param(channel, GAPS_CHANNEL, flags, &param);
+    if (rv != 0) {
+        log_msg(ERROR, "failed to set channel options '%s'", str);
+        return -1;
     }
 
-    return -1;
+    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
+        log_msg(ERROR, "Failed to open GAPS channel");
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -484,3 +378,4 @@ void print_hex(const char *msg, const uint8_t *buf, uint32_t len) {
     fprintf(stdout, "\n");
     fflush(stdout);
 }
+

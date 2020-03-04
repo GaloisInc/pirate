@@ -10,66 +10,154 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 #include <time.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <termios.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/stat.h>
+#include <stdint.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
-#include "primitives.h"
+#include "pirate_common.h"
 #include "serial.h"
 
-static const speed_t    SERIAL_BAUD = B230400;
-static const uint32_t   SERIAL_MTU  = 1024;
+int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param) {
+    (void) flags;
+    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SERIAL_NAME_FMT, gd);
+    param->baud = SERIAL_DEFAULT_BAUD;
+    param->mtu = SERIAL_DEFAULT_MTU;
+    return 0;
+}
 
-int pirate_serial_open(int gd, int flags, pirate_channel_t *channels) {
-    pirate_channel_t *ch = &channels[gd];
+int pirate_serial_parse_param(int gd, int flags, char *str,
+                                pirate_serial_param_t *param) {
+    char *ptr = NULL;
+
+    if (pirate_serial_init_param(gd, flags, param) != 0) {
+        return -1;
+    }
+
+    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
+        (strcmp(ptr, "serial") != 0)) {
+        return -1;
+    }
+
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        strncpy(param->path, ptr, sizeof(param->path));
+    }
+
+    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+        if (strncmp("4800", ptr, strlen("4800")) == 0) {
+            param->baud = B4800;
+        } else if (strncmp("9600", ptr, strlen("9600")) == 0) {
+            param->baud = B9600;
+        } else if (strncmp("19200", ptr, strlen("19200")) == 0) {
+            param->baud = B19200;
+        } else if (strncmp("38400", ptr, strlen("38400")) == 0) {
+            param->baud = B38400;
+        } else if (strncmp("57600", ptr, strlen("57600")) == 0) {
+            param->baud = B57600;
+        } else if (strncmp("115200", ptr, strlen("115200")) == 0) {
+            param->baud = B115200;
+        } else if (strncmp("230400", ptr, strlen("230400")) == 0) {
+            param->baud = B230400;
+        } else if (strncmp("460800", ptr, strlen("460800")) == 0) {
+            param->baud = B460800;
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
+
+        if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
+            param->mtu = strtol(ptr, NULL, 10);
+        }
+    }
+
+    return 0;
+}
+
+int pirate_serial_set_param(pirate_serial_ctx_t *ctx,
+                            const pirate_serial_param_t *param) {
+    if (param == NULL) {
+        memset(&ctx->param, 0, sizeof(ctx->param));
+    } else {
+        ctx->param = *param;
+    }
+
+    return 0;
+}
+
+int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,
+                            pirate_serial_param_t *param) {
+    *param  = ctx->param;
+    return 0;
+}
+
+int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
     struct termios attr;
 
-    int fd = open(ch->pathname, flags | O_NOCTTY);
-    if (fd < 0) {
+    ctx->fd = open(ctx->param.path, flags | O_NOCTTY);
+    if (ctx->fd < 0) {
         return -1;
     }
 
-    if (tcgetattr(fd, &attr) != 0) {
+    if (tcgetattr(ctx->fd, &attr) != 0) {
         return -1;
     }
 
-    if (cfsetispeed(&attr, SERIAL_BAUD) || cfsetispeed(&attr, SERIAL_BAUD)) {
+    if (cfsetispeed(&attr, ctx->param.baud) ||
+        cfsetispeed(&attr, ctx->param.baud)) {
         return -1;
     }
 
     cfmakeraw(&attr);
 
-    if (tcsetattr(fd, TCSANOW, &attr)) {
+    if (tcsetattr(ctx->fd, TCSANOW, &attr)) {
         return -1;
     }
 
-    ch->fd = fd;
     return gd;
 }
 
-int pirate_serial_write(int gd, pirate_channel_t *writers, const void *buf,
-    size_t count) {
+int pirate_serial_close(pirate_serial_ctx_t *ctx) {
 
-    int fd = writers[gd].fd;
+    int rv = -1;
+
+    if (ctx->fd <= 0) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    rv = close(ctx->fd);
+    ctx->fd = -1;
+    return rv;
+}
+
+ssize_t pirate_serial_read(pirate_serial_ctx_t *ctx, void *buf, size_t count) {
+    return read(ctx->fd, buf, count);
+}
+
+ssize_t pirate_serial_write(pirate_serial_ctx_t *ctx, const void *buf,
+                            size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
         int rv;
         uint32_t tx_buf_bytes = 0;
-        size_t wr_len = remain > SERIAL_MTU ? SERIAL_MTU : remain;
-        rv = write(fd, wr_buf, wr_len);
+        size_t wr_len = remain > ctx->param.mtu ? ctx->param.mtu : remain;
+        rv = write(ctx->fd, wr_buf, wr_len);
         if (rv < 0) {
             return -1;
         }
 
         do {
-            if (ioctl(fd, TIOCOUTQ, &tx_buf_bytes)) {
+            if (ioctl(ctx->fd, TIOCOUTQ, &tx_buf_bytes)) {
                 return -1;
             }
 

@@ -24,9 +24,9 @@
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
-#define GAPS_ENCLAVE_MAIN(e)  __attribute__((gaps_enclave_main(e)))
+#define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
 #else
-#define GAPS_ENCLAVE_MAIN(e)
+#define PIRATE_ENCLAVE_MAIN(e)
 #endif
 
 #define MAX_APP_THREADS         3
@@ -44,8 +44,7 @@ typedef struct {
 typedef struct {
     int num;
     int flags;
-    channel_t type;
-    const char* path;
+    const char *conf;
     const char* desc;
 } gaps_channel_ctx_t;
 
@@ -55,15 +54,16 @@ typedef struct {
     int signal_fd;
     void (*on_shutdown) (void);
 } gaps_app_t;
-#define GAPS_CHANNEL(n, f, t, p, d) \
+#define GAPS_CHANNEL(n, f, c, d)    \
 {                                   \
     .num   = n,                     \
     .flags = f,                     \
-    .type  = t,                     \
-    .path  = p,                     \
+    .conf  = c,                     \
     .desc  = d                      \
 }
-#define GAPS_CHANNEL_END      GAPS_CHANNEL(-1, 0, INVALID, NULL, NULL)
+#define GAPS_CHANNEL_END        GAPS_CHANNEL(-1, 0, NULL, NULL)
+
+#define DEFAULT_GAPS_CHANNEL    "pipe"
 
 int gaps_app_run(gaps_app_t *ctx);
 int gaps_app_wait_exit(gaps_app_t *ctx);
@@ -78,10 +78,10 @@ typedef enum {
     SIGNER_TO_PROXY = 3
 } demo_channel_t;
 
-#define PROXY_TO_SIGNER_WR "/dev/tty_P_TO_S_WR"
-#define PROXY_TO_SIGNER_RD "/dev/tty_P_TO_S_RD"
-#define SIGNER_TO_PROXY_WR "/dev/tty_S_TO_P_WR"
-#define SIGNER_TO_PROXY_RD "/dev/tty_S_TO_P_RD"
+#define PROXY_TO_SIGNER_WR "serial,/dev/tty_P_TO_S_WR"
+#define PROXY_TO_SIGNER_RD "serial,/dev/tty_P_TO_S_RD"
+#define SIGNER_TO_PROXY_WR "serial,/dev/tty_S_TO_P_WR"
+#define SIGNER_TO_PROXY_RD "serial,/dev/tty_S_TO_P_RD"
 
 typedef enum {
     OK,
