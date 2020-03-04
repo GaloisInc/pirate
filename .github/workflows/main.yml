@@ -41,7 +41,7 @@ jobs:
         ./ts_test.sh
   gaps:
     runs-on: ubuntu-latest
-    container: docker://pirateteam/ubuntu-llvm:latest
+    container: docker://pirateteam/llvm-ubuntu:latest
     steps:
     - uses: actions/checkout@v1
     - name: install dependencies
