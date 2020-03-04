@@ -26,6 +26,8 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+const char *argp_program_version = DEMO_VERSION;
+
 volatile sig_atomic_t terminated = 0;
 
 // Register an empty signal handler for SIGUSR1.
@@ -41,13 +43,14 @@ int gaps_app_run(gaps_app_t *ctx) {
     sigset_t mask;
     struct sigaction saction;
 
-    // Block the SIGINT and SIGTERM signals in the parent thread.
+    // Block the SIGINT, SIGTERM, and SIGPIPE signals in the parent thread.
     // A new thread inherits a copy of its creator's signal mask.
     // The main thread will wait on signalfd() to handle
-    // SIGINT and SIGTERM signals.
+    // the signals.
     sigemptyset(&mask);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGPIPE);
     if (pthread_sigmask(SIG_BLOCK, &mask, NULL) < 0) {
         ts_log(ERROR, "sigprocmask failed");
         return -1;
@@ -72,22 +75,27 @@ int gaps_app_run(gaps_app_t *ctx) {
     // Initialize and open GAPS channels
     for (int i = 0; i < MAX_APP_GAPS_CHANNELS; i++) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
+        pirate_channel_param_t param;
+        channel_t channel = INVALID;
+        int rv = -1;
         if (c->num == -1) {
             break;
         }
 
-        if (pirate_set_channel_type(c->num, c->type)) {
-            ts_log(ERROR, "Failed to set channel type for %s", c->desc);
+        channel = pirate_parse_channel_param(c->num, c->flags, c->conf, &param);
+        if (channel == INVALID) {
+            ts_log(ERROR, "Failed to parse channel configuration %s", c->conf);
             return -1;
         }
 
-        if (pirate_set_pathname(c->num, c->path)) {
-            ts_log(ERROR, "Failed to set path %s for %u", c->path, c->num);
+        rv = pirate_set_channel_param(channel, c->num, c->flags, &param);
+        if (rv != 0) {
+            ts_log(ERROR, "Failed to set channel parameters for %s", c->desc);
             return -1;
         }
 
         if (pirate_open(c->num, c->flags) != c->num) {
-            ts_log(ERROR, "Failed to open %s for %s", c->path, c->desc);
+            ts_log(ERROR, "Failed to open channel %s", c->desc);
             return -1;
         }
     }
@@ -122,6 +130,8 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
         rv = -1;
     }
 
+    ts_log(INFO, "received a shutdown signal");
+
     gaps_terminate();
 
     // Close GAPS channels
@@ -133,7 +143,7 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
 
         pirate_close(c->num, c->flags);
     }
-    
+
     // Stop worker threads
     for (int i = 0; i < MAX_APP_THREADS; i++) {
         thread_ctx_t *t = &ctx->threads[i];
@@ -157,6 +167,10 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
             ts_log(ERROR, "pthread_join '%s'", t->name);
             rv = -1;
         }
+    }
+
+    if (ctx->on_shutdown != NULL) {
+        ctx->on_shutdown();
     }
 
     return rv;
@@ -284,7 +298,7 @@ void log_tsa_req(verbosity_t v, const char* msg, const tsa_request_t *req) {
 
 void log_tsa_rsp(verbosity_t v, const char* msg, const tsa_response_t* rsp) {
     if (v >= VERBOSITY_MIN) {
-        ts_log(INFO, BCLR(MAGENTA, "%s : status %s"), msg, 
+        ts_log(INFO, BCLR(MAGENTA, "%s : status %s"), msg,
             ts_status_str(rsp->hdr.status));
         if (v >= VERBOSITY_MAX) {
             char *msg = NULL;

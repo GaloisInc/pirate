@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     int i, memfd, secfd, seclen, keylen, program_index, count;
     unsigned char *buf;
     unsigned int remain;
-    char *secret;
+    unsigned char *secret;
     picohash_ctx_t p_ctx;
     struct AES_ctx a_ctx;
     unsigned char digest[PICOHASH_SHA256_DIGEST_LENGTH];

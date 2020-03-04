@@ -1,13 +1,39 @@
 ## Project structure
 
 ### Building
+
+To build the libpirate library:
+
 ```
-$ cd pirate-demos
+$ cd pirate
 $ mkdir build
 $ cd build
 $ cmake ..
 $ make
 ```
+
+To build the demo applications that use libpirate:
+
+```
+$ cd pirate
+$ mkdir build
+$ cd build
+$ cmake -DGAPS_DEMOS=ON ..
+$ make
+```
+
+#### Additional cmake Options
+
+Invoke with
+
+```
+$ cmake -D<OPTION_NAME>=ON ..
+```
+
+ * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests (requires googletest v1.10 or greater)
+ * ```GAPS_ENABLE``` enable compilation with GAPS annotations
+ * ```GAPS_DEMOS``` enable compilation of GAPS demo applications
+ * ```SINGLE_BINARY``` encrypt and combine application binaries into a single executable
 
 ### libpirate
 
@@ -21,7 +47,7 @@ cleanup / data wipe on termination.
 libpirate currently implements GAPS channels using Linux named pipes,
 a character device driver, a Unix domain socket, shared memory,
 network communication, or userspace IO. Benchmarks are available on
-the [wiki](https://github.com/GaloisInc/pirate-demos/wiki/libpirate-benchmarks).
+the [wiki](https://github.com/GaloisInc/pirate/wiki/libpirate-benchmarks).
 
 ### demos
 

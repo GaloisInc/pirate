@@ -13,15 +13,29 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef __SHMEM_INTERFACE_H
-#define __SHMEM_INTERFACE_H
+#ifndef __PIRATE_CHANNEL_SHMEM_INTERFACE_H
+#define __PIRATE_CHANNEL_SHMEM_INTERFACE_H
 
 #include "primitives.h"
+#include "shmem_buffer.h"
 
-int pirate_shmem_open(int gd, int flags, pirate_channel_t *channels);
-int pirate_shmem_close(int gd, pirate_channel_t *channels);
-ssize_t pirate_shmem_read(shmem_buffer_t *shmem_buffer, void *buf,
-                          size_t count);
-ssize_t pirate_shmem_write(shmem_buffer_t *shmem_buffer, const void *buf,
-                           size_t count);
-#endif
+typedef struct {
+    int flags;
+    shmem_buffer_t *buf;
+    pirate_shmem_param_t param;
+} pirate_shmem_ctx_t;
+
+int pirate_shmem_init_param(int gd, int flags, pirate_shmem_param_t *param);
+int pirate_shmem_parse_param(int gd, int flags, char *str,
+                                pirate_shmem_param_t *param);
+int pirate_shmem_set_param(pirate_shmem_ctx_t *ctx,
+                            const pirate_shmem_param_t *param);
+int pirate_shmem_get_param(const pirate_shmem_ctx_t *ctx,
+                            pirate_shmem_param_t *param);
+int pirate_shmem_open(int gd, int flags, pirate_shmem_ctx_t *ctx);
+int pirate_shmem_close(pirate_shmem_ctx_t *ctx);
+ssize_t pirate_shmem_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count);
+ssize_t pirate_shmem_write(pirate_shmem_ctx_t *ctx, const void *buf,
+                            size_t count);
+
+#endif /* __PIRATE_CHANNEL_SHMEM_INTERFACE_H */

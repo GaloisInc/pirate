@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.5)
+project(enclave_demo)
+
+set(CMAKE_C_COMPILER "clang")
+
+function(add_gaps_target TGT SRC)
+    SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
+    add_executable(${TGT} ${SRC})
+    target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
+    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld")
+endfunction()
+
+if(GAPS_ENABLE)
+    SET(ENCLAVE_SOURCES "enclave.c")
+    add_gaps_target("alpha" ${ENCLAVE_SOURCES})
+    add_gaps_target("beta" ${ENCLAVE_SOURCES})
+    add_gaps_target("gamma" ${ENCLAVE_SOURCES})
+else()
+    message(STATUS "GAPS clang not present")
+endif()

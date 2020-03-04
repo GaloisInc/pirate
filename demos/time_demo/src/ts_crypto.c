@@ -453,11 +453,13 @@ void ts_term(void *ctx) {
 
 
 void ts_sign(void *ctx, const tsa_request_t *req, tsa_response_t *rsp) {
-    rsp->hdr.status = ERR;
+    int ret;
     TS_RESP_CTX *ts_ctx = (TS_RESP_CTX *)ctx;
     TS_RESP *ts_rsp = NULL;
     BIO *ts_req_bio = NULL;
     BIO *ts_rsp_bio = NULL;
+
+    rsp->hdr.status = ERR;
 
     if (req->len == 0 || req->len > sizeof(req->req)) {
         goto end;
@@ -479,11 +481,13 @@ void ts_sign(void *ctx, const tsa_request_t *req, tsa_response_t *rsp) {
         goto end;
     }
 
-    if ((rsp->hdr.len = BIO_read(ts_rsp_bio, rsp->ts, sizeof(rsp->ts))) < 0) {
+    if ((ret = BIO_read(ts_rsp_bio, rsp->ts, sizeof(rsp->ts))) < 0) {
         goto end;
     }
 
+    rsp->hdr.len = (uint32_t) ret;
     rsp->hdr.status = OK;
+
 end:
     if (rsp->hdr.status != OK) {
         print_err("Failed to sign the timestamp request");
