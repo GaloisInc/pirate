@@ -40,7 +40,7 @@ TEST(ChannelSerialTest, Configuration)
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, serial_param->path);
-    ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
+    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     // Apply configuration
@@ -92,7 +92,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(SERIAL, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(default_path, serial_param->path);
-    ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
+    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
@@ -101,7 +101,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(SERIAL, channel);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, serial_param->path);
-    ASSERT_EQ(SERIAL_DEFAULT_BAUD, serial_param->baud);
+    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
