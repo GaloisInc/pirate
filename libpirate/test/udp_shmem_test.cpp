@@ -45,8 +45,8 @@ TEST(ChannelUdpShmemTest, Configuration)
     // Apply configuration
     const char *path = "/tmp/gaps_udp_shmem_test";
     const unsigned buffer_size = DEFAULT_SMEM_BUF_LEN * 2;
-    const size_t packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT * 2;
-    const size_t packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE * 2;
+    const unsigned packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT * 2;
+    const unsigned packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE * 2;
 
     strncpy(udp_shmem_param->path, path, sizeof(udp_shmem_param->path) - 1);
     udp_shmem_param->buffer_size = buffer_size;
@@ -85,14 +85,14 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     char opt[128];
     const char *name = "udp_shmem";
     const char *path = "/tmp/test_udp_shmem";
-    const uint32_t buffer_size = 42 * 42;
+    const unsigned buffer_size = 42 * 42;
 
 #if PIRATE_SHMEM_FEATURE
     const pirate_udp_shmem_param_t *udp_shmem_param = &param.udp_shmem;
     char default_path[128];
     snprintf(default_path, sizeof(default_path), PIRATE_SHMEM_NAME, ch_num);
-    const uint32_t packet_size = 4242;
-    const uint32_t packet_count = 4224;
+    const unsigned packet_size = 4242;
+    const unsigned packet_count = 4224;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);

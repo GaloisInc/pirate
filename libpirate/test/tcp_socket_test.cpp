@@ -42,8 +42,8 @@ TEST(ChannelTcpSocketTest, Configuration)
     // Apply configuration
     const char *ip_addr = "1.2.3.4";
     const short ip_port = 4321;
-    const int iov_len = 42;
-    const int buffer_size = 128;
+    const unsigned iov_len = 42;
+    const unsigned buffer_size = 128;
 
     strncpy(tcp_param->addr, ip_addr, sizeof(tcp_param->addr) - 1);
     tcp_param->port = ip_port;
@@ -78,8 +78,8 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     const char *name = "tcp_socket";
     const char *addr = "1.2.3.4";
     const short port = 0x4242;
-    const uint32_t iov_len = 42;
-    const uint32_t buffer_size = 42 * 42;
+    const unsigned iov_len = 42;
+    const unsigned buffer_size = 42 * 42;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);

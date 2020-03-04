@@ -45,8 +45,8 @@ TEST(ChannelUnixSocketTest, Configuration)
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
-    const int iov_len = 42;
-    const int buffer_size = 1024;
+    const unsigned iov_len = 42;
+    const unsigned buffer_size = 1024;
     strncpy(us_param->path, test_path, sizeof(us_param->path) - 1);
     us_param->iov_len = iov_len;
     us_param->buffer_size = buffer_size;
@@ -81,8 +81,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     char opt[128];
     const char *name = "unix_socket";
     const char *path = "/tmp/test_unix_socket";
-    const uint32_t iov_len = 42;
-    const uint32_t buffer_size = 42 * 42;
+    const unsigned iov_len = 42;
+    const unsigned buffer_size = 42 * 42;
 
     memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
