@@ -16,9 +16,10 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/uio.h>
+#include "primitives.h"
 #include "pirate_common.h"
 
-static int create_iov(void *buf, size_t count, size_t iov_len, 
+static int create_iov(void *buf, size_t count, size_t iov_len,
     struct iovec *iov) {
     int iov_count = count / iov_len;
     unsigned char *iov_base = buf;
@@ -43,7 +44,7 @@ ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len) {
         errno = EBADF;
         return -1;
     }
-    
+
     if ((iov_len > 0) && (count > iov_len)) {
         struct iovec iov[PIRATE_IOV_MAX];
         int iov_count = create_iov(buf, count, iov_len, iov);

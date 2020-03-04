@@ -18,8 +18,6 @@
 
 #include <sys/types.h>
 
-#define PIRATE_IOV_MAX 16
-
 #ifndef MIN
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif

@@ -39,34 +39,36 @@ add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
-add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
-add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
-add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat.c)
-add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
-set_target_properties(primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles PROPERTIES EXCLUDE_FROM_ALL 1)
-add_custom_target(bench DEPENDS primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles)
-
-target_compile_options(primitives_bench_thr PRIVATE ${PIRATE_C_FLAGS})
-target_compile_options(primitives_bench_thr_vector PRIVATE ${PIRATE_C_FLAGS})
-target_compile_options(primitives_bench_lat PRIVATE ${PIRATE_C_FLAGS})
-target_compile_options(primitives_bench_lat_percentiles PRIVATE ${PIRATE_C_FLAGS})
-
-SET(PIRATE_LINK_LIBRARIES Threads::Threads)
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-if(PIRATE_SHMEM_FEATURE)
-SET(PIRATE_LINK_LIBRARIES ${PIRATE_LINK_LIBRARIES} rt)
-endif(PIRATE_SHMEM_FEATURE)
-
-target_link_libraries(primitives_bench_thr ${PIRATE_LINK_LIBRARIES})
-target_link_libraries(primitives_bench_thr_vector ${PIRATE_LINK_LIBRARIES})
-target_link_libraries(primitives_bench_lat ${PIRATE_LINK_LIBRARIES})
-target_link_libraries(primitives_bench_lat_percentiles ${PIRATE_LINK_LIBRARIES})
-
 install(FILES primitives.h shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+
+if(GAPS_BENCH)
+    add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
+    add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
+    add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat.c)
+    add_executable(primitives_bench_lat_percentiles ${PIRATE_SOURCES} bench/primitives_bench_lat_percentiles.c)
+    set_target_properties(primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles PROPERTIES EXCLUDE_FROM_ALL 1)
+    add_custom_target(bench DEPENDS primitives_bench_thr primitives_bench_thr_vector primitives_bench_lat primitives_bench_lat_percentiles)
+
+    target_compile_options(primitives_bench_thr PRIVATE ${PIRATE_C_FLAGS})
+    target_compile_options(primitives_bench_thr_vector PRIVATE ${PIRATE_C_FLAGS})
+    target_compile_options(primitives_bench_lat PRIVATE ${PIRATE_C_FLAGS})
+    target_compile_options(primitives_bench_lat_percentiles PRIVATE ${PIRATE_C_FLAGS})
+
+    SET(PIRATE_LINK_LIBRARIES Threads::Threads)
+
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    if(PIRATE_SHMEM_FEATURE)
+    SET(PIRATE_LINK_LIBRARIES ${PIRATE_LINK_LIBRARIES} rt)
+    endif(PIRATE_SHMEM_FEATURE)
+
+    target_link_libraries(primitives_bench_thr ${PIRATE_LINK_LIBRARIES})
+    target_link_libraries(primitives_bench_thr_vector ${PIRATE_LINK_LIBRARIES})
+    target_link_libraries(primitives_bench_lat ${PIRATE_LINK_LIBRARIES})
+    target_link_libraries(primitives_bench_lat_percentiles ${PIRATE_LINK_LIBRARIES})
+    endif(GAPS_BENCH)
 
 # GAPS channel unit test
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)

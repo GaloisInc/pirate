@@ -6,6 +6,7 @@ option(GAPS_ENABLE "Enable compilation with GAPS annotation" OFF)
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(GAPS_DEMOS "Enable compilation of GAPS demo applications" OFF)
+option(GAPS_BENCH "Enable compilation of GAPS benchmark applications" OFF)
 
 # Common build options
 set(PIRATE_LIB_LIBS)

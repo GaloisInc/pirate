@@ -234,17 +234,6 @@ typedef union {
     pirate_ge_eth_param_t           ge_eth;
 } pirate_channel_param_t;
 
-typedef struct {
-  int fd;                       // file descriptor
-  channel_t channel;            // channel type
-  char *pathname;               // optional device path
-  int port_number;              // optional port number (TCP_SOCKET or UDP_SOCKET)
-  int buffer_size;              // optional memory buffer size
-  size_t packet_size;           // optional packet size (SHMEM_UDP)
-  size_t packet_count;          // optional packet count (SHMEM_UDP)
-  size_t iov_len;               // optional use readv/writev
-} pirate_channel_t;
-
 //
 // API
 //
@@ -350,111 +339,6 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd, int flags);
-
-//
-// CONFIGURATION PARAMETERS
-//
-
-// Sets the channel type for the read and write ends
-// of the gaps descriptor. Must be configured before
-// the channel is opened. Returns zero on success.
-// On error -1 is returned, and erro is set appropriately.
-int pirate_set_channel_type(int gd, channel_t channel_type);
-
-// Gets the channel type for the read and write ends
-// of the channel descriptor. Returns INVALID on error.
-channel_t pirate_get_channel_type(int gd);
-
-// Sets the pathname or hostname for the read and write ends
-// of the gaps descriptor. Only valid if the channel
-// type is DEVICE, TCP_SOCKET, or UDP_SOCKET. Returns zero on success.
-// On error -1 is returned, and errno is set appropriately.
-// If pathname is NULL, then the memory allocated
-// for the channel pathname is free'd.
-int pirate_set_pathname(int gd, const char *pathname);
-
-// Gets the pathname or hostname for the read and write ends
-// of the gaps descriptor. There must be PIRATE_LEN_NAME
-// bytes allocated at pathname. Returns zero on success.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_get_pathname(int gd, char *pathname);
-
-// Sets the port number for the read and write ends
-// of the gaps descriptor. Only valid if the channel
-// type is TCP_SOCKET or UDP_SOCKET. Returns zero on success.
-// On error -1 is returned, and errno is set appropriately.
-// If pathname is NULL, then the memory allocated
-// for the channel pathname is free'd.
-int pirate_set_port_number(int gd, int port);
-
-// Gets the port number for the read and write ends
-// of the gaps descriptor. On error -1 is returned,
-// and errno is set appropriately.
-int pirate_get_port_number(int gd);
-
-// Sets the memory buffer size for the gaps channel.
-// Only valid if the channel type is SHMEM or UNIX_SOCKET.
-// If zero then SHMEM will allocate DEFAULT_SHMEM_BUFFER bytes.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_set_buffer_size(int gd, int buffer_size);
-
-// Gets the shared memory buffer size for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_get_buffer_size(int gd);
-
-// Sets the packet size for the gaps channel.
-// Only valid if the channel type is SHMEM_UDP.
-// If zero then SHMEM will allocate DEFAULT_PACKET_SIZE packet size.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_set_packet_size(int gd, size_t packet_size);
-
-// Gets the packet size for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-size_t pirate_get_packet_size(int gd);
-
-// Sets the packet count for the gaps channel buffer.
-// Only valid if the channel type is SHMEM_UDP.
-// If zero then SHMEM will allocate DEFAULT_PACKET_COUNT packet size.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_set_packet_count(int gd, size_t packet_count);
-
-// Gets the packet count for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-size_t pirate_get_packet_count(int gd);
-
-// Sets the memory buffer size for the gaps channel.
-// Only valid if the channel type is SHMEM or UNIX_SOCKET.
-// If zero then SHMEM will allocate DEFAULT_SHMEM_BUFFER bytes.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_set_buffer_size(int gd, int buffer_size);
-
-// Gets the shared memory buffer size for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_get_buffer_size(int gd);
-
-// Sets the iovector length for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-int pirate_set_iov_length(int gd, size_t iov_len);
-
-// Gets the iovector length for the gaps channel.
-// On error -1 is returned, and errno is set appropriately.
-ssize_t pirate_get_iov_length(int gd);
-
-// Invoke fcntl() on the underlying file descriptor
-int pirate_fcntl0(int gd, int flags, int cmd);
-int pirate_fcntl1_int(int gd, int flags, int cmd, int arg);
-
-// Invoke ioctl() on the underlying device
-int pirate_ioctl0(int gd, int flags, long cmd);
-int pirate_ioctl1_int(int gd, int flags, long cmd, int arg);
-
-// Invoke getsockopt() on the underlying socket
-int pirate_getsockopt(int gd, int flags, int level, int optname, void *optval,
-                      socklen_t *optlen);
-
-// Invoke setsockopt() on the underlying socket
-int pirate_setsockopt(int gd, int flags, int level, int optname,
-                      const void *optval, socklen_t optlen);
 
 #ifdef __cplusplus
 }
