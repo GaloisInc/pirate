@@ -47,7 +47,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev
+        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
     - name: googletest
       run: |
         mkdir ~/googletest
