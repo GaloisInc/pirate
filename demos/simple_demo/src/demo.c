@@ -25,7 +25,7 @@
 #include <sys/signalfd.h>
 #include <unistd.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "tiny.h"
 
 #ifdef GAPS_ENABLE

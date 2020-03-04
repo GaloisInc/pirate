@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <linux/limits.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "common.h"
 
 #define TIMESTAMP_STR_LEN 64

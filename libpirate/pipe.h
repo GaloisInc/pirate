@@ -17,7 +17,7 @@
 #define __PIRATE_CHANNEL_PIPE_H
 
 #include <sys/types.h>
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef struct {
     int fd;

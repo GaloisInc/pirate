@@ -16,7 +16,7 @@
 #ifndef __PIRATE_CHANNEL_UIO_H
 #define __PIRATE_CHANNEL_UIO_H
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "shmem_buffer.h"
 
 typedef struct {

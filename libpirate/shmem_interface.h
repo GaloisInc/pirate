@@ -16,7 +16,7 @@
 #ifndef __PIRATE_CHANNEL_SHMEM_INTERFACE_H
 #define __PIRATE_CHANNEL_SHMEM_INTERFACE_H
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "shmem_buffer.h"
 
 typedef struct {

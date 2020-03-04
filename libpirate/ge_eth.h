@@ -16,7 +16,7 @@
 #ifndef __PIRATE_CHANNEL_GE_ETH_H
 #define __PIRATE_CHANNEL_GE_ETH_H
 
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef struct {
     int sock;

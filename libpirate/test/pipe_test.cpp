@@ -14,7 +14,7 @@
  */
 
 #include <errno.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 namespace GAPS

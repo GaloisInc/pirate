@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 
 #define BUF_SIZE 1024
 

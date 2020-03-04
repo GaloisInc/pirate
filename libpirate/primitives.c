@@ -24,7 +24,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "device.h"
 #include "pipe.h"
 #include "unix_socket.h"

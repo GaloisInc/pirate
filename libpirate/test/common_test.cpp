@@ -16,7 +16,7 @@
 #include <cstring>
 #include <errno.h>
 #include <gtest/gtest.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 // Channel-type agnostic tests

@@ -9,7 +9,7 @@ cleanup / data wipe on termination.
 
 ## Usage
 
-See [primitives.h](/libpirate/primitives.h) for additional documentation.
+See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
 
 Reader:
 

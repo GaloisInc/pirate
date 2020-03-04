@@ -39,7 +39,7 @@ add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
-install(FILES primitives.h shmem_buffer.h DESTINATION include)
+install(FILES libpirate.h shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 

@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "common.h"
-#include "primitives.h"
+#include "libpirate.h"
 
 #define DEFAULT_PACKET_DELAY_US 1000000
 

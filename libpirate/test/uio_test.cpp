@@ -13,7 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 namespace GAPS
