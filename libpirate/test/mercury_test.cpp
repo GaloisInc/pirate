@@ -117,13 +117,13 @@ public:
             param.mercury.mtu = mtu;
         }
 
-        rv = pirate_set_channel_param(MERCURY, Writer.channel, O_WRONLY, 
+        rv = pirate_set_channel_param(MERCURY, Writer.channel, O_WRONLY,
                                         &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
         // write and read parameters are the same
-        rv = pirate_set_channel_param(MERCURY, Reader.channel, O_RDONLY, 
+        rv = pirate_set_channel_param(MERCURY, Reader.channel, O_RDONLY,
                                         &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
@@ -138,7 +138,7 @@ TEST_P(MercuryTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(MercuryFunctionalTest, MercuryTest, 
+INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest, 
     Values(0, MercuryTest::TEST_MTU));
 
 } // namespace

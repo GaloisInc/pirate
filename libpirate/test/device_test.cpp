@@ -113,7 +113,7 @@ public:
         rv = pirate_set_channel_param(DEVICE, Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-        
+
         rv = pirate_set_channel_param(DEVICE, Reader.channel, O_RDONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
@@ -126,7 +126,7 @@ TEST_P(DeviceTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(DeviceFunctionalTest, DeviceTest, 
+INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest, 
     Values(0, ChannelTest::TEST_IOV_LEN));
 
 } // namespace

@@ -112,7 +112,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, unix_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len, 
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len,
             buffer_size);
     channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(UNIX_SOCKET, channel);
@@ -157,8 +157,8 @@ TEST_P(UnixSocketTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(UnixSocketFunctionalTest, UnixSocketTest, 
-    Combine(Values(0, ChannelTest::TEST_IOV_LEN), 
+INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest, 
+    Combine(Values(0, ChannelTest::TEST_IOV_LEN),
             Values(0, UnixSocketTest::TEST_BUF_LEN)));
 
 } // namespace

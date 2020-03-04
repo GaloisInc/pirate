@@ -149,7 +149,7 @@ TEST_P(ShmemTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(ShmemFunctionalTest, ShmemTest, 
+INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, ShmemTest, 
     Values(0, ShmemTest::TEST_BUF_LEN));
 #endif
 

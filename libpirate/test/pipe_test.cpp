@@ -131,7 +131,7 @@ TEST_P(PipeTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(PipeFunctionalTest, PipeTest,
+INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
     Values(0, ChannelTest::TEST_IOV_LEN));
 
 } // namespace

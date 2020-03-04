@@ -123,7 +123,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(mtu, serial_param->mtu);
 
     memset(&param, 0, sizeof(param));
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, 
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path,
                 invalid_baud_str, mtu);
     channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(INVALID, channel);
@@ -160,7 +160,7 @@ public:
                                         &wr_param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-    
+
         pirate_init_channel_param(SERIAL, Reader.channel, O_WRONLY, &rd_param);
         if (baud) {
             rd_param.serial.baud = baud;
@@ -186,15 +186,15 @@ public:
 
 TEST_P(SerialTest, Run)
 {
-    if ((access("/dev/ttyUSB0", W_OK) == 0) && 
+    if ((access("/dev/ttyUSB0", W_OK) == 0) &&
         (access("/dev/ttyUSB1", R_OK) == 0)) {
         Run();
     }
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(SerialFunctionalTest, SerialTest, 
-    Combine(Values(0, SerialTest::TEST_BAUD), 
+INSTANTIATE_TEST_SUITE_P(SerialFunctionalTest, SerialTest, 
+    Combine(Values(0, SerialTest::TEST_BAUD),
             Values(0, SerialTest::TEST_MTU)));
 
 } // namespace

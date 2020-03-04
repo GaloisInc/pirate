@@ -123,7 +123,7 @@ public:
         // Use write delay to reduce the chance of that
         WriteDelayUs = 1000;
 
-        int rv = pirate_init_channel_param(GE_ETH, Writer.channel, O_WRONLY, 
+        int rv = pirate_init_channel_param(GE_ETH, Writer.channel, O_WRONLY,
                                             &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
@@ -152,7 +152,7 @@ TEST_P(GeEthTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(GeEthFunctionalTest, GeEthTest, 
+INSTANTIATE_TEST_SUITE_P(GeEthFunctionalTest, GeEthTest, 
                         Values(0, GeEthTest::TEST_MTU_LEN));
 
 } // namespace

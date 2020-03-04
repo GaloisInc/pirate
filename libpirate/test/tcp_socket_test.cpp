@@ -1,5 +1,4 @@
-/*
- * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+/* * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
  * agreement with Galois, Inc.  This material is based upon work supported by
  * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
  * HR0011-19-C-0103.
@@ -39,7 +38,7 @@ TEST(ChannelTcpSocketTest, Configuration)
     ASSERT_EQ(PIRATE_TCP_PORT_BASE + channel, tcp_param->port);
     ASSERT_EQ(0, tcp_param->iov_len);
     ASSERT_EQ(0, tcp_param->buffer_size);
-    
+
     // Apply configuration
     const char *ip_addr = "1.2.3.4";
     const short ip_port = 4321;
@@ -123,7 +122,7 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, tcp_socket_param->buffer_size);
 
     memset(&param, 0, sizeof(param));
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len, 
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
             buffer_size);
     channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
     ASSERT_EQ(TCP_SOCKET, channel);
@@ -168,8 +167,8 @@ TEST_P(TcpSocketTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_CASE_P(TcpSocketFunctionalTest, TcpSocketTest, 
-    Combine(Values(0, ChannelTest::TEST_IOV_LEN), 
+INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest, 
+    Combine(Values(0, ChannelTest::TEST_IOV_LEN),
             Values(0, TcpSocketTest::TEST_BUF_LEN)));
 
 } // namespace
