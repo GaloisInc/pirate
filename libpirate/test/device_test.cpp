@@ -32,14 +32,16 @@ TEST(ChannelDeviceTest, Configuration) {
     pirate_channel_param_t param;
     pirate_device_param_t *dev_param = &param.device;
     int rv = pirate_init_channel_param(DEVICE, channel, flags, &param);
+    const unsigned default_iov_len = 0;
+    const char *default_path = "";
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ("", dev_param->path);
-    ASSERT_EQ(0, dev_param->iov_len);
+    ASSERT_STREQ(default_path, dev_param->path);
+    ASSERT_EQ(default_iov_len, dev_param->iov_len);
 
     // Apply configuration
     const char *test_path = "/tmp/test_path";
-    const int iov_len = 42;
+    const unsigned iov_len = 42;
     strncpy(dev_param->path, test_path, sizeof(dev_param->path) - 1);
     dev_param->iov_len = iov_len;
 
@@ -126,7 +128,7 @@ TEST_P(DeviceTest, Run)
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest, 
+INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest,
     Values(0, ChannelTest::TEST_IOV_LEN));
 
 } // namespace
