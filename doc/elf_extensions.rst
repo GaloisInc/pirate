@@ -169,7 +169,7 @@ is ignored in the executable ELF. The two different structs represent
 the application's view and the toolchain's view of the data,
 respectively.
 
- .. code-block:: c
+.. code-block:: c
 
                 struct pirate_resource {
                     char *pr_name;
@@ -216,7 +216,7 @@ respectively.
 Encodes information about a parameter for a Pirate-initialized
 resource.
 
- .. code-block:: c
+.. code-block:: c
 
                 struct pirate_resource_param {
                     char *prp_name;
