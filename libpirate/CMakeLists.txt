@@ -68,7 +68,7 @@ if(GAPS_BENCH)
     target_link_libraries(primitives_bench_thr_vector ${PIRATE_LINK_LIBRARIES})
     target_link_libraries(primitives_bench_lat ${PIRATE_LINK_LIBRARIES})
     target_link_libraries(primitives_bench_lat_percentiles ${PIRATE_LINK_LIBRARIES})
-    endif(GAPS_BENCH)
+endif(GAPS_BENCH)
 
 # GAPS channel unit test
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
