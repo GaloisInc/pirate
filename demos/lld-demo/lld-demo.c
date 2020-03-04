@@ -53,17 +53,17 @@ int bar_main(void) {
 }
 
 /*
-#pragma enclave declare(enclave_foo)
-#pragma enclave declare(enclave_bar)
+#pragma pirate enclave declare(enclave_foo)
+#pragma pirate enclave declare(enclave_bar)
 
-#pragma capability declare(common_sensitivity)
-#pragma capability declare(foo_sensitivity, common_sensitivity)
-#pragma capability declare(bar_sensitivity, common_sensitivity)
-#pragma capability declare(foo_capability)
+#pragma pirate capability declare(common_sensitivity)
+#pragma pirate capability declare(foo_sensitivity, common_sensitivity)
+#pragma pirate capability declare(bar_sensitivity, common_sensitivity)
+#pragma pirate capability declare(foo_capability)
 
-#pragma enclave capability(enclave_foo, foo_sensitivity)
-#pragma enclave capability(enclave_bar, bar_sensitivity)
-#pragma enclave capability(enclave_foo, foo_capability)
+#pragma pirate enclave capability(enclave_foo, foo_sensitivity)
+#pragma pirate enclave capability(enclave_bar, bar_sensitivity)
+#pragma pirate enclave capability(enclave_foo, foo_capability)
 */
 
 __asm__(

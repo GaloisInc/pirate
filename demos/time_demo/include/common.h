@@ -24,9 +24,9 @@
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
-#define GAPS_ENCLAVE_MAIN(e)  __attribute__((gaps_enclave_main(e)))
+#define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
 #else
-#define GAPS_ENCLAVE_MAIN(e)
+#define PIRATE_ENCLAVE_MAIN(e)
 #endif
 
 #define MAX_APP_THREADS         3

@@ -32,9 +32,9 @@
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
-#pragma enclave declare(high)
-#pragma enclave declare(low)
-#define GAPS_MAIN(name) __attribute__((gaps_enclave_main(name)))
+#pragma pirate enclave declare(high)
+#pragma pirate enclave declare(low)
+#define GAPS_MAIN(name) __attribute__((pirate_enclave_main(name)))
 #else
 #define GAPS_MAIN(name)
 #endif
