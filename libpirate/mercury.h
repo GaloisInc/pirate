@@ -20,7 +20,9 @@
 
 typedef struct {
     int fd;
+    int flags;
     uint8_t *buf;
+    uint32_t session_id;
 } mercury_ctx;
 
 int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param);

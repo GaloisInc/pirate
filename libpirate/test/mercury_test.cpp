@@ -13,6 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include <cstring>
 #include "libpirate.h"
 #include "channel_test.hpp"
 
@@ -31,32 +32,112 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 
     char opt[128];
     const char *name = "mercury";
+    const uint32_t application_id = 0x42;
     const char *path = "/tmp/test_mercury";
     const uint32_t mtu = 42;
+    const uint32_t timeout_ms = 2000;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(MERCURY, param.channel_type);
+    ASSERT_EQ(0u, mercury_param->application_id);
     ASSERT_STREQ("", mercury_param->path);
-    ASSERT_EQ((unsigned)0, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->timeout_ms);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
+    snprintf(opt, sizeof(opt) - 1, "%s,%d", name, application_id);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(MERCURY, param.channel_type);
+    ASSERT_EQ(application_id, mercury_param->application_id);
+    ASSERT_STREQ("", mercury_param->path);
+    ASSERT_EQ(0u, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->timeout_ms);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%d,%s", name, application_id, path);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(MERCURY, param.channel_type);
+    ASSERT_EQ(application_id, mercury_param->application_id);
     ASSERT_STREQ(path, mercury_param->path);
-    ASSERT_EQ((unsigned)0, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->timeout_ms);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, mtu);
+    snprintf(opt, sizeof(opt) - 1, "%s,%d,%s,%u", name, application_id, path,
+            mtu);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(MERCURY, param.channel_type);
+    ASSERT_EQ(application_id, mercury_param->application_id);
     ASSERT_STREQ(path, mercury_param->path);
     ASSERT_EQ(mtu, mercury_param->mtu);
+    ASSERT_EQ(0u, mercury_param->timeout_ms);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%d,%s,%u,%u", name, application_id, path,
+            mtu, timeout_ms);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(MERCURY, param.channel_type);
+    ASSERT_EQ(application_id, mercury_param->application_id);
+    ASSERT_STREQ(path, mercury_param->path);
+    ASSERT_EQ(mtu, mercury_param->mtu);
+    ASSERT_EQ(timeout_ms, mercury_param->timeout_ms);
+}
+
+TEST(ChannelMercuryTest, BasicFunctionality) {
+    int rv = 0;
+    const int channel = 0;
+
+    const uint8_t wr_data[] = { 0xC0, 0xDE, 0xDA, 0xDA };
+    uint8_t rd_data[sizeof(wr_data)] = { 0 };
+    ssize_t io_size = sizeof(wr_data);
+
+    if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) != 0) {
+        return;
+    }
+
+    pirate_channel_param_t param;
+    pirate_init_channel_param(MERCURY, &param);
+
+    rv =  pirate_set_channel_param(channel, O_WRONLY, &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv =  pirate_set_channel_param(channel, O_RDONLY, &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = pirate_open(channel, O_WRONLY);
+    ASSERT_EQ(channel, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = pirate_open(channel, O_RDONLY);
+    ASSERT_EQ(channel, rv);
+    ASSERT_EQ(0, errno);
+
+    io_size = pirate_write(channel, wr_data, sizeof(wr_data));
+    ASSERT_EQ(io_size, sizeof(wr_data));
+    ASSERT_EQ(0, errno);
+
+    io_size = pirate_read(channel, rd_data, sizeof(rd_data));
+    ASSERT_EQ(io_size, sizeof(rd_data));
+    ASSERT_EQ(0, errno);
+
+    EXPECT_TRUE(0 == std::memcmp(wr_data, rd_data, sizeof(rd_data)));
+
+    rv = pirate_close(channel, O_WRONLY);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = pirate_close(channel, O_RDONLY);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
 }
 
 class MercuryTest : public ChannelTest, public WithParamInterface<uint32_t>
@@ -65,6 +146,9 @@ public:
     void ChannelInit()
     {
         int rv;
+
+        Writer.channel = Reader.channel = 0;
+
         pirate_init_channel_param(MERCURY, &param);
         const uint32_t mtu = GetParam();
         if (mtu) {
@@ -74,6 +158,11 @@ public:
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
+
+        pirate_init_channel_param(MERCURY, &param);
+        if (mtu) {
+            param.mercury.mtu = mtu;
+        }
 
         // write and read parameters are the same
         rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
@@ -86,11 +175,13 @@ public:
 
 TEST_P(MercuryTest, Run)
 {
-    Run();
+    if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) == 0) {
+        Run();
+    }
 }
 
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,
-    Values(0, MercuryTest::TEST_MTU));
+    Values(0));
 
 } // namespace

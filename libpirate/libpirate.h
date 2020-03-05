@@ -109,8 +109,10 @@ typedef enum {
 
     // The gaps channel for Mercury System PCI-E device
     // Configuration parameters - pirate_mercury_param_t
-    //  - path - device path
-    //  - mtu  - maximum frame length, default 256
+    //  - application_id - application id, default gd + 1
+    //  - path           - device path
+    //  - mtu            - maximum frame length, default 256
+    //  - timeout_ms     - read/write timeout in milliseconds, default 1000
     MERCURY,
 
     // The gaps channel for GRC Ethernet devices
@@ -197,11 +199,15 @@ typedef struct {
 } pirate_serial_param_t;
 
 // MERCURY parameters
-#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
-#define PIRATE_MERCURY_DEFAULT_MTU   256
+#define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
+#define PIRATE_MERCURY_NAME_FMT             "/dev/gaps_ilip_%d_%s"
+#define PIRATE_MERCURY_DEFAULT_MTU          256u
+#define PIRATE_MERCURY_DEFAULT_TIMEOUT_MS   1000u
 typedef struct {
+    uint32_t application_id;
     char path[PIRATE_LEN_NAME];
     uint32_t mtu;
+    uint32_t timeout_ms;
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
@@ -265,7 +271,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial[,path,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,path[,mtu]\n"                                     \
+    "  MERCURY       mercury[,application_id,path,mtu,timeout_ms]\n"           \
     "  GE_ETH        ge_eth[,addr,port,mtu]\n"
 
 // Copies channel parameters from param argument into configuration.
