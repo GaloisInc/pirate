@@ -40,7 +40,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(MERCURY, param.channel_type);
     ASSERT_STREQ("", mercury_param->path);
-    ASSERT_EQ(0, mercury_param->mtu);
+    ASSERT_EQ((unsigned)0, mercury_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -48,7 +48,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(MERCURY, param.channel_type);
     ASSERT_STREQ(path, mercury_param->path);
-    ASSERT_EQ(0, mercury_param->mtu);
+    ASSERT_EQ((unsigned)0, mercury_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, mtu);
     rv = pirate_parse_channel_param(opt, &param);

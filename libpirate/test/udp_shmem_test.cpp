@@ -44,7 +44,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ("", udp_shmem_param->path);
-    ASSERT_EQ(0, udp_shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_shmem_param->buffer_size);
     ASSERT_EQ(0, udp_shmem_param->packet_count);
     ASSERT_EQ(0, udp_shmem_param->packet_size);
 
@@ -54,7 +54,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
-    ASSERT_EQ(0, udp_shmem_param->buffer_size);
+    ASSERT_EQ((unsigned)0, udp_shmem_param->buffer_size);
     ASSERT_EQ(0, udp_shmem_param->packet_count);
     ASSERT_EQ(0, udp_shmem_param->packet_size);
 
