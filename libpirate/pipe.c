@@ -24,20 +24,14 @@
 #include "pirate_common.h"
 #include "pipe.h"
 
-int pirate_pipe_init_param(int gd, int flags, pirate_pipe_param_t *param) {
-    (void) flags;
-    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, gd);
-    param->iov_len = 0;
-    return 0;
+void pirate_pipe_init_param(int gd, pirate_pipe_param_t *param) {
+    if (strnlen(param->path, 1) == 0) {
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, gd);
+    }
 }
 
-int pirate_pipe_parse_param(int gd, int flags, char *str,
-                            pirate_pipe_param_t *param) {
+int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     char *ptr = NULL;
-
-    if (pirate_pipe_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "pipe") != 0)) {
@@ -55,25 +49,10 @@ int pirate_pipe_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx,
-                            const pirate_pipe_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, '\0', sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-
-    return 0;
-}
-
-int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx,
-                            pirate_pipe_param_t *param) {
-    *param  = ctx->param;
-    return 0;
-}
-
-int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx) {
-    if (mkfifo(ctx->param.path, 0660) == -1) {
+int pirate_pipe_open(int gd, int flags, pirate_pipe_param_t *param,
+                        pipe_ctx *ctx) {
+    pirate_pipe_init_param(gd, param);
+    if (mkfifo(param->path, 0660) == -1) {
         if (errno == EEXIST) {
             errno = 0;
         } else {
@@ -86,14 +65,14 @@ int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx) {
         return -1;
     }
 
-    if ((ctx->fd = open(ctx->param.path, flags)) < 0) {
+    if ((ctx->fd = open(param->path, flags)) < 0) {
         return -1;
     }
 
     return gd;
 }
 
-int pirate_pipe_close(pirate_pipe_ctx_t *ctx) {
+int pirate_pipe_close(pipe_ctx *ctx) {
     int rv = -1;
 
     if (ctx->fd <= 0) {
@@ -106,11 +85,10 @@ int pirate_pipe_close(pirate_pipe_ctx_t *ctx) {
     return rv;
 }
 
-ssize_t pirate_pipe_read(pirate_pipe_ctx_t *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->fd, buf, count, ctx->param.iov_len);
+ssize_t pirate_pipe_read(pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
+    return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
 }
 
-ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf,
-                            size_t count) {
-    return pirate_fd_write(ctx->fd, buf, count, ctx->param.iov_len);
+ssize_t pirate_pipe_write(pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
+    return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
 }

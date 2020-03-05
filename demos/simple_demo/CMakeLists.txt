@@ -9,9 +9,6 @@ if (GAPS_ENABLE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
 endif(GAPS_ENABLE)
 
-# Dependencies
-SET(LIBS "pirate" "pthread")
-
 # Sensitivity levels and output binary names
 set(HIGH "high")
 set(LOW "low")
@@ -43,7 +40,7 @@ SET(SRCS "${SRC_DIR}/demo.c" "${SRC_DIR}/tiny.c")
 
 function(add_gaps_target TGT OUT_DIR)
     add_executable(${TGT} ${SRCS})
-    target_link_libraries(${TGT} ${LIBS})
+    target_link_libraries(${TGT} ${PIRATE_APP_LIBS})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
     target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld")
     set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
@@ -52,7 +49,7 @@ endfunction()
 function(add_non_gaps_target TGT OUT_DIR)
     string(TOUPPER ${TGT} TGT_FLAG)
     add_executable(${TGT} ${SRCS})
-    target_link_libraries(${TGT} ${LIBS})
+    target_link_libraries(${TGT} ${PIRATE_APP_LIBS})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS} "-D${TGT_FLAG}")
     set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
 endfunction()

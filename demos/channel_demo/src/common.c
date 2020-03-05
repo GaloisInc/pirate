@@ -25,10 +25,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <linux/limits.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "common.h"
 
 #define TIMESTAMP_STR_LEN 64
+#ifndef DEMO_VERSION
+#define DEMO_VERSION ""
+#endif
 const char *argp_program_version = DEMO_VERSION;
 
 static const char *pattern_str(data_pattern_t p) {
@@ -72,14 +75,13 @@ static inline int get_time(char ts[TIMESTAMP_STR_LEN], const char *fmt) {
 static int parse_channel_opt(char *str, int flags) {
     int rv;
     pirate_channel_param_t param;
-    channel_t channel = pirate_parse_channel_param(GAPS_CHANNEL, flags, str,
-                                                    &param);
-    if (channel == INVALID) {
+    rv = pirate_parse_channel_param(str, &param);
+    if (rv < 0) {
         log_msg(ERROR, "failed to parse channel options '%s'", str);
-        return -1;
+        return rv;
     }
 
-    rv = pirate_set_channel_param(channel, GAPS_CHANNEL, flags, &param);
+    rv = pirate_set_channel_param(GAPS_CHANNEL, flags, &param);
     if (rv != 0) {
         log_msg(ERROR, "failed to set channel options '%s'", str);
         return -1;

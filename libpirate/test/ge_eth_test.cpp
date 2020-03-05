@@ -13,7 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 namespace GAPS
@@ -23,53 +23,10 @@ using ::testing::WithParamInterface;
 using ::testing::TestWithParam;
 using ::testing::Values;
 
-TEST(ChannelGeEthTest, Configuration)
-{
-    const int channel = ChannelTest::TEST_CHANNEL + 1;
-    const int flags = O_RDONLY;
-
-    // Default configuration
-    pirate_channel_param_t param;
-    pirate_ge_eth_param_t *ge_eth_param = &param.ge_eth;
-    int rv = pirate_init_channel_param(GE_ETH, channel, flags, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
-    ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + channel, ge_eth_param->port);
-    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
-
-    // Apply configuration
-    const char *ip_addr = "1.2.3.4";
-    const short ip_port = 0x4321;
-    const unsigned mtu = DEFAULT_GE_ETH_MTU / 2;
-
-    strncpy(ge_eth_param->addr, ip_addr, sizeof(ge_eth_param->addr) - 1);
-    ge_eth_param->port = ip_port;
-    ge_eth_param->mtu = mtu;
-
-    rv = pirate_set_channel_param(GE_ETH, channel, flags, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-
-    pirate_channel_param_t param_get;
-    pirate_ge_eth_param_t *ge_eth_param_get = &param_get.ge_eth;
-    memset(ge_eth_param_get, 0, sizeof(*ge_eth_param_get));
-
-    channel_t ch =  pirate_get_channel_param(channel, flags, &param_get);
-    ASSERT_EQ(GE_ETH, ch);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(ip_addr, ge_eth_param_get->addr);
-    ASSERT_EQ(ip_port, ge_eth_param_get->port);
-    ASSERT_EQ(mtu, ge_eth_param_get->mtu);
-}
-
 TEST(ChannelGeEthTest, ConfigurationParser) {
-
-    const int ch_num = ChannelTest::TEST_CHANNEL;
-    const int flags = O_RDONLY;
+    int rv;
     pirate_channel_param_t param;
     const pirate_ge_eth_param_t *ge_eth_param = &param.ge_eth;
-    channel_t channel;
 
     char opt[128];
     const char *name = "ge_eth";
@@ -77,38 +34,38 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     const short port = 0x4242;
     const unsigned mtu = 42;
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(GE_ETH, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ(DEFAULT_GE_ETH_IP_ADDR, ge_eth_param->addr);
-    ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
-    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ(GE_ETH, param.channel_type);
+    ASSERT_STREQ("", ge_eth_param->addr);
+    ASSERT_EQ(0, ge_eth_param->port);
+    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(GE_ETH, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
-    ASSERT_EQ(DEFAULT_GE_ETH_IP_PORT + ch_num, ge_eth_param->port);
-    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ(0, ge_eth_param->port);
+    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(GE_ETH, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
-    ASSERT_EQ((unsigned)DEFAULT_GE_ETH_MTU, ge_eth_param->mtu);
+    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, mtu);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(GE_ETH, channel);
+    rv  = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
     ASSERT_EQ(mtu, ge_eth_param->mtu);
@@ -119,25 +76,24 @@ class GeEthTest : public ChannelTest, public WithParamInterface<unsigned>
 public:
     void ChannelInit()
     {
+        int rv;
+
         // Since UDP is unreliable it's possible to get out of sync.
         // Use write delay to reduce the chance of that
         WriteDelayUs = 1000;
 
-        int rv = pirate_init_channel_param(GE_ETH, Writer.channel, O_WRONLY,
-                                            &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
+        pirate_init_channel_param(GE_ETH, &param);
         const unsigned mtu = GetParam();
         if (mtu) {
             param.ge_eth.mtu = mtu;
         }
 
-        rv = pirate_set_channel_param(GE_ETH, Writer.channel, O_WRONLY, &param);
+        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
         // write and read parameters are the same
-        rv = pirate_set_channel_param(GE_ETH, Reader.channel, O_RDONLY, &param);
+        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
     }

@@ -16,53 +16,11 @@
 #include <cstring>
 #include <errno.h>
 #include <gtest/gtest.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 // Channel-type agnostic tests
 namespace GAPS {
-
-TEST(CommonChannel, NoConfiguration)
-{
-    const int channel_num = ChannelTest::TEST_CHANNEL;
-
-    channel_t channel;
-    pirate_channel_param_t param_empty;
-    pirate_channel_param_t param_rd;
-
-    memset(&param_empty, 0, sizeof(param_empty));
-
-    // Configuration set to default
-    memset(&param_rd, 0xAA, sizeof(param_rd));
-    channel = pirate_get_channel_param(channel_num, O_WRONLY, &param_rd);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_TRUE(0 == std::memcmp(&param_empty, &param_rd, sizeof(param_rd)));
-
-    memset(&param_rd, 0xAA, sizeof(param_rd));
-    channel = pirate_get_channel_param(channel_num, O_RDONLY, &param_rd);
-    ASSERT_EQ(INVALID, channel);
-    ASSERT_TRUE(0 == std::memcmp(&param_empty, &param_rd, sizeof(param_rd)));
-}
-
-TEST(CommonChannel, InvalidParamInit) {
-    int rv;
-
-    rv = pirate_init_channel_param(DEVICE, -1, O_RDONLY, NULL);
-    ASSERT_EQ(-1, rv);
-    ASSERT_EQ(ENODEV, errno);
-    errno = 0;
-
-    rv = pirate_init_channel_param(DEVICE, PIRATE_NUM_CHANNELS, O_RDONLY, NULL);
-    ASSERT_EQ(-1, rv);
-    ASSERT_EQ(ENODEV, errno);
-    errno = 0;
-
-    rv = pirate_init_channel_param(DEVICE, ChannelTest::TEST_CHANNEL, O_RDWR, 
-                                    NULL);
-    ASSERT_EQ(-1, rv);
-    ASSERT_EQ(EINVAL, errno);
-    errno = 0;
-}
 
 TEST(CommonChannel, InvalidOpen)
 {

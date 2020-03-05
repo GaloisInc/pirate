@@ -18,7 +18,7 @@
 
 #include <pthread.h>
 #include <openssl/sha.h>
-#include "primitives.h"
+#include "libpirate.h"
 
 #ifdef GAPS_ENABLE
 #ifndef __GAPS__

@@ -10,7 +10,6 @@ endif(GAPS_ENABLE)
 
 # Dependencies
 include_directories(../../libpirate)
-SET(LIBS "pirate")
 
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
@@ -24,5 +23,5 @@ SET(WRITER_TGT writer_cxx)
 ADD_EXECUTABLE(${READER_TGT} reader.cpp)
 ADD_EXECUTABLE(${WRITER_TGT} writer.cpp)
 
-TARGET_LINK_LIBRARIES(${READER_TGT} LINK_PUBLIC ${LIBS})
-TARGET_LINK_LIBRARIES(${WRITER_TGT} LINK_PUBLIC ${LIBS})
+TARGET_LINK_LIBRARIES(${READER_TGT} LINK_PUBLIC ${PIRATE_APP_LIBS})
+TARGET_LINK_LIBRARIES(${WRITER_TGT} LINK_PUBLIC ${PIRATE_APP_LIBS})

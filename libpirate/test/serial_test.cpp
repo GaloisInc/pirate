@@ -13,7 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "channel_test.hpp"
 
 namespace GAPS
@@ -24,59 +24,10 @@ using ::testing::TestWithParam;
 using ::testing::Values;
 using ::testing::Combine;
 
-TEST(ChannelSerialTest, Configuration)
-{
-    const int channel = ChannelTest::TEST_CHANNEL;
-    const int flags = O_RDONLY;
-
-    char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_SERIAL_NAME_FMT,
-                channel);
-
-    // Default configuration
-    pirate_channel_param_t param;
-    pirate_serial_param_t *serial_param = &param.serial;
-    int rv = pirate_init_channel_param(SERIAL, channel, flags, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(default_path, serial_param->path);
-    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
-
-    // Apply configuration
-    const char *test_dev = "/dev/ttyUSB2";
-    const speed_t baud = B115200;
-    const unsigned mtu = SERIAL_DEFAULT_MTU / 2;
-    strncpy(serial_param->path, test_dev, sizeof(serial_param->path) - 1);
-    serial_param->baud = baud;
-    serial_param->mtu = mtu;
-
-    rv = pirate_set_channel_param(SERIAL, channel, flags, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-
-    pirate_channel_param_t param_get;
-    pirate_serial_param_t *serial_param_get = &param_get.serial;
-    memset(serial_param_get, 0, sizeof(*serial_param_get));
-
-    channel_t ch =  pirate_get_channel_param(channel, flags, &param_get);
-    ASSERT_EQ(SERIAL, ch);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(test_dev, serial_param_get->path);
-    ASSERT_EQ(baud, serial_param_get->baud);
-    ASSERT_EQ(mtu, serial_param_get->mtu);
-}
-
 TEST(ChannelSerialTest, ConfigurationParser) {
-    const int ch_num = ChannelTest::TEST_CHANNEL;
-    const int flags = O_RDONLY;
+    int rv;
     pirate_channel_param_t param;
     const pirate_serial_param_t *serial_param = &param.serial;
-    channel_t channel;
-
-    char default_path[128];
-    snprintf(default_path, sizeof(default_path), PIRATE_SERIAL_NAME_FMT,
-                ch_num);
 
     char opt[128];
     const char *name = "serial";
@@ -86,47 +37,46 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     const char *invalid_baud_str = "115201";
     const uint32_t mtu = 42;
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s", name);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(SERIAL, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
-    ASSERT_STREQ(default_path, serial_param->path);
-    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ(SERIAL, param.channel_type);
+    ASSERT_STREQ("", serial_param->path);
+    ASSERT_EQ((speed_t)0, serial_param->baud);
+    ASSERT_EQ((unsigned)0, serial_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(SERIAL, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
-    ASSERT_EQ((speed_t)SERIAL_DEFAULT_BAUD, serial_param->baud);
-    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((speed_t)0, serial_param->baud);
+    ASSERT_EQ((unsigned)0, serial_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(SERIAL, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
-    ASSERT_EQ((unsigned)SERIAL_DEFAULT_MTU, serial_param->mtu);
+    ASSERT_EQ((unsigned)0, serial_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(SERIAL, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
     ASSERT_EQ(mtu, serial_param->mtu);
 
-    memset(&param, 0, sizeof(param));
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path,
                 invalid_baud_str, mtu);
-    channel = pirate_parse_channel_param(ch_num, flags, opt, &param);
-    ASSERT_EQ(INVALID, channel);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
     errno = 0;
 }
@@ -143,11 +93,9 @@ public:
         auto test_param = GetParam();
         const speed_t baud = std::get<0>(test_param);
         const unsigned mtu = std::get<0>(test_param);
+        int rv;
 
-        int rv = pirate_init_channel_param(SERIAL, Writer.channel, O_WRONLY,
-                                            &wr_param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
+        pirate_init_channel_param(SERIAL, &wr_param);
         if (baud) {
             wr_param.serial.baud = baud;
         }
@@ -156,12 +104,11 @@ public:
             wr_param.serial.mtu = mtu;
         }
 
-        rv = pirate_set_channel_param(SERIAL, Writer.channel, O_WRONLY,
-                                        &wr_param);
+        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &wr_param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        pirate_init_channel_param(SERIAL, Reader.channel, O_WRONLY, &rd_param);
+        pirate_init_channel_param(SERIAL, &rd_param);
         if (baud) {
             rd_param.serial.baud = baud;
         }
@@ -170,8 +117,7 @@ public:
             rd_param.serial.mtu = mtu;
         }
 
-        rv = pirate_set_channel_param(SERIAL, Reader.channel, O_RDONLY,
-                                        &rd_param);
+        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &rd_param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
     }

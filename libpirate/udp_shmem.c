@@ -99,24 +99,23 @@ static inline int is_empty(uint64_t value) {
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
 
-int udp_shmem_buffer_init_param(int gd, int flags,
-                                pirate_udp_shmem_param_t *param) {
-    (void) flags;
-    snprintf(param->path, PIRATE_SHMEM_LEN_NAME - 1,  
-              PIRATE_SHMEM_NAME, gd);
-    param->buffer_size = DEFAULT_SMEM_BUF_LEN;
-    param->packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
-    param->packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
-    return 0;
+void udp_shmem_buffer_init_param(int gd, pirate_udp_shmem_param_t *param) {
+    if (strnlen(param->path, 1) == 0) {
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
+    }
+    if (param->buffer_size == 0) {
+        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+    }
+    if (param->packet_size == 0) {
+        param->packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
+    }
+    if (param->packet_count == 0) {
+        param->packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
+    }
 }
 
-int udp_shmem_buffer_parse_param(int gd, int flags, char *str,
-                                    pirate_udp_shmem_param_t *param) {
+int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
     char *ptr = NULL;
-
-    if (udp_shmem_buffer_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "udp_shmem") != 0)) {
@@ -142,40 +141,42 @@ int udp_shmem_buffer_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-static int udp_shmem_buffer_init(int fd, pirate_udp_shmem_ctx_t *ctx) {
+static shmem_buffer_t *udp_shmem_buffer_init(int fd, pirate_udp_shmem_param_t *param) {
     int rv;
     int err;
     int success = 0;
-    const int buffer_size = ctx->param.packet_size * ctx->param.packet_count;
+    const int buffer_size = param->packet_size * param->packet_count;
     const size_t alloc_size = sizeof(shmem_buffer_t) + buffer_size;
     pthread_mutexattr_t mutex_attr;
     pthread_condattr_t cond_attr;
+    shmem_buffer_t* shmem_buffer = NULL;
 
     if ((rv = ftruncate(fd, alloc_size)) != 0) {
         err = errno;
         close(fd);
         errno = err;
-        return -1;
+        return NULL;
     }
 
-    ctx->buf = (shmem_buffer_t *)mmap(NULL, alloc_size,
+    shmem_buffer = (shmem_buffer_t *)mmap(NULL, alloc_size,
         PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (ctx->buf == MAP_FAILED) {
+
+    if (shmem_buffer == MAP_FAILED) {
         err = errno;
         close(fd);
         errno = err;
-        return -1;
+        return NULL;
     }
 
     close(fd);
     fd = -1;
 
     while (!success) {
-        uint64_t init = atomic_load(&ctx->buf->init);
+        uint64_t init = atomic_load(&shmem_buffer->init);
         switch (init) {
             
         case 0:
-            if (atomic_compare_exchange_weak(&ctx->buf->init, &init, 1)) {
+            if (atomic_compare_exchange_weak(&shmem_buffer->init, &init, 1)) {
                 success = 1;
             }
             break;
@@ -185,24 +186,24 @@ static int udp_shmem_buffer_init(int fd, pirate_udp_shmem_ctx_t *ctx) {
             break;
         
         case 2:
-            return 0;
+            return shmem_buffer;
 
         default:
-            munmap(ctx->buf, alloc_size);
-            return -1;
+            munmap(shmem_buffer, alloc_size);
+            return NULL;
         }
     }
 
-    ctx->buf->size = buffer_size;
-    ctx->buf->buffer = (unsigned char *)ctx->buf + sizeof(shmem_buffer_t);
-    ctx->buf->packet_size = ctx->param.packet_size;
-    ctx->buf->packet_count = ctx->param.packet_count;
+    shmem_buffer->size = buffer_size;
+    shmem_buffer->buffer = (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
+    shmem_buffer->packet_size = param->packet_size;
+    shmem_buffer->packet_count = param->packet_count;
 
-    if ((rv = sem_init(&ctx->buf->reader_open_wait, 1, 0)) != 0) {
+    if ((rv = sem_init(&shmem_buffer->reader_open_wait, 1, 0)) != 0) {
         goto error;
     }
 
-    if ((rv = sem_init(&ctx->buf->writer_open_wait, 1, 0)) != 0) {
+    if ((rv = sem_init(&shmem_buffer->writer_open_wait, 1, 0)) != 0) {
         goto error;
     }
 
@@ -217,7 +218,7 @@ static int udp_shmem_buffer_init(int fd, pirate_udp_shmem_ctx_t *ctx) {
         goto error;
     }
 
-    if ((rv = pthread_mutex_init(&ctx->buf->mutex, &mutex_attr)) != 0) {
+    if ((rv = pthread_mutex_init(&shmem_buffer->mutex, &mutex_attr)) != 0) {
         errno = rv;
         goto error;
     }
@@ -227,83 +228,86 @@ static int udp_shmem_buffer_init(int fd, pirate_udp_shmem_ctx_t *ctx) {
         goto error;
     }
 
-    if ((rv = pthread_condattr_setpshared(&cond_attr, 
+    if ((rv = pthread_condattr_setpshared(&cond_attr,
                                         PTHREAD_PROCESS_SHARED)) != 0) {
         errno = rv;
         goto error;
     }
 
-    if ((rv = pthread_cond_init(&ctx->buf->is_not_empty, &cond_attr)) != 0) {
+    if ((rv = pthread_cond_init(&shmem_buffer->is_not_empty, &cond_attr)) != 0) {
         errno = rv;
         goto error;
     }
 
-    if ((rv = pthread_cond_init(&ctx->buf->is_not_full, &cond_attr)) != 0) {
+    if ((rv = pthread_cond_init(&shmem_buffer->is_not_full, &cond_attr)) != 0) {
         errno = rv;
         goto error;
     }
 
-    atomic_store(&ctx->buf->init, 2);
-    return 0;
+    atomic_store(&shmem_buffer->init, 2);
+    return shmem_buffer;
 error:
     err = errno;
-    atomic_store(&ctx->buf->init, 0);
-    munmap(ctx->buf, alloc_size);
-    ctx->buf = NULL;
+    atomic_store(&shmem_buffer->init, 0);
+    munmap(shmem_buffer, alloc_size);
     errno = err;
-    return -1;
+    return NULL;
 }
 
-int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_ctx_t *ctx) {
+int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
+    shmem_buffer_t* buf;
 
+    udp_shmem_buffer_init_param(gd, param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
     // this function
-    int fd = shm_open(ctx->param.path, O_RDWR | O_CREAT, 0660);
+    int fd = shm_open(param->path, O_RDWR | O_CREAT, 0660);
     if (fd < 0) {
         ctx->buf = NULL;
         return -1;
     }
 
-    if (udp_shmem_buffer_init(fd, ctx)) {
+    buf = udp_shmem_buffer_init(fd, param);
+    ctx->buf = buf;
+    if (ctx->buf == NULL) {
         goto error;
     }
 
     if (flags == O_RDONLY) {
-        if (!atomic_compare_exchange_strong(&ctx->buf->reader_pid, &init_pid,
+        if (!atomic_compare_exchange_strong(&buf->reader_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
             goto error;
         }
 
-        if (sem_post(&ctx->buf->writer_open_wait) < 0) {
-            atomic_store(&ctx->buf->reader_pid, 0);
+        if (sem_post(&buf->writer_open_wait) < 0) {
+            atomic_store(&buf->reader_pid, 0);
             goto error;
         }
 
-        if (sem_wait(&ctx->buf->reader_open_wait) < 0) {
-            atomic_store(&ctx->buf->reader_pid, 0);
+        if (sem_wait(&buf->reader_open_wait) < 0) {
+            atomic_store(&buf->reader_pid, 0);
             goto error;
         }
     } else {
-        if (!atomic_compare_exchange_strong(&ctx->buf->writer_pid, &init_pid,
+        if (!atomic_compare_exchange_strong(&buf->writer_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
         goto error;
         }
 
-        if (sem_post(&ctx->buf->reader_open_wait) < 0) {
-            atomic_store(&ctx->buf->writer_pid, 0);
+        if (sem_post(&buf->reader_open_wait) < 0) {
+            atomic_store(&buf->writer_pid, 0);
             goto error;
         }
 
-        if (sem_wait(&ctx->buf->writer_open_wait) < 0) {
-            atomic_store(&ctx->buf->writer_pid, 0);
+        if (sem_wait(&buf->writer_open_wait) < 0) {
+            atomic_store(&buf->writer_pid, 0);
             goto error;
         }
   }
-    if (shm_unlink(ctx->param.path) == -1) {
+    if (shm_unlink(param->path) == -1) {
         if (errno == ENOENT) {
             errno = 0;
         } else {
@@ -316,31 +320,33 @@ int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_ctx_t *ctx) {
 error:
     err = errno;
     ctx->buf = NULL;
-    shm_unlink(ctx->param.path);
+    shm_unlink(param->path);
     errno = err;
     return -1;
 }
 
-int udp_shmem_buffer_close(pirate_udp_shmem_ctx_t *ctx) {
-  const size_t alloc_size = sizeof(shmem_buffer_t) + ctx->buf->size;
+int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
+  shmem_buffer_t* buf = ctx->buf;
+  const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
 
     if (ctx->flags == O_RDONLY) {
-        atomic_store(&ctx->buf->reader_pid, 0);
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_full);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        atomic_store(&buf->reader_pid, 0);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_full);
+        pthread_mutex_unlock(&buf->mutex);
     } else {
-        atomic_store(&ctx->buf->writer_pid, 0);
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_empty);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        atomic_store(&buf->writer_pid, 0);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_empty);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
-    return munmap(ctx->buf, alloc_size);
+    return munmap(buf, alloc_size);
 }
 
-ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf, 
+ssize_t udp_shmem_buffer_read(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buffer,
                                 size_t count) {
+    (void) param;
     uint64_t position;
     int was_full;
     uint32_t reader, writer;
@@ -349,56 +355,57 @@ ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
     uint16_t exp_csum, obs_csum;
     struct pseudo_ip_hdr pseudo_header;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    const size_t packet_size = ctx->buf->packet_size;
-    const size_t packet_count = ctx->buf->packet_count;
+    const size_t packet_size = buf->packet_size;
+    const size_t packet_count = buf->packet_count;
 
     if (count > (packet_size - UDP_HEADER_SIZE)) {
         count = packet_size - UDP_HEADER_SIZE;
     }
 
-    position = atomic_load(&ctx->buf->position);
+    position = atomic_load(&buf->position);
     for (int spin = 0; (spin < SPIN_ITERATIONS) && is_empty(position); spin++) {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     }
 
     if (is_empty(position)) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        position = atomic_load(&ctx->buf->position);
+        pthread_mutex_lock(&buf->mutex);
+        position = atomic_load(&buf->position);
         while (is_empty(position)) {
             // The reader returns 0 when the writer has closed
             // the channel and the channel is empty. If the writer
             // has closed the channel and the buffer has content
             // then return the contents of the buffer.
-            if (atomic_load(&ctx->buf->writer_pid) == 0) {
-                pthread_mutex_unlock(&ctx->buf->mutex);
+            if (atomic_load(&buf->writer_pid) == 0) {
+                pthread_mutex_unlock(&buf->mutex);
                 return 0;
             }
-            pthread_cond_wait(&ctx->buf->is_not_empty, &ctx->buf->mutex);
-            position = atomic_load(&ctx->buf->position);
+            pthread_cond_wait(&buf->is_not_empty, &buf->mutex);
+            position = atomic_load(&buf->position);
         }
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     reader = get_read(position);
     writer = get_write(position);
 
     atomic_thread_fence(memory_order_acquire);
-    memcpy(&ip_header, ctx->buf->buffer + (reader * packet_size),
+    memcpy(&ip_header, buf->buffer + (reader * packet_size),
             sizeof(struct ip_hdr));
-    memcpy(&udp_header, ctx->buf->buffer + (reader * packet_size) + 
+    memcpy(&udp_header, buf->buffer + (reader * packet_size) + 
             sizeof(struct ip_hdr), sizeof(struct udp_hdr));
-    memcpy(buf, ctx->buf->buffer + (reader * packet_size) + 
+    memcpy(buffer, buf->buffer + (reader * packet_size) + 
             UDP_HEADER_SIZE, count);
 
     for (;;) {
         uint64_t update = create_position(writer, (reader + 1) % 
                             packet_count, 0);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                                      update)) {
             was_full = is_full(position);
             break;
@@ -407,9 +414,9 @@ ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
     }
 
     if (was_full) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_full);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_full);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     exp_csum = ip_header.csum;
@@ -431,9 +438,9 @@ ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
     pseudo_header.csum = 0;
 
     exp_csum = udp_header.csum;
-    obs_csum = cksum_avx2((void*) &pseudo_header, 
+    obs_csum = cksum_avx2((void*) &pseudo_header,
                             sizeof(struct pseudo_ip_hdr), 0);
-    obs_csum = cksum_avx2((void*) buf, count, ~obs_csum);
+    obs_csum = cksum_avx2((void*) buffer, count, ~obs_csum);
     if (exp_csum != obs_csum) {
         errno = EL3HLT;
         return -1;
@@ -442,8 +449,9 @@ ssize_t udp_shmem_buffer_read(pirate_udp_shmem_ctx_t *ctx, void *buf,
   return count;
 }
 
-ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf,
+ssize_t udp_shmem_buffer_write(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
                             size_t count) {
+    (void) param;
     int was_empty;
     uint32_t reader, writer;
     uint64_t position;
@@ -452,13 +460,14 @@ ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf,
     struct udp_hdr udp_header;
     struct pseudo_ip_hdr pseudo_header;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    const size_t packet_size = ctx->buf->packet_size;
-    const size_t packet_count = ctx->buf->packet_count;
+    const size_t packet_size = buf->packet_size;
+    const size_t packet_count = buf->packet_count;
 
     if (count > (packet_size - UDP_HEADER_SIZE)) {
         count = packet_size - UDP_HEADER_SIZE;
@@ -491,34 +500,34 @@ ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf,
     pseudo_header.csum = 0;
 
     csum = cksum_avx2((void*) &pseudo_header, sizeof(struct pseudo_ip_hdr), 0);
-    csum = cksum_avx2((void*) buf, count, ~csum);
+    csum = cksum_avx2((void*) buffer, count, ~csum);
     udp_header.csum = csum;
 
-    position = atomic_load(&ctx->buf->position);
+    position = atomic_load(&buf->position);
     for (int spin = 0; (spin < SPIN_ITERATIONS) && is_full(position); spin++) {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     }
 
     if (is_full(position)) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        position = atomic_load(&ctx->buf->position);
+        pthread_mutex_lock(&buf->mutex);
+        position = atomic_load(&buf->position);
         while (is_full(position)) {
-            if (atomic_load(&ctx->buf->reader_pid) == 0) {
-                pthread_mutex_unlock(&ctx->buf->mutex);
+            if (atomic_load(&buf->reader_pid) == 0) {
+                pthread_mutex_unlock(&buf->mutex);
                 kill(getpid(), SIGPIPE);
                 errno = EPIPE;
                 return -1;
             }
-            pthread_cond_wait(&ctx->buf->is_not_full, &ctx->buf->mutex);
-            position = atomic_load(&ctx->buf->position);
+            pthread_cond_wait(&buf->is_not_full, &buf->mutex);
+            position = atomic_load(&buf->position);
         }
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     // The writer returns -1 when the reader has closed the channel.
     // The reader returns 0 when the writer has closed the channel AND
     // the channel is empty.
-    if (atomic_load(&ctx->buf->reader_pid) == 0) {
+    if (atomic_load(&buf->reader_pid) == 0) {
         kill(getpid(), SIGPIPE);
         errno = EPIPE;
         return -1;
@@ -526,18 +535,18 @@ ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf,
     reader = get_read(position);
     writer = get_write(position);
 
-    memcpy(ctx->buf->buffer + (writer * packet_size), &ip_header,
+    memcpy(buf->buffer + (writer * packet_size), &ip_header,
             sizeof(struct ip_hdr));
-    memcpy(ctx->buf->buffer + (writer * packet_size) + sizeof(struct ip_hdr),
+    memcpy(buf->buffer + (writer * packet_size) + sizeof(struct ip_hdr),
             &udp_header, sizeof(struct udp_hdr));
-    memcpy(ctx->buf->buffer + (writer * packet_size) + UDP_HEADER_SIZE, buf,
+    memcpy(buf->buffer + (writer * packet_size) + UDP_HEADER_SIZE, buffer,
             count);
     atomic_thread_fence(memory_order_release);
 
     for (;;) {
-        uint64_t update = create_position((writer + 1) % packet_count, 
+        uint64_t update = create_position((writer + 1) % packet_count,
                                             reader, 1);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             was_empty = is_empty(position);
             break;
@@ -546,9 +555,9 @@ ssize_t udp_shmem_buffer_write(pirate_udp_shmem_ctx_t *ctx, const void *buf,
     }
 
     if (was_empty) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_empty);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_empty);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     return count;

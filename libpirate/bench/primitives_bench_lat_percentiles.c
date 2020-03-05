@@ -25,7 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 
 #define ITERATIONS 1000
 

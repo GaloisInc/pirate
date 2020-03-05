@@ -26,21 +26,17 @@
 #include "pirate_common.h"
 #include "tcp_socket.h"
 
-int pirate_tcp_socket_init_param(int gd, int flags,
-                                    pirate_tcp_socket_param_t *param) {
-    (void) flags;
-    snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
-    param->port = PIRATE_TCP_PORT_BASE + gd;
-    param->iov_len = 0;
-    param->buffer_size = 0;
-    return 0;
+void pirate_tcp_socket_init_param(int gd, pirate_tcp_socket_param_t *param) {
+    if (strnlen(param->addr, 1) == 0) {
+        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
+    }
+    if (param->port == 0) {
+        param->port = PIRATE_TCP_PORT_BASE + gd;
+    }
 }
 
-int pirate_tcp_socket_parse_param(int gd, int flags, char *str,
-                                    pirate_tcp_socket_param_t *param) {
+int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
     char *ptr = NULL;
-
-    pirate_tcp_socket_init_param(gd, flags, param);
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "tcp_socket") != 0)) {
@@ -66,28 +62,10 @@ int pirate_tcp_socket_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_tcp_socket_set_param(pirate_tcp_socket_ctx_t *ctx,
-                                    const pirate_tcp_socket_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, 0, sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-    
-    return 0;
-}
-
-int pirate_tcp_socket_get_param(const pirate_tcp_socket_ctx_t *ctx,
-                                    pirate_tcp_socket_param_t *param) {
-    *param  = ctx->param;
-    return 0;
-}
-
-static int tcp_socket_reader_open(pirate_tcp_socket_ctx_t *ctx) {
+static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv;
     int server_fd;
     struct sockaddr_in addr;
-    const pirate_tcp_socket_param_t *param = &ctx->param;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
@@ -148,10 +126,9 @@ static int tcp_socket_reader_open(pirate_tcp_socket_ctx_t *ctx) {
     return 0;
 }
 
-static int tcp_socket_writer_open(pirate_tcp_socket_ctx_t *ctx) {
+static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv;
     struct sockaddr_in addr;
-    const pirate_tcp_socket_param_t *param = &ctx->param;
 
     ctx->sock = socket(AF_INET, SOCK_STREAM, 0);
     if (ctx->sock < 0) {
@@ -200,18 +177,20 @@ static int tcp_socket_writer_open(pirate_tcp_socket_ctx_t *ctx) {
     return -1;
 }
 
-int pirate_tcp_socket_open(int gd, int flags, pirate_tcp_socket_ctx_t *ctx) {
+int pirate_tcp_socket_open(int gd, int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv = -1;
+
+    pirate_tcp_socket_init_param(gd, param);
     if (flags == O_RDONLY) {
-        rv = tcp_socket_reader_open(ctx);
+        rv = tcp_socket_reader_open(param, ctx);
     } else if (flags == O_WRONLY) {
-        rv = tcp_socket_writer_open(ctx);
+        rv = tcp_socket_writer_open(param, ctx);
     }
 
     return rv == 0 ? gd : rv;
 }
 
-int pirate_tcp_socket_close(pirate_tcp_socket_ctx_t *ctx) {
+int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
     int rv = -1;
 
     if (ctx->sock <= 0) {
@@ -224,12 +203,10 @@ int pirate_tcp_socket_close(pirate_tcp_socket_ctx_t *ctx) {
     return rv;
 }
 
-ssize_t pirate_tcp_socket_read(pirate_tcp_socket_ctx_t *ctx, void *buf,
-                                size_t count) {
-    return pirate_fd_read(ctx->sock, buf, count, ctx->param.iov_len);
+ssize_t pirate_tcp_socket_read(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
+    return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
 }
 
-ssize_t pirate_tcp_socket_write(pirate_tcp_socket_ctx_t *ctx, const void *buf,
-                                    size_t count) {
-    return pirate_fd_write(ctx->sock, buf, count, ctx->param.iov_len);
+ssize_t pirate_tcp_socket_write(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
+    return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
 }

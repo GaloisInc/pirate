@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/uio.h>
-#include "primitives.h"
+#include "libpirate.h"
 #include "pirate_common.h"
 
 static int create_iov(void *buf, size_t count, size_t iov_len,

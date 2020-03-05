@@ -26,6 +26,9 @@
 #include "common.h"
 #include "ts_crypto.h"
 
+#ifndef DEMO_VERSION
+#define DEMO_VERSION ""
+#endif
 const char *argp_program_version = DEMO_VERSION;
 
 volatile sig_atomic_t terminated = 0;
@@ -76,19 +79,18 @@ int gaps_app_run(gaps_app_t *ctx) {
     for (int i = 0; i < MAX_APP_GAPS_CHANNELS; i++) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
         pirate_channel_param_t param;
-        channel_t channel = INVALID;
         int rv = -1;
         if (c->num == -1) {
             break;
         }
 
-        channel = pirate_parse_channel_param(c->num, c->flags, c->conf, &param);
-        if (channel == INVALID) {
+        rv = pirate_parse_channel_param(c->conf, &param);
+        if (rv < 0) {
             ts_log(ERROR, "Failed to parse channel configuration %s", c->conf);
-            return -1;
+            return rv;
         }
 
-        rv = pirate_set_channel_param(channel, c->num, c->flags, &param);
+        rv = pirate_set_channel_param(c->num, c->flags, &param);
         if (rv != 0) {
             ts_log(ERROR, "Failed to set channel parameters for %s", c->desc);
             return -1;

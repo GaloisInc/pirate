@@ -25,7 +25,7 @@
 #include <sys/signalfd.h>
 #include <unistd.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "tiny.h"
 
 #ifdef GAPS_ENABLE
@@ -404,22 +404,14 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
     webargs.level = LEVEL_HIGH;
     printf("\n%s web server on port %d\n\n", NAME, webargs.port);
 
-    if (pirate_init_channel_param(PIPE, HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
-        perror("channel parameter initialize: high->low");
-        return -1;
-    }
+    pirate_init_channel_param(PIPE, &param);
 
-    if (pirate_set_channel_param(PIPE, HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
+    if (pirate_set_channel_param(HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
         perror("channel parameter set: high->low");
         return -1;
     }
 
-    if (pirate_init_channel_param(PIPE, LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
-        perror("channel parameter initialize: high<-low");
-        return -1;
-    }
-
-    if (pirate_set_channel_param(PIPE, LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
+    if (pirate_set_channel_param(LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
         perror("channel parameter set: high<-low");
         return -1;
     }
@@ -526,22 +518,14 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
     printf("\n%s web server on port %d\n\n", NAME, webargs.port);
 
 
-    if (pirate_init_channel_param(PIPE, HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
-        perror("channel parameter initialize: high->low");
-        return -1;
-    }
+    pirate_init_channel_param(PIPE, &param);
 
-    if (pirate_set_channel_param(PIPE, HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
+    if (pirate_set_channel_param(HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
         perror("channel parameter set: high->low");
         return -1;
     }
 
-    if (pirate_init_channel_param(PIPE, LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
-        perror("channel parameter initialize: high<-low");
-        return -1;
-    }
-
-    if (pirate_set_channel_param(PIPE, LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
+    if (pirate_set_channel_param(LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
         perror("channel parameter set: high<-low");
         return -1;
     }

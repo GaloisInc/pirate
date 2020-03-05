@@ -117,21 +117,20 @@ static int ge_message_unpack(const void *buf, void *data, uint32_t mtu,
     return 0;
 }
 
-int pirate_ge_eth_init_param(int gd, int flags, pirate_ge_eth_param_t *param) {
-    (void) flags;
-    snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_GE_ETH_IP_ADDR);
-    param->port = DEFAULT_GE_ETH_IP_PORT + gd;
-    param->mtu = DEFAULT_GE_ETH_MTU;
-    return 0;
+void pirate_ge_eth_init_param(int gd, pirate_ge_eth_param_t *param) {
+    if (strnlen(param->addr, 1) == 0) {
+        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_GE_ETH_IP_ADDR);
+    }
+    if (param->port == 0) {
+        param->port = DEFAULT_GE_ETH_IP_PORT + gd;
+    }
+    if (param->mtu == 0) {
+        param->mtu = DEFAULT_GE_ETH_MTU;
+    }
 }
 
-int pirate_ge_eth_parse_param(int gd, int flags, char *str,
-                                pirate_ge_eth_param_t *param) {
+int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
     char *ptr = NULL;
-
-    if (pirate_ge_eth_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "ge_eth") != 0)) {
@@ -153,24 +152,7 @@ int pirate_ge_eth_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_ge_eth_set_param(pirate_ge_eth_ctx_t *ctx,
-                                    const pirate_ge_eth_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, '\0', sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-    
-    return 0;
-}
-
-int pirate_ge_eth_get_param(const pirate_ge_eth_ctx_t *ctx,
-                                    pirate_ge_eth_param_t *param) {
-    *param  = ctx->param;
-    return 0;
-}
-
-static int ge_eth_reader_open(pirate_ge_eth_ctx_t *ctx) {
+static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int rv;
     struct sockaddr_in addr;
 
@@ -182,7 +164,7 @@ static int ge_eth_reader_open(pirate_ge_eth_ctx_t *ctx) {
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons(ctx->param.port);
+    addr.sin_port = htons(param->port);
 
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -206,7 +188,7 @@ static int ge_eth_reader_open(pirate_ge_eth_ctx_t *ctx) {
     return 0;
 }
 
-static int ge_eth_writer_open(pirate_ge_eth_ctx_t *ctx) {
+static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int rv;
     struct sockaddr_in addr;
 
@@ -217,8 +199,8 @@ static int ge_eth_writer_open(pirate_ge_eth_ctx_t *ctx) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(ctx->param.addr);
-    addr.sin_port = htons(ctx->param.port);
+    addr.sin_addr.s_addr = inet_addr(param->addr);
+    addr.sin_port = htons(param->port);
     rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
     if (rv < 0) {
         int err = errno;
@@ -231,24 +213,25 @@ static int ge_eth_writer_open(pirate_ge_eth_ctx_t *ctx) {
     return 0;
 }
 
-int pirate_ge_eth_open(int gd, int flags, pirate_ge_eth_ctx_t *ctx) {
+int pirate_ge_eth_open(int gd, int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int rv = -1;
 
-    ctx->buf = (uint8_t *) malloc(ctx->param.mtu);
+    pirate_ge_eth_init_param(gd, param);
+    ctx->buf = (uint8_t *) malloc(param->mtu);
     if (ctx->buf == NULL) {
         return -1;
     }
 
     if (flags == O_RDONLY) {
-        rv = ge_eth_reader_open(ctx);
+        rv = ge_eth_reader_open(param, ctx);
     } else if (flags == O_WRONLY) {
-        rv = ge_eth_writer_open(ctx);
+        rv = ge_eth_writer_open(param, ctx);
     }
 
     return rv == 0 ? gd : rv;
 }
 
-int pirate_ge_eth_close(pirate_ge_eth_ctx_t *ctx) {
+int pirate_ge_eth_close(ge_eth_ctx *ctx) {
     int rv = -1;
 
     if (ctx->buf != NULL) {
@@ -267,7 +250,7 @@ int pirate_ge_eth_close(pirate_ge_eth_ctx_t *ctx) {
     return rv;
 }
 
-ssize_t pirate_ge_eth_read(pirate_ge_eth_ctx_t *ctx, void *buf, size_t count) {
+ssize_t pirate_ge_eth_read(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, void *buf, size_t count) {
     ssize_t rd_size;
     ge_header_t hdr = { 0 };
     
@@ -276,20 +259,19 @@ ssize_t pirate_ge_eth_read(pirate_ge_eth_ctx_t *ctx, void *buf, size_t count) {
         return -1;
     }
 
-    rd_size = recv(ctx->sock, ctx->buf, ctx->param.mtu, 0);
+    rd_size = recv(ctx->sock, ctx->buf, param->mtu, 0);
     if (rd_size < 0) {
         return 0;
     }
 
-    if (ge_message_unpack(ctx->buf, buf, ctx->param.mtu, count, &hdr) != 0) {
+    if (ge_message_unpack(ctx->buf, buf, param->mtu, count, &hdr) != 0) {
         return -1;
     }
 
     return hdr.data_len;
 }
 
-ssize_t pirate_ge_eth_write(pirate_ge_eth_ctx_t *ctx, const void *buf,
-                                    size_t count) {
+ssize_t pirate_ge_eth_write(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, const void *buf, size_t count) {
     ge_header_t hdr = {
         .message_id = 1,
         .data_len = count,
@@ -297,7 +279,7 @@ ssize_t pirate_ge_eth_write(pirate_ge_eth_ctx_t *ctx, const void *buf,
     };
     ssize_t wr_len = -1;
 
-    if ((wr_len = ge_message_pack(ctx->buf, buf, ctx->param.mtu, &hdr)) < 0) {
+    if ((wr_len = ge_message_pack(ctx->buf, buf, param->mtu, &hdr)) < 0) {
         errno = ENOMSG;
         return -1;
     }
