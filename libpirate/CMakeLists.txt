@@ -28,9 +28,6 @@ endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(.)
 
-set(PIRATE_STATIC_LIB libpirate_static)
-set(PIRATE_SHARED_LIB libpirate_shared)
-
 add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
@@ -71,13 +68,12 @@ if(GAPS_BENCH)
 endif(GAPS_BENCH)
 
 # GAPS channel unit test
-option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
 if(PIRATE_UNIT_TEST)
     find_package(GTest REQUIRED)
     include_directories(${GTEST_INCLUDE_DIR})
 
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
-    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_STATIC_LIB} pthread)
+    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS})
     set(GAPS_CHANNELS_TEST gaps_channels_test)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
     add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})

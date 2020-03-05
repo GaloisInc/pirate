@@ -64,19 +64,14 @@ static inline int is_full(uint64_t value) {
     return get_status(value) == 2;
 }
 
-int pirate_uio_init_param(int gd, int flags, pirate_uio_param_t *param) {
-    (void) gd, (void) flags;
-    snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
-    return 0;
+void pirate_uio_init_param(pirate_uio_param_t *param) {
+    if (strnlen(param->path, 1) == 0) {
+        snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
+    }
 }
 
-int pirate_uio_parse_param(int gd, int flags, char *str,
-                            pirate_uio_param_t *param) {
+int pirate_uio_parse_param(char *str, pirate_uio_param_t *param) {
     char *ptr = NULL;
-
-    if (pirate_uio_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "uio") != 0)) {
@@ -87,22 +82,6 @@ int pirate_uio_parse_param(int gd, int flags, char *str,
         strncpy(param->path, ptr, sizeof(param->path));
     }
 
-    return 0;
-}
-
-int pirate_uio_set_param(pirate_uio_ctx_t *ctx,
-                            const pirate_uio_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, 0, sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-
-    return 0;
-}
-int pirate_uio_get_param(const pirate_uio_ctx_t *ctx,
-                            pirate_uio_param_t *param) {
-    *param  = ctx->param;
     return 0;
 }
 
@@ -119,40 +98,43 @@ static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
     return uio_buffer;
 }
 
-int pirate_uio_open(int gd, int flags, pirate_uio_ctx_t *ctx) {
+int pirate_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
+    shmem_buffer_t* buf;
 
-    ctx->fd = open("/dev/uio0", O_RDWR | O_SYNC);
+    pirate_uio_init_param(param);
+    ctx->fd = open(param->path, O_RDWR | O_SYNC);
     if (ctx->fd < 0) {
         ctx->buf = NULL;
         return -1;
     }
 
-    ctx->buf = uio_buffer_init(gd, ctx->fd);
+    buf = uio_buffer_init(gd, ctx->fd);
+    ctx->buf = buf;
     if (ctx->buf == NULL) {
         goto error;
     }
 
     if (flags == O_RDONLY) {
-        if (!atomic_compare_exchange_strong(&ctx->buf->reader_pid, &init_pid,
+        if (!atomic_compare_exchange_strong(&buf->reader_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
             goto error;
         }
 
         do {
-            init_pid = atomic_load(&ctx->buf->writer_pid);
+            init_pid = atomic_load(&buf->writer_pid);
         } while (!init_pid);
     } else {
-        if (!atomic_compare_exchange_strong(&ctx->buf->writer_pid, &init_pid,
+        if (!atomic_compare_exchange_strong(&buf->writer_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
             goto error;
         }
 
         do {
-            init_pid = atomic_load(&ctx->buf->reader_pid);
+            init_pid = atomic_load(&buf->reader_pid);
         } while (!init_pid);
     }
 
@@ -162,56 +144,59 @@ error:
     err = errno;
     close(ctx->fd);
     ctx->fd = -1;
-    if (ctx->buf != NULL) {
-        munmap(ctx->buf, buffer_size());
+    if (buf != NULL) {
+        munmap(buf, buffer_size());
         ctx->buf = NULL;
     }
     errno = err;
     return -1;
 }
 
-int pirate_uio_close(pirate_uio_ctx_t *ctx) {
-    if (ctx->buf == NULL) {
+int pirate_uio_close(uio_ctx *ctx) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
     if (ctx->flags == O_RDONLY) {
-        atomic_store(&ctx->buf->reader_pid, 0);
+        atomic_store(&buf->reader_pid, 0);
     } else {
-        atomic_store(&ctx->buf->writer_pid, 0);
+        atomic_store(&buf->writer_pid, 0);
     }
 
     close(ctx->fd);
     ctx->fd = -1;
-    return munmap(ctx->buf, buffer_size());
+    return munmap(buf, buffer_size());
 }
 
-ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count) {
+ssize_t pirate_uio_read(pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
+    (void) param;
     uint64_t position;
     uint32_t reader, writer;
     size_t nbytes, nbytes1, nbytes2;
     int buffer_size;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
     for (;;) {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
         if (!is_empty(position)) {
             break;
         }
 
-        if (atomic_load(&ctx->buf->writer_pid) == 0) {
+        if (atomic_load(&buf->writer_pid) == 0) {
             return 0;
         }
     }
 
     reader = get_read(position);
     writer = get_write(position);
-    buffer_size = ctx->buf->size;
+    buffer_size = buf->size;
 
     if (reader < writer) {
         nbytes = writer - reader;
@@ -223,16 +208,16 @@ ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count) {
     nbytes1 = MIN(buffer_size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buf, ctx->buf->buffer + reader, nbytes1);
+    memcpy(buffer, buf->buffer + reader, nbytes1);
 
     if (nbytes2 > 0) {
-        memcpy(((char *)buf) + nbytes1, ctx->buf->buffer + nbytes1, nbytes2);
+        memcpy(((char *)buffer) + nbytes1, buf->buffer + nbytes1, nbytes2);
     }
 
     for (;;) {
         uint64_t update = create_position(writer,
                                         (reader + nbytes) % buffer_size, 0);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             break;
         }
@@ -242,14 +227,15 @@ ssize_t pirate_uio_read(pirate_uio_ctx_t *ctx, void *buf, size_t count) {
     return nbytes;
 }
 
-ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf,
-                            size_t count) {
+ssize_t pirate_uio_write(pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
+    (void) param;
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;
     uint64_t position;
     uint32_t reader, writer;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
@@ -258,19 +244,19 @@ ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf,
     // The reader returns 0 when the writer has closed the channel AND
     // the channel is empty.
     do {
-        if (atomic_load(&ctx->buf->reader_pid) == 0) {
+        if (atomic_load(&buf->reader_pid) == 0) {
             return -1;
         }
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     } while (is_full(position));
 
     do {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     } while (is_full(position));
 
     reader = get_read(position);
     writer = get_write(position);
-    buffer_size = ctx->buf->size;
+    buffer_size = buf->size;
 
     if (writer < reader) {
         nbytes = reader - writer;
@@ -281,17 +267,17 @@ ssize_t pirate_uio_write(pirate_uio_ctx_t *ctx, const void *buf,
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buffer_size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
-    memcpy(ctx->buf->buffer + writer, buf, nbytes1);
+    memcpy(buf->buffer + writer, buffer, nbytes1);
 
     if (nbytes2 > 0) {
-        memcpy(ctx->buf->buffer, ((char *)buf) + nbytes1, nbytes2);
+        memcpy(buf->buffer, ((char *)buffer) + nbytes1, nbytes2);
     }
 
     atomic_thread_fence(memory_order_release);
     for (;;) {
         uint64_t update = create_position((writer + nbytes) % buffer_size,
                                             reader, 1);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             break;
         }

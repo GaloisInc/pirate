@@ -39,6 +39,33 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
+  shmem:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install dependencies
+      run: |
+        sudo apt-get install -y clang valgrind
+    - name: googletest
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake --build . --target install
+        cd ..
+    - name: build libpirate
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DPIRATE_SHMEM_FEATURE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
+    - name: libpirate tests
+      timeout-minutes: 1
+      run: |
+        cd build/libpirate
+        ./gaps_channels_test
+        make valgrind
   gaps:
     runs-on: ubuntu-latest
     container: docker://pirateteam/llvm-ubuntu:latest

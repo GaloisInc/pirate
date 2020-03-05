@@ -80,7 +80,7 @@ static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
         return NULL;
     }
 
-    shmem_buffer = (shmem_buffer_t *)mmap(NULL, alloc_size, 
+    shmem_buffer = (shmem_buffer_t *)mmap(NULL, alloc_size,
         PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     if (shmem_buffer == MAP_FAILED) {
@@ -148,13 +148,13 @@ static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
         goto error;
     }
 
-    if ((rv = pthread_condattr_setpshared(&cond_attr, 
+    if ((rv = pthread_condattr_setpshared(&cond_attr,
                                         PTHREAD_PROCESS_SHARED)) != 0) {
         errno = rv;
         goto error;
     }
 
-    if ((rv = pthread_cond_init(&shmem_buffer->is_not_empty, 
+    if ((rv = pthread_cond_init(&shmem_buffer->is_not_empty,
                                         &cond_attr)) != 0) {
         errno = rv;
         goto error;
@@ -175,20 +175,17 @@ error:
     return NULL;
 }
 
-int shmem_buffer_init_param(int gd, int flags, pirate_shmem_param_t *param) {
-    (void) flags;
-    snprintf(param->path, PIRATE_SHMEM_LEN_NAME - 1,  PIRATE_SHMEM_NAME, gd);
-    param->buffer_size = DEFAULT_SMEM_BUF_LEN;
-    return 0;
+void shmem_buffer_init_param(int gd, pirate_shmem_param_t *param) {
+    if (strnlen(param->path, 1) == 0) {
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
+    }
+    if (param->buffer_size == 0) {
+        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+    }
 }
 
-int shmem_buffer_parse_param(int gd, int flags, char *str,
-                                pirate_shmem_param_t *param) {
+int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
     char *ptr = NULL;
-
-    if (shmem_buffer_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "shmem") != 0)) {
@@ -206,58 +203,61 @@ int shmem_buffer_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int shmem_buffer_open(int gd, int flags, pirate_shmem_ctx_t *ctx) {
+int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
+    shmem_buffer_t* buf;
 
+    shmem_buffer_init_param(gd, param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
     // this function
-    int fd = shm_open(ctx->param.path, O_RDWR | O_CREAT, 0660);
+    int fd = shm_open(param->path, O_RDWR | O_CREAT, 0660);
     if (fd < 0) {
         ctx->buf = NULL;
         return -1;
     }
 
-    ctx->buf = shmem_buffer_init(fd, ctx->param.buffer_size);
+    buf = shmem_buffer_init(fd, param->buffer_size);
+    ctx->buf = buf;
     if (ctx->buf == NULL) {
         goto error;
     }
 
     if (flags == O_RDONLY) {
-        if (!atomic_compare_exchange_strong(&ctx->buf->reader_pid,
+        if (!atomic_compare_exchange_strong(&buf->reader_pid,
                                             &init_pid, (uint64_t)getpid())) {
             errno = EBUSY;
             goto error;
         }
 
-        if (sem_post(&ctx->buf->writer_open_wait) < 0) {
-            atomic_store(&ctx->buf->reader_pid, 0);
+        if (sem_post(&buf->writer_open_wait) < 0) {
+            atomic_store(&buf->reader_pid, 0);
             goto error;
         }
 
-        if (sem_wait(&ctx->buf->reader_open_wait) < 0) {
-            atomic_store(&ctx->buf->reader_pid, 0);
+        if (sem_wait(&buf->reader_open_wait) < 0) {
+            atomic_store(&buf->reader_pid, 0);
             goto error;
         }
     } else {
-        if (!atomic_compare_exchange_strong(&ctx->buf->writer_pid, &init_pid,
+        if (!atomic_compare_exchange_strong(&buf->writer_pid, &init_pid,
                                         (uint64_t)getpid())) {
             errno = EBUSY;
             goto error;
         }
 
-        if (sem_post(&ctx->buf->reader_open_wait) < 0) {
-            atomic_store(&ctx->buf->writer_pid, 0);
+        if (sem_post(&buf->reader_open_wait) < 0) {
+            atomic_store(&buf->writer_pid, 0);
             goto error;
         }
 
-        if (sem_wait(&ctx->buf->writer_open_wait) < 0) {
-            atomic_store(&ctx->buf->writer_pid, 0);
+        if (sem_wait(&buf->writer_open_wait) < 0) {
+            atomic_store(&buf->writer_pid, 0);
             goto error;
         }
     }
     
-    if (shm_unlink(ctx->param.path) == -1) {
+    if (shm_unlink(param->path) == -1) {
         if (errno == ENOENT) {
             errno = 0;
         } else {
@@ -270,61 +270,64 @@ int shmem_buffer_open(int gd, int flags, pirate_shmem_ctx_t *ctx) {
 error:
     err = errno;
     ctx->buf = NULL;
-    shm_unlink(ctx->param.path);
+    shm_unlink(param->path);
     errno = err;
     return -1;
 }
 
-int shmem_buffer_close(pirate_shmem_ctx_t *ctx) {
-    const size_t alloc_size = sizeof(shmem_buffer_t) + ctx->buf->size;
+int shmem_buffer_close(shmem_ctx *ctx) {
+    shmem_buffer_t* buf = ctx->buf;
+    const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
 
     if (ctx->flags == O_RDONLY) {
-        atomic_store(&ctx->buf->reader_pid, 0);
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_full);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        atomic_store(&buf->reader_pid, 0);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_full);
+        pthread_mutex_unlock(&buf->mutex);
     } else {
-        atomic_store(&ctx->buf->writer_pid, 0);
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_empty);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        atomic_store(&buf->writer_pid, 0);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_empty);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
-    return munmap(ctx->buf, alloc_size);
+    return munmap(buf, alloc_size);
 }
 
-ssize_t shmem_buffer_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count) {
+ssize_t shmem_buffer_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
+    (void) param;
     uint64_t position;
     int was_full;
     size_t nbytes, nbytes1, nbytes2;
     uint32_t reader, writer;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    position = atomic_load(&ctx->buf->position);
+    position = atomic_load(&buf->position);
     for (int spin = 0; (spin < SPIN_ITERATIONS) && is_empty(position); spin++) {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     }
 
     if (is_empty(position)) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        position = atomic_load(&ctx->buf->position);
+        pthread_mutex_lock(&buf->mutex);
+        position = atomic_load(&buf->position);
         while (is_empty(position)) {
             // The reader returns 0 when the writer has closed
             // the channel and the channel is empty. If the writer
             // has closed the channel and the buffer has content
             // then return the contents of the buffer.
-            if (atomic_load(&ctx->buf->writer_pid) == 0) {
-                pthread_mutex_unlock(&ctx->buf->mutex);
+            if (atomic_load(&buf->writer_pid) == 0) {
+                pthread_mutex_unlock(&buf->mutex);
                 return 0;
             }
-            pthread_cond_wait(&ctx->buf->is_not_empty, &ctx->buf->mutex);
-            position = atomic_load(&ctx->buf->position);
+            pthread_cond_wait(&buf->is_not_empty, &buf->mutex);
+            position = atomic_load(&buf->position);
         }
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     reader = get_read(position);
@@ -333,23 +336,23 @@ ssize_t shmem_buffer_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count) {
     if (reader < writer) {
         nbytes = writer - reader;
     } else {
-        nbytes = ctx->buf->size + writer - reader;
+        nbytes = buf->size + writer - reader;
     }
 
     nbytes = MIN(nbytes, count);
 
-    nbytes1 = MIN(ctx->buf->size - reader, nbytes);
+    nbytes1 = MIN(buf->size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buf, ctx->buf->buffer + reader, nbytes1);
+    memcpy(buffer, buf->buffer + reader, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(((char *)buf) + nbytes1, ctx->buf->buffer + nbytes1, nbytes2);
+        memcpy(((char *)buffer) + nbytes1, buf->buffer + nbytes1, nbytes2);
     }
 
     for (;;) {
-        uint64_t update = create_position(writer, 
-            (reader + nbytes) % ctx->buf->size, 0);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position, 
+        uint64_t update = create_position(writer,
+            (reader + nbytes) % buf->size, 0);
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                 update)) {
             was_full = is_full(position);
             break;
@@ -358,52 +361,54 @@ ssize_t shmem_buffer_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count) {
     }
 
     if (was_full) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_full);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_full);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     return nbytes;
 }
 
-ssize_t shmem_buffer_write(pirate_shmem_ctx_t *ctx, const void *buf, 
+ssize_t shmem_buffer_write(pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
                             size_t count) {
+    (void) param;
     uint64_t position;
     int was_empty;
     size_t nbytes, nbytes1, nbytes2;
     uint32_t reader, writer;
 
-    if (ctx->buf == NULL) {
+    shmem_buffer_t* buf = ctx->buf;
+    if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    position = atomic_load(&ctx->buf->position);
+    position = atomic_load(&buf->position);
     for (int spin = 0; (spin < SPIN_ITERATIONS) && is_full(position); spin++) {
-        position = atomic_load(&ctx->buf->position);
+        position = atomic_load(&buf->position);
     }
 
     if (is_full(position)) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        position = atomic_load(&ctx->buf->position);
+        pthread_mutex_lock(&buf->mutex);
+        position = atomic_load(&buf->position);
         while (is_full(position)) {
-            if (atomic_load(&ctx->buf->reader_pid) == 0) {
-                pthread_mutex_unlock(&ctx->buf->mutex);
+            if (atomic_load(&buf->reader_pid) == 0) {
+                pthread_mutex_unlock(&buf->mutex);
                 kill(getpid(), SIGPIPE);
                 errno = EPIPE;
                 return -1;
             }
-            pthread_cond_wait(&ctx->buf->is_not_full, &ctx->buf->mutex);
-            position = atomic_load(&ctx->buf->position);
+            pthread_cond_wait(&buf->is_not_full, &buf->mutex);
+            position = atomic_load(&buf->position);
         }
 
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     // The writer returns -1 when the reader has closed the channel.
     // The reader returns 0 when the writer has closed the channel AND
     // the channel is empty.
-    if (atomic_load(&ctx->buf->reader_pid) == 0) {
+    if (atomic_load(&buf->reader_pid) == 0) {
         kill(getpid(), SIGPIPE);
         errno = EPIPE;
         return -1;
@@ -414,21 +419,21 @@ ssize_t shmem_buffer_write(pirate_shmem_ctx_t *ctx, const void *buf,
     if (writer < reader) {
         nbytes = reader - writer;
     } else {
-        nbytes = ctx->buf->size + reader - writer;
+        nbytes = buf->size + reader - writer;
     }
 
     nbytes = MIN(nbytes, count);
-    nbytes1 = MIN(ctx->buf->size - writer, nbytes);
+    nbytes1 = MIN(buf->size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
-    memcpy(ctx->buf->buffer + writer, buf, nbytes1);
+    memcpy(buf->buffer + writer, buffer, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(ctx->buf->buffer, ((char *)buf) + nbytes1, nbytes2);
+        memcpy(buf->buffer, ((char *)buffer) + nbytes1, nbytes2);
     }
     atomic_thread_fence(memory_order_release);
     for (;;) {
-        uint64_t update = create_position((writer + nbytes) % ctx->buf->size, 
+        uint64_t update = create_position((writer + nbytes) % buf->size,
                                             reader, 1);
-        if (atomic_compare_exchange_weak(&ctx->buf->position, &position,
+        if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             was_empty = is_empty(position);
         break;
@@ -437,9 +442,9 @@ ssize_t shmem_buffer_write(pirate_shmem_ctx_t *ctx, const void *buf,
     }
 
     if (was_empty) {
-        pthread_mutex_lock(&ctx->buf->mutex);
-        pthread_cond_signal(&ctx->buf->is_not_empty);
-        pthread_mutex_unlock(&ctx->buf->mutex);
+        pthread_mutex_lock(&buf->mutex);
+        pthread_cond_signal(&buf->is_not_empty);
+        pthread_mutex_unlock(&buf->mutex);
     }
 
     return nbytes;

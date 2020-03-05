@@ -27,21 +27,20 @@
 #include "pirate_common.h"
 #include "serial.h"
 
-int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param) {
-    (void) flags;
-    snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SERIAL_NAME_FMT, gd);
-    param->baud = SERIAL_DEFAULT_BAUD;
-    param->mtu = SERIAL_DEFAULT_MTU;
-    return 0;
+void pirate_serial_init_param(int gd, pirate_serial_param_t *param) {
+    if (strnlen(param->path, 1) == 0) {
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SERIAL_NAME_FMT, gd);
+    }
+    if (param->baud == 0) {
+        param->baud = SERIAL_DEFAULT_BAUD;
+    }
+    if (param->mtu == 0) {
+        param->mtu = SERIAL_DEFAULT_MTU;
+    }
 }
 
-int pirate_serial_parse_param(int gd, int flags, char *str,
-                                pirate_serial_param_t *param) {
+int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
     char *ptr = NULL;
-
-    if (pirate_serial_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
         (strcmp(ptr, "serial") != 0)) {
@@ -82,27 +81,11 @@ int pirate_serial_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_serial_set_param(pirate_serial_ctx_t *ctx,
-                            const pirate_serial_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, 0, sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-
-    return 0;
-}
-
-int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,
-                            pirate_serial_param_t *param) {
-    *param  = ctx->param;
-    return 0;
-}
-
-int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
+int pirate_serial_open(int gd, int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
     struct termios attr;
 
-    ctx->fd = open(ctx->param.path, flags | O_NOCTTY);
+    pirate_serial_init_param(gd, param);
+    ctx->fd = open(param->path, flags | O_NOCTTY);
     if (ctx->fd < 0) {
         return -1;
     }
@@ -111,8 +94,8 @@ int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
         return -1;
     }
 
-    if (cfsetispeed(&attr, ctx->param.baud) ||
-        cfsetispeed(&attr, ctx->param.baud)) {
+    if (cfsetispeed(&attr, param->baud) ||
+        cfsetospeed(&attr, param->baud)) {
         return -1;
     }
 
@@ -125,7 +108,7 @@ int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx) {
     return gd;
 }
 
-int pirate_serial_close(pirate_serial_ctx_t *ctx) {
+int pirate_serial_close(serial_ctx *ctx) {
 
     int rv = -1;
 
@@ -139,18 +122,18 @@ int pirate_serial_close(pirate_serial_ctx_t *ctx) {
     return rv;
 }
 
-ssize_t pirate_serial_read(pirate_serial_ctx_t *ctx, void *buf, size_t count) {
+ssize_t pirate_serial_read(pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
+    (void) param;
     return read(ctx->fd, buf, count);
 }
 
-ssize_t pirate_serial_write(pirate_serial_ctx_t *ctx, const void *buf,
-                            size_t count) {
+ssize_t pirate_serial_write(pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
         int rv;
         uint32_t tx_buf_bytes = 0;
-        size_t wr_len = remain > ctx->param.mtu ? ctx->param.mtu : remain;
+        size_t wr_len = remain > param->mtu ? param->mtu : remain;
         rv = write(ctx->fd, wr_buf, wr_len);
         if (rv < 0) {
             return -1;

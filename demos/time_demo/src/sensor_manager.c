@@ -376,7 +376,7 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
     return gaps_app_wait_exit(&client.app);
 }
 
-#ifndef GAPS_ENALBLE
+#ifndef GAPS_ENABLE
 int main(int argc, char *argv[]) {
     return sensor_manager_main(argc, argv);
 }
