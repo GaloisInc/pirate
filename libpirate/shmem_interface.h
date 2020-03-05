@@ -16,26 +16,18 @@
 #ifndef __PIRATE_CHANNEL_SHMEM_INTERFACE_H
 #define __PIRATE_CHANNEL_SHMEM_INTERFACE_H
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "shmem_buffer.h"
 
 typedef struct {
     int flags;
     shmem_buffer_t *buf;
-    pirate_shmem_param_t param;
-} pirate_shmem_ctx_t;
+} shmem_ctx;
 
-int pirate_shmem_init_param(int gd, int flags, pirate_shmem_param_t *param);
-int pirate_shmem_parse_param(int gd, int flags, char *str,
-                                pirate_shmem_param_t *param);
-int pirate_shmem_set_param(pirate_shmem_ctx_t *ctx,
-                            const pirate_shmem_param_t *param);
-int pirate_shmem_get_param(const pirate_shmem_ctx_t *ctx,
-                            pirate_shmem_param_t *param);
-int pirate_shmem_open(int gd, int flags, pirate_shmem_ctx_t *ctx);
-int pirate_shmem_close(pirate_shmem_ctx_t *ctx);
-ssize_t pirate_shmem_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_shmem_write(pirate_shmem_ctx_t *ctx, const void *buf,
-                            size_t count);
+int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param);
+int pirate_shmem_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx);
+int pirate_shmem_close(shmem_ctx *ctx);
+ssize_t pirate_shmem_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_shmem_write(pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_SHMEM_INTERFACE_H */

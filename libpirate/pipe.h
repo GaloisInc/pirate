@@ -17,24 +17,16 @@
 #define __PIRATE_CHANNEL_PIPE_H
 
 #include <sys/types.h>
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef struct {
     int fd;
-    pirate_pipe_param_t param;
- } pirate_pipe_ctx_t;
+ } pipe_ctx;
 
-int pirate_pipe_init_param(int gd, int flags, pirate_pipe_param_t *param);
-int pirate_pipe_parse_param(int gd, int flags, char *str,
-                            pirate_pipe_param_t *param);
-int pirate_pipe_set_param(pirate_pipe_ctx_t *ctx,
-                            const pirate_pipe_param_t *param);
-int pirate_pipe_get_param(const pirate_pipe_ctx_t *ctx,
-                            pirate_pipe_param_t *param);
-int pirate_pipe_open(int gd, int flags, pirate_pipe_ctx_t *ctx);
-int pirate_pipe_close(pirate_pipe_ctx_t *ctx);
-ssize_t pirate_pipe_read(pirate_pipe_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_pipe_write(pirate_pipe_ctx_t *ctx, const void *buf,
-                            size_t count);
+int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param);
+int pirate_pipe_open(int gd, int flags, pirate_pipe_param_t *param, pipe_ctx *ctx);
+int pirate_pipe_close(pipe_ctx *ctx);
+ssize_t pirate_pipe_read(pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_pipe_write(pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count);
 
 #endif /*__PIRATE_CHANNEL_PIPE_H */

@@ -25,7 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "shmem_udp.h"
 
 static int set_buffer_size(int gd, int size) {

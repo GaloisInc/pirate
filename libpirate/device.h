@@ -17,24 +17,16 @@
 #define __PIRATE_CHANNEL_DEVICE_H
 
 #include <sys/types.h>
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef struct {
     int fd;
-    pirate_device_param_t param;
-} pirate_device_ctx_t;
+} device_ctx;
 
-int pirate_device_init_param(int gd, int flags, pirate_device_param_t *param);
-int pirate_device_parse_param(int gd, int flags, char *str,
-                                pirate_device_param_t *param);
-int pirate_device_set_param(pirate_device_ctx_t *ctx,
-                            const pirate_device_param_t *param);
-int pirate_device_get_param(const pirate_device_ctx_t *ctx,
-                            pirate_device_param_t *param);
-int pirate_device_open(int gd, int flags, pirate_device_ctx_t *ctx);
-int pirate_device_close(pirate_device_ctx_t *ctx);
-ssize_t pirate_device_read(pirate_device_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_device_write(pirate_device_ctx_t *ctx, const void *buf,
-                            size_t count);
+int pirate_device_parse_param(char *str, pirate_device_param_t *param);
+int pirate_device_open(int gd, int flags, pirate_device_param_t *param, device_ctx *ctx);
+int pirate_device_close(device_ctx *ctx);
+ssize_t pirate_device_read(pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_device_write(pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count);
 
 #endif /*__PIRATE_CHANNEL_DEVICE_H */

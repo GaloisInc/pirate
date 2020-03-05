@@ -27,12 +27,6 @@
 extern "C" {
 #endif
 
-// TODO: remove
-#define PIRATE_FILENAME "/tmp/gaps.channel.%d"
-#define PIRATE_PORT_NUMBER 26427
-#define PIRATE_SHM_NAME "/gaps.channel.%d"
-
-
 #define PIRATE_LEN_NAME 64
 #define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
@@ -125,7 +119,7 @@ typedef enum {
     //  - port - IP port, if empty, then 0x4745 + aps descriptor is used
     //  - mtu  - maximum frame length, default 1454
     GE_ETH
-} channel_t;
+} channel_enum_t;
 
 // DEVICE parameters
 typedef struct {
@@ -220,45 +214,44 @@ typedef struct {
     unsigned mtu;
 } pirate_ge_eth_param_t;
 
-typedef union {
-    pirate_device_param_t           device;
-    pirate_pipe_param_t             pipe;
-    pirate_unix_socket_param_t      unix_socket;
-    pirate_tcp_socket_param_t       tcp_socket;
-    pirate_udp_socket_param_t       udp_socket;
-    pirate_shmem_param_t            shmem;
-    pirate_udp_shmem_param_t        udp_shmem;
-    pirate_uio_param_t              uio;
-    pirate_serial_param_t           serial;
-    pirate_mercury_param_t          mercury;
-    pirate_ge_eth_param_t           ge_eth;
+typedef struct {
+    channel_enum_t channel_type;
+    union {
+        pirate_device_param_t           device;
+        pirate_pipe_param_t             pipe;
+        pirate_unix_socket_param_t      unix_socket;
+        pirate_tcp_socket_param_t       tcp_socket;
+        pirate_udp_socket_param_t       udp_socket;
+        pirate_shmem_param_t            shmem;
+        pirate_udp_shmem_param_t        udp_shmem;
+        pirate_uio_param_t              uio;
+        pirate_serial_param_t           serial;
+        pirate_mercury_param_t          mercury;
+        pirate_ge_eth_param_t           ge_eth;
+    };
 } pirate_channel_param_t;
 
 //
 // API
 //
 
-// Channel-specific default parameter initialization
+// Sets channel properties to the default values.
+// The default value is represented by the zero value.
 // Parameters:
 //  channel_type - GAPS channel type
-//  gd           - GAPS channel number
-//  flags        - O_RDONLY or O_WRONLY
-//  param        - channel-specific parameters to be initialized
-// Return:
-//  0 on success
-// -1 on failure, errno is set
-int pirate_init_channel_param(channel_t channel_type, int gd, int flags,
-                                    pirate_channel_param_t *param);
+//  param        - channel parameters to be initialized
+void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param);
 
-// Parse a string with gaps channel configuration options
+// Parse a string with gaps channel configuration options.
+// Any parameters not specified will be set to the default value.
+// The default value is represented by the zero value.
 // Parameters:
 //  str   - gaps channel configuration string
 //  param - structure with configuration parameters
 // Return:
-//  channel type on success
-//  INVALID on failure
-channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
-                                        pirate_channel_param_t *param);
+//  0 on success
+// -1 on failure
+int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 
 #define OPT_DELIM ","
 #define GAPS_CHANNEL_OPTIONS                                                   \
@@ -275,24 +268,19 @@ channel_t pirate_parse_channel_param(int gd, int flags, const char *str,
     "  MERCURY       mercury,path[,mtu]\n"                                     \
     "  GE_ETH        ge_eth[,addr,port,mtu]\n"
 
-// Channel-agnostic method for setting channel-specific parameters. After a
-// successful execution the channel type will for the channel number 'gd' will
-// be set to 'channel_type'
+// Copies channel parameters from param argument into configuration.
 //
 // Parameters:
 //  gd           - GAPS channel number
 //  flags        - O_RDONLY or O_WRONLY
-//  channel_type - GAPS channel type
-//  param        - channel-specific parameters. If null then, channel
-//                 type will be set to INVALID
+//  param        - channel-specific parameters.
 // Return:
 //  0 on success
 // -1 on failure, errno is set
 
-int pirate_set_channel_param(channel_t channel_type, int gd, int flags,
-  const pirate_channel_param_t *param);
+int pirate_set_channel_param(int gd, int flags, const pirate_channel_param_t *param);
 
-// Channel-agnostic method for getting channel-specific parameters.
+// Copies channel parameters from configuration into param argument.
 //
 // Parameters
 //  gd           - GAPS channel number
@@ -300,11 +288,10 @@ int pirate_set_channel_param(channel_t channel_type, int gd, int flags,
 //  param        - channel-specific parameters
 //
 // Return:
-//  channel type on success
-//  INVALID on failure, errno is set
+//  0 on success
+// -1 on failure, errno is set
 
-channel_t pirate_get_channel_param(int gd, int flags,
-                                    pirate_channel_param_t *param);
+int pirate_get_channel_param(int gd, int flags, pirate_channel_param_t *param);
 
 // Opens the gaps channel specified by the gaps descriptor.
 //

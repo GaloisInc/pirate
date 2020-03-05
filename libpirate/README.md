@@ -9,11 +9,14 @@ cleanup / data wipe on termination.
 
 ## Usage
 
-See [primitives.h](/libpirate/primitives.h) for additional documentation.
+See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
 
 Reader:
 
 ```
+  pirate_channel_param_t param
+  pirate_init_channel_param(PIPE, &param);
+
   int data;
   if (pirate_open(1, O_RDONLY) < 0) {
     perror("reader open error");
@@ -29,6 +32,9 @@ Reader:
 Writer:
 
 ```
+  pirate_channel_param_t param
+  pirate_init_channel_param(PIPE, &param);
+
   int data = 1234;
   if (pirate_open(1, O_WRONLY) < 0) {
     perror("writer open error");
@@ -42,10 +48,6 @@ Writer:
 ```
 
 ## Channel types
-
-libpirate currently implements GAPS channels using Linux named pipes,
-a character device driver, or shared memory. Use
-`pirate_set_channel_type(int, channel_t)` to set the channel type.
 
 ### PIPE type
 

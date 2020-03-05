@@ -18,68 +18,27 @@
 #include "shmem_interface.h"
 #include "shmem.h"
 
-int pirate_shmem_init_param(int gd, int flags, pirate_shmem_param_t *param) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_init_param(gd, flags, param);
-#else
-    (void) gd, (void) flags;
-    memset(param, 0, sizeof(*param));
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_parse_param(int gd, int flags, char *str, 
-                                pirate_shmem_param_t *param) {
+int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param) {
 #if PIRATE_SHMEM_FEATURE
-    return  shmem_buffer_parse_param(gd, flags, str, param);
+    return  shmem_buffer_parse_param(str, param);
 #else
-    (void) gd, (void) flags, (void) str, (void) param;
+    (void) str, (void) param;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
 
-int pirate_shmem_set_param(pirate_shmem_ctx_t *ctx,
-                            const pirate_shmem_param_t *param) {
+int pirate_shmem_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    if (param == NULL) {
-        memset(&ctx->param, 0, sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-    
-    return 0;
+    return shmem_buffer_open(gd, flags, param, ctx);
 #else
-    (void) ctx, (void) param;
+    (void) gd, (void) flags, (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
 
-int pirate_shmem_get_param(const pirate_shmem_ctx_t *ctx, 
-                            pirate_shmem_param_t *param) {
-#ifdef PIRATE_SHMEM_FEATURE          
-    *param  = ctx->param;
-    return 0;
-#else
-    (void) ctx, (void) param;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_open(int gd, int flags, pirate_shmem_ctx_t *ctx) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_open(gd, flags, ctx);
-#else
-    (void) gd, (void) flags, (void) ctx;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_close(pirate_shmem_ctx_t *ctx) {
+int pirate_shmem_close(shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
     return shmem_buffer_close(ctx);
 #else
@@ -89,22 +48,22 @@ int pirate_shmem_close(pirate_shmem_ctx_t *ctx) {
 #endif
 }
 
-ssize_t pirate_shmem_read(pirate_shmem_ctx_t *ctx, void *buf, size_t count) {
+ssize_t pirate_shmem_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_read(ctx, buf, count);
+    return shmem_buffer_read(param, ctx, buf, count);
 #else
-    (void) ctx, (void) buf, (void) count;
+    (void) param, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
 
-ssize_t pirate_shmem_write(pirate_shmem_ctx_t *ctx, const void *buf, 
+ssize_t pirate_shmem_write(pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_write(ctx, buf, count);
+    return shmem_buffer_write(param, ctx, buf, count);
 #else
-    (void) ctx, (void) buf, (void) count;
+    (void) param, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

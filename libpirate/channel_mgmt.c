@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "primitives.h"
+#include "libpirate.h"
 
 #define PIRATE_INVALID_CHANNEL  -1
 

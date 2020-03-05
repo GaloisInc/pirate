@@ -13,7 +13,7 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include "primitives.h"
+#include "libpirate.h"
 #include "gaps_packet.h"
 
 

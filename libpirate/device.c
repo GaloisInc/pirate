@@ -23,20 +23,8 @@
 #include "device.h"
 #include "pirate_common.h"
 
-int pirate_device_init_param(int gd, int flags, pirate_device_param_t *param) {
-    (void) gd, (void) flags;
-    memset(param->path, '\0', sizeof(param->path));
-    param->iov_len = 0;
-    return 0;
-}
-
-int pirate_device_parse_param(int gd, int flags, char *str,
-                                pirate_device_param_t *param) {
+int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
     char *ptr = NULL;
-
-    if (pirate_device_init_param(gd, flags, param) != 0) {
-        return -1;
-    }
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
         (strcmp(ptr, "device") != 0)) {
@@ -56,37 +44,20 @@ int pirate_device_parse_param(int gd, int flags, char *str,
     return 0;
 }
 
-int pirate_device_set_param(pirate_device_ctx_t *ctx,
-                            const pirate_device_param_t *param) {
-    if (param == NULL) {
-        memset(&ctx->param, '\0', sizeof(ctx->param));
-    } else {
-        ctx->param = *param;
-    }
-    
-    return 0;
-}
-
-int pirate_device_get_param(const pirate_device_ctx_t *ctx,
-                            pirate_device_param_t *param) {
-    *param  = ctx->param;
-    return 0;
-}
-
-int pirate_device_open(int gd, int flags, pirate_device_ctx_t *ctx) {
+int pirate_device_open(int gd, int flags, pirate_device_param_t *param, device_ctx *ctx) {
     if (ctx->fd > 0) {
         errno = EBUSY;
         return -1;
     }
 
-    if ((ctx->fd = open(ctx->param.path, flags)) < 0) {
+    if ((ctx->fd = open(param->path, flags)) < 0) {
         return -1;
     }
     
     return gd;
 }
 
-int pirate_device_close(pirate_device_ctx_t *ctx) {
+int pirate_device_close(device_ctx *ctx) {
     int rv = -1;
 
     if (ctx->fd <= 0) {
@@ -100,11 +71,10 @@ int pirate_device_close(pirate_device_ctx_t *ctx) {
 }
 
 
-ssize_t pirate_device_read(pirate_device_ctx_t *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->fd, buf, count, ctx->param.iov_len);
+ssize_t pirate_device_read(pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count) {
+    return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
 }
 
-ssize_t pirate_device_write(pirate_device_ctx_t *ctx, const void *buf, 
-                            size_t count) {
-    return pirate_fd_write(ctx->fd, buf, count, ctx->param.iov_len);
+ssize_t pirate_device_write(pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count) {
+    return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
 }

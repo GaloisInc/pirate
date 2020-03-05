@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef channel_test_t reader_t;
 

@@ -16,24 +16,16 @@
 #ifndef __PIRATE_CHANNEL_SERIAL_H
 #define __PIRATE_CHANNEL_SERIAL_H
 
-#include "primitives.h"
+#include "libpirate.h"
 
 typedef struct {
     int fd;
-    pirate_serial_param_t param;
-} pirate_serial_ctx_t;
+} serial_ctx;
 
-int pirate_serial_init_param(int gd, int flags, pirate_serial_param_t *param);
-int pirate_serial_parse_param(int gd, int flags, char *str,
-                                pirate_serial_param_t *param);
-int pirate_serial_set_param(pirate_serial_ctx_t *ctx,
-                            const pirate_serial_param_t *param);
-int pirate_serial_get_param(const pirate_serial_ctx_t *ctx,
-                            pirate_serial_param_t *param);
-int pirate_serial_open(int gd, int flags, pirate_serial_ctx_t *ctx);
-int pirate_serial_close(pirate_serial_ctx_t *ctx);
-ssize_t pirate_serial_read(pirate_serial_ctx_t *ctx, void *buf, size_t count);
-ssize_t pirate_serial_write(pirate_serial_ctx_t *ctx, const void *buf,
-                            size_t count);
+int pirate_serial_parse_param(char *str, pirate_serial_param_t *param);
+int pirate_serial_open(int gd, int flags, pirate_serial_param_t *param, serial_ctx *ctx);
+int pirate_serial_close(serial_ctx *ctx);
+ssize_t pirate_serial_read(pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_serial_write(pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_SERIAL_H */
