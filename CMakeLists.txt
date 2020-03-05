@@ -18,19 +18,17 @@ if(BUILD_ALL)
 endif(BUILD_ALL)
 
 # Common build options
-set(PIRATE_LIB_LIBS)
-
 set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+
+set(PIRATE_STATIC_LIB libpirate_static)
+set(PIRATE_SHARED_LIB libpirate_shared)
+set(PIRATE_APP_LIBS ${PIRATE_STATIC_LIB} pthread)
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_LIB_LIBS ${PIRATE_LIB_LIBS} pthread rt)
     SET(PIRATE_C_FLAGS ${PIRATE_C_FLAGS} -mavx2)
+    set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} rt)
 endif(PIRATE_SHMEM_FEATURE)
-
-set(PIRATE_STATIC_LIB libpirate_static)
-set(PIRATE_SHARED_LIB libpirate_shared)
-
-set(PIRATE_APP_LIBS ${PIRATE_STATIC_LIB} ${PIRATE_LIB_LIBS})
 
 add_subdirectory(libpirate)
 
