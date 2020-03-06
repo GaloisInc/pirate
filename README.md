@@ -1,4 +1,40 @@
-## Project structure
+## PIRATE
+
+This is main software repository for the Pirate distributed-computing
+technologies.  Our goal is to develop technologies that help make
+it easier to build efficient, safe and secure distributed systems.
+
+The main artifacts available are:
+
+ * The `pirate-llvm` [compiler](https://github.com/GaloisInc/pirate-llvm).
+ * The `libpirate` library in this repo, and
+ * Demonstration applications that use the above tools.
+
+Trying out the system is very easy -- we provide a [Docker
+image](https://hub.docker.com/r/pirateteam/ubuntu) with our tools,
+documentation, and demos preinstalled, and provide [online html
+documentation](https://pirate-annotations.readthedocs.io).  The docker
+image can be installed and run by running
+
+```
+docker run -it pirateteam/ubuntu
+```
+
+This will download the image from Docker Hub, and start an interactive
+bash session in the root account.  The `pirate` directory contains the
+demos, and HTML documentaton.  The compiler toolchain and `libpirate`
+are pre-installed in `/usr/local`.
+
+If you are not able to run Docker in your environment, we provide
+precompiled versions of [`libpirate`](https://github.com/GaloisInc/pirate/actions)
+and [`pirate-llvm`](https://github.com/GaloisInc/pirate-llvm/actions)
+as part of continuous integration.
+
+Finally, the `pirate-llvm` [repository](https://github.com/GaloisInc/pirate-llvm) has
+links to instructions for building it, and instructions for building the
+other components are available below.
+
+This material is based upon work supported by the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR0011-19-C-0103.
 
 ### Building
 
