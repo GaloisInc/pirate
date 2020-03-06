@@ -99,7 +99,7 @@ static inline int is_empty(uint64_t value) {
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
 
-void udp_shmem_buffer_init_param(int gd, pirate_udp_shmem_param_t *param) {
+static void udp_shmem_buffer_init_param(int gd, pirate_udp_shmem_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
     }
@@ -344,7 +344,7 @@ int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
-ssize_t udp_shmem_buffer_read(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buffer,
+ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buffer,
                                 size_t count) {
     (void) param;
     uint64_t position;
@@ -449,7 +449,7 @@ ssize_t udp_shmem_buffer_read(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ct
   return count;
 }
 
-ssize_t udp_shmem_buffer_write(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
+ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
                             size_t count) {
     (void) param;
     int was_empty;

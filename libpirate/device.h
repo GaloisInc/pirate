@@ -26,7 +26,7 @@ typedef struct {
 int pirate_device_parse_param(char *str, pirate_device_param_t *param);
 int pirate_device_open(int gd, int flags, pirate_device_param_t *param, device_ctx *ctx);
 int pirate_device_close(device_ctx *ctx);
-ssize_t pirate_device_read(pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_device_write(pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_device_write(const pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count);
 
 #endif /*__PIRATE_CHANNEL_DEVICE_H */

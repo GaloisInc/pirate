@@ -21,9 +21,9 @@
 int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param);
 int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx);
 int udp_shmem_buffer_close(udp_shmem_ctx *ctx);
-ssize_t udp_shmem_buffer_read(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf,
+ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf,
                             size_t count);
-ssize_t udp_shmem_buffer_write(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, 
+ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, 
                             size_t count);
 
 #endif /* __PIRATE_CHANNEL_UDP_SHMEM_H */

@@ -26,7 +26,7 @@
 #include "pirate_common.h"
 #include "tcp_socket.h"
 
-void pirate_tcp_socket_init_param(int gd, pirate_tcp_socket_param_t *param) {
+static void pirate_tcp_socket_init_param(int gd, pirate_tcp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
     }
@@ -203,10 +203,10 @@ int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_tcp_socket_read(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
     return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
 }
 
-ssize_t pirate_tcp_socket_write(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
     return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
 }

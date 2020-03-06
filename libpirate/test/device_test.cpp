@@ -46,7 +46,7 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     ASSERT_EQ(DEVICE, param.channel_type);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);
-    ASSERT_EQ((unsigned)0, device_param->iov_len);
+    ASSERT_EQ(0u, device_param->iov_len);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);

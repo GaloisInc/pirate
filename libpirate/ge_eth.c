@@ -117,7 +117,7 @@ static int ge_message_unpack(const void *buf, void *data, uint32_t mtu,
     return 0;
 }
 
-void pirate_ge_eth_init_param(int gd, pirate_ge_eth_param_t *param) {
+static void pirate_ge_eth_init_param(int gd, pirate_ge_eth_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_GE_ETH_IP_ADDR);
     }
@@ -250,7 +250,7 @@ int pirate_ge_eth_close(ge_eth_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_ge_eth_read(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, void *buf, size_t count) {
     ssize_t rd_size;
     ge_header_t hdr = { 0 };
     
@@ -271,7 +271,7 @@ ssize_t pirate_ge_eth_read(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, void *
     return hdr.data_len;
 }
 
-ssize_t pirate_ge_eth_write(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, const void *buf, size_t count) {
     ge_header_t hdr = {
         .message_id = 1,
         .data_len = count,

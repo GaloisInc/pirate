@@ -64,7 +64,7 @@ static inline int is_full(uint64_t value) {
     return get_status(value) == 2;
 }
 
-void pirate_uio_init_param(pirate_uio_param_t *param) {
+static void pirate_uio_init_param(pirate_uio_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
     }
@@ -170,7 +170,7 @@ int pirate_uio_close(uio_ctx *ctx) {
     return munmap(buf, buffer_size());
 }
 
-ssize_t pirate_uio_read(pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
+ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     uint32_t reader, writer;
@@ -227,7 +227,7 @@ ssize_t pirate_uio_read(pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, s
     return nbytes;
 }
 
-ssize_t pirate_uio_write(pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
+ssize_t pirate_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
     (void) param;
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;

@@ -264,8 +264,8 @@ int pirate_mercury_close(mercury_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_mercury_read(pirate_mercury_param_t *param, mercury_ctx *ctx,
-                            void *buf, size_t count) {
+ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
+                            mercury_ctx *ctx, void *buf, size_t count) {
     ssize_t rd_len;
     int do_read = 1;
     uint32_t wait_counter = 0;
@@ -295,8 +295,8 @@ ssize_t pirate_mercury_read(pirate_mercury_param_t *param, mercury_ctx *ctx,
     return mercury_message_unpack(ctx->buf, rd_len, buf, count, param, ctx);
 }
 
-ssize_t pirate_mercury_write(pirate_mercury_param_t *param, mercury_ctx *ctx,
-                                const void *buf, size_t count) {
+ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
+                             mercury_ctx *ctx, const void *buf, size_t count) {
     ssize_t wr_len;
     int do_write = 1;
     uint32_t wait_counter = 0;

@@ -25,7 +25,7 @@
 #include "pirate_common.h"
 #include "unix_socket.h"
 
-void pirate_unix_socket_init_param(int gd, pirate_unix_socket_param_t *param) {
+static void pirate_unix_socket_init_param(int gd, pirate_unix_socket_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT, gd);
     }
@@ -187,10 +187,10 @@ int pirate_unix_socket_close(unix_socket_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_unix_socket_read(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count) {
     return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
 }
 
-ssize_t pirate_unix_socket_write(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
     return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
 }

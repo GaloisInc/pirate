@@ -175,7 +175,7 @@ error:
     return NULL;
 }
 
-void shmem_buffer_init_param(int gd, pirate_shmem_param_t *param) {
+static void shmem_buffer_init_param(int gd, pirate_shmem_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
     }
@@ -294,7 +294,7 @@ int shmem_buffer_close(shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
-ssize_t shmem_buffer_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
+ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     int was_full;
@@ -369,7 +369,7 @@ ssize_t shmem_buffer_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf
     return nbytes;
 }
 
-ssize_t shmem_buffer_write(pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
+ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
                             size_t count) {
     (void) param;
     uint64_t position;

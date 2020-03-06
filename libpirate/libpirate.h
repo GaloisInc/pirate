@@ -165,7 +165,7 @@ typedef struct {
 } pirate_udp_socket_param_t;
 
 // SHMEM parameters
-#define DEFAULT_SMEM_BUF_LEN                (128 << 10)
+#define DEFAULT_SMEM_BUF_LEN                (128u << 10)
 #define PIRATE_SHMEM_NAME_FMT               "/gaps.channel.%d"
 typedef struct {
     char path[PIRATE_LEN_NAME];
@@ -191,7 +191,7 @@ typedef struct {
 // SERIAL parameters
 #define PIRATE_SERIAL_NAME_FMT  "/dev/ttyUSB%d"
 #define SERIAL_DEFAULT_BAUD     B230400
-#define SERIAL_DEFAULT_MTU      1024
+#define SERIAL_DEFAULT_MTU      1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     speed_t baud;
@@ -213,7 +213,7 @@ typedef struct {
 // GE_ETH parameters
 #define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define DEFAULT_GE_ETH_IP_PORT  0x4745
-#define DEFAULT_GE_ETH_MTU      1454
+#define DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
