@@ -34,7 +34,8 @@ Finally, the `pirate-llvm` [repository](https://github.com/GaloisInc/pirate-llvm
 links to instructions for building it, and instructions for building the
 other components are available below.
 
-This material is based upon work supported by the Defense Advanced Research Projects Agency (DARPA) under Contract No. HR0011-19-C-0103.
+This material is based upon work supported by the Defense Advanced
+Research Projects Agency (DARPA) under Contract No. HR0011-19-C-0103.
 
 ### Building
 
