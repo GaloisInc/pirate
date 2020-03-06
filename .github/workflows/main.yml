@@ -22,8 +22,15 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
+              -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
+        make install
+    - name: Make libpirate artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: libpirate
+        path: dist/libpirate
     - name: libpirate tests
       timeout-minutes: 1
       run: |
@@ -39,6 +46,27 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
+    - name: Build documentation
+      run: |
+        pip3 install sphinx
+        export PATH="$HOME/.local/bin:$PATH"
+        sphinx-build -M html doc images/ubuntu/doc
+    - name: Build pirateteam/ubuntu
+      run: |
+        cp -a dist/libpirate images/ubuntu
+        cp -a demos images/ubuntu
+        docker build -t pirateteam/ubuntu images/ubuntu
+        docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
+    - name: Make pirateteam/ubuntu artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ubuntu-latest
+        path: ubuntu-latest.tar.gz
+    - name: Post docker images
+      run: |
+        echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
+        docker push pirateteam/ubuntu
+      if: github.ref == 'refs/heads/master'
   shmem:
     runs-on: ubuntu-latest
     steps:
@@ -87,7 +115,10 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
+              -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
         make
     - name: libpirate tests
       timeout-minutes: 1
