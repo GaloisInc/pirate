@@ -95,8 +95,9 @@ TEST(ChannelMercuryTest, BasicFunctionality) {
     const int channel = 0;
 
     const uint8_t wr_data[] = { 0xC0, 0xDE, 0xDA, 0xDA };
-    uint8_t rd_data[sizeof(wr_data)] = { 0 };
-    ssize_t io_size = sizeof(wr_data);
+    const ssize_t data_len = sizeof(wr_data);
+    uint8_t rd_data[data_len] = { 0 };
+    ssize_t io_size = -1;
 
     if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) != 0) {
         return;
@@ -121,15 +122,15 @@ TEST(ChannelMercuryTest, BasicFunctionality) {
     ASSERT_EQ(channel, rv);
     ASSERT_EQ(0, errno);
 
-    io_size = pirate_write(channel, wr_data, sizeof(wr_data));
-    ASSERT_EQ(io_size, sizeof(wr_data));
+    io_size = pirate_write(channel, wr_data, data_len);
+    ASSERT_EQ(io_size, data_len);
     ASSERT_EQ(0, errno);
 
-    io_size = pirate_read(channel, rd_data, sizeof(rd_data));
-    ASSERT_EQ(io_size, sizeof(rd_data));
+    io_size = pirate_read(channel, rd_data, data_len);
+    ASSERT_EQ(io_size, data_len);
     ASSERT_EQ(0, errno);
 
-    EXPECT_TRUE(0 == std::memcmp(wr_data, rd_data, sizeof(rd_data)));
+    EXPECT_TRUE(0 == std::memcmp(wr_data, rd_data, data_len));
 
     rv = pirate_close(channel, O_WRONLY);
     ASSERT_EQ(0, rv);
