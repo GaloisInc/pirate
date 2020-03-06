@@ -142,31 +142,23 @@ TEST(ChannelMercuryTest, BasicFunctionality) {
     ASSERT_EQ(0, errno);
 }
 
-class MercuryTest : public ChannelTest, public WithParamInterface<uint32_t>
+class MercuryTest : public ChannelTest, public WithParamInterface<int>
 {
 public:
     void ChannelInit()
     {
         int rv;
 
-        Writer.channel = Reader.channel = 0;
+        Writer.channel = Reader.channel = GetParam();
 
+        // Writer
         pirate_init_channel_param(MERCURY, &param);
-        const uint32_t mtu = GetParam();
-        if (mtu) {
-            param.mercury.mtu = mtu;
-        }
-
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
+        // Rreader
         pirate_init_channel_param(MERCURY, &param);
-        if (mtu) {
-            param.mercury.mtu = mtu;
-        }
-
-        // write and read parameters are the same
         rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);

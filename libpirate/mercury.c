@@ -69,10 +69,10 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         return -1;
     }
 
-    msg_hdr->header.session  = htobe32(1u);
-    msg_hdr->header.message  = htobe32(1u);
+    msg_hdr->header.session  = htobe32(ctx->session_id);
+    msg_hdr->header.message  = htobe32(ctx->session_id);
     msg_hdr->header.count    = htobe32(1u);
-    msg_hdr->header.data_tag = htobe32(1u);
+    msg_hdr->header.data_tag = htobe32(ctx->session_id);
     msg_hdr->time.ilip_time  = 0ul;
     msg_hdr->time.linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
     msg_hdr->data_length     = htobe32(data_len);
@@ -97,10 +97,10 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
         return -1;
     }
 
-    if ((be32toh(msg_hdr->header.session) != 1u) ||
-        (be32toh(msg_hdr->header.message) != 1u) ||
+    if ((be32toh(msg_hdr->header.session) != ctx->session_id) ||
+        (be32toh(msg_hdr->header.message) != ctx->session_id) ||
         (be32toh(msg_hdr->header.count) != 1u) ||
-        (be32toh(msg_hdr->header.data_tag) != 1u)) {
+        (be32toh(msg_hdr->header.data_tag) != ctx->session_id)) {
         return -1;
     }
 
