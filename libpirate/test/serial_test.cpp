@@ -135,6 +135,9 @@ TEST_P(SerialTest, Run)
     if ((access("/dev/ttyUSB0", W_OK) == 0) &&
         (access("/dev/ttyUSB1", R_OK) == 0)) {
         Run();
+    } else {
+        ASSERT_EQ(ENOENT, errno);
+        errno = 0;
     }
 }
 

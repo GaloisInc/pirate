@@ -100,6 +100,7 @@ TEST(ChannelMercuryTest, BasicFunctionality) {
     ssize_t io_size = -1;
 
     if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) != 0) {
+        ASSERT_EQ(ENOENT, errno);
         errno = 0;
         return;
     }
@@ -172,6 +173,7 @@ TEST_P(MercuryTest, Run)
     if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) == 0) {
         Run();
     } else {
+        ASSERT_EQ(ENOENT, errno);
         errno = 0;
     }
 }

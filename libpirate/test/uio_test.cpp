@@ -67,6 +67,9 @@ TEST_F(UioTest, UioFunctionalTest)
 {
     if (access("/dev/uio0", R_OK | W_OK) == 0) {
         Run();
+    } else {
+        ASSERT_EQ(ENOENT, errno);
+        errno = 0;
     }
 }
 
