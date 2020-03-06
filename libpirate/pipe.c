@@ -51,10 +51,12 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
 
 int pirate_pipe_open(int gd, int flags, pirate_pipe_param_t *param,
                         pipe_ctx *ctx) {
+    int err;
     pirate_pipe_init_param(gd, param);
+    err = errno;
     if (mkfifo(param->path, 0660) == -1) {
         if (errno == EEXIST) {
-            errno = 0;
+            errno = err;
         } else {
             return -1;
         }

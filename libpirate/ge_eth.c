@@ -153,7 +153,7 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
 }
 
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
-    int rv;
+    int err, rv;
     struct sockaddr_in addr;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -169,7 +169,7 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
@@ -178,7 +178,7 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
 
     rv = bind(ctx->sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
@@ -189,7 +189,7 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
 }
 
 static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
-    int rv;
+    int err, rv;
     struct sockaddr_in addr;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -203,7 +203,7 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     addr.sin_port = htons(param->port);
     rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;

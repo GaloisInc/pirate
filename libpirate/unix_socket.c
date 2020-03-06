@@ -56,7 +56,7 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 
 static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     int server_fd;
-    int rv;
+    int err, rv;
     struct sockaddr_un addr;
 
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -72,19 +72,19 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(server_fd);
             errno = err;
             return rv;
         }
     }
-
+    err = errno;
     unlink(param->path);
     // ignore unlink error if file does not exist
-    errno = 0;
+    errno = err;
     rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return rv;
@@ -92,7 +92,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
 
     rv = listen(server_fd, 0);
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return rv;
@@ -101,7 +101,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
     ctx->sock = accept(server_fd, NULL, NULL);
 
     if (ctx->sock < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return ctx->sock;
@@ -113,7 +113,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
 
 static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     struct sockaddr_un addr;
-    int rv;
+    int err, rv;
 
     ctx->sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (ctx->sock < 0) {
@@ -128,7 +128,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
         rv = setsockopt(ctx->sock, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             errno = err;
             return rv;
@@ -136,11 +136,12 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     }
 
     for (;;) {
+        err = errno;
         rv = connect(ctx->sock, (struct sockaddr *)&addr, sizeof(addr));
         if (rv < 0) {
             if ((errno == ENOENT) || (errno == ECONNREFUSED)) {
                 struct timespec req;
-                errno = 0;
+                errno = err;
                 req.tv_sec = 0;
                 req.tv_nsec = 1e8;
                 rv = nanosleep(&req, NULL);
@@ -148,7 +149,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
                     continue;
                 }
             }
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             errno = err;
             return rv;

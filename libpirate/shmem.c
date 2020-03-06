@@ -65,8 +65,7 @@ static inline int is_full(uint64_t value) {
 }
 
 static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
-    int rv;
-    int err;
+    int err, rv;
     int success = 0;
     shmem_buffer_t *shmem_buffer = NULL;
     pthread_mutexattr_t mutex_attr;
@@ -256,10 +255,10 @@ int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx 
             goto error;
         }
     }
-    
+    err = errno;
     if (shm_unlink(param->path) == -1) {
         if (errno == ENOENT) {
-            errno = 0;
+            errno = err;
         } else {
             goto error;
         }

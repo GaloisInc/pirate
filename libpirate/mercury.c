@@ -113,16 +113,17 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
 }
 
 int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param, mercury_ctx *ctx) {
-    int rv = -1;
+    int err, rv = -1;
 
 
     pirate_mercury_init_param(gd, param);
     // Current implementation uses pipe as a loopback
     // Remove pipe creation once it is no longer needed
+    err = errno;
     rv = mkfifo(param->path, 0660);
     if (rv == -1) {
         if (errno == EEXIST) {
-            errno = 0;
+            errno = err;
         } else {
             return -1;
         }

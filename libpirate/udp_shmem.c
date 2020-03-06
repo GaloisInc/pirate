@@ -306,10 +306,11 @@ int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, ud
             atomic_store(&buf->writer_pid, 0);
             goto error;
         }
-  }
+    }
+    err = errno;
     if (shm_unlink(param->path) == -1) {
         if (errno == ENOENT) {
-            errno = 0;
+            errno = err;
         } else {
             goto error;
         }
