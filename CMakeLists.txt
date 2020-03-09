@@ -1,4 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
+
+# This must be done before any language is set (ie before any project() or
+# enable_language() command).
+# https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#method-3-avoid-use-set
+if (NOT CMAKE_C_COMPILER)
+    set(CMAKE_C_COMPILER "clang")
+endif(NOT CMAKE_C_COMPILER)
+
 project(gaps)
 
 # Common options
