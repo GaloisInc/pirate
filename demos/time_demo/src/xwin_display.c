@@ -57,7 +57,7 @@ int xwin_display_initialize() {
 }
 
 static void convert_jpg_to_ximage(const unsigned char *buf, unsigned long len) {
-    int i, width, height, depth;
+    int i, width, depth;
     unsigned x, y, z, k;
 
     struct jpeg_decompress_struct cinfo;
@@ -77,7 +77,6 @@ static void convert_jpg_to_ximage(const unsigned char *buf, unsigned long len) {
 
     jpeg_start_decompress(&cinfo);
     width = cinfo.output_width;
-    height = cinfo.output_height;
     depth = cinfo.num_components; //should always be 3
 
     row_pointer[0] = jpg_row_image;

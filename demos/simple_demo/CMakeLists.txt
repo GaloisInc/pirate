@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(simple_demo)
-set(CMAKE_C_COMPILER "clang")
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Options

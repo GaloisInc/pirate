@@ -31,6 +31,7 @@ jobs:
       with:
         name: libpirate
         path: dist/libpirate
+      if: github.ref == 'refs/heads/master'
     - name: libpirate tests
       timeout-minutes: 1
       run: |
@@ -57,11 +58,13 @@ jobs:
         cp -a demos images/ubuntu
         docker build -t pirateteam/ubuntu images/ubuntu
         docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
+      if: github.ref == 'refs/heads/master'
     - name: Make pirateteam/ubuntu artifact
       uses: actions/upload-artifact@v1
       with:
         name: ubuntu-latest
         path: ubuntu-latest.tar.gz
+      if: github.ref == 'refs/heads/master'
     - name: Post docker images
       run: |
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
@@ -94,6 +97,21 @@ jobs:
         cd build/libpirate
         ./gaps_channels_test
         make valgrind
+  gcc:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: build libpirate
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_C_COMPILER="gcc" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
+    - name: build demos
+      run: |
+        cd build
+        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
   gaps:
     runs-on: ubuntu-latest
     container: docker://pirateteam/llvm-ubuntu:latest
