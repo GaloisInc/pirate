@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(enclave_demo)
 
-set(CMAKE_C_COMPILER "clang")
-
 function(add_gaps_target TGT SRC)
     SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
     add_executable(${TGT} ${SRC})
