@@ -17,9 +17,7 @@
 #include "ownship.h"
 #include "target.h"
 
-
-
-template<typename T> 
+template<typename T>
 struct Pipe {
   Sender<T> sender;
   Receiver<T> receiver;
@@ -30,16 +28,16 @@ Pipe<T> initPipe()
 {
   int fd[2];
   if (pipe(fd)) { std::cerr << "pipe failed" << std::endl; exit(-1); }
-  return { .sender = fdSender<T>(fd[1]), 
+  return { .sender = fdSender<T>(fd[1]),
            .receiver = fdReceiver<T>(fd[0])
          };
 }
 
 template<typename T>
-void pirateReadMessages(const char* nm, int gd, std::function<void (const T& d)> f) 
+void pirateReadMessages(const char* nm, int gd, std::function<void (const T& d)> f)
 {
   while (true) {
-    T p; 
+    T p;
     ssize_t cnt = pirate_read(gd, &p, sizeof(T));
     if (cnt == -1) {
       print([nm](std::ostream& o) { o << "Read " << nm << " failed " << errno << std::endl; });
@@ -95,7 +93,7 @@ Pipe<T> initPiratePipe(int rd, const std::string& rdparam,
 
   Sender<T> s =  [wrGD](const T& d) { pirate_write(wrGD, &d, sizeof(T)); };
 
-  Receiver<T> r = 
+  Receiver<T> r =
     [nm, rdGD](std::function<void (const T& d)> f) {
       std::thread t(&pirateReadMessages<T>, nm, rdGD, f);
       t.detach();
@@ -163,34 +161,33 @@ void setupGps(Sender<Position> gpsSender)
   Position p(.0, .0, .0); // initial position
   Velocity v(50, 25, 12);
 
-  GpsSensor* gps = new GpsSensor(gpsSender, p, v);  
+  GpsSensor* gps = new GpsSensor(gpsSender, p, v);
+  // Run every 10 gps milliseconds.
   startTimer(10, [gps](){ gps->read(msecs(10)); });
 }
 
 void setupTarget(Receiver<Position> uav, Receiver<Distance> rf, Receiver<Position> gps)
 {
-  
-  Target* tgt    = new Target(10); // updates at 10 Hz frequency
+  Target* tgt = new Target(10); // updates at 10 Hz frequency
   auto tgtMutex = new std::mutex();
 
   asyncReadMessages<Position>(uav,
-    [tgt, tgtMutex](const Position& p) { 
+    [tgt, tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(*tgtMutex);
-        tgt->setUAVLocation(p); 
+        tgt->setUAVLocation(p);
       });
-  asyncReadMessages<Distance>(rf, 
-    [tgt, tgtMutex](const Distance& d) { 
+  asyncReadMessages<Distance>(rf,
+    [tgt, tgtMutex](const Distance& d) {
         std::lock_guard<std::mutex> g(*tgtMutex);
         tgt->setDistance(d);
       });
   asyncReadMessages<Position>(gps,
-    [tgt, tgtMutex](const Position& p) { 
-      std::lock_guard<std::mutex> g(*tgtMutex); 
-      tgt->onGpsPositionChange(p); 
+    [tgt, tgtMutex](const Position& p) {
+      std::lock_guard<std::mutex> g(*tgtMutex);
+      tgt->onGpsPositionChange(p);
     });
 }
 
-// This doesn't reurn ans must be last.
 void setupRfSensor(Sender<Distance> rfSender)
 {
   Distance d(1062, 7800, 9000); // initial target distance
@@ -201,10 +198,10 @@ void setupRfSensor(Sender<Distance> rfSender)
 
 void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
 {
-  OwnShip* uav = new OwnShip(uavSender, 100); // updates at 100 Hz frequency  
-  asyncReadMessages<Position>(gps, 
-    [uav](const Position& p) { 
-        uav->onGpsPositionChange(p); 
+  OwnShip* uav = new OwnShip(uavSender, 100); // updates at 100 Hz frequency
+  asyncReadMessages<Position>(gps,
+    [uav](const Position& p) {
+        uav->onGpsPositionChange(p);
       });
 }
 
@@ -212,7 +209,7 @@ void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
 #pragma pirate enclave declare(yellow)
 
 void showUsage(const char* arg0) {
-  std::cerr 
+  std::cerr
     << "Usage:\n"
     << "  "  << arg0 << " --gps-to-uav path --uav-to-target path --rf-to-target path\n"
     << std::endl
@@ -241,7 +238,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
     } else {
       std::cerr << "Unexpected argument " << argv[i] << std::endl;
       showUsage(argv[0]);
-    }    
+    }
   }
 
   auto gpsToTargetChan = initPipe<Position>(); // Green to green
@@ -260,7 +257,6 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   usleep(5 * 1000 * 1000);
   return 0;
 }
-
 
 int run_yellow(int argc, char** argv) __attribute__((pirate_enclave_main("yellow")))
 {
@@ -283,7 +279,7 @@ int run_yellow(int argc, char** argv) __attribute__((pirate_enclave_main("yellow
     } else {
       std::cerr << "Unexpected argument " << argv[i] << std::endl;
       showUsage(argv[0]);
-    }    
+    }
   }
   auto gpsToUAVRecv    = initPirateReceiver<Position>(0, gpsToUAVPath, "gapsToUAV");    // Green to yellow
   auto uavToTargetSend = initPirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Yellow to green
