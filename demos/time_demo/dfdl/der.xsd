@@ -151,8 +151,8 @@
     <xs:complexType name="utcTime">
         <xs:sequence>
             <xs:element name="type" type="xs:unsignedByte" fixed="23"></xs:element>
-            <xs:element name="length" type="xs:unsignedByte" fixed="13"></xs:element>
-            <xs:element name="value" type="xs:string" dfdl:lengthKind="explicit" dfdl:length="13"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:string" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
         </xs:sequence>
     </xs:complexType>
 
