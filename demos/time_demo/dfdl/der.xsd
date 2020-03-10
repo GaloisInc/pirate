@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema targetNamespace="urn:der" xmlns:tns="urn:der"
+    xmlns:msi="urn:der"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:dfdl="http://www.ogf.org/dfdl/dfdl-1.0/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:fn="http://www.w3.org/2005/xpath-functions"
+    elementFormDefault="unqualified">
+
+    <xs:annotation>
+        <xs:appinfo source="http://www.ogf.org/dfdl/">
+            <!--  encodingErrorPolicy="error" not yet implemented -->
+            <dfdl:format
+          alignment="1"
+          alignmentUnits="bytes"
+          binaryFloatRep="ieee"
+          binaryNumberCheckPolicy="lax"
+          binaryNumberRep="binary"
+          binaryCalendarEpoch="1970-01-01T00:00:00"
+          bitOrder="mostSignificantBitFirst"
+          byteOrder="bigEndian"
+          calendarCenturyStart="53"
+          calendarCheckPolicy="strict"
+          calendarDaysInFirstWeek="4"
+          calendarFirstDayOfWeek="Sunday"
+          calendarLanguage="en"
+          calendarObserveDST="yes"
+          calendarPatternKind="implicit"
+          calendarTimeZone="UTC"
+          choiceLengthKind="implicit"
+          decimalSigned="yes"
+          documentFinalTerminatorCanBeMissing="no"
+          emptyValueDelimiterPolicy="both"
+          encodingErrorPolicy="replace"
+          encoding="US-ASCII"
+          escapeSchemeRef=""
+          fillByte="%#r20;"
+          floating="no"
+          ignoreCase="no"
+          initiatedContent="no"
+          initiator=""
+          leadingSkip="0"
+          lengthKind="implicit"
+          lengthUnits="bytes"
+          occursCountKind="implicit"
+          outputNewLine="%LF;"
+          representation="binary"
+          separator=""
+          separatorPosition="infix"
+          separatorSuppressionPolicy="anyEmpty"
+          sequenceKind="ordered"
+          terminator=""
+          textBidi="no"
+          textBooleanPadCharacter="%SP;"
+          textCalendarJustification="left"
+          textCalendarPadCharacter="%SP;"
+          textNumberCheckPolicy="lax"
+          textNumberJustification="right"
+          textNumberPadCharacter="%SP;"
+          textNumberPattern="#,##0.###;-#,##0.###"
+          textNumberRep="standard"
+          textNumberRounding="explicit"
+          textNumberRoundingIncrement="0"
+          textNumberRoundingMode="roundHalfEven"
+          textOutputMinLength="0"
+          textPadKind="none"
+          textStandardBase="10"
+          textStandardDecimalSeparator="."
+          textStandardExponentRep="E"
+          textStandardGroupingSeparator=","
+          textStandardInfinityRep="Inf"
+          textStandardNaNRep="NaN"
+          textStandardZeroRep="0"
+          textStringJustification="left"
+          textStringPadCharacter="%SP;"
+          textTrimKind="none"
+          trailingSkip="0"
+          truncateSpecifiedLengthString="no"
+          utf16Width="fixed"
+            />
+        </xs:appinfo>
+    </xs:annotation>
+    
+    <!--  ELEMENT DECLARATIONS -->
+
+    <xs:element name="DER" type="tns:derType" />
+
+    <!--  TYPE DECLARATIONS -->
+
+    <!-- length types -->
+
+    <xs:complexType name="derLength">
+        <xs:sequence>
+            <xs:element name="flag" type="xs:unsignedByte" dfdl:lengthUnits="bits" dfdl:alignmentUnits="bits" dfdl:lengthKind="explicit" dfdl:length="1"></xs:element>
+            <xs:element name="short" type="xs:unsignedByte" dfdl:lengthUnits="bits" dfdl:alignmentUnits="bits" dfdl:lengthKind="explicit" dfdl:length="7"></xs:element>
+            <xs:element name="long" type="xs:hexBinary" dfdl:lengthKind="explicit" dfdl:length="{ if (../flag) then (../short) else 0 }"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- primitive types -->
+
+    <xs:complexType name="derBoolean">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="1"></xs:element>
+            <xs:element name="length" type="xs:unsignedByte" fixed="1"></xs:element>
+            <xs:element name="value" type="xs:unsignedByte"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="derInteger">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="2"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:hexBinary" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="derNull">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="5"></xs:element>
+            <xs:element name="length" type="xs:unsignedByte" fixed="0"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="objectIdentifier">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="6"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:hexBinary" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="octetString">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="4"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:hexBinary" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="utf8String">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="12"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:string" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="printableString">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="19"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="xs:string" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="utcTime">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="23"></xs:element>
+            <xs:element name="length" type="xs:unsignedByte" fixed="13"></xs:element>
+            <xs:element name="value" type="xs:string" dfdl:lengthKind="explicit" dfdl:length="13"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- collection types -->
+    <xs:complexType name="derSequence">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="48"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="tns:collection" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="derSet">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="49"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="tns:collection" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="derContextSpecific">
+        <xs:sequence>
+            <xs:element name="type" type="xs:unsignedByte" fixed="160"></xs:element>
+            <xs:element name="length" type="tns:derLength"></xs:element>
+            <xs:element name="value" type="tns:derType" dfdl:lengthKind="explicit" dfdl:length=" { if (../length/flag) then dfdl:unsignedLong(../length/long) else dfdl:unsignedLong(../length/short) } " ></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="derType">
+        <xs:choice>
+            <xs:element name="derSequence" type="tns:derSequence"/>
+            <xs:element name="derSet" type="tns:derSet"/>
+            <xs:element name="derContextSpecific" type="tns:derContextSpecific"/>
+            <xs:element name="derBoolean" type="tns:derBoolean"/>
+            <xs:element name="derInteger" type="tns:derInteger"/>
+            <xs:element name="derNull" type="tns:derNull"/>
+            <xs:element name="objectIdentifier" type="tns:objectIdentifier"/>
+            <xs:element name="octetString" type="tns:octetString"/>
+            <xs:element name="utf8String" type="tns:utf8String"/>
+            <xs:element name="printableString" type="tns:printableString"/>
+            <xs:element name="utcTime" type="tns:utcTime"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="collection">
+        <xs:sequence>
+            <xs:element name="collectionElement" type="tns:derType" maxOccurs="unbounded"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
