@@ -49,7 +49,17 @@ $ cmake ..
 $ make
 ```
 
-To build the demo applications that use libpirate:
+To build the channel demo application that uses libpirate:
+
+```
+$ cd pirate
+$ mkdir build
+$ cd build
+$ cmake -DCHANNEL_DEMO=ON ..
+$ make
+```
+
+To build all the demo applications that use libpirate:
 
 ```
 $ cd pirate
@@ -69,7 +79,8 @@ $ cmake -D<OPTION_NAME>=ON ..
 
  * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests (requires googletest v1.10 or greater)
  * ```GAPS_ENABLE``` enable compilation with GAPS annotations
- * ```GAPS_DEMOS``` enable compilation of GAPS demo applications
+ * ```CHANNEL_DEMO``` enable compilation of GAPS channel application
+ * ```GAPS_DEMOS``` enable compilation of all GAPS demo applications
  * ```GAPS_BENCH``` enable compilation of GAPS benchmark applications
  * ```PIRATE_SHMEM_FEATURE``` support shared memory channels (requires libpthread and librt)
  * ```BUILD_ALL``` enables PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH
@@ -91,13 +102,21 @@ the [wiki](https://github.com/GaloisInc/pirate/wiki/libpirate-benchmarks).
 
 ### demos
 
+#### channel_demo
+
+Provide a simple application for validating GAPS channel API and
+functionality, continuous integration of the PIRATE library,
+facilitating hardware integration, and debugging. The channel
+demo has a reader and a writer that can be configured to use
+different channel types and transmit different patterns of data. ([more information](/demos/channel_demo))
+
 #### simple_demo
 
 Adapted a simple webserver as a demonstration of an application using GAPS
 channels. Manually separated the program into two executables. The low side
 application is a webserver that sends http requests to the high side
 application. The high side application filters the html response before
-sending it to the low side application. Uses the libpirate API.
+sending it to the low side application. Uses the libpirate API. ([more information](/demos/simple_demo))
 
 Adapted from http://www.cs.cmu.edu/afs/cs/academic/class/15213-s00/www/class28/tiny.c
 
@@ -107,7 +126,7 @@ executables.
 
 #### time_demo
 
-Trusted timestamping is the process of tracking the time that data was created or modified. A trusted timestamp generally identifies the data that timestamped (typically by a secure hash of the data), the time that the data was timestamped, and a digital signature or other evidence that the timestamp should be trusted. This is typically a digitial signature signed by a trusted third party, but could include additional evidence such as information needed to locate the timestamp in a blockchain ledger. The additional information could be used to provide alternate methods of establishing trust if the private key associated with the digital signature is lost.
+Trusted timestamping is the process of tracking the time that data was created or modified. A trusted timestamp generally identifies the data that timestamped (typically by a secure hash of the data), the time that the data was timestamped, and a digital signature or other evidence that the timestamp should be trusted. This is typically a digitial signature signed by a trusted third party, but could include additional evidence such as information needed to locate the timestamp in a blockchain ledger. The additional information could be used to provide alternate methods of establishing trust if the private key associated with the digital signature is lost. ([more information](/demos/time_demo))
 
 ### device drivers
 
