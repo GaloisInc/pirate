@@ -3,11 +3,6 @@ cmake_minimum_required(VERSION 3.13)
 project(simple_demo)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
-# Options
-if (GAPS_ENABLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
-endif(GAPS_ENABLE)
-
 # Sensitivity levels and output binary names
 set(HIGH "high")
 set(LOW "low")
@@ -28,10 +23,7 @@ configure_file(${RES_DIR}/${FAV_ICON_HIGH} ${HIGH_DIR}/${FAV_ICON} COPYONLY)
 configure_file(${RES_DIR}/${FAV_ICON_LOW} ${LOW_DIR}/${FAV_ICON} COPYONLY)
 
 # Build flags
-set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
-if (GAPS_ENABLE)
-    set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-endif(GAPS_ENABLE)
+SET(BUILD_FLAGS ${PIRATE_C_FLAGS})
 
 # Source files
 SET(SRC_DIR ${PROJECT_SOURCE_DIR}/src)

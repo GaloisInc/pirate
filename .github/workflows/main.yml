@@ -23,7 +23,10 @@ jobs:
         mkdir -p build
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
-              -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+              -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON \
+              -DGAPS_ENABLE=OFF \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
         make
         make install
     - name: Make libpirate artifact
@@ -41,7 +44,7 @@ jobs:
     - name: build demos
       run: |
         cd build
-        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGAPS_DEMOS=ON -DGAPS_ENABLE=OFF -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
@@ -91,7 +94,11 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DPIRATE_SHMEM_FEATURE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON \
+              -DPIRATE_SHMEM_FEATURE=ON \
+              -DGAPS_ENABLE=OFF \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
         make
     - name: libpirate tests
       timeout-minutes: 1
@@ -135,8 +142,8 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
-              -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON \
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON \
+              -DGAPS_ENABLE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
         make

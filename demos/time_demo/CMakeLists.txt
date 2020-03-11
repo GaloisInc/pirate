@@ -14,10 +14,6 @@ if(GAPS_SERIAL)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_SERIAL")
 endif(GAPS_SERIAL)
 
-if (GAPS_ENABLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
-endif(GAPS_ENABLE)
-
 # Dependencies
 find_package(OpenSSL REQUIRED)
 find_library(JPEG_LIB jpeg)
@@ -51,10 +47,7 @@ set(PURPLE_DIR ${PROJECT_BINARY_DIR}/${LEVEL_PURPLE})
 file(MAKE_DIRECTORY ${ORANGE_DIR} ${YELLOW_DIR} ${PURPLE_DIR})
 
 # Build flags
-set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
-if (GAPS_ENABLE)
-    set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-endif(GAPS_ENABLE)
+SET(BUILD_FLAGS ${PIRATE_C_FLAGS})
 
 # Source files
 set(COMMON_SRC

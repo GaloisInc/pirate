@@ -10,7 +10,7 @@ endif(NOT CMAKE_C_COMPILER)
 project(gaps)
 
 # Common options
-option(GAPS_ENABLE "Enable compilation with GAPS annotation" OFF)
+set(GAPS_ENABLE "" CACHE STRING "Enable compilation with pirate annotations")
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
@@ -28,6 +28,17 @@ endif(BUILD_ALL)
 
 # Common build options
 set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+
+if("${GAPS_ENABLE}" STREQUAL "")
+    message("-- Testing for pirate annotation support")
+    try_compile(GAPS_ENABLE ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/cmake/test_gaps.c)
+endif("${GAPS_ENABLE}" STREQUAL "")
+
+if (GAPS_ENABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGAPS_ENABLE")
+    set(PIRATE_C_FLAGS ${PIRATE_C_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
+endif(GAPS_ENABLE)
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
