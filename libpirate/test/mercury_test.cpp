@@ -170,7 +170,7 @@ typedef struct {
 class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestParam>
 {
 public:
-    void ChannelInit()
+    void ChannelInit() override
     {
         WriteDelayUs = 1000;
 
