@@ -221,7 +221,7 @@ public:
         ASSERT_EQ(mMercuryParam.session_id, rdParam.mercury.session.id);
     }
 
-    void ReaderChannelOpen()
+    void ReaderChannelOpen() override
     {
         pirate_channel_param_t rdParam;
 
