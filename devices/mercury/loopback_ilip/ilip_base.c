@@ -49,6 +49,7 @@
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/stat.h>
+#include <linux/timekeeping.h>
 
 #include <linux/uaccess.h>
 
