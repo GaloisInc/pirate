@@ -27,8 +27,23 @@
 #include "pirate_common.h"
 #include "mercury.h"
 
-#pragma pack(4)
+#define ARRAY_SZ(a) (sizeof(a)/sizeof(a[0]))
 
+typedef enum {
+    MERCURY_CFG_OFF_SOURCE_ID      = 0,
+    MERCURY_CFG_OFF_LEVEL          = 4,
+    MERCURY_CFG_OFF_DESTINATION_ID = 8,
+    MERCURY_CFG_OFF_MESSAGES       = 12
+} mercury_wr_config_offset_e;
+
+typedef enum {
+    MERCURY_CFG_OFF_SESSION_ID     = 0
+} mercury_rd_config_offset_e;
+
+#define PIRATE_MERCURY_DEFAULT_FMT  "/dev/gaps_ilip_%d_%s"
+#define PIRATE_MERCURY_SESSION_FMT  "/dev/gaps_ilip_s_%08x_%s"
+
+#pragma pack(4)
 typedef struct {
     uint32_t session;
     uint32_t message;
@@ -46,19 +61,17 @@ typedef struct ilip_message {
     ilip_time_t time;
     uint32_t data_length;
 } ilip_message_t;
-
 #pragma pack()
 
-static pthread_mutex_t open_lock = PTHREAD_MUTEX_INITIALIZER; 
+static pthread_mutex_t open_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t mercury_message_pack(void *buf, const void *data,
-        uint32_t data_len, const pirate_mercury_param_t *param,
-        const mercury_ctx *ctx) {
+        uint32_t data_len, const pirate_mercury_param_t *param) {
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(ilip_message_t);
     const ssize_t msg_len = data_len + sizeof(ilip_message_t);
     struct timespec tv;
-    (void) ctx;
+    uint64_t linux_time;
 
     if (msg_len > param->mtu) {
         errno = ENOBUFS;
@@ -68,15 +81,99 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     if(clock_gettime(CLOCK_REALTIME, &tv) != 0 ) {
         return -1;
     }
+    linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
 
-    msg_hdr->header.session  = htobe32(ctx->session_id);
-    msg_hdr->header.message  = htobe32(ctx->session_id);
-    msg_hdr->header.count    = htobe32(1u);
-    msg_hdr->header.data_tag = htobe32(ctx->session_id);
+    // Count is always 1 for now
+    msg_hdr->header.count = htobe32(1u);
+
+    // Session
+    msg_hdr->header.session = htobe32(param->session.id);
+
+    switch (param->session.id) {
+
+        case 1:
+        case 0xECA51756:
+        {
+            const uint32_t msg[] = {1, 2, 3};
+            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            msg_hdr->header.message = htobe32(msg_tag);
+            switch (msg_tag) {
+                case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
+                case 2:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                case 3:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                default:  return -1;
+            }
+            break;
+        }
+
+        case 2:
+        case 0x67FF90F4:
+        {
+            const uint32_t msg[] = {2, 2, 3};
+            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            msg_hdr->header.message = htobe32(msg_tag);
+            switch (msg_tag) {
+                case 2:   msg_hdr->header.data_tag = htobe32(2u);   break;
+                case 3:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                default:  return -1;
+            }
+            break;
+        }
+
+        case 0x6BB83E13:
+        {
+            const uint32_t msg[] = {1, 5, 6};
+            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            msg_hdr->header.message = htobe32(msg_tag);
+            switch (msg_tag) {
+                case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
+                case 5:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                case 6:   msg_hdr->header.data_tag = htobe32(4u);   break;
+                default:  return -1;
+            }
+            break;
+        }
+
+        case 0x8127AA5B:
+        {
+            const uint32_t msg[] = {2, 3, 4};
+            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            msg_hdr->header.message = htobe32(msg_tag);
+            switch (msg_tag) {
+                case 2:   msg_hdr->header.data_tag = htobe32(1u);   break;
+                case 3:   msg_hdr->header.data_tag = htobe32(1u);   break;
+                case 4:   msg_hdr->header.data_tag = htobe32(2u);   break;
+                default:  return -1;
+            }
+            break;
+        }
+
+        case 0x2C2B8E86:
+        {
+            msg_hdr->header.message = htobe32(1u);
+            const uint32_t data[] = {1, 3, 4};
+            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
+            msg_hdr->header.data_tag = htobe32(data_tag);
+            break;
+        }
+
+        case 0x442D2490:
+        {
+            msg_hdr->header.message = htobe32(2u);
+            const uint32_t data[] = {1, 2};
+            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
+            msg_hdr->header.data_tag = htobe32(data_tag);
+            break;
+        }
+
+        default:
+            return -1;
+    }
+
     msg_hdr->time.ilip_time  = 0ul;
     msg_hdr->time.linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
+    
     msg_hdr->data_length     = htobe32(data_len);
-
     memcpy(msg_data, data, data_len);
     return msg_len;
 }
@@ -84,10 +181,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
 static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
                                         void *data, ssize_t count,
-                                        const pirate_mercury_param_t *param,
-                                        const mercury_ctx *ctx) {
-    (void) ctx;
-
+                                        const pirate_mercury_param_t *param) {
     const ilip_message_t *msg_hdr = (const ilip_message_t *)buf;
     const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
     ssize_t payload_len;
@@ -97,10 +191,8 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
         return -1;
     }
 
-    if ((be32toh(msg_hdr->header.session) != ctx->session_id) ||
-        (be32toh(msg_hdr->header.message) != ctx->session_id) ||
-        (be32toh(msg_hdr->header.count) != 1u) ||
-        (be32toh(msg_hdr->header.data_tag) != ctx->session_id)) {
+    if ((be32toh(msg_hdr->header.session) != param->session.id) ||
+        (be32toh(msg_hdr->header.count) != 1u)) {
         return -1;
     }
 
@@ -115,16 +207,9 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     return count;
 }
 
-static void pirate_mercury_init_param(int gd, int flags,
-                                        pirate_mercury_param_t *param) {
-    if (param->application_id == 0) {
-        param->application_id = gd + 1;
-    }
-
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_NAME_FMT, 
-                    param->application_id,
-                    flags == O_RDONLY ? "read" : "write");
+static void pirate_mercury_init_param(int gd, pirate_mercury_param_t *param) {
+    if (param->session.level == 0) {
+        param->session.level = param->session.source_id = gd + 1;
     }
 
     if (param->mtu == 0) {
@@ -144,20 +229,41 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->application_id = strtol(ptr, NULL, 10);
-    }
+    // Non-parsed and default parameters
+    param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
+    param->timeout_ms = PIRATE_MERCURY_DEFAULT_TIMEOUT_MS;
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    // Level
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    param->session.level = strtol(ptr, NULL, 10);
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->mtu = strtol(ptr, NULL, 10);
+    // Source ID
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    param->session.source_id = strtol(ptr, NULL, 10);
 
+    // Destination ID
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    param->session.destination_id = strtol(ptr, NULL, 10);
+
+    // Timeout
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->timeout_ms = strtol(ptr, NULL, 10);
+    }
+
+    // Messages
+    while (((ptr = strtok(NULL, OPT_DELIM)) != NULL) &&
+           (param->session.message_count < PIRATE_MERCURY_MESSAGE_TABLE_LEN)) {
+        param->session.messages[param->session.message_count++] = 
+            strtol(ptr, NULL, 10);
     }
 
     return 0;
@@ -165,19 +271,14 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
 
 int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param, 
                             mercury_ctx *ctx) {
+    const uint32_t cfg_len = sizeof(uint32_t);
     ssize_t sz;
     int fd_root = -1;
     ctx->flags = flags;
     const mode_t mode = ctx->flags == O_RDONLY ? S_IRUSR : S_IWUSR;
 
-    /* Current implementation is limited to two channels */
-    if (gd > 1) {
-        errno = ELNRNG;
-        return -1;
-    }
-
-    /* Open the root device to convert application ID to session ID */
-    pirate_mercury_init_param(gd, flags, param);
+    /* Open the root device to configure and establish a session */
+    pirate_mercury_init_param(gd, param);
 
     if (pthread_mutex_lock(&open_lock) != 0) {
         return -1;
@@ -188,18 +289,39 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
         goto error_session;
     }
 
-    sz = write(fd_root, &param->application_id, sizeof(param->application_id));
-    if (sz != sizeof(param->application_id)) {
+    if (param->session.message_count > 0) {
+        const uint32_t msg_cgf_len = param->session.message_count * cfg_len;
+
+        // Level
+        sz = pwrite(fd_root, &param->session.level, cfg_len, 
+                    MERCURY_CFG_OFF_SOURCE_ID);
+        if (sz != cfg_len) {
+            goto error_session;
+        }
+
+        // Destination ID
+        sz = pwrite(fd_root, &param->session.destination_id, cfg_len,
+                    MERCURY_CFG_OFF_DESTINATION_ID);
+        if (sz != cfg_len) {
+            goto error_session;
+        }
+
+        // Message tags
+        sz = pwrite(fd_root, param->session.messages, msg_cgf_len,
+                    MERCURY_CFG_OFF_MESSAGES);
+        if (sz != msg_cgf_len) {
+            goto error_session;
+        }
+    }
+
+    sz = pwrite(fd_root, &param->session.source_id, cfg_len,
+                    MERCURY_CFG_OFF_SOURCE_ID);
+    if (sz != cfg_len) {
         goto error_session;
     }
 
-    sz = read(fd_root, &ctx->session_id, sizeof(ctx->session_id));
-    if (sz != sizeof(ctx->session_id)) {
-        goto error_session;
-    }
-
-    if (param->application_id != ctx->session_id) {
-        errno = EBADE;
+    sz = pread(fd_root, &param->session.id, cfg_len, MERCURY_CFG_OFF_SESSION_ID);
+    if (sz != sizeof(param->session.id)) {
         goto error_session;
     }
 
@@ -213,8 +335,21 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
         goto error;
     }
 
+    if (param->session.message_count == 0) {
+        if (param->session.source_id != param->session.id) {
+            errno = EBADE;
+            goto error;
+        }
+
+        snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
+                    param->session.id, flags == O_RDONLY ? "read" : "write");
+    } else {
+        snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
+                    param->session.id, flags == O_RDONLY ? "read" : "write");
+    }
+
     /* Open the device */
-    if ((ctx->fd = open(param->path, ctx->flags, mode)) < 0) {
+    if ((ctx->fd = open(ctx->path, ctx->flags, mode)) < 0) {
         goto error;
     }
 
@@ -292,7 +427,7 @@ ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
         }
     } while(do_read == 1);
 
-    return mercury_message_unpack(ctx->buf, rd_len, buf, count, param, ctx);
+    return mercury_message_unpack(ctx->buf, rd_len, buf, count, param);
 }
 
 ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
@@ -306,7 +441,7 @@ ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
         return -1;
     }
 
-    if ((wr_len = mercury_message_pack(ctx->buf, buf, count, param, ctx)) < 0) {
+    if ((wr_len = mercury_message_pack(ctx->buf, buf, count, param)) < 0) {
         return -1;
     }
 

@@ -109,10 +109,11 @@ typedef enum {
 
     // The gaps channel for Mercury System PCI-E device
     // Configuration parameters - pirate_mercury_param_t
-    //  - application_id - application id, default gd + 1
-    //  - path           - device path
-    //  - mtu            - maximum frame length, default 256
-    //  - timeout_ms     - read/write timeout in milliseconds, default 1000
+    //  - Level          - Sensitivity level, required
+    //  - Source ID      - Source ID, required
+    //  - Destination ID - Destination ID, required
+    //  - Timeout (ms)   - Read/write timeout in milliseconds, optional
+    //  - Messages       - Message IDs, optional
     MERCURY,
 
     // The gaps channel for GRC Ethernet devices
@@ -200,12 +201,19 @@ typedef struct {
 
 // MERCURY parameters
 #define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
-#define PIRATE_MERCURY_NAME_FMT             "/dev/gaps_ilip_%d_%s"
 #define PIRATE_MERCURY_DEFAULT_MTU          256u
 #define PIRATE_MERCURY_DEFAULT_TIMEOUT_MS   1000u
+#define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
 typedef struct {
-    uint32_t application_id;
-    char path[PIRATE_LEN_NAME];
+    struct {
+        uint32_t level;
+        uint32_t source_id;
+        uint32_t destination_id;
+        uint32_t message_count;
+        uint32_t messages[PIRATE_MERCURY_MESSAGE_TABLE_LEN];
+        uint32_t id;
+    } session;
+
     uint32_t mtu;
     uint32_t timeout_ms;
 } pirate_mercury_param_t;
@@ -271,7 +279,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial[,path,baud,mtu]\n"                                 \
-    "  MERCURY       mercury[,application_id,path,mtu,timeout_ms]\n"           \
+    "  MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]\n"  \
     "  GE_ETH        ge_eth[,addr,port,mtu]\n"
 
 // Copies channel parameters from param argument into configuration.
