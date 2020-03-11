@@ -21,8 +21,8 @@ $ git clone https://github.com/GaloisInc/pirate.git
 $ cd pirate
 $ mkdir build
 $ cd build
-$ cmake --target channel_demo ..
-$ make writer reader
+$ cmake -DCHANNEL_DEMO=ON ..
+$ make
 ```
 
 Output artifacts are located in ```pirate/build/demos/channel_demo```

@@ -14,7 +14,8 @@ option(GAPS_ENABLE "Enable compilation with GAPS annotation" OFF)
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
-option(GAPS_DEMOS "Enable compilation of GAPS demo applications" OFF)
+option(CHANNEL_DEMO "Enable compilation of GAPS channel application" OFF)
+option(GAPS_DEMOS "Enable compilation of all GAPS demo applications" OFF)
 option(GAPS_BENCH "Enable compilation of GAPS benchmark applications" OFF)
 option(BUILD_ALL "Enable PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH" OFF)
 
@@ -39,6 +40,12 @@ if (PIRATE_SHMEM_FEATURE)
 endif(PIRATE_SHMEM_FEATURE)
 
 add_subdirectory(libpirate)
+
+if (CHANNEL_DEMO)
+    include_directories(${CMAKE_SOURCE_DIR}/libpirate)
+    link_directories(${CMAKE_BINARY_DIR}/libpirate)
+    add_subdirectory(demos/channel_demo)
+endif(CHANNEL_DEMO)
 
 if (GAPS_DEMOS)
     include_directories(${CMAKE_SOURCE_DIR}/libpirate)
