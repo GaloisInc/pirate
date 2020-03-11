@@ -54,6 +54,7 @@ jobs:
         sphinx-build -M html doc images/ubuntu/doc
     - name: Build pirateteam/ubuntu
       run: |
+        cp -a dist images/ubuntu
         cp -a libpirate images/ubuntu
         cp -a demos images/ubuntu
         cp -a CMakeLists.txt images/ubuntu
