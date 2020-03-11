@@ -22,7 +22,6 @@ jobs:
       run: |
         cd devices/mercury/loopback_ilip
         make
-        insmod gaps_ilip.ko
         cd ../../..
     - name: build libpirate
       run: |
@@ -97,7 +96,6 @@ jobs:
       run: |
         cd devices/mercury/loopback_ilip
         make
-        insmod gaps_ilip.ko
         cd ../../..
     - name: build libpirate
       run: |
@@ -135,12 +133,6 @@ jobs:
       run: |
         apt-get update
         apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
-    - name: build Mercury loopback
-      run: |
-        cd devices/mercury/loopback_ilip
-        make
-        insmod gaps_ilip.ko
-        cd ../../..
     - name: googletest
       run: |
         mkdir ~/googletest
