@@ -49,7 +49,6 @@
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/stat.h>
-#include <linux/time64.h>
 
 #include <linux/uaccess.h>
 
@@ -1022,9 +1021,10 @@ static void gaps_ilip_copy( struct work_struct *work )
     unsigned int write_driver_index_saved;
     unsigned int read_driver_index;
     unsigned int read_driver_index_save;
-    struct timespec64 ts64;
     u64 t;
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0) && LINUX_VERSION_CODE < KERNEL_VERSION(5,3,0)
+    struct timespec64 ts64;
+#endif
     /* Cannot be NULL */
     if ( work == NULL ) {
         printk( KERN_WARNING "gaps_ilip_copy( ) work pointer invalid\n" );
@@ -1032,8 +1032,10 @@ static void gaps_ilip_copy( struct work_struct *work )
     }
 
     /* device time we start processing */
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0) || CI
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
     /* Ubuntu 19.10 API change */
+    t = ktime_get_boottime_ns();
+    #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0)
     ktime_get_boottime_ts64(&ts64);
     t = ts64.tv_sec * 1000000000 + ts64.tv_nsec;
     #else 
@@ -1218,8 +1220,10 @@ static void gaps_ilip_copy( struct work_struct *work )
         }
         memcpy(cp->dst_data, cp->src_data, cp->dst->block_size );
         /* Record delta ILIP time in the receive buffer */
-        #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0) || CI
+        #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
         /* Ubuntu 19.10 */
+        msg->time.ilip_time = ktime_get_boottime_ns() - msg->time.ilip_time ;
+        #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0)
         ktime_get_boottime_ts64(&ts64);
         msg->time.ilip_time = ts64.tv_sec * 1000000000 + ts64.tv_nsec - msg->time.ilip_time ;
         #else 
@@ -1296,7 +1300,7 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
         printk( KERN_INFO "gaps_ilip_read() dev: %p Major: %u Minor: %u\n", dev, dev->mj, dev->mn );
     }
 
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0) || CI
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
     /* Ubuntu 19.10 */
     if( access_ok(buf,count) == 0 ) {
         printk( KERN_WARNING "gaps_ilip_read() Address: %p invalid\n", buf );
@@ -1542,7 +1546,7 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
         gaps_ilip_message_write_count[level]++;
     }
 
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0) || CI
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
     /* Ubuntu 19.10 */
     if( access_ok(buf,count) == 0 ) {
         printk( KERN_WARNING "gaps_ilip_write() Address: %p invalid\n", buf );
