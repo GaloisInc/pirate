@@ -41,7 +41,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ("", pipe_param->path);
-    ASSERT_EQ((unsigned)0, pipe_param->iov_len);
+    ASSERT_EQ(0u, pipe_param->iov_len);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -49,7 +49,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
-    ASSERT_EQ((unsigned)0, pipe_param->iov_len);
+    ASSERT_EQ(0u, pipe_param->iov_len);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);

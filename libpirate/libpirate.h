@@ -109,8 +109,11 @@ typedef enum {
 
     // The gaps channel for Mercury System PCI-E device
     // Configuration parameters - pirate_mercury_param_t
-    //  - path - device path
-    //  - mtu  - maximum frame length, default 256
+    //  - Level          - Sensitivity level, required
+    //  - Source ID      - Source ID, required
+    //  - Destination ID - Destination ID, required
+    //  - Timeout (ms)   - Read/write timeout in milliseconds, optional
+    //  - Messages       - Message IDs, optional
     MERCURY,
 
     // The gaps channel for GRC Ethernet devices
@@ -163,7 +166,7 @@ typedef struct {
 } pirate_udp_socket_param_t;
 
 // SHMEM parameters
-#define DEFAULT_SMEM_BUF_LEN                (128 << 10)
+#define DEFAULT_SMEM_BUF_LEN                (128u << 10)
 #define PIRATE_SHMEM_NAME_FMT               "/gaps.channel.%d"
 typedef struct {
     char path[PIRATE_LEN_NAME];
@@ -189,7 +192,7 @@ typedef struct {
 // SERIAL parameters
 #define PIRATE_SERIAL_NAME_FMT  "/dev/ttyUSB%d"
 #define SERIAL_DEFAULT_BAUD     B230400
-#define SERIAL_DEFAULT_MTU      1024
+#define SERIAL_DEFAULT_MTU      1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     speed_t baud;
@@ -197,17 +200,28 @@ typedef struct {
 } pirate_serial_param_t;
 
 // MERCURY parameters
-#define PIRATE_MERCURY_NAME_FMT     "/tmp/gaps.mercury.%d"
-#define PIRATE_MERCURY_DEFAULT_MTU   256
+#define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
+#define PIRATE_MERCURY_DEFAULT_MTU          256u
+#define PIRATE_MERCURY_DEFAULT_TIMEOUT_MS   1000u
+#define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
 typedef struct {
-    char path[PIRATE_LEN_NAME];
+    struct {
+        uint32_t level;
+        uint32_t source_id;
+        uint32_t destination_id;
+        uint32_t message_count;
+        uint32_t messages[PIRATE_MERCURY_MESSAGE_TABLE_LEN];
+        uint32_t id;
+    } session;
+
     uint32_t mtu;
+    uint32_t timeout_ms;
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
 #define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define DEFAULT_GE_ETH_IP_PORT  0x4745
-#define DEFAULT_GE_ETH_MTU      1454
+#define DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -265,7 +279,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial[,path,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,path[,mtu]\n"                                     \
+    "  MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]\n"  \
     "  GE_ETH        ge_eth[,addr,port,mtu]\n"
 
 // Copies channel parameters from param argument into configuration.

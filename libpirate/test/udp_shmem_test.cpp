@@ -44,9 +44,9 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ("", udp_shmem_param->path);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->buffer_size);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_count);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_size);
+    ASSERT_EQ(0u, udp_shmem_param->buffer_size);
+    ASSERT_EQ(0u, udp_shmem_param->packet_count);
+    ASSERT_EQ(0u, udp_shmem_param->packet_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -54,9 +54,9 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->buffer_size);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_count);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_size);
+    ASSERT_EQ(0u, udp_shmem_param->buffer_size);
+    ASSERT_EQ(0u, udp_shmem_param->packet_count);
+    ASSERT_EQ(0u, udp_shmem_param->packet_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
@@ -65,8 +65,8 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_count);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_size);
+    ASSERT_EQ(0u, udp_shmem_param->packet_count);
+    ASSERT_EQ(0u, udp_shmem_param->packet_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, buffer_size,
                 packet_size);
@@ -77,7 +77,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
     ASSERT_EQ(packet_size, udp_shmem_param->packet_size);
-    ASSERT_EQ((unsigned)0, udp_shmem_param->packet_count);
+    ASSERT_EQ(0u, udp_shmem_param->packet_count);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, path, buffer_size,
                 packet_size, packet_count);

@@ -24,7 +24,7 @@
 #include "pirate_common.h"
 #include "udp_socket.h"
 
-void pirate_udp_socket_init_param(int gd, pirate_udp_socket_param_t *param) {
+static void pirate_udp_socket_init_param(int gd, pirate_udp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_UDP_IP_ADDR);
     }
@@ -198,7 +198,7 @@ static int pirate_make_msgvec(void *buf, size_t count, size_t iov_len,
     return vlen;
 }
 
-ssize_t pirate_udp_socket_read(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count) {
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
@@ -225,7 +225,7 @@ ssize_t pirate_udp_socket_read(pirate_udp_socket_param_t *param, udp_socket_ctx 
     return recv(ctx->sock, buf, count, 0);
 }
 
-ssize_t pirate_udp_socket_write(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;

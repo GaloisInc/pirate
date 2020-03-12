@@ -25,7 +25,7 @@ typedef struct {
 int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param);
 int pirate_tcp_socket_open(int gd, int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx);
 int pirate_tcp_socket_close(tcp_socket_ctx *ctx);
-ssize_t pirate_tcp_socket_read(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_tcp_socket_write(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_TCP_SOCKET_H */

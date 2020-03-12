@@ -44,7 +44,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ("", serial_param->path);
     ASSERT_EQ((speed_t)0, serial_param->baud);
-    ASSERT_EQ((unsigned)0, serial_param->mtu);
+    ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -53,7 +53,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ((speed_t)0, serial_param->baud);
-    ASSERT_EQ((unsigned)0, serial_param->mtu);
+    ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
     rv = pirate_parse_channel_param(opt, &param);
@@ -62,7 +62,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
-    ASSERT_EQ((unsigned)0, serial_param->mtu);
+    ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
     rv = pirate_parse_channel_param(opt, &param);
@@ -135,6 +135,9 @@ TEST_P(SerialTest, Run)
     if ((access("/dev/ttyUSB0", W_OK) == 0) &&
         (access("/dev/ttyUSB1", R_OK) == 0)) {
         Run();
+    } else {
+        ASSERT_EQ(ENOENT, errno);
+        errno = 0;
     }
 }
 

@@ -41,8 +41,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ("", unix_socket_param->path);
-    ASSERT_EQ((unsigned)0, unix_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
+    ASSERT_EQ(0u, unix_socket_param->iov_len);
+    ASSERT_EQ(0u, unix_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -50,8 +50,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
-    ASSERT_EQ((unsigned)0, unix_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
+    ASSERT_EQ(0u, unix_socket_param->iov_len);
+    ASSERT_EQ(0u, unix_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
@@ -60,7 +60,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
     ASSERT_EQ(iov_len, unix_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, unix_socket_param->buffer_size);
+    ASSERT_EQ(0u, unix_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len,
             buffer_size);

@@ -20,13 +20,15 @@
 
 typedef struct {
     int fd;
+    int flags;
     uint8_t *buf;
+    char path[PIRATE_LEN_NAME];
 } mercury_ctx;
 
 int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param);
 int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param, mercury_ctx *ctx);
 int pirate_mercury_close(mercury_ctx *ctx);
-ssize_t pirate_mercury_read(pirate_mercury_param_t *param, mercury_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_mercury_write(pirate_mercury_param_t *param, mercury_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_mercury_read(const pirate_mercury_param_t *param, mercury_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_mercury_write(const pirate_mercury_param_t *param, mercury_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_MERCURY_H */

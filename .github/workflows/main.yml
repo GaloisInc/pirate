@@ -17,13 +17,21 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
+    - name: build Mercury loopback
+      run: |
+        cd devices/mercury/loopback_ilip
+        make
+        sudo insmod gaps_ilip.ko
+        test -c /dev/gaps_ilip_0_root || exit 1
     - name: build libpirate
       run: |
         mkdir -p build
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
-              -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+              -DGTEST_ROOT:PATH=$HOME/googletest \
+              -DPIRATE_UNIT_TEST=ON \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
+              ..
         make
         make install
     - name: Make libpirate artifact
@@ -86,12 +94,21 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
+    - name: build Mercury loopback
+      run: |
+        cd devices/mercury/loopback_ilip
+        make
+        sudo insmod gaps_ilip.ko
+        test -c /dev/gaps_ilip_0_root || exit 1
     - name: build libpirate
       run: |
         mkdir -p build
         cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest -DPIRATE_UNIT_TEST=ON -DPIRATE_SHMEM_FEATURE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
+              -DPIRATE_UNIT_TEST=ON \
+              -DPIRATE_SHMEM_FEATURE=ON \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
         make
     - name: libpirate tests
       timeout-minutes: 1
@@ -130,7 +147,6 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
     - name: build libpirate
       run: |
         mkdir -p build

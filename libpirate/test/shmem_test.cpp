@@ -41,7 +41,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(SHMEM, param.channel_type);
     ASSERT_STREQ("", shmem_param->path);
-    ASSERT_EQ((unsigned)0, shmem_param->buffer_size);
+    ASSERT_EQ(0u, shmem_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -49,7 +49,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(SHMEM, param.channel_type);
     ASSERT_STREQ(path, shmem_param->path);
-    ASSERT_EQ((unsigned)0, shmem_param->buffer_size);
+    ASSERT_EQ(0u, shmem_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);

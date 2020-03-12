@@ -27,7 +27,7 @@
 #include "pirate_common.h"
 #include "serial.h"
 
-void pirate_serial_init_param(int gd, pirate_serial_param_t *param) {
+static void pirate_serial_init_param(int gd, pirate_serial_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SERIAL_NAME_FMT, gd);
     }
@@ -122,12 +122,12 @@ int pirate_serial_close(serial_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_serial_read(pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
     (void) param;
     return read(ctx->fd, buf, count);
 }
 
-ssize_t pirate_serial_write(pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {

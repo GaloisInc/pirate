@@ -48,7 +48,7 @@ int pirate_shmem_close(shmem_ctx *ctx) {
 #endif
 }
 
-ssize_t pirate_shmem_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
     return shmem_buffer_read(param, ctx, buf, count);
 #else
@@ -58,7 +58,7 @@ ssize_t pirate_shmem_read(pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf
 #endif
 }
 
-ssize_t pirate_shmem_write(pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
+ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
     return shmem_buffer_write(param, ctx, buf, count);

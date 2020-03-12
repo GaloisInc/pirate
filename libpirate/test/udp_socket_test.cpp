@@ -43,8 +43,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ("", udp_socket_param->addr);
     ASSERT_EQ(0, udp_socket_param->port);
-    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
+    ASSERT_EQ(0u, udp_socket_param->iov_len);
+    ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
@@ -53,8 +53,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(0, udp_socket_param->port);
-    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
+    ASSERT_EQ(0u, udp_socket_param->iov_len);
+    ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
@@ -63,8 +63,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
-    ASSERT_EQ((unsigned)0, udp_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
+    ASSERT_EQ(0u, udp_socket_param->iov_len);
+    ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
@@ -74,7 +74,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
     ASSERT_EQ(iov_len, udp_socket_param->iov_len);
-    ASSERT_EQ((unsigned)0, udp_socket_param->buffer_size);
+    ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
             buffer_size);

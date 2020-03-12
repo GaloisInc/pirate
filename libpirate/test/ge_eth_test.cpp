@@ -41,7 +41,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ("", ge_eth_param->addr);
     ASSERT_EQ(0, ge_eth_param->port);
-    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
+    ASSERT_EQ(0u, ge_eth_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
@@ -50,7 +50,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(0, ge_eth_param->port);
-    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
+    ASSERT_EQ(0u, ge_eth_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
@@ -59,7 +59,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
-    ASSERT_EQ((unsigned)0, ge_eth_param->mtu);
+    ASSERT_EQ(0u, ge_eth_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, mtu);
     rv  = pirate_parse_channel_param(opt, &param);

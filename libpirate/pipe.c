@@ -24,7 +24,7 @@
 #include "pirate_common.h"
 #include "pipe.h"
 
-void pirate_pipe_init_param(int gd, pirate_pipe_param_t *param) {
+static void pirate_pipe_init_param(int gd, pirate_pipe_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
         snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, gd);
     }
@@ -85,10 +85,10 @@ int pirate_pipe_close(pipe_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_pipe_read(pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
     return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
 }
 
-ssize_t pirate_pipe_write(pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
     return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
 }

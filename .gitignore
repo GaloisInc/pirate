@@ -1,4 +1,3 @@
-Makefile
 CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
@@ -17,6 +16,12 @@ libpirate/bench/*.png
 devices/cusegaps/cusegaps_net
 devices/cusegaps/cusegaps_pipe
 devices/cusegaps/cusegaps_test
+devices/mercury/loopback_ilip/*.cmd
+devices/mercury/loopback_ilip/Module.symvers
+devices/mercury/loopback_ilip/*.ko
+devices/mercury/loopback_ilip/*mod*
+devices/mercury/loopback_ilip/*.o
+devices/mercury/loopback_ilip/modules.order
 .vscode
 .project
 /build/*
