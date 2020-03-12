@@ -52,57 +52,6 @@ void pirateReadMessages(const char* nm, int gd, std::function<void (const T& d)>
 }
 
 template<typename T>
-Pipe<T> initPiratePipe(int rd, const std::string& rdparam,
-                       int wr, const std::string& wrparam,
-                       const char* nm)
-{
-  pirate_channel_param_t param;
-
-  if (rdparam == "" || wrparam == "") {
-    std::cerr << "Specify " << nm << std::endl;
-    exit(-1);
-  }
-
-  if (pirate_parse_channel_param(wrparam.c_str(), &param)) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  if (pirate_set_channel_param(wr, O_WRONLY, &param) < 0) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  if (pirate_parse_channel_param(rdparam.c_str(), &param)) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  if (pirate_set_channel_param(rd, O_RDONLY, &param) < 0) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  int rdGD;
-  std::thread rdThread([&rdGD, rd] () {
-      rdGD = pirate_open(rd, O_RDONLY);
-    });
-
-  int wrGD = pirate_open(wr, O_WRONLY);
-  rdThread.join();
-
-  Sender<T> s =  [wrGD](const T& d) { pirate_write(wrGD, &d, sizeof(T)); };
-
-  Receiver<T> r =
-    [nm, rdGD](std::function<void (const T& d)> f) {
-      std::thread t(&pirateReadMessages<T>, nm, rdGD, f);
-      t.detach();
-    };
-
-  return { .sender = s, .receiver = r };
-}
-
-template<typename T>
 Receiver<T> initPirateReceiver(int rd, const std::string& rdparam, const char* nm)
 {
   if (rdparam == "") {
@@ -120,9 +69,13 @@ Receiver<T> initPirateReceiver(int rd, const std::string& rdparam, const char* n
     exit(-1);
   }
 
-  std::cerr << "Try open " << nm << std::endl;
+  print([nm](std::ostream& o) { o << nm << " receiver try open." << std::endl; });
   int rdGD = pirate_open(rd, O_RDONLY);
-  std::cerr << "Open " << nm << std::endl;
+  if (rdGD == -1) {
+    print([nm](std::ostream& o) { o << nm << " receiver open failed" << std::endl; });
+    exit(-1);
+  }
+  print([nm](std::ostream& o) { o << nm << " receiver open." << std::endl; });
 
   return
     [nm, rdGD](std::function<void (const T& d)> f) {
@@ -150,10 +103,28 @@ Sender<T> initPirateSender(int wr, const std::string& wrparam, const char* nm)
     exit(-1);
   }
 
+  print([nm](std::ostream& o) { o << nm << " sender try open." << std::endl; });
   int wrGD = pirate_open(wr, O_WRONLY);
-  std::cerr << "Open " << nm << std::endl;
 
-  return [wrGD](const T& d) { pirate_write(wrGD, &d, sizeof(T)); };
+  if (wrGD == -1) {
+    print([nm](std::ostream& o) { o << nm << " sender open failed" << std::endl; });
+    exit(-1);
+  }
+  print([nm](std::ostream& o) { o << nm << " sender open." << std::endl; });
+
+
+  return [nm,wrGD](const T& d) {
+      int cnt = pirate_write(wrGD, &d, sizeof(T));
+      print([nm](std::ostream& o) { o << "Write " << nm << " " << sizeof(T) << " bytes." << std::endl; });
+      if (cnt == -1) {
+        print([nm](std::ostream& o) { o << "Write to " << nm << " failed " << errno << std::endl; });
+        exit(-1);
+      }
+      if (cnt != sizeof(T)) {
+        print([nm](std::ostream& o) { o << "Write to " << nm << " had unexpected count." << std::endl; });
+        exit(-1);
+      }
+    };
 }
 
 void setupGps(Sender<Position> gpsSender)
@@ -193,7 +164,10 @@ void setupRfSensor(Sender<Distance> rfSender)
   Distance d(1062, 7800, 9000); // initial target distance
   Velocity vtgt(35, 625, 18);
   RfSensor* rfs  = new RfSensor(rfSender, d, vtgt);
-  startTimer(sleep_msec, [rfs]() { rfs->read(msecs(10)); });
+  startTimer(sleep_msec, [rfs]() {
+    print([](std::ostream& o) { o << "rf sensor event." << std::endl; });
+    rfs->read(msecs(10));
+  });
 }
 
 void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
@@ -206,7 +180,7 @@ void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
 }
 
 #pragma pirate enclave declare(green)
-#pragma pirate enclave declare(yellow)
+#pragma pirate enclave declare(orange)
 
 void showUsage(const char* arg0) {
   std::cerr
@@ -242,9 +216,9 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   }
 
   auto gpsToTargetChan = initPipe<Position>(); // Green to green
-  auto gpsToUAVSend    = initPirateSender<Position>(  0, gpsToUAVPath, "gpsToUAV");    // Green to yellow
-  auto uavToTargetRecv = initPirateReceiver<Position>(1, uavToTargetPath, "uavToTarget");  // Yellow to green
-  auto rfToTargetRecv  = initPirateReceiver<Distance>(2, rfToTargetPath, "rfToTarget");   // Yellow to green
+  auto gpsToUAVSend    = initPirateSender<Position>(  0, gpsToUAVPath, "gpsToUAV");    // Green to orange
+  auto uavToTargetRecv = initPirateReceiver<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
+  auto rfToTargetRecv  = initPirateReceiver<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
 
   // Setup sender for gps that broadcasts to two other channels.
   Sender<Position> gpsSender = [gpsToUAVSend, gpsToTargetChan](const Position& p) {
@@ -258,7 +232,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   return 0;
 }
 
-int run_yellow(int argc, char** argv) __attribute__((pirate_enclave_main("yellow")))
+int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange")))
 {
   std::string gpsToUAVPath;
   std::string uavToTargetPath;
@@ -281,9 +255,9 @@ int run_yellow(int argc, char** argv) __attribute__((pirate_enclave_main("yellow
       showUsage(argv[0]);
     }
   }
-  auto gpsToUAVRecv    = initPirateReceiver<Position>(0, gpsToUAVPath, "gapsToUAV");    // Green to yellow
-  auto uavToTargetSend = initPirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Yellow to green
-  auto rfToTargetSend  = initPirateSender<Distance>(2, rfToTargetPath, "rfToTarget");   // Yellow to green
+  auto gpsToUAVRecv    = initPirateReceiver<Position>(0, gpsToUAVPath, "gpsToUAV");    // Green to orange
+  auto uavToTargetSend = initPirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
+  auto rfToTargetSend  = initPirateSender<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
 
   setupUAV(uavToTargetSend, gpsToUAVRecv);
   setupRfSensor(rfToTargetSend);

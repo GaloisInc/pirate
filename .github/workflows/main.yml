@@ -181,7 +181,9 @@ jobs:
       run: |
         mkdir pnt_demo
         mkdir build_ngc && cd build_ngc
-        cmake -DCMAKE_INSTALL_PREFIX=pnt_demo ../demos/pnt_demo/4.pirate/
+        cmake -DCMAKE_INSTALL_PREFIX=pnt_demo \
+              -DCMAKE_EXE_LINKER_FLAGS=-static \
+              ../demos/pnt_demo/4.pirate/
     - name: Make
       run: |
         cd build_ngc
