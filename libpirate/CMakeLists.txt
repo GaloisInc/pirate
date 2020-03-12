@@ -65,14 +65,12 @@ if(GAPS_BENCH)
     target_link_libraries(primitives_bench_lat_percentiles ${PIRATE_LINK_LIBRARIES})
 endif(GAPS_BENCH)
 
-
 # GAPS channel unit test
 if(PIRATE_UNIT_TEST)
     find_package(GTest REQUIRED)
     include_directories(${GTEST_INCLUDE_DIR})
 
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
-
     set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS})
     set(GAPS_CHANNELS_TEST gaps_channels_test)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
