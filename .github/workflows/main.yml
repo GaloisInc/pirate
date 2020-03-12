@@ -22,6 +22,7 @@ jobs:
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
+        test -c /dev/gaps_ilip_0_root || exit 1
     - name: build libpirate
       run: |
         mkdir -p build
@@ -98,6 +99,7 @@ jobs:
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
+        test -c /dev/gaps_ilip_0_root || exit 1
     - name: build libpirate
       run: |
         mkdir -p build
