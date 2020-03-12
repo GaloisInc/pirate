@@ -170,7 +170,7 @@ typedef struct {
 class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestParam>
 {
 public:
-    void ChannelInit()
+    void ChannelInit() override
     {
         WriteDelayUs = 1000;
 
@@ -221,7 +221,7 @@ public:
         ASSERT_EQ(mMercuryParam.session_id, rdParam.mercury.session.id);
     }
 
-    void ReaderChannelOpen()
+    void ReaderChannelOpen() override
     {
         pirate_channel_param_t rdParam;
 
