@@ -29,7 +29,6 @@ jobs:
         cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
               -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
-              -DPIRATE_UNIT_TEST_MERCURY_SESSIONS=OFF \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
               ..
         make
@@ -105,7 +104,6 @@ jobs:
         cd build
         cmake -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
-              -DPIRATE_UNIT_TEST_MERCURY_SESSIONS=OFF \
               -DPIRATE_SHMEM_FEATURE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
@@ -153,7 +151,6 @@ jobs:
         cd build
         cmake -DGTEST_ROOT:PATH=$HOME/googletest \
               -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON \
-              -DPIRATE_UNIT_TEST_MERCURY_SESSIONS=OFF \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
         make
