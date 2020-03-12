@@ -137,7 +137,7 @@ Usage: writer [OPTION...] args ...
 Test utility for writing deterministic GAPS packets
 
   -c, --cont                 Operate in a continuous loop
-  -C, --channel=CH           channel,options,...  
+  -C, --channel=CH           <channel options>
   -d, --delay=US             Inter-packet delay
   -i, --input=PATH           Binary input file path
   -l, --length=LEN           START,STOP,STEP
@@ -146,15 +146,22 @@ Test utility for writing deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-     PIPE:          pipe
-     UDP SOCKET:    udp,<ip_addr>,<ip_port>
-     MERCURY        mercury,<path>
-     GE ETHERNET:   ge_eth,<ip_addr>,<ip_port>
+   DEVICE        device,path[,iov_len]
+   PIPE          pipe[,path,iov_len]
+   UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]
+   UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]
+   SHMEM         shmem[,path,buffer_size]
+   UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]
+   UIO           uio[,path]
+   SERIAL        serial[,path,baud,mtu]
+   MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
+   GE_ETH        ge_eth[,addr,port,mtu]
+
 
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
-
 ```
 
 #### Reader Command-Line Options Options
@@ -163,7 +170,7 @@ Usage: reader [OPTION...] args ...
 Test utility for reading deterministic GAPS packets
 
   -c, --cont                 Operate in a continuous loop
-  -C, --channel=CH           channel,options,...  
+  -C, --channel=CH           <channel options>
   -i, --input=PATH           Binary input file path
   -l, --length=LEN           START,STOP,STEP
   -p, --pattern=PAT          Test pattern (zeros,onces,incr)
@@ -171,15 +178,22 @@ Test utility for reading deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-     PIPE:          pipe
-     UDP SOCKET:    udp,<ip_addr>,<ip_port>
-     MERCURY        mercury,<path>
-     GE ETHERNET:   ge_eth,<ip_addr>,<ip_port>
+   DEVICE        device,path[,iov_len]
+   PIPE          pipe[,path,iov_len]
+   UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]
+   UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]
+   SHMEM         shmem[,path,buffer_size]
+   UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]
+   UIO           uio[,path]
+   SERIAL        serial[,path,baud,mtu]
+   MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
+   GE_ETH        ge_eth[,addr,port,mtu]
+
 
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
-
 ```
 
 ## Hardware Integration
@@ -191,9 +205,7 @@ for integrating hardware devices.
 #### Channel Configuration and Initialization
 Command-line option processing:
 ```
-pirate/demos/channel_demo/src/common.c:parse_channel_opt()
-pirate/demos/channel_demo/src/common.c:open_gaps_ge_eth()
-pirate/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
+pirate/libpirate/ge_eth.c/pirate_ge_eth_parse_param()
 pirate/libpirate/ge_eth.c/pirate_ge_eth_open()
 ```
 #### Write
@@ -215,9 +227,7 @@ pirate/libpirate/ge_eth.c:pirate_ge_eth_read()
 Command-line option processing:
 
 ```
-pirate/demos/channel_demo/src/common.c:parse_channel_opt()
-pirate/demos/channel_demo/src/common.c:open_gaps_mercury()
-pirate/demos/channel_demo/src/common.h:CHANNEL_OPT_DESCRIPTION
+pirate/libpirate/ge_eth.c/pirate_mercury_parse_param()
 pirate/libpirate/mercury.c/pirate_mercury_open()
 ```
 
