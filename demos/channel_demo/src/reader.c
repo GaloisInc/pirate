@@ -23,7 +23,7 @@ typedef channel_test_t reader_t;
 
 static struct argp_option options[] = {
     COMMON_OPTIONS,
-    { 0 }
+    { NULL, 0, NULL, 0, NULL, 0 }
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {

@@ -30,7 +30,7 @@ typedef struct {
 static struct argp_option options[] = {
     { "delay",   'd', "US",   0, "Inter-packet delay",               0 },
     COMMON_OPTIONS,
-    { 0 }
+    { NULL, 0, NULL, 0, NULL, 0 }
 };
 
 
