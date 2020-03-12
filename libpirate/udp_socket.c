@@ -61,7 +61,7 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
 }
 
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
-    int rv;
+    int err, rv;
     struct sockaddr_in addr;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -77,7 +77,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
@@ -89,7 +89,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
                         &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
@@ -99,7 +99,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 
     rv = bind(ctx->sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
@@ -110,7 +110,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 }
 
 static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
-    int rv;
+    int err, rv;
     struct sockaddr_in addr;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -123,7 +123,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
                         &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
@@ -137,7 +137,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
     addr.sin_port = htons(param->port);
     rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;

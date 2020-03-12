@@ -63,7 +63,7 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 }
 
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
-    int rv;
+    int err, rv;
     int server_fd;
     struct sockaddr_in addr;
 
@@ -80,7 +80,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     int enable = 1;
     rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return rv;
@@ -90,7 +90,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(server_fd);
             errno = err;
             return rv;
@@ -99,7 +99,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
     rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return rv;
@@ -107,7 +107,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
     rv = listen(server_fd, 0);
     if (rv < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return rv;
@@ -116,7 +116,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     ctx->sock = accept(server_fd, NULL, NULL);
 
     if (ctx->sock < 0) {
-        int err = errno;
+        err = errno;
         close(server_fd);
         errno = err;
         return ctx->sock;
@@ -127,7 +127,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 }
 
 static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
-    int rv;
+    int err, rv;
     struct sockaddr_in addr;
 
     ctx->sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -139,7 +139,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         rv = setsockopt(ctx->sock, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
                     sizeof(param->buffer_size));
         if (rv < 0) {
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
@@ -152,11 +152,12 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     addr.sin_port = htons(param->port);
 
     for (;;) {
+        err = errno;
         rv = connect(ctx->sock, (struct sockaddr *)&addr, sizeof(addr));
         if (rv < 0) {
             if ((errno == ENOENT) || (errno == ECONNREFUSED)) {
                 struct timespec req;
-                errno = 0;
+                errno = err;
                 req.tv_sec = 0;
                 req.tv_nsec = 1e8;
                 rv = nanosleep(&req, NULL);
@@ -164,7 +165,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
                     continue;
                 }
             }
-            int err = errno;
+            err = errno;
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
