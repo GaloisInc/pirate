@@ -27,7 +27,7 @@ using ::testing::Combine;
 TEST(ChannelUdpSocketTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_udp_socket_param_t *udp_socket_param = &param.udp_socket;
+    const pirate_udp_socket_param_t *udp_socket_param = &param.channel.udp_socket;
 
     char opt[128];
     const char *name = "udp_socket";
@@ -101,8 +101,8 @@ public:
         int rv;
         pirate_init_channel_param(UDP_SOCKET, &param);
         auto test_param = GetParam();
-        param.udp_socket.iov_len = std::get<0>(test_param);
-        param.udp_socket.buffer_size = std::get<1>(test_param);
+        param.channel.udp_socket.iov_len = std::get<0>(test_param);
+        param.channel.udp_socket.buffer_size = std::get<1>(test_param);
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);

@@ -27,7 +27,7 @@ using ::testing::Combine;
 TEST(ChannelUnixSocketTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_unix_socket_param_t *unix_socket_param = &param.unix_socket;
+    const pirate_unix_socket_param_t *unix_socket_param = &param.channel.unix_socket;
 
     char opt[128];
     const char *name = "unix_socket";
@@ -82,8 +82,8 @@ public:
         int rv;
         pirate_init_channel_param(UNIX_SOCKET, &param);
         auto test_param = GetParam();
-        param.unix_socket.iov_len = std::get<0>(test_param);
-        param.unix_socket.buffer_size = std::get<1>(test_param);
+        param.channel.unix_socket.iov_len = std::get<0>(test_param);
+        param.channel.unix_socket.buffer_size = std::get<1>(test_param);
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);
