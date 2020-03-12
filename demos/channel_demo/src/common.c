@@ -193,7 +193,9 @@ int test_data_init(test_data_t *td, verbosity_t v) {
     if (td->bin_input != NULL) {
         /* Use provided binary file as input */
         FILE *f_in = NULL;
-        struct stat st = { 0 };
+        struct stat st;
+
+        memset(&st, 0, sizeof(struct stat));
         if (stat(td->bin_input, &st) != 0) {
             log_msg(ERROR, "Failed to stat %s", td->bin_input);
             return -1;
