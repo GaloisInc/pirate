@@ -34,7 +34,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     const uint32_t buffer_size = 42 * 42;
 
 #if PIRATE_SHMEM_FEATURE
-    const pirate_shmem_param_t *shmem_param = &param.shmem;
+    const pirate_shmem_param_t *shmem_param = &param.channel.shmem;
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
@@ -77,7 +77,7 @@ public:
         pirate_init_channel_param(SHMEM, &param);
         unsigned buffer_size = GetParam();
         if (buffer_size) {
-            param.shmem.buffer_size = buffer_size;
+            param.channel.shmem.buffer_size = buffer_size;
         }
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);

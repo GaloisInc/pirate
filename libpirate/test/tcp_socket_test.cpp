@@ -26,7 +26,7 @@ using ::testing::Combine;
 TEST(ChannelTcpSocketTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_tcp_socket_param_t *tcp_socket_param = &param.tcp_socket;
+    const pirate_tcp_socket_param_t *tcp_socket_param = &param.channel.tcp_socket;
 
     char opt[128];
     const char *name = "tcp_socket";
@@ -96,8 +96,8 @@ public:
         int rv;
         pirate_init_channel_param(TCP_SOCKET, &param);
         auto test_param = GetParam();
-        param.tcp_socket.iov_len = std::get<0>(test_param);
-        param.tcp_socket.buffer_size = std::get<1>(test_param);
+        param.channel.tcp_socket.iov_len = std::get<0>(test_param);
+        param.channel.tcp_socket.buffer_size = std::get<1>(test_param);
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);

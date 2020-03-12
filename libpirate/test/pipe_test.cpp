@@ -28,7 +28,7 @@ using ::testing::Values;
 TEST(ChannelPipeTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_pipe_param_t *pipe_param = &param.pipe;
+    const pirate_pipe_param_t *pipe_param = &param.channel.pipe;
 
     char opt[128];
     const char *name = "pipe";
@@ -68,7 +68,7 @@ public:
         int rv;
 
         pirate_init_channel_param(PIPE, &param);
-        param.pipe.iov_len = GetParam();
+        param.channel.pipe.iov_len = GetParam();
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
         ASSERT_EQ(0, rv);

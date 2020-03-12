@@ -26,7 +26,7 @@ using ::testing::Values;
 TEST(ChannelGeEthTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_ge_eth_param_t *ge_eth_param = &param.ge_eth;
+    const pirate_ge_eth_param_t *ge_eth_param = &param.channel.ge_eth;
 
     char opt[128];
     const char *name = "ge_eth";
@@ -85,7 +85,7 @@ public:
         pirate_init_channel_param(GE_ETH, &param);
         const unsigned mtu = GetParam();
         if (mtu) {
-            param.ge_eth.mtu = mtu;
+            param.channel.ge_eth.mtu = mtu;
         }
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
