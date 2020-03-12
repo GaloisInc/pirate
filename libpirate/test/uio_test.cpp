@@ -22,12 +22,13 @@ namespace GAPS
 TEST(ChannelUioTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_uio_param_t *uio_param = &param.channel.uio;
 
     char opt[128];
     const char *name = "uio";
     const char *path = "/tmp/test_uio";
 
+#if PIRATE_SHMEM_FEATURE
+    const pirate_uio_param_t *uio_param = &param.channel.uio;
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
@@ -41,8 +42,16 @@ TEST(ChannelUioTest, ConfigurationParser) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(UIO_DEVICE, param.channel_type);
     ASSERT_STREQ(path, uio_param->path);
+#else
+    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(-1, rv);
+    ASSERT_EQ(ESOCKTNOSUPPORT, errno);
+    errno = 0;
+#endif
 }
 
+#if PIRATE_SHMEM_FEATURE
 class UioTest : public ChannelTest
 {
 public:
@@ -72,5 +81,5 @@ TEST_F(UioTest, UioFunctionalTest)
         errno = 0;
     }
 }
-
+#endif
 } // namespace
