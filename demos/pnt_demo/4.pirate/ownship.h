@@ -12,7 +12,7 @@ class OwnShip
   int _cycle;
   int _cnt;
 public:
-  OwnShip(const Sender<Position>& c, int rate = 1) 
+  OwnShip(const Sender<Position>& c, int rate = 1)
     : _c(c),
       _frequency(rate),
      _cycle(static_cast<int> (((1.0 / _frequency) / (sleep_msec / 1000)))),
