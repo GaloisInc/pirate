@@ -29,7 +29,7 @@ jobs:
         mkdir -p build
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
-              -DGTEST_ROOT:PATH=$HOME/googletest 
+              -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
               -DPIRATE_UNIT_TEST_MERCURY_SESSIONS=OFF \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
