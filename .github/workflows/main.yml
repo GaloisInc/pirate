@@ -17,13 +17,11 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
     - name: build Mercury loopback
       run: |
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
-        cd ../../..
     - name: build libpirate
       run: |
         mkdir -p build
@@ -96,13 +94,11 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
     - name: build Mercury loopback
       run: |
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
-        cd ../../..
     - name: build libpirate
       run: |
         mkdir -p build
@@ -151,7 +147,6 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-        cd ..
     - name: build libpirate
       run: |
         mkdir -p build
