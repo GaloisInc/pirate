@@ -22,13 +22,13 @@ namespace GAPS
 TEST(ChannelUioTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_uio_param_t *uio_param = &param.channel.uio;
 
     char opt[128];
     const char *name = "uio";
     const char *path = "/tmp/test_uio";
 
 #if PIRATE_SHMEM_FEATURE
+    const pirate_uio_param_t *uio_param = &param.channel.uio;
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
