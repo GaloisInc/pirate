@@ -294,7 +294,7 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
 
         // Level
         sz = pwrite(fd_root, &param->session.level, cfg_len, 
-                    MERCURY_CFG_OFF_SOURCE_ID);
+                    MERCURY_CFG_OFF_LEVEL);
         if (sz != cfg_len) {
             goto error_session;
         }
