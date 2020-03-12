@@ -24,8 +24,12 @@
 #ifdef __cplusplus
 #include <atomic>
 using namespace std;
-#else
+#elif HAVE_STD_ATOMIC
 #include <stdatomic.h>
+#else
+// This is a workaround.
+// Do not use shmem_buffer_t when atomics are not available
+typedef uint_fast64_t atomic_uint_fast64_t;
 #endif
 
 typedef struct {

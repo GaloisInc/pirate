@@ -70,7 +70,7 @@ static void pirate_uio_init_param(pirate_uio_param_t *param) {
     }
 }
 
-int pirate_uio_parse_param(char *str, pirate_uio_param_t *param) {
+int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
     char *ptr = NULL;
 
     if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
@@ -98,7 +98,7 @@ static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
     return uio_buffer;
 }
 
-int pirate_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
@@ -152,7 +152,7 @@ error:
     return -1;
 }
 
-int pirate_uio_close(uio_ctx *ctx) {
+int pirate_internal_uio_close(uio_ctx *ctx) {
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
         errno = EBADF;
@@ -170,7 +170,7 @@ int pirate_uio_close(uio_ctx *ctx) {
     return munmap(buf, buffer_size());
 }
 
-ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
+ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     uint32_t reader, writer;
@@ -227,7 +227,7 @@ ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf
     return nbytes;
 }
 
-ssize_t pirate_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
+ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
     (void) param;
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;

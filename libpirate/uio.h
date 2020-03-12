@@ -16,19 +16,12 @@
 #ifndef __PIRATE_CHANNEL_UIO_H
 #define __PIRATE_CHANNEL_UIO_H
 
-#include "libpirate.h"
-#include "shmem_buffer.h"
+#include "uio_interface.h"
 
-typedef struct {
-    int fd;
-    int flags;
-    shmem_buffer_t *buf;
-} uio_ctx;
-
-int pirate_uio_parse_param(char *str, pirate_uio_param_t *param);
-int pirate_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx);
-int pirate_uio_close(uio_ctx *ctx);
-ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf, size_t count);
+int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param);
+int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx);
+int pirate_internal_uio_close(uio_ctx *ctx);
+ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_UIO_H */

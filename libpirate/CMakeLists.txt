@@ -16,12 +16,12 @@ SET(PIRATE_SOURCES
     "tcp_socket.c"
     "udp_socket.c"
     "unix_socket.c"
-    "uio.c"
+    "uio_interface.c"
 )
 
 if(PIRATE_SHMEM_FEATURE)
     add_definitions(-DPIRATE_SHMEM_FEATURE=1)
-    set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "udp_shmem.c" "checksum.c")
+    set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
 endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(.)

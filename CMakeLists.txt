@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
+include(CheckIncludeFile)
 
 # This must be done before any language is set (ie before any project() or
 # enable_language() command).
@@ -38,6 +39,11 @@ if (PIRATE_SHMEM_FEATURE)
     SET(PIRATE_C_FLAGS ${PIRATE_C_FLAGS} -mavx2)
     set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} rt)
 endif(PIRATE_SHMEM_FEATURE)
+
+CHECK_INCLUDE_FILE(stdatomic.h HAVE_STD_ATOMIC)
+if (HAVE_STD_ATOMIC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_STD_ATOMIC")
+endif(HAVE_STD_ATOMIC)
 
 add_subdirectory(libpirate)
 
