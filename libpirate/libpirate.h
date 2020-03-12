@@ -242,7 +242,7 @@ typedef struct {
         pirate_serial_param_t           serial;
         pirate_mercury_param_t          mercury;
         pirate_ge_eth_param_t           ge_eth;
-    };
+    } channel;
 } pirate_channel_param_t;
 
 //

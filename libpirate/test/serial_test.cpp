@@ -27,7 +27,7 @@ using ::testing::Combine;
 TEST(ChannelSerialTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_serial_param_t *serial_param = &param.serial;
+    const pirate_serial_param_t *serial_param = &param.channel.serial;
 
     char opt[128];
     const char *name = "serial";
@@ -97,11 +97,11 @@ public:
 
         pirate_init_channel_param(SERIAL, &wr_param);
         if (baud) {
-            wr_param.serial.baud = baud;
+            wr_param.channel.serial.baud = baud;
         }
 
         if (mtu) {
-            wr_param.serial.mtu = mtu;
+            wr_param.channel.serial.mtu = mtu;
         }
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &wr_param);
@@ -110,11 +110,11 @@ public:
 
         pirate_init_channel_param(SERIAL, &rd_param);
         if (baud) {
-            rd_param.serial.baud = baud;
+            rd_param.channel.serial.baud = baud;
         }
 
         if (mtu) {
-            rd_param.serial.mtu = mtu;
+            rd_param.channel.serial.mtu = mtu;
         }
 
         rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &rd_param);

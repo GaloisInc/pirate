@@ -34,7 +34,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     const unsigned buffer_size = 42 * 42;
 
 #if PIRATE_SHMEM_FEATURE
-    const pirate_udp_shmem_param_t *udp_shmem_param = &param.udp_shmem;
+    const pirate_udp_shmem_param_t *udp_shmem_param = &param.channel.udp_shmem;
     const unsigned packet_size = 4242;
     const unsigned packet_count = 4224;
 
@@ -114,15 +114,15 @@ public:
         unsigned packet_size = std::get<2>(test_param);
 
         if (buffer_size) {
-            param.udp_shmem.buffer_size = buffer_size;
+            param.channel.udp_shmem.buffer_size = buffer_size;
         }
 
         if (packet_count) {
-            param.udp_shmem.packet_count = packet_count;
+            param.channel.udp_shmem.packet_count = packet_count;
         }
 
         if (packet_size) {
-            param.udp_shmem.packet_size = packet_size;
+            param.channel.udp_shmem.packet_size = packet_size;
         }
 
         rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);

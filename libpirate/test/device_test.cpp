@@ -27,7 +27,7 @@ using ::testing::Values;
 TEST(ChannelDeviceTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
-    const pirate_device_param_t *device_param = &param.device;
+    const pirate_device_param_t *device_param = &param.channel.device;
 
     char opt[128];
     const char *name = "device";
@@ -63,10 +63,10 @@ public:
     void ChannelInit() {
         int rv;
         pirate_init_channel_param(DEVICE, &param);
-        snprintf(param.device.path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
-        param.device.iov_len = GetParam();
+        snprintf(param.channel.device.path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
+        param.channel.device.iov_len = GetParam();
 
-        if (mkfifo(param.device.path, 0660) == -1) {
+        if (mkfifo(param.channel.device.path, 0660) == -1) {
             ASSERT_EQ(EEXIST, errno);
             errno = 0;
         }
