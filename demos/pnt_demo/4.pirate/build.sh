@@ -12,7 +12,6 @@ docker run --mount "type=bind,src=`pwd`,dst=/root/src,ro" \
                  -DCMAKE_EXE_LINKER_FLAGS=-static \
                  -DCMAKE_INSTALL_PREFIX=/root/dist
 
-
 docker run --mount "type=bind,src=`pwd`,dst=/root/src,ro" \
            --mount "type=bind,src=`pwd`/build,dst=/root/build" \
            -w /root/build \

@@ -1,131 +1,15 @@
 // pnt_example.cpp : Defines the entry point for the console application.
 //
 
-#include <iostream>
-#include <mutex>
-#ifdef _WIN32
-# include <Windows.h>
-#else
-# include <unistd.h>
-#endif
-
-#include <libpirate.h>
-#include <string.h>
-
+#include "channel_fd.h"
+#include "channel_pirate.h"
 #include "pnt_data.h"
 #include "sensors.h"
 #include "ownship.h"
 #include "target.h"
-
-template<typename T>
-struct Pipe {
-  Sender<T> sender;
-  Receiver<T> receiver;
-};
-
-template<typename T>
-Pipe<T> initPipe()
-{
-  int fd[2];
-  if (pipe(fd)) { std::cerr << "pipe failed" << std::endl; exit(-1); }
-  return { .sender = fdSender<T>(fd[1]),
-           .receiver = fdReceiver<T>(fd[0])
-         };
-}
-
-template<typename T>
-void pirateReadMessages(const char* nm, int gd, std::function<void (const T& d)> f)
-{
-  while (true) {
-    T p;
-    ssize_t cnt = pirate_read(gd, &p, sizeof(T));
-    if (cnt == -1) {
-      print([nm](std::ostream& o) { o << "Read " << nm << " failed " << errno << std::endl; });
-      exit(-1);
-    }
-    if (cnt < sizeof(T)) {
-      print([nm,cnt](std::ostream& o) { o << "Read " << nm << " returned " << cnt << " bytes when " << sizeof(T) << " expected" << std::endl; });
-      exit(-1);
-    }
-    f(p);
-  }
-}
-
-template<typename T>
-Receiver<T> initPirateReceiver(int rd, const std::string& rdparam, const char* nm)
-{
-  if (rdparam == "") {
-    std::cerr << "Specify " << nm << std::endl;
-    exit(-1);
-  }
-  pirate_channel_param_t param;
-  if (pirate_parse_channel_param(rdparam.c_str(), &param)) {
-    std::cerr << "channel parameter set failed" << std::endl;
-    exit(-1);
-  }
-
-  if (pirate_set_channel_param(rd, O_RDONLY, &param) < 0) {
-    std::cerr << "channel parameter set failed" << std::endl;
-    exit(-1);
-  }
-
-  print([nm](std::ostream& o) { o << nm << " receiver try open." << std::endl; });
-  int rdGD = pirate_open(rd, O_RDONLY);
-  if (rdGD == -1) {
-    print([nm](std::ostream& o) { o << nm << " receiver open failed" << std::endl; });
-    exit(-1);
-  }
-  print([nm](std::ostream& o) { o << nm << " receiver open." << std::endl; });
-
-  return
-    [nm, rdGD](std::function<void (const T& d)> f) {
-      std::thread t(&pirateReadMessages<T>, nm, rdGD, f);
-      t.detach();
-    };
-}
-
-template<typename T>
-Sender<T> initPirateSender(int wr, const std::string& wrparam, const char* nm)
-{
-  if (wrparam == "") {
-    std::cerr << "Specify " << nm << std::endl;
-    exit(-1);
-  }
-
-  pirate_channel_param_t param;
-  if (pirate_parse_channel_param(wrparam.c_str(), &param)) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  if (pirate_set_channel_param(wr, O_WRONLY, &param) < 0) {
-    perror("channel parameter set failed");
-    exit(-1);
-  }
-
-  print([nm](std::ostream& o) { o << nm << " sender try open." << std::endl; });
-  int wrGD = pirate_open(wr, O_WRONLY);
-
-  if (wrGD == -1) {
-    print([nm](std::ostream& o) { o << nm << " sender open failed" << std::endl; });
-    exit(-1);
-  }
-  print([nm](std::ostream& o) { o << nm << " sender open." << std::endl; });
-
-
-  return [nm,wrGD](const T& d) {
-      int cnt = pirate_write(wrGD, &d, sizeof(T));
-      print([nm](std::ostream& o) { o << "Write " << nm << " " << sizeof(T) << " bytes." << std::endl; });
-      if (cnt == -1) {
-        print([nm](std::ostream& o) { o << "Write to " << nm << " failed " << errno << std::endl; });
-        exit(-1);
-      }
-      if (cnt != sizeof(T)) {
-        print([nm](std::ostream& o) { o << "Write to " << nm << " had unexpected count." << std::endl; });
-        exit(-1);
-      }
-    };
-}
+#include "timer.h"
+#include <mutex>
+#include <string.h>
 
 void setupGps(Sender<Position> gpsSender)
 {
@@ -215,15 +99,16 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
     }
   }
 
-  auto gpsToTargetChan = initPipe<Position>(); // Green to green
-  auto gpsToUAVSend    = initPirateSender<Position>(  0, gpsToUAVPath, "gpsToUAV");    // Green to orange
-  auto uavToTargetRecv = initPirateReceiver<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
-  auto rfToTargetRecv  = initPirateReceiver<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
+  auto gpsToTargetChan = anonPipe<Position>(); // Green to green
+  auto gpsToUAVSend    = pirateSender<Position>(  0, gpsToUAVPath, "gpsToUAV");    // Green to orange
+  auto uavToTargetRecv = pirateReceiver<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
+  auto rfToTargetRecv  = pirateReceiver<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
+  auto gpsToTargetSend = gpsToTargetChan.sender;
 
   // Setup sender for gps that broadcasts to two other channels.
-  Sender<Position> gpsSender = [gpsToUAVSend, gpsToTargetChan](const Position& p) {
+  Sender<Position> gpsSender = [gpsToUAVSend, gpsToTargetSend](const Position& p) {
     gpsToUAVSend(p);
-    gpsToTargetChan.sender(p);
+    gpsToTargetSend(p);
   };
 
   setupTarget(uavToTargetRecv, rfToTargetRecv, gpsToTargetChan.receiver);
@@ -255,12 +140,16 @@ int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange
       showUsage(argv[0]);
     }
   }
-  auto gpsToUAVRecv    = initPirateReceiver<Position>(0, gpsToUAVPath, "gpsToUAV");    // Green to orange
-  auto uavToTargetSend = initPirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
-  auto rfToTargetSend  = initPirateSender<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
+  auto gpsToUAVRecv    = pirateReceiver<Position>(0, gpsToUAVPath, "gpsToUAV");    // Green to orange
+  auto uavToTargetSend = pirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
+  auto rfToTargetSend  = pirateSender<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
 
+
+  print([](std::ostream& o) { o << "setupUAV" << std::endl; });
   setupUAV(uavToTargetSend, gpsToUAVRecv);
+  print([](std::ostream& o) { o << "setupRfSensor" << std::endl; });
   setupRfSensor(rfToTargetSend);
+  print([](std::ostream& o) { o << "orange sleep" << std::endl; });
   usleep(5 * 1000 * 1000);
   return 0;
 }

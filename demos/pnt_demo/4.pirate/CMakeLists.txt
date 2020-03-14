@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.14)
 project(pnt)
 
 add_executable(pnt_green
-    channel.h
+    channel.h channel_fd.h channel_fd.cpp channel_pirate.h
+    print.h print.cpp
+    timer.h timer.cpp
     pnt_data.h
     sensors.h
     ownship.h ownship.cpp
@@ -19,7 +21,9 @@ set_target_properties(pnt_green PROPERTIES
 )
 
 add_executable(pnt_orange
-    channel.h
+    channel.h channel_fd.h channel_fd.cpp channel_pirate.h
+    print.h print.cpp
+    timer.h timer.cpp
     pnt_data.h
     sensors.h
     ownship.h ownship.cpp
