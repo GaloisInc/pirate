@@ -11,58 +11,6 @@
 #include <mutex>
 #include <string.h>
 
-void setupGps(Sender<Position> gpsSender)
-{
-  Position p(.0, .0, .0); // initial position
-  Velocity v(50, 25, 12);
-
-  GpsSensor* gps = new GpsSensor(gpsSender, p, v);
-  // Run every 10 gps milliseconds.
-  startTimer(10, [gps](){ gps->read(msecs(10)); });
-}
-
-void setupTarget(Receiver<Position> uav, Receiver<Distance> rf, Receiver<Position> gps)
-{
-  Target* tgt = new Target(10); // updates at 10 Hz frequency
-  auto tgtMutex = new std::mutex();
-
-  asyncReadMessages<Position>(uav,
-    [tgt, tgtMutex](const Position& p) {
-        std::lock_guard<std::mutex> g(*tgtMutex);
-        tgt->setUAVLocation(p);
-      });
-  asyncReadMessages<Distance>(rf,
-    [tgt, tgtMutex](const Distance& d) {
-        std::lock_guard<std::mutex> g(*tgtMutex);
-        tgt->setDistance(d);
-      });
-  asyncReadMessages<Position>(gps,
-    [tgt, tgtMutex](const Position& p) {
-      std::lock_guard<std::mutex> g(*tgtMutex);
-      tgt->onGpsPositionChange(p);
-    });
-}
-
-void setupRfSensor(Sender<Distance> rfSender)
-{
-  Distance d(1062, 7800, 9000); // initial target distance
-  Velocity vtgt(35, 625, 18);
-  RfSensor* rfs  = new RfSensor(rfSender, d, vtgt);
-  startTimer(sleep_msec, [rfs]() {
-    print([](std::ostream& o) { o << "rf sensor event." << std::endl; });
-    rfs->read(msecs(10));
-  });
-}
-
-void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
-{
-  OwnShip* uav = new OwnShip(uavSender, 100); // updates at 100 Hz frequency
-  asyncReadMessages<Position>(gps,
-    [uav](const Position& p) {
-        uav->onGpsPositionChange(p);
-      });
-}
-
 #pragma pirate enclave declare(green)
 #pragma pirate enclave declare(orange)
 
@@ -99,21 +47,58 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
     }
   }
 
-  auto gpsToTargetChan = anonPipe<Position>(); // Green to green
-  auto gpsToUAVSend    = pirateSender<Position>(  0, gpsToUAVPath, "gpsToUAV");    // Green to orange
-  auto uavToTargetRecv = pirateReceiver<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
-  auto rfToTargetRecv  = pirateReceiver<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
-  auto gpsToTargetSend = gpsToTargetChan.sender;
+  //auto gpsToTargetChan = anonPipe<Position>(); // Green to green
+  //auto gpsToUAVSend    = unixSeqPacketSender<Position>(gpsToUAVPath);    // Green to orange
+  //auto uavToTargetRecv = unixSeqPacketReceiver<Position>(uavToTargetPath);  // Orange to green
+  //auto rfToTargetRecv  = unixSeqPacketReceiver<Distance>(rfToTargetPath);   // Orange to green
+  //auto gpsToTargetSend = gpsToTargetChan.sender;
 
   // Setup sender for gps that broadcasts to two other channels.
-  Sender<Position> gpsSender = [gpsToUAVSend, gpsToTargetSend](const Position& p) {
-    gpsToUAVSend(p);
-    gpsToTargetSend(p);
+  Sender<Position> gpsSender = [](const Position& p) {
+    channel_errlog([](FILE* f) { fprintf(f, "About to send\n");});
+    //gpsToUAVSend(p);
+    //gpsToTargetSend(p);
   };
 
-  setupTarget(uavToTargetRecv, rfToTargetRecv, gpsToTargetChan.receiver);
-  setupGps(gpsSender);
-  usleep(5 * 1000 * 1000);
+  Target* tgt = new Target(10); // updates at 10 Hz frequency
+  //auto tgtMutex = new std::mutex();
+
+/*
+  asyncReadMessages<Position>(uavToTargetRecv,
+    [tgt, tgtMutex](const Position& p) {
+        std::lock_guard<std::mutex> g(*tgtMutex);
+        tgt->setUAVLocation(p);
+      });*/
+      /*
+  std::thread rfToTargetThread(rfToTargetRecv,
+    [tgt](const Distance& d) {
+        channel_errlog([](FILE* f) { fprintf(f, "Received distance\n"); });
+     //   std::lock_guard<std::mutex> g(*tgtMutex);
+        tgt->setDistance(d);
+      });
+      */
+      /*
+  asyncReadMessages<Position>(gpsToTargetChan.receiver,
+    [tgt, tgtMutex](const Position& p) {
+      std::lock_guard<std::mutex> g(*tgtMutex);
+      tgt->onGpsPositionChange(p);
+    });*/
+
+
+  Position p(.0, .0, .0); // initial position
+  Velocity v(50, 25, 12);
+
+  GpsSensor* gps = new GpsSensor(gpsSender, p, v);
+  // Run every 10 gps milliseconds.
+  /*
+  std::thread gpsThread(onTimer, 50, 10, [gps](){
+      print([](std::ostream& o) { o << "gps thread" << std::endl; });
+      gps->read(msecs(10));
+      print([](std::ostream& o) { o << "gps thread done" << std::endl; });
+    });
+  gpsThread.join();
+  */
+  //rfToTargetThread.join();
   return 0;
 }
 
@@ -140,16 +125,36 @@ int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange
       showUsage(argv[0]);
     }
   }
-  auto gpsToUAVRecv    = pirateReceiver<Position>(0, gpsToUAVPath, "gpsToUAV");    // Green to orange
-  auto uavToTargetSend = pirateSender<Position>(1, uavToTargetPath, "uavToTarget");  // Orange to green
-  auto rfToTargetSend  = pirateSender<Distance>(2, rfToTargetPath, "rfToTarget");   // Orange to green
+//  auto gpsToUAVRecv    = unixSeqPacketReceiver<Position>(gpsToUAVPath);    // Green to orange
+  //auto uavToTargetSend = unixSeqPacketSender<Position>(uavToTargetPath);  // Orange to green
+  //auto rfToTargetSend  = unixSeqPacketSender<Distance>(rfToTargetPath);   // Orange to green
 
+  auto rfToTargetSend = [](const Distance& p) {
+    channel_errlog([](FILE* f) { fprintf(f, "About to send\n");});
+    //gpsToUAVSend(p);
+    //gpsToTargetSend(p);
+  };
 
   print([](std::ostream& o) { o << "setupUAV" << std::endl; });
-  setupUAV(uavToTargetSend, gpsToUAVRecv);
+  //OwnShip* uav = new OwnShip(uavToTargetSend, 100); // updates at 100 Hz frequency
+
+/*
+  asyncReadMessages<Position>(gpsToUAVRecv,
+    [](const Position& p) {
+//        uav->onGpsPositionChange(p);
+      });
+      */
   print([](std::ostream& o) { o << "setupRfSensor" << std::endl; });
-  setupRfSensor(rfToTargetSend);
-  print([](std::ostream& o) { o << "orange sleep" << std::endl; });
-  usleep(5 * 1000 * 1000);
+
+  Distance dtgt(1062, 7800, 9000); // initial target distance
+  Velocity vtgt(35, 625, 18);
+  RfSensor* rfs  = new RfSensor(rfToTargetSend, dtgt, vtgt);
+
+  std::thread rfThread(onTimer, 1000, 10, [rfs]() {
+    print([](std::ostream& o) { o << "rf sensor event." << std::endl; });
+    rfs->read(msecs(10));
+    print([](std::ostream& o) { o << "rf sensor event done" << std::endl; });
+  });
+  rfThread.join();
   return 0;
 }
