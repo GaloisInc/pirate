@@ -7,20 +7,14 @@ if (GAPS_ENABLE)
 endif(GAPS_ENABLE)
 
 set(COMMON_SRC
-    channel_fd.cpp
-    channel_fd.h
-    channel.h
-    ownship.cpp
-    ownship.h
+    channel.h channel_fd.h channel_fd.cpp
+    print.h print.cpp
+    timer.h timer.cpp
     pnt_data.h
-    pnt_example.cpp
-    print.cpp
-    print.h
     sensors.h
-    target.cpp
-    timer.h
-    timer.cpp
-    timer.h
+    ownship.h ownship.cpp
+    target.h target.cpp
+    pnt_example.cpp
 )
 
 if (GAPS_ENABLE)
