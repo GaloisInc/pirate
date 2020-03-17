@@ -193,4 +193,4 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: pnt_demo
-        path: build/pnt_demo
+        path: build_ngc/pnt_demo
