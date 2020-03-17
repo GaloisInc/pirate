@@ -50,7 +50,7 @@ static const char *usage =
 
 static void cusegaps_open(fuse_req_t req, struct fuse_file_info *fi) {
   char pathname[128];
-  int rv, flags, *fd_p;
+  int err, rv, flags, *fd_p;
 
   flags = fi->flags & 0x3;
   switch (flags) {
@@ -71,10 +71,11 @@ static void cusegaps_open(fuse_req_t req, struct fuse_file_info *fi) {
   }
 
   snprintf(pathname, sizeof(pathname) - 1, PIRATE_FILENAME, dev_name);
+  err = errno;
   rv = mkfifo(pathname, 0660);
   if (rv == -1) {
     if (errno == EEXIST) {
-      errno = 0;
+      errno = err;
     } else {
       fuse_reply_err(req, errno);
       return;
