@@ -8,11 +8,19 @@ endif(GAPS_ENABLE)
 
 set(COMMON_SRC
     channel_fd.cpp
-    print.cpp
-    timer.cpp
+    channel_fd.h
+    channel.h
     ownship.cpp
-    target.cpp
+    ownship.h
+    pnt_data.h
     pnt_example.cpp
+    print.cpp
+    print.h
+    sensors.h
+    target.cpp
+    timer.h
+    timer.cpp
+    timer.h
 )
 
 if (GAPS_ENABLE)
@@ -25,14 +33,14 @@ else()
     add_executable(pnt_orange ${COMMON_SRC} orange.cpp)
 endif(GAPS_ENABLE)
 
-target_link_libraries(pnt_green "pthread")
+target_link_libraries(pnt_green ${PIRATE_APP_LIBS})
 set_target_properties(pnt_green PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange "pthread")
+target_link_libraries(pnt_orange ${PIRATE_APP_LIBS})
 set_target_properties(pnt_orange PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
@@ -40,3 +48,4 @@ set_target_properties(pnt_orange PROPERTIES
 )
 
 install(TARGETS pnt_green pnt_orange)
+configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)

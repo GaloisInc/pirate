@@ -1,10 +1,13 @@
 #include "channel_fd.h"
+
+#include "libpirate.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-void fdCheckedWrite(const std::string& path, int fd, const void* buf, size_t n) {
-  ssize_t cnt = write(fd, buf, n);
+void gdCheckedWrite(const std::string& path, int gd, const void* buf, size_t n) {
+  ssize_t cnt = pirate_write(gd, buf, n);
   if (cnt == -1) {
     channel_errlog([path](FILE* f) { fprintf(f, "%s write failed (error = %d).", path.c_str(), errno); });
     exit(-1);
@@ -15,30 +18,22 @@ void fdCheckedWrite(const std::string& path, int fd, const void* buf, size_t n) 
   }
 }
 
-int openFifo(const std::string& path, int flags) {
-    if (mkfifo(path.c_str(), 0660) == -1) {
-      if (errno == EEXIST) {
-        errno = 0;
-      } else {
-        channel_errlog([path](FILE* f) { fprintf(f, "%s creation failed (error = %d).", path.c_str(), errno); });
-        exit(-1);
-      }
-    }
+void piratePipe(const std::string& path, int gd) {
+  int rv;
+  pirate_channel_param_t param;
 
-    int fd = open(path.c_str(), flags);
-    if (fd == -1) {
-        channel_errlog([path](FILE* f) { fprintf(f, "%s open failed (error = %d).", path.c_str(), errno); });
-        exit(-1);
-    }
-
-    struct stat s;
-    if (fstat(fd, &s) == -1) {
-        channel_errlog([path](FILE* f) { fprintf(f, "%s stat failed (error = %d).", path.c_str(), errno); });
-        exit(-1);
-    }
-    if (!S_ISFIFO(s.st_mode)) {
-        channel_errlog([path](FILE* f) { fprintf(f, "%s must be a fifo.", path.c_str()); });
-        exit(-1);
-    }
-    return fd;
+  pirate_init_channel_param(PIPE, &param);
+  strncpy(param.channel.pipe.path, path.c_str(), sizeof(param.channel.pipe.path));
+  if (pirate_set_channel_param(gd, O_RDONLY, &param) < 0) {
+    channel_errlog([](FILE* f) { fprintf(f, "unable to set read channel parameter"); });
+    exit(-1);
+  }
+  if (pirate_set_channel_param(gd, O_WRONLY, &param) < 0) {
+    channel_errlog([](FILE* f) { fprintf(f, "unable to set write channel parameter"); });
+    exit(-1);
+  }
+  if (pirate_pipe(gd, O_RDWR) < 0) {
+    channel_errlog([](FILE* f) { fprintf(f, "unable to open pirate pipe"); });
+    exit(-1);
+  }
 }
