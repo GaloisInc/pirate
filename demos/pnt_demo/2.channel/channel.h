@@ -1,9 +1,11 @@
 #pragma once
+#include <functional>
 #include <vector>
 
 template<typename T>
 class SendChannel {
 public:
+  SendChannel() {}
   SendChannel(const SendChannel& c) = delete;
   SendChannel& operator=(SendChannel& ) = delete;
   virtual void send(const T& data) = 0;
