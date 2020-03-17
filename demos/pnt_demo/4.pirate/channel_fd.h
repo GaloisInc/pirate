@@ -1,13 +1,12 @@
 #pragma once
 #include "channel.h"
 #include "print.h"
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
-
-#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 /** Write the bytes to a file descriptor, and check that all bytes were written. */
 void fdCheckedWrite(const std::string& path, int fd, const void* buf, size_t n);

@@ -23,6 +23,7 @@ void showUsage(const char* arg0) {
 
 int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")))
 {
+  // Parse command line arguments
   std::string gpsToUAVPath;
   std::string uavToTargetPath;
   std::string rfToTargetPath;
@@ -51,6 +52,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
     }
   }
 
+  // Create channels 
   auto gpsToTargetChan = anonPipe<Position>("gpsToTarget"); // Green to green
   auto gpsToTargetSend = gpsToTargetChan.sender;
   auto gpsToUAVSend    = unixSeqPacketSender<Position>(gpsToUAVPath);    // Green to orange
@@ -70,12 +72,13 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
 
   Time start;
 
+  // CreateGPS
   Position p(.0, .0, .0); // initial position
   Velocity v(50, 25, 12);
   GpsSensor gps(start, gpsSender, p, v);
 
+  // Create target and event handling threads.
   Target tgt(10); // updates at 10 Hz frequency
-
   std::mutex tgtMutex;
   auto uavToTargetThread = 
     asyncReadMessages<Position>(uavToTargetRecv,
@@ -98,8 +101,11 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   // Run every 10 gps milliseconds.
   onTimer(start, duration,std::chrono::milliseconds(10), 
            [&gps](TimerMsec now){ gps.read(now); });
-           
+
+  // Close GPS  
   gpsSender.close();
+  
+  // Wait for all target threads to terminate.
   uavToTargetThread.join();
   rfToTargetThread.join();
   gpsToTargetThread.join();
@@ -108,6 +114,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
 
 int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange")))
 {
+  // Parse command line arguments
   std::string gpsToUAVPath;
   std::string uavToTargetPath;
   std::string rfToTargetPath;
@@ -135,24 +142,31 @@ int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange
       exit(-1);
     }
   }
+
+  // Create channels (Note: Order must match corresponding run_green channel creation order)
   auto gpsToUAVRecv    = unixSeqPacketReceiver<Position>(gpsToUAVPath);    // Green to orange
   auto uavToTargetSend = unixSeqPacketSender<Position>(uavToTargetPath);  // Orange to green
   auto rfToTargetSend  = unixSeqPacketSender<Distance>(rfToTargetPath);   // Orange to green
 
+  Time start;
+
+  // Create RF sensor
+  Distance dtgt(1062, 7800, 9000); // initial target distance
+  Velocity vtgt(35, 625, 18);
+  RfSensor rfs(start, rfToTargetSend, dtgt, vtgt);
+
+  // Create UAV and have it start listening.
   OwnShip uav(uavToTargetSend, 100); // updates at 100 Hz frequency
   auto gpsToUAVThread =
     asyncReadMessages<Position>(gpsToUAVRecv,
       [&uav](const Position& p) { uav.onGpsPositionChange(p); });
 
-  Time start;
-
-  Distance dtgt(1062, 7800, 9000); // initial target distance
-  Velocity vtgt(35, 625, 18);
-  RfSensor rfs(start, rfToTargetSend, dtgt, vtgt);
+  // Run RF sensor
   onTimer(start, duration, std::chrono::milliseconds(10), 
           [&rfs](TimerMsec now) { rfs.read(now); });
   rfToTargetSend.close();
-    
+
+  // Wait for UAV to stop receiving messages and close its channel.    
   gpsToUAVThread.join();
   uavToTargetSend.close();
 

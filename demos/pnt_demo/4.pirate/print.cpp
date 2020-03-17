@@ -1,15 +1,6 @@
 #include "print.h"
-#include <sstream>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-void print(std::function<void(std::ostream& o)> p) {
-  std::stringstream o;
-  p(o);
-  std::string s=o.str();
-  write(STDOUT_FILENO, s.c_str(), s.size());
-}
 
 void channel_errlog(std::function<void(FILE*)> p) {
   char* b;
