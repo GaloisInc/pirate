@@ -1,19 +1,30 @@
 #pragma once
 #include <functional>
 #include <thread>
-#include "print.h"
 
 template<typename T>
-using Sender = std::function<void(const T& m)>;
+class Sender {
+  std::function<void(const T&)> _send;
+  std::function<void(void)> _close;
+public:
+  Sender(const std::function<void(const T&)> send, const std::function<void(void)>& close)
+    : _send(send), _close(close) {
+
+    }
+
+  void operator()(const T& x) const {
+    _send(x);
+  }
+  void close(void) { _close(); }
+};
 
 template<typename T>
 using Receiver = std::function<void(std::function<void (const T& d)>)>;
 
 template<typename T>
-void asyncReadMessages(Receiver<T> r, std::function<void (const T& d)> f)
+std::thread asyncReadMessages(Receiver<T> r, std::function<void (const T& d)> f)
 {
-  std::thread t(r, f);
-  t.detach();
+  return std::thread(r, f);
 }
 
 template<typename T>
@@ -21,3 +32,9 @@ struct SenderReceiverPair {
   Sender<T> sender;
   Receiver<T> receiver;
 };
+
+/** A function that given an ostream populates it with output. */
+using Printer=std::function<void(std::ostream&)>;
+
+/** A function that outputs the string returned by a printer atomically. */
+using PrintSink=std::function<void(Printer)>;

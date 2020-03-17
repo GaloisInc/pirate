@@ -1,7 +1,8 @@
 #pragma once
+#include <chrono>
 #include <functional>
 
-void onTimer(unsigned total, unsigned msec, std::function<void()> p);
+using TimerMsec = std::chrono::time_point<std::chrono::steady_clock, std::chrono::milliseconds>;
 
-/** Start a thread that runs the task at a periodic interval. */
-void startTimer(unsigned total, unsigned msec, std::function<void()> p);
+/** Runs an event at aregular interval for a total number of minutes. */
+void onTimer(TimerMsec start, std::chrono::milliseconds dur, std::chrono::milliseconds step, std::function<void(TimerMsec)> p);

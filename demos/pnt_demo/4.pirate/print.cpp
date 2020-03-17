@@ -21,16 +21,8 @@ void channel_errlog(std::function<void(FILE*)> p) {
     exit(-1);
   }
   p(f);
+  fputc('\n', f);
   fclose(f);
   write(STDERR_FILENO, b, sz);
   free(b);
-}
-
-void channel_error(std::function<void(std::ostream& o)> p) {
-  std::stringstream o;
-  p(o);
-  std::string s=o.str();
-  write(STDERR_FILENO, s.c_str(), s.size());
-
-  exit(-1);
 }

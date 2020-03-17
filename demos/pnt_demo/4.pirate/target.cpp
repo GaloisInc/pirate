@@ -3,9 +3,9 @@
 #include "sensors.h"
 
 void Target::onGpsPositionChange(const Position& p) {  
-  bool tick = false;
+  static int cnt = 0;
   		
-  if (_cycle != 0 && 0 == ++_cnt % _cycle) {
+  if (_cycle != 0 && 0 == ++cnt % _cycle) {
     targetLocation();
     print_track();
   }

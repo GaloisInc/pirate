@@ -1,6 +1,4 @@
 #pragma once
-#include<ostream>
-
 enum sensitivity { red, blue, green, yellow, orange };
 static int max_fqc = 100;
 static double sleep_msec = 1000 / max_fqc; 
@@ -24,11 +22,6 @@ struct Position {
   double _z;
 };
 
-inline
-std::ostream& operator<<(std::ostream& o, const Position& p)
-{
-  return o << "(x=" << p._x << ", y=" << p._y << ", z=" << p._z << ")";
-}
 
 struct Velocity {
   Velocity() :_dx(.0), _dy(.0), _dz(.0) {};
@@ -43,5 +36,3 @@ struct Track {
   Position _pos;
   Velocity _v;
 };
-
-
