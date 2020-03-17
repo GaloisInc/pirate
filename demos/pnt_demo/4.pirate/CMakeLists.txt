@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(pnt)
 
 if (GAPS_ENABLE)
-    set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -DGAPS_ENABLE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGAPS_ENABLE")
 endif(GAPS_ENABLE)
 
 set(COMMON_SRC
