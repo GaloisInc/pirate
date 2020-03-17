@@ -194,3 +194,4 @@ jobs:
       with:
         name: pnt_demo
         path: build_ngc/pnt_demo
+      if: github.ref == 'refs/heads/master'
