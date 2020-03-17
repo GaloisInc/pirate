@@ -61,6 +61,7 @@ if (GAPS_DEMOS)
     add_subdirectory(demos/time_demo)
     add_subdirectory(demos/channel_demo)
     add_subdirectory(demos/cxx_demo)
+    add_subdirectory(demos/pnt_demo/4.pirate)
 
     if (GAPS_ENABLE)
         add_subdirectory(demos/enclave_demo)

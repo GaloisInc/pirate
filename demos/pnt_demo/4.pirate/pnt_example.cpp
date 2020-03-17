@@ -13,6 +13,17 @@
 #pragma pirate enclave declare(green)
 #pragma pirate enclave declare(orange)
 
+#ifdef GAPS_ENABLE
+#ifndef __GAPS__
+#error "gaps compiler must be used"
+#endif
+#pragma pirate enclave declare(green)
+#pragma pirate enclave declare(orange)
+#define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
+#else
+#define PIRATE_ENCLAVE_MAIN(e)
+#endif
+
 void showUsage(const char* arg0) {
   std::cerr
        << "Usage:\n"
@@ -21,7 +32,7 @@ void showUsage(const char* arg0) {
        << "  path should be a valid libpirate channel format string." << std::endl;
 }
 
-int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")))
+int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 {
   // Parse command line arguments
   std::string gpsToUAVPath;
@@ -112,7 +123,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   return 0;
 }
 
-int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange")))
+int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
 {
   // Parse command line arguments
   std::string gpsToUAVPath;
