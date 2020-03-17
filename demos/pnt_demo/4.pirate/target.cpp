@@ -1,6 +1,4 @@
 #include "target.h"
-#include "ownship.h"
-#include "sensors.h"
 
 void Target::onGpsPositionChange(const Position& p) {  
   static int cnt = 0;

@@ -1,7 +1,6 @@
 #pragma once
 #include "channel.h"
 #include "pnt_data.h"
-#include <functional>
 #include <iostream>
 
 class OwnShip
@@ -11,6 +10,7 @@ class OwnShip
   Track _track;
   int _frequency;
   int _cycle;
+
 public:
   OwnShip(const Sender<Position>& c, int rate = 1)
     : _c(c),
@@ -35,4 +35,5 @@ public:
 protected:
   void setPosition(Position const& p) { _track._pos = p; }
   void setVelocity(Velocity const& v) { _track._v = v; }
+
 };
