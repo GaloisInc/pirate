@@ -171,3 +171,26 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
+  ng_demo:
+    needs: build
+    runs-on: ubuntu-latest
+    container: docker://pirateteam/ubuntu:latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Configure
+      run: |
+        mkdir pnt_demo
+        mkdir build_ngc && cd build_ngc
+        cmake -DCMAKE_INSTALL_PREFIX=pnt_demo \
+              -DCMAKE_EXE_LINKER_FLAGS=-static \
+              ../demos/pnt_demo/4.pirate/
+    - name: Make
+      run: |
+        cd build_ngc
+        make
+        make install
+    - name: Make demo artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: pnt_demo
+        path: build_ngc/pnt_demo
