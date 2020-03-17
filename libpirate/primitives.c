@@ -215,7 +215,7 @@ int pirate_open(int gd, int flags) {
 
 static void* pirate_pipe_open_read(void *gd) {
     int rv;
-    rv = pirate_open((int) gd, O_RDONLY);
+    rv = pirate_open((intptr_t) gd, O_RDONLY);
     if (rv < 0) {
         return (void*) ((intptr_t) errno);
     }
@@ -224,7 +224,7 @@ static void* pirate_pipe_open_read(void *gd) {
 
 static void* pirate_pipe_open_write(void *gd) {
     int rv;
-    rv = pirate_open((int) gd, O_WRONLY);
+    rv = pirate_open((intptr_t) gd, O_WRONLY);
     if (rv < 0) {
         return (void*) ((intptr_t) errno);
     }
