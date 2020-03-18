@@ -210,12 +210,12 @@ public:
         pirate_channel_param_t rdParam;
 
         int rv = pirate_open(Writer.channel, O_WRONLY);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(Writer.channel, rv);
+        ASSERT_EQ(0, errno);
 
         rv = pirate_get_channel_param(Writer.channel, O_WRONLY, &rdParam);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
@@ -226,12 +226,12 @@ public:
         pirate_channel_param_t rdParam;
 
         int rv = pirate_open(Reader.channel, O_RDONLY);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(Reader.channel, rv);
+        ASSERT_EQ(0, errno);
 
         rv = pirate_get_channel_param(Writer.channel, O_RDONLY, &rdParam);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);

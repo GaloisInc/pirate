@@ -73,29 +73,29 @@ void ChannelTest::WriteDataInit(ssize_t len)
 void ChannelTest::WriterChannelOpen()
 {
     int rv = pirate_open(Writer.channel, O_WRONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(Writer.channel, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::ReaderChannelOpen()
 {
     int rv = pirate_open(Reader.channel, O_RDONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(Reader.channel, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::WriterChannelClose()
 {
     int rv = pirate_close(Writer.channel, O_WRONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::ReaderChannelClose()
 {
     int rv = pirate_close(Reader.channel, O_RDONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::Run()
@@ -118,8 +118,8 @@ void ChannelTest::RunChildOpen(bool child)
     {
         ASSERT_EQ(Reader.channel, Writer.channel);
         rv = pirate_pipe(Writer.channel, O_RDWR);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(Writer.channel, rv);
+        ASSERT_EQ(0, errno);
     }
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
@@ -172,8 +172,8 @@ void ChannelTest::WriterTest()
         }
 
         rv = pirate_write(Writer.channel, Writer.buf, l);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(l, rv);
+        ASSERT_EQ(0, errno);
 
         sts = sem_wait(&sem);
         ASSERT_EQ(0, sts);
@@ -200,8 +200,8 @@ void ChannelTest::ReaderTest()
         uint8_t *buf = Reader.buf;
         do {
             rv = pirate_read(Reader.channel, buf, remain);
-            ASSERT_EQ(0, errno);
             ASSERT_GT(rv, 0);
+            ASSERT_EQ(0, errno);
             remain -= rv;
             buf += rv;
 
