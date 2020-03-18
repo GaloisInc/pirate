@@ -100,11 +100,27 @@ void ChannelTest::ReaderChannelClose()
 
 void ChannelTest::Run()
 {
+    RunChildOpen(true);
+    RunChildOpen(false);
+}
+
+void ChannelTest::RunChildOpen(bool child)
+{
     int rv;
     pthread_t WriterId, ReaderId;
     void *WriterStatus, *ReaderStatus;
 
+    childOpen = child;
+
     ChannelInit();
+
+    if (!childOpen)
+    {
+        ASSERT_EQ(Reader.channel, Writer.channel);
+        rv = pirate_pipe(Writer.channel, O_RDWR);
+        ASSERT_EQ(0, errno);
+        ASSERT_EQ(Writer.channel, rv);
+    }
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
     ASSERT_EQ(0, rv);
@@ -135,7 +151,10 @@ void *ChannelTest::ReaderThreadS(void *param)
 
 void ChannelTest::WriterTest()
 {
-    WriterChannelOpen();
+    if (childOpen)
+    {
+        WriterChannelOpen();
+    }
 
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {
@@ -165,7 +184,10 @@ void ChannelTest::WriterTest()
 
 void ChannelTest::ReaderTest()
 {
-    ReaderChannelOpen();
+    if (childOpen)
+    {
+        ReaderChannelOpen();
+    }
 
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {

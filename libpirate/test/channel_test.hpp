@@ -39,6 +39,7 @@ protected:
     virtual void ReaderChannelClose();
 
     void Run();
+    void RunChildOpen(bool child);
     void WriterTest();
     void ReaderTest();
 
@@ -67,6 +68,12 @@ protected:
 
     // Optional inter-write delay
     uint32_t WriteDelayUs;
+
+    // If true the producer and consumer
+    // open the channel.
+    // If false the producer and consumer
+    // assume the channel is open.
+    bool childOpen;
 public:
     ChannelTest();
     static void *WriterThreadS(void *param);
