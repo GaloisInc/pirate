@@ -11,6 +11,8 @@ add_executable(pnt
     pnt_example.cpp
 )
 
+target_link_libraries(pnt pthread)
+
 set_target_properties(pnt PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
