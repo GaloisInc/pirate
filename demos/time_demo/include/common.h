@@ -20,13 +20,13 @@
 #include <openssl/sha.h>
 #include "libpirate.h"
 
-#ifdef GAPS_ENABLE
+#ifdef GAPS_DISABLE
+#define PIRATE_ENCLAVE_MAIN(e)
+#else
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
 #define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
-#else
-#define PIRATE_ENCLAVE_MAIN(e)
 #endif
 
 #define MAX_APP_THREADS         3

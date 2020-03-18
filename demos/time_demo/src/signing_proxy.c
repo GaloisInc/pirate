@@ -24,7 +24,7 @@
 #include "common.h"
 #include "ts_crypto.h"
 
-#ifdef GAPS_ENABLE
+#ifndef GAPS_DISABLE
 #pragma pirate enclave declare(yellow)
 #endif
 
@@ -411,7 +411,7 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
     return rv;
 }
 
-#ifndef GAPS_ENABLE
+#ifdef GAPS_DISABLE
 int main(int argc, char *argv[]) {
     return signing_proxy_main(argc, argv);
 }

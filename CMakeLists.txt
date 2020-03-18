@@ -11,7 +11,7 @@ endif(NOT CMAKE_C_COMPILER)
 project(gaps)
 
 # Common options
-option(GAPS_ENABLE "Enable compilation with GAPS annotation" OFF)
+option(GAPS_DISABLE "Disable compilation with GAPS annotations" OFF)
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
@@ -70,8 +70,8 @@ if (GAPS_DEMOS)
     add_subdirectory(demos/cxx_demo)
     add_subdirectory(demos/pnt_demo/4.pirate)
 
-    if (GAPS_ENABLE)
+    if (NOT GAPS_DISABLE)
         add_subdirectory(demos/enclave_demo)
-    endif(GAPS_ENABLE)
+    endif(NOT GAPS_DISABLE)
 
 endif(GAPS_DEMOS)

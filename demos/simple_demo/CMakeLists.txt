@@ -4,9 +4,9 @@ project(simple_demo)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Options
-if (GAPS_ENABLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
-endif(GAPS_ENABLE)
+if (GAPS_DISABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_DISABLE")
+endif(GAPS_DISABLE)
 
 # Sensitivity levels and output binary names
 set(HIGH "high")
@@ -29,9 +29,9 @@ configure_file(${RES_DIR}/${FAV_ICON_LOW} ${LOW_DIR}/${FAV_ICON} COPYONLY)
 
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
-if (GAPS_ENABLE)
+if (NOT GAPS_DISABLE)
     set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-endif(GAPS_ENABLE)
+endif(NOT GAPS_DISABLE)
 
 # Source files
 SET(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
@@ -53,13 +53,13 @@ function(add_non_gaps_target TGT OUT_DIR)
     set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
 endfunction()
 
-if (GAPS_ENABLE)
-    add_gaps_target(${HIGH} ${HIGH_DIR})
-    add_gaps_target(${LOW} ${LOW_DIR})
-else()
+if (GAPS_DISABLE)
     add_non_gaps_target(${HIGH} ${HIGH_DIR})
     add_non_gaps_target(${LOW} ${LOW_DIR})
-endif(GAPS_ENABLE)
+else()
+    add_gaps_target(${HIGH} ${HIGH_DIR})
+    add_gaps_target(${LOW} ${LOW_DIR})
+endif(GAPS_DISABLE)
 
 # Combined binary
 if (SINGLE_BINARY)

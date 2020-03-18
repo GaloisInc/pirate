@@ -4,18 +4,18 @@ project(cxx_demo)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 # Options
-if (GAPS_ENABLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGAPS_ENABLE")
-endif(GAPS_ENABLE)
+if (GAPS_DISABLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGAPS_DISABLE")
+endif(GAPS_DISABLE)
 
 # Dependencies
 include_directories(../../libpirate)
 
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
-if (GAPS_ENABLE)
+if (NOT GAPS_DISABLE)
     set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-endif(GAPS_ENABLE)
+endif(NOT GAPS_DISABLE)
 
 SET(READER_TGT reader_cxx)
 SET(WRITER_TGT writer_cxx)

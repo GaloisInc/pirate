@@ -29,6 +29,7 @@ jobs:
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
               -DGTEST_ROOT:PATH=$HOME/googletest \
+              -DGAPS_DISABLE=ON \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
               ..
@@ -106,6 +107,7 @@ jobs:
         cd build
         cmake -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
+              -DGAPS_DISABLE=ON \
               -DPIRATE_SHMEM_FEATURE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
@@ -124,12 +126,12 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: build demos
       run: |
         cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
   gaps:
     runs-on: ubuntu-latest
@@ -152,7 +154,7 @@ jobs:
         mkdir -p build
         cd build
         cmake -DGTEST_ROOT:PATH=$HOME/googletest \
-              -DGAPS_ENABLE=ON -DPIRATE_UNIT_TEST=ON \
+              -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
         make
@@ -165,7 +167,7 @@ jobs:
     - name: Build demos
       run: |
         cd build
-        cmake -DGAPS_ENABLE=ON -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
@@ -175,8 +177,7 @@ jobs:
       run: |
         mkdir build_pnt_demo
         cd build_pnt_demo
-        cmake -DGAPS_ENABLE=ON \
-          -DPNT_DEMO=ON \
+        cmake -DPNT_DEMO=ON \
           -DCMAKE_INSTALL_PREFIX=pnt_demo \
           -DCMAKE_EXE_LINKER_FLAGS=-static \
           -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \

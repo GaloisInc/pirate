@@ -26,7 +26,7 @@
 #include "video_sensor.h"
 #include "xwin_display.h"
 
-#ifdef GAPS_ENABLE
+#ifndef GAPS_DISABLE
 #pragma pirate enclave declare(orange)
 #endif
 
@@ -376,7 +376,7 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
     return gaps_app_wait_exit(&client.app);
 }
 
-#ifndef GAPS_ENABLE
+#ifdef GAPS_DISABLE
 int main(int argc, char *argv[]) {
     return sensor_manager_main(argc, argv);
 }

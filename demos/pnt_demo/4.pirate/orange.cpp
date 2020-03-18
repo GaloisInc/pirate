@@ -1,7 +1,7 @@
 
 int run_orange(int argc, char** argv);
 
-#ifndef GAPS_ENABLE
+#ifdef GAPS_DISABLE
 int main(int argc, char** argv) {
     return run_orange(argc, argv);
 }
