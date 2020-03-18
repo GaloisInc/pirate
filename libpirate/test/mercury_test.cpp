@@ -172,7 +172,7 @@ class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestPar
 public:
     void ChannelInit() override
     {
-        WriteDelayUs = 1000;
+        WriteDelayUs = 10000;
 
         int rv;
         mMercuryParam = GetParam();
