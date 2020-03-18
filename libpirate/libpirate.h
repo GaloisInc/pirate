@@ -320,6 +320,21 @@ int pirate_get_channel_param(int gd, int flags, pirate_channel_param_t *param);
 
 int pirate_open(int gd, int flags);
 
+// Opens both ends of the gaps channel specified by the
+// gaps descriptor. Some channel types cannot be opened
+// for both reading and writing.
+//
+// The caller is responsible for setting channel params on
+// both the reader and the writer. The caller is responsible
+// for closing the reader and the writer.
+//
+// The return value is the input gaps descriptor, or -1 if an
+// error occurred (in which case, errno is set appropriately).
+//
+// The argument flags must be O_RDWR.
+
+int pirate_pipe(int gd, int flags);
+
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
 //
