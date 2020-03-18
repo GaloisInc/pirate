@@ -716,6 +716,39 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
             break;
         }
         break;
+    case 0xbc5a32fb:
+        /* establish_session_id( Level: 1 Src: 1, Dst: 2, Msg: 1 ): new session ID 0xbc5a32fb */
+        switch ( ntohl(msg->header.message) ) {
+        case 1:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 2:
+            case 5:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x574c9a21:
+        /* establish_session_id( Level: 2 Src: 2, Dst: 1, Msg: 2 ): new session ID 0x574c9a21 */
+        switch ( ntohl(msg->header.message) ) {
+        case 2:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 1:
+            case 3:
+            case 4:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
     default:
         goto error_return;
     }
@@ -915,6 +948,39 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
             switch ( ntohl(msg->header.data_tag) ) {
             case 1: /* Position data */
             case 2: /* Polar data */
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0xbc5a32fb:
+        /* establish_session_id( Level: 1 Src: 1, Dst: 2, Msg: 1 ): new session ID 0xbc5a32fb */
+        switch ( ntohl(msg->header.message) ) {
+        case 1:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 2:
+            case 5:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x574c9a21:
+        /* establish_session_id( Level: 2 Src: 2, Dst: 1, Msg: 2 ): new session ID 0x574c9a21 */
+        switch ( ntohl(msg->header.message) ) {
+        case 2:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 1:
+            case 3:
+            case 4:
                 break;
             default:
                 goto error_return;
