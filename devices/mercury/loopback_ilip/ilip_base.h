@@ -35,6 +35,9 @@
  * of the Defense Advanced Research Projects Agency (DARPA).
  */
 
+#include <linux/cdev.h>
+#include <linux/mutex.h>
+
 #ifndef GAPS_ILIP_H_1727_INCLUDED
 #define GAPS_ILIP_H_1727_INCLUDED
 
@@ -73,13 +76,13 @@
 /* The number of messages at al level we can handle at a time */
 #define GAPS_ILIP_MESSAGE_COUNT (GAPS_ILIP_BUFFER_SIZE/GAPS_ILIP_BLOCK_SIZE)
 
-/* The structure to represent 'cfake' devices. 
+/* The structure to represent 'ilip' devices. 
  *  data - data buffer;
  *  buffer_size - size of the data buffer;
  *  block_size - maximum number of bytes that can be read or written 
  *    in one call;
  *  gaps_ilip_mutex - a mutex to protect the fields of this structure;
- *  cdev - ñharacter device structure.
+ *  cdev - Character device structure.
  */
 struct gaps_ilip_dev {
 	unsigned char *data;
@@ -134,5 +137,59 @@ struct ilip_message {
     struct ilip_time time;
     struct ilip_payload payload;
 }__attribute__((packed));
+
+struct ilip_session_statistics {
+    uint32_t send_count;
+    uint32_t receive_count;
+    uint32_t send_reject_count;
+    uint32_t receive_reject_count;
+    uint32_t send_ilip_count;
+    uint32_t receive_ilip_count;
+    uint32_t send_ilip_reject_count;
+    uint32_t receive_ilip_reject_count;
+};
+
+/**
+ * @brief Find the session ID and return the index
+ * 
+ * @author mdesroch (3/4/20)
+ * 
+ * @param session_id  The session ID provided by the root ILIP device
+ * 
+ * @return unsigned int Session index or GAPS_ILIP_NSESSIONS indicates session 
+ *         ID not found.
+ */
+unsigned int gaps_ilip_get_session_index( unsigned int session_id );
+/**
+ * @brief Clear or reset the statistics associated to a session
+ * 
+ * @author mdesroch (3/4/20)
+ * 
+ * @param session_id The session ID provided by the root ILIP device
+ * 
+ * @return int  0 on success, -1 on an error
+ */
+int gaps_ilip_clear_statistics( uint32_t session_id );
+/**
+ * @brief Get the statistics associated to a session
+ * 
+ * @author mdesroch (3/4/20)
+ * 
+ * @param session_id The session ID provided by the root ILIP device
+ * @param stat Buffer address to place statistics into
+ * 
+ * @return int 0 on success, -1 on an error
+ */
+int gaps_ilip_get_statistics( uint32_t session_id, struct ilip_session_statistics *stat );
+/**
+ * @brief get the verbose level for the netlink section of the ILIP driver
+ * 
+ * @author mdesroch (3/5/20)
+ * 
+ * @param void 
+ * 
+ * @return uint 0 to 10, 0 being quiet.
+ */
+uint gaps_ilip_get_nt_verbose_level( void );
 
 #endif /* GAPS_ILIP_H_1727_INCLUDED */

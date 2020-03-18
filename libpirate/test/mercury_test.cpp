@@ -256,7 +256,6 @@ static MercuryTestParam MercuryParams [] =
     // CH,LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
     {  0, 1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
     {  2, 2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
-#if 0
     {  1, 1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
     {  3, 2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
     {  0, 1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
@@ -265,7 +264,6 @@ static MercuryTestParam MercuryParams [] =
     {  3, 2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
     {  0, 1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
     {  1, 2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
-#endif
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,
