@@ -171,27 +171,21 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
-  ng_demo:
-    needs: build
-    runs-on: ubuntu-latest
-    container: docker://pirateteam/ubuntu:latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Configure
+    - name: Build pnt
       run: |
-        mkdir pnt_demo
-        mkdir build_ngc && cd build_ngc
-        cmake -DCMAKE_INSTALL_PREFIX=pnt_demo \
-              -DCMAKE_EXE_LINKER_FLAGS=-static \
-              ../demos/pnt_demo/4.pirate/
-    - name: Make
-      run: |
-        cd build_ngc
+        mkdir build_pnt_demo
+        cd build_pnt_demo
+        cmake -DGAPS_ENABLE=ON \
+          -DPNT_DEMO=ON \
+          -DCMAKE_INSTALL_PREFIX=pnt_demo \
+          -DCMAKE_EXE_LINKER_FLAGS=-static \
+          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+          ..
         make
         make install
-    - name: Make demo artifacts
+    - name: Upload pnt demo artifacts
       uses: actions/upload-artifact@v1
       with:
         name: pnt_demo
-        path: build_ngc/pnt_demo
+        path: build_pnt_demo/pnt_demo
       if: github.ref == 'refs/heads/master'

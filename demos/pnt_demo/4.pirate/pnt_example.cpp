@@ -13,6 +13,17 @@
 #pragma pirate enclave declare(green)
 #pragma pirate enclave declare(orange)
 
+#ifdef GAPS_ENABLE
+#ifndef __GAPS__
+#error "gaps compiler must be used"
+#endif
+#pragma pirate enclave declare(green)
+#pragma pirate enclave declare(orange)
+#define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
+#else
+#define PIRATE_ENCLAVE_MAIN(e)
+#endif
+
 void showUsage(const char* arg0) {
   std::cerr
        << "Usage:\n"
@@ -21,16 +32,20 @@ void showUsage(const char* arg0) {
        << "  path should be a valid libpirate channel format string." << std::endl;
 }
 
-int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")))
+int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 {
   // Parse command line arguments
+  std::string gpsToTarget;
   std::string gpsToUAVPath;
   std::string uavToTargetPath;
   std::string rfToTargetPath;
   std::chrono::milliseconds duration;
   int i = 1;
   while (i < argc) {
-    if (strcmp(argv[i], "--gps-to-uav") == 0) {
+    if (strcmp(argv[i], "--gps-to-target") == 0) {
+      gpsToTarget = argv[i+1];
+      i+=2;
+    } else if (strcmp(argv[i], "--gps-to-uav") == 0) {
       gpsToUAVPath = argv[i+1];
       i+=2;
     } else if (strcmp(argv[i], "--uav-to-target") == 0) {
@@ -52,12 +67,13 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
     }
   }
 
-  // Create channels 
-  auto gpsToTargetChan = anonPipe<Position>("gpsToTarget"); // Green to green
-  auto gpsToTargetSend = gpsToTargetChan.sender;
-  auto gpsToUAVSend    = unixSeqPacketSender<Position>(gpsToUAVPath);    // Green to orange
-  auto uavToTargetRecv = unixSeqPacketReceiver<Position>(uavToTargetPath);  // Orange to green
-  auto rfToTargetRecv  = unixSeqPacketReceiver<Distance>(rfToTargetPath);   // Orange to green
+  // Create channels
+  piratePipe(gpsToTarget, 0);
+  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
+  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
+  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 1);       // Green to orange
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 2);  // Orange to green
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 3);   // Orange to green
 
   // Setup sender for gps that broadcasts to two other channels.
   Sender<Position> gpsSender(
@@ -92,7 +108,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
         tgt.setDistance(d);
       });
   auto gpsToTargetThread =
-    asyncReadMessages<Position>(gpsToTargetChan.receiver,
+    asyncReadMessages<Position>(gpsToTargetRecv,
       [&tgt, &tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.onGpsPositionChange(p);
@@ -112,7 +128,7 @@ int run_green(int argc, char** argv) __attribute__((pirate_enclave_main("green")
   return 0;
 }
 
-int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange")))
+int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
 {
   // Parse command line arguments
   std::string gpsToUAVPath;
@@ -144,9 +160,9 @@ int run_orange(int argc, char** argv) __attribute__((pirate_enclave_main("orange
   }
 
   // Create channels (Note: Order must match corresponding run_green channel creation order)
-  auto gpsToUAVRecv    = unixSeqPacketReceiver<Position>(gpsToUAVPath);    // Green to orange
-  auto uavToTargetSend = unixSeqPacketSender<Position>(uavToTargetPath);  // Orange to green
-  auto rfToTargetSend  = unixSeqPacketSender<Distance>(rfToTargetPath);   // Orange to green
+  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath, 1);    // Green to orange
+  auto uavToTargetSend = pirateSender<Position>(uavToTargetPath, 2);  // Orange to green
+  auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath, 3);   // Orange to green
 
   Time start;
 

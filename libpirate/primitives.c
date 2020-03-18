@@ -213,6 +213,74 @@ int pirate_open(int gd, int flags) {
     return -1;
 }
 
+static void* pirate_pipe_open_read(void *gd) {
+    int rv;
+    rv = pirate_open((intptr_t) gd, O_RDONLY);
+    if (rv < 0) {
+        return (void*) ((intptr_t) errno);
+    }
+    return 0;
+}
+
+static void* pirate_pipe_open_write(void *gd) {
+    int rv;
+    rv = pirate_open((intptr_t) gd, O_WRONLY);
+    if (rv < 0) {
+        return (void*) ((intptr_t) errno);
+    }
+    return 0;
+}
+
+int pirate_pipe(int gd, int flags) {
+    pthread_t recvId, sendId;
+    intptr_t param = gd, result;
+    int rv;
+
+    if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (flags != O_RDWR) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    rv = pthread_create(&recvId, NULL, pirate_pipe_open_read, (void*) param);
+    if (rv != 0) {
+        errno = rv;
+        return -1;
+    }
+
+    rv = pthread_create(&sendId, NULL, pirate_pipe_open_write, (void*) param);
+    if (rv != 0) {
+        errno = rv;
+        return -1;
+    }
+
+    rv = pthread_join(recvId, (void*) &result);
+    if (rv != 0) {
+        errno = rv;
+        return -1;
+    }
+    if (result != 0) {
+        errno = result;
+        return -1;
+    }
+
+    rv = pthread_join(sendId, (void*) &result);
+    if (rv != 0) {
+        errno = rv;
+        return -1;
+    }
+    if (result != 0) {
+        errno = result;
+        return -1;
+    }
+
+    return gd;
+}
+
 
 int pirate_close(int gd, int flags) {
     pirate_channel_t *channel = NULL;
