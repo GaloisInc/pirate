@@ -249,12 +249,12 @@ public:
         pirate_channel_param_t rdParam;
 
         int rv = pirate_open(Writer.channel, O_WRONLY);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(Writer.channel, rv);
+        ASSERT_EQ(0, errno);
 
         rv = pirate_get_channel_param(Writer.channel, O_WRONLY, &rdParam);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
@@ -269,12 +269,12 @@ public:
         pirate_channel_param_t rdParam;
 
         int rv = pirate_open(Reader.channel, O_RDONLY);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(Reader.channel, rv);
+        ASSERT_EQ(0, errno);
 
         rv = pirate_get_channel_param(Writer.channel, O_RDONLY, &rdParam);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
@@ -290,9 +290,9 @@ public:
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        ASSERT_EQ(Stats.wr.packets, test_stats.send_count);
+        ASSERT_EQ(statsWr.packets, test_stats.send_count);
         ASSERT_EQ(0u, test_stats.send_reject_count);
-        ASSERT_EQ(Stats.wr.packets, test_stats.send_ilip_count);
+        ASSERT_EQ(statsWr.packets, test_stats.send_ilip_count);
         ASSERT_EQ(0u, test_stats.send_ilip_reject_count);
 
         ChannelTest::WriterChannelClose();
@@ -304,9 +304,9 @@ public:
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        ASSERT_EQ(Stats.rd.packets, test_stats.receive_count);
+        ASSERT_EQ(statsRd.packets, test_stats.receive_count);
         ASSERT_EQ(0u, test_stats.receive_reject_count);
-        ASSERT_EQ(Stats.rd.packets, test_stats.receive_ilip_count);
+        ASSERT_EQ(statsRd.packets, test_stats.receive_ilip_count);
         ASSERT_EQ(0u, test_stats.receive_ilip_reject_count);
 
         ChannelTest::ReaderChannelClose();

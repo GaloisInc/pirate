@@ -41,7 +41,7 @@ jobs:
         path: dist/libpirate
       if: github.ref == 'refs/heads/master'
     - name: libpirate tests
-      timeout-minutes: 1
+      timeout-minutes: 5
       run: |
         cd build/libpirate
         ./gaps_channels_test
@@ -111,7 +111,7 @@ jobs:
               ..
         make
     - name: libpirate tests
-      timeout-minutes: 1
+      timeout-minutes: 5
       run: |
         cd build/libpirate
         ./gaps_channels_test
@@ -157,7 +157,7 @@ jobs:
               ..
         make
     - name: libpirate tests
-      timeout-minutes: 1
+      timeout-minutes: 5
       run: |
         cd build/libpirate
         ./gaps_channels_test

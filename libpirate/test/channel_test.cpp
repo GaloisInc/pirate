@@ -42,8 +42,6 @@ void ChannelTest::SetUp()
 
     rv = sem_init(&sem, 0, 0);
     ASSERT_EQ(0, rv);
-
-    memset(&Stats, 0, sizeof(Stats));
 }
 
 void ChannelTest::TearDown()
@@ -75,38 +73,54 @@ void ChannelTest::WriteDataInit(ssize_t len)
 void ChannelTest::WriterChannelOpen()
 {
     int rv = pirate_open(Writer.channel, O_WRONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(Writer.channel, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::ReaderChannelOpen()
 {
     int rv = pirate_open(Reader.channel, O_RDONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(Reader.channel, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::WriterChannelClose()
 {
     int rv = pirate_close(Writer.channel, O_WRONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::ReaderChannelClose()
 {
     int rv = pirate_close(Reader.channel, O_RDONLY);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
 }
 
 void ChannelTest::Run()
+{
+    RunChildOpen(true);
+    RunChildOpen(false);
+}
+
+void ChannelTest::RunChildOpen(bool child)
 {
     int rv;
     pthread_t WriterId, ReaderId;
     void *WriterStatus, *ReaderStatus;
 
+    childOpen = child;
+
     ChannelInit();
+
+    if (!childOpen)
+    {
+        ASSERT_EQ(Reader.channel, Writer.channel);
+        rv = pirate_pipe(Writer.channel, O_RDWR);
+        ASSERT_EQ(Writer.channel, rv);
+        ASSERT_EQ(0, errno);
+    }
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
     ASSERT_EQ(0, rv);
@@ -137,7 +151,12 @@ void *ChannelTest::ReaderThreadS(void *param)
 
 void ChannelTest::WriterTest()
 {
-    WriterChannelOpen();
+    if (childOpen)
+    {
+        WriterChannelOpen();
+    }
+
+    memset(&statsWr, 0, sizeof(statsWr));
 
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {
@@ -155,11 +174,11 @@ void ChannelTest::WriterTest()
         }
 
         rv = pirate_write(Writer.channel, Writer.buf, l);
-        ASSERT_EQ(0, errno);
         ASSERT_EQ(l, rv);
+        ASSERT_EQ(0, errno);
 
-        Stats.wr.packets++;
-        Stats.wr.bytes += l;
+        statsWr.packets++;
+        statsWr.bytes += l;
 
         sts = sem_wait(&sem);
         ASSERT_EQ(0, sts);
@@ -170,7 +189,12 @@ void ChannelTest::WriterTest()
 
 void ChannelTest::ReaderTest()
 {
-    ReaderChannelOpen();
+    if (childOpen)
+    {
+        ReaderChannelOpen();
+    }
+
+    memset(&statsRd, 0, sizeof(statsRd));
 
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {
@@ -183,16 +207,16 @@ void ChannelTest::ReaderTest()
         uint8_t *buf = Reader.buf;
         do {
             rv = pirate_read(Reader.channel, buf, remain);
-            ASSERT_EQ(0, errno);
             ASSERT_GT(rv, 0);
+            ASSERT_EQ(0, errno);
             remain -= rv;
             buf += rv;
 
         } while (remain > 0);
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, l));
 
-        Stats.rd.packets++;
-        Stats.rd.bytes += l;
+        statsRd.packets++;
+        statsRd.bytes += l;
 
         sts = sem_post(&sem);
         ASSERT_EQ(0, sts);
