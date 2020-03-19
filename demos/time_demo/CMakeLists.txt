@@ -14,9 +14,9 @@ if(GAPS_SERIAL)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_SERIAL")
 endif(GAPS_SERIAL)
 
-if (GAPS_ENABLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_ENABLE")
-endif(GAPS_ENABLE)
+if (GAPS_DISABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_DISABLE")
+endif(GAPS_DISABLE)
 
 # Dependencies
 find_package(OpenSSL REQUIRED)
@@ -52,9 +52,9 @@ file(MAKE_DIRECTORY ${ORANGE_DIR} ${YELLOW_DIR} ${PURPLE_DIR})
 
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3")
-if (GAPS_ENABLE)
+if (NOT GAPS_DISABLE)
     set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-endif(GAPS_ENABLE)
+endif(NOT GAPS_DISABLE)
 
 # Source files
 set(COMMON_SRC
@@ -93,15 +93,15 @@ function(add_non_gaps_target TGT TGT_DIR)
     set_target_properties(${TGT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TGT_DIR})
 endfunction()
 
-if (GAPS_ENABLE)
-    add_gaps_target(${SENSOR_MANAGER}  "${ALL_SRC}" ${LEVEL_ORANGE})
-    add_gaps_target(${SIGNING_PROXY}   "${ALL_SRC}" ${LEVEL_YELLOW})
-    add_gaps_target(${SIGNING_SERVICE} "${ALL_SRC}" ${LEVEL_PURPLE})
-else()
+if (GAPS_DISABLE)
     add_non_gaps_target(${SENSOR_MANAGER}  ${ORANGE_DIR})
     add_non_gaps_target(${SIGNING_PROXY}   ${YELLOW_DIR})
     add_non_gaps_target(${SIGNING_SERVICE} ${PURPLE_DIR})
-endif(GAPS_ENABLE)
+else()
+    add_gaps_target(${SENSOR_MANAGER}  "${ALL_SRC}" ${LEVEL_ORANGE})
+    add_gaps_target(${SIGNING_PROXY}   "${ALL_SRC}" ${LEVEL_YELLOW})
+    add_gaps_target(${SIGNING_SERVICE} "${ALL_SRC}" ${LEVEL_PURPLE})
+endif(GAPS_DISABLE)
 
 # TSA directories
 set(CA_DIR ${PROJECT_BINARY_DIR}/ca)

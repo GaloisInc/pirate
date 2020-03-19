@@ -13,15 +13,15 @@
 #pragma pirate enclave declare(green)
 #pragma pirate enclave declare(orange)
 
-#ifdef GAPS_ENABLE
+#ifdef GAPS_DISABLE
+#define PIRATE_ENCLAVE_MAIN(e)
+#else
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
 #pragma pirate enclave declare(green)
 #pragma pirate enclave declare(orange)
 #define PIRATE_ENCLAVE_MAIN(e)  __attribute__((pirate_enclave_main(e)))
-#else
-#define PIRATE_ENCLAVE_MAIN(e)
 #endif
 
 void showUsage(const char* arg0) {

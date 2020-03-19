@@ -28,15 +28,15 @@
 #include "libpirate.h"
 #include "tiny.h"
 
-#ifdef GAPS_ENABLE
+#ifdef GAPS_DISABLE
+#define GAPS_MAIN(name)
+#else
 #ifndef __GAPS__
 #error "gaps compiler must be used"
 #endif
 #pragma pirate enclave declare(high)
 #pragma pirate enclave declare(low)
 #define GAPS_MAIN(name) __attribute__((pirate_enclave_main(name)))
-#else
-#define GAPS_MAIN(name)
 #endif
 
 #define HIGH_TO_LOW_CH 0
@@ -574,7 +574,7 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
 }
 
 
-#ifndef GAPS_ENABLE
+#ifdef GAPS_DISABLE
 int main(int argc, char* argv[]) {
 #ifdef HIGH
     return main_high(argc, argv);
