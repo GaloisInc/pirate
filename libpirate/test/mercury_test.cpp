@@ -160,14 +160,14 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
 
-    ASSERT_EQ(1, stats.send_count);
-    ASSERT_EQ(1, stats.receive_count);
-    ASSERT_EQ(0, stats.send_reject_count);
-    ASSERT_EQ(0, stats.receive_reject_count);
-    ASSERT_EQ(1, stats.send_ilip_count);
-    ASSERT_EQ(1, stats.receive_ilip_count);
-    ASSERT_EQ(0, stats.send_ilip_reject_count);
-    ASSERT_EQ(0, stats.receive_ilip_reject_count);
+    ASSERT_EQ(1u, stats.send_count);
+    ASSERT_EQ(1u, stats.receive_count);
+    ASSERT_EQ(0u, stats.send_reject_count);
+    ASSERT_EQ(0u, stats.receive_reject_count);
+    ASSERT_EQ(1u, stats.send_ilip_count);
+    ASSERT_EQ(1u, stats.receive_ilip_count);
+    ASSERT_EQ(0u, stats.send_ilip_reject_count);
+    ASSERT_EQ(0u, stats.receive_ilip_reject_count);
 
     rv = mercury_cmd_stat_clear(session_id);
     ASSERT_EQ(0, rv);
@@ -177,14 +177,14 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
 
-    ASSERT_EQ(0, stats.send_count);
-    ASSERT_EQ(0, stats.receive_count);
-    ASSERT_EQ(0, stats.send_reject_count);
-    ASSERT_EQ(0, stats.receive_reject_count);
-    ASSERT_EQ(0, stats.send_ilip_count);
-    ASSERT_EQ(0, stats.receive_ilip_count);
-    ASSERT_EQ(0, stats.send_ilip_reject_count);
-    ASSERT_EQ(0, stats.receive_ilip_reject_count);
+    ASSERT_EQ(0u, stats.send_count);
+    ASSERT_EQ(0u, stats.receive_count);
+    ASSERT_EQ(0u, stats.send_reject_count);
+    ASSERT_EQ(0u, stats.receive_reject_count);
+    ASSERT_EQ(0u, stats.send_ilip_count);
+    ASSERT_EQ(0u, stats.receive_ilip_count);
+    ASSERT_EQ(0u, stats.send_ilip_reject_count);
+    ASSERT_EQ(0u, stats.receive_ilip_reject_count);
 
     rv = pirate_close(channel, O_WRONLY);
     ASSERT_EQ(0, rv);
@@ -291,9 +291,9 @@ public:
         ASSERT_EQ(0, errno);
 
         ASSERT_EQ(Stats.wr.packets, test_stats.send_count);
-        ASSERT_EQ(0, test_stats.send_reject_count);
+        ASSERT_EQ(0u, test_stats.send_reject_count);
         ASSERT_EQ(Stats.wr.packets, test_stats.send_ilip_count);
-        ASSERT_EQ(0, test_stats.send_ilip_reject_count);
+        ASSERT_EQ(0u, test_stats.send_ilip_reject_count);
 
         ChannelTest::WriterChannelClose();
     }
@@ -305,9 +305,9 @@ public:
         ASSERT_EQ(0, errno);
 
         ASSERT_EQ(Stats.rd.packets, test_stats.receive_count);
-        ASSERT_EQ(0, test_stats.receive_reject_count);
+        ASSERT_EQ(0u, test_stats.receive_reject_count);
         ASSERT_EQ(Stats.rd.packets, test_stats.receive_ilip_count);
-        ASSERT_EQ(0, test_stats.receive_ilip_reject_count);
+        ASSERT_EQ(0u, test_stats.receive_ilip_reject_count);
 
         ChannelTest::ReaderChannelClose();
     }
