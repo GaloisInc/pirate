@@ -1,5 +1,9 @@
 #pragma once
 
+#define GAPS_ILIP_ERR_BUFLEN		 (64)
+#define GAPS_ILIP_RESP_BUFLEN_MAX	 (2048 * 6)
+#define GAPS_ILIP_RESP_BUFLEN_MIN	 (256)
+
 /**
  * gaps_ilip_attr_t netlink attributes for qdma(variables):
  * the index in this enum is used as a reference for the type,

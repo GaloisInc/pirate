@@ -43,10 +43,6 @@
 /** ILIP netlink interface version number */
 #define ILIP_VERSION		0x1 
 
-#define GAPS_ILIP_ERR_BUFLEN		 (64)
-#define GAPS_ILIP_RESP_BUFLEN_MAX	 (2048 * 6)
-#define GAPS_ILIP_RESP_BUFLEN_MIN	 (256)
-
 /** qdma_dev_attributes structure size */
 #define QDMA_DEV_ATTR_STRUCT_SIZE	(16u)
 
