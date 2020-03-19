@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _MERCURY_GAPS_ILIP_H
+#define _MERCURY_GAPS_ILIP_H
 
 #define GAPS_ILIP_ERR_BUFLEN		 (64)
 #define GAPS_ILIP_RESP_BUFLEN_MAX	 (2048 * 6)
@@ -108,3 +109,5 @@ enum gaps_ilip_op_t {
 	GAPS_ILIP_CMD_DEV_CAP,	/**< list h/w capabilities , hw and sw version */
 	GAPS_ILIP_CMD_MAX,		/**< max number of XNL commands*/
 };
+
+#endif // _MERCURY_GAPS_ILIP_H
