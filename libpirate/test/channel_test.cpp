@@ -42,6 +42,8 @@ void ChannelTest::SetUp()
 
     rv = sem_init(&sem, 0, 0);
     ASSERT_EQ(0, rv);
+
+    memset(&Stats, 0, sizeof(Stats));
 }
 
 void ChannelTest::TearDown()
@@ -156,6 +158,9 @@ void ChannelTest::WriterTest()
         ASSERT_EQ(0, errno);
         ASSERT_EQ(l, rv);
 
+        Stats.wr.packets++;
+        Stats.wr.bytes += l;
+
         sts = sem_wait(&sem);
         ASSERT_EQ(0, sts);
     }
@@ -185,6 +190,9 @@ void ChannelTest::ReaderTest()
 
         } while (remain > 0);
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, l));
+
+        Stats.rd.packets++;
+        Stats.rd.bytes += l;
 
         sts = sem_post(&sem);
         ASSERT_EQ(0, sts);

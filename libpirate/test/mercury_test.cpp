@@ -15,6 +15,7 @@
 
 #include <cstring>
 #include "libpirate.h"
+#include "mercury_cntl.h"
 #include "channel_test.hpp"
 
 namespace GAPS
@@ -103,15 +104,17 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 }
 
-
 TEST(ChannelMercuryTest, DefaultSession) {
     int rv = 0;
     const int channel = 0;
 
+    const uint32_t session_id = 1;
     const uint8_t wr_data[] = { 0xC0, 0xDE, 0xDA, 0xDA };
     const ssize_t data_len = sizeof(wr_data);
     uint8_t rd_data[data_len] = { 0 };
     ssize_t io_size = -1;
+    mercury_dev_stat_t stats;
+    memset(&stats, 0, sizeof(stats));
 
     if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) != 0) {
         ASSERT_EQ(ENOENT, errno);
@@ -138,6 +141,11 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(channel, rv);
     ASSERT_EQ(0, errno);
 
+    rv = pirate_get_channel_param(channel, O_WRONLY, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(session_id, param.channel.mercury.session.id);
+
     io_size = pirate_write(channel, wr_data, data_len);
     ASSERT_EQ(io_size, data_len);
     ASSERT_EQ(0, errno);
@@ -148,6 +156,36 @@ TEST(ChannelMercuryTest, DefaultSession) {
 
     EXPECT_TRUE(0 == std::memcmp(wr_data, rd_data, data_len));
 
+    rv = mercury_cmd_stat(session_id, &stats);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    ASSERT_EQ(1, stats.send_count);
+    ASSERT_EQ(1, stats.receive_count);
+    ASSERT_EQ(0, stats.send_reject_count);
+    ASSERT_EQ(0, stats.receive_reject_count);
+    ASSERT_EQ(1, stats.send_ilip_count);
+    ASSERT_EQ(1, stats.receive_ilip_count);
+    ASSERT_EQ(0, stats.send_ilip_reject_count);
+    ASSERT_EQ(0, stats.receive_ilip_reject_count);
+
+    rv = mercury_cmd_stat_clear(session_id);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = mercury_cmd_stat(session_id, &stats);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    ASSERT_EQ(0, stats.send_count);
+    ASSERT_EQ(0, stats.receive_count);
+    ASSERT_EQ(0, stats.send_reject_count);
+    ASSERT_EQ(0, stats.receive_reject_count);
+    ASSERT_EQ(0, stats.send_ilip_count);
+    ASSERT_EQ(0, stats.receive_ilip_count);
+    ASSERT_EQ(0, stats.send_ilip_reject_count);
+    ASSERT_EQ(0, stats.receive_ilip_reject_count);
+
     rv = pirate_close(channel, O_WRONLY);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
@@ -156,6 +194,7 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
 }
+
 
 typedef struct {
     int         channel;
@@ -219,6 +258,10 @@ public:
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
+
+        rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
+        ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
     }
 
     void ReaderChannelOpen() override
@@ -235,6 +278,38 @@ public:
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
+
+        rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
+        ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
+    }
+
+    void WriterChannelClose() override {
+        mercury_dev_stat_t test_stats;
+        int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
+        ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
+
+        ASSERT_EQ(Stats.wr.packets, test_stats.send_count);
+        ASSERT_EQ(0, test_stats.send_reject_count);
+        ASSERT_EQ(Stats.wr.packets, test_stats.send_ilip_count);
+        ASSERT_EQ(0, test_stats.send_ilip_reject_count);
+
+        ChannelTest::WriterChannelClose();
+    }
+
+    void ReaderChannelClose() override {
+        mercury_dev_stat_t test_stats;
+        int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
+        ASSERT_EQ(0, rv);
+        ASSERT_EQ(0, errno);
+
+        ASSERT_EQ(Stats.rd.packets, test_stats.receive_count);
+        ASSERT_EQ(0, test_stats.receive_reject_count);
+        ASSERT_EQ(Stats.rd.packets, test_stats.receive_ilip_count);
+        ASSERT_EQ(0, test_stats.receive_ilip_reject_count);
+
+        ChannelTest::ReaderChannelClose();
     }
 
 protected:
@@ -268,4 +343,5 @@ static MercuryTestParam MercuryParams [] =
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,
     ValuesIn(MercuryParams));
+
 } // namespace

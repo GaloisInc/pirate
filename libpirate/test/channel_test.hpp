@@ -67,6 +67,14 @@ protected:
 
     // Optional inter-write delay
     uint32_t WriteDelayUs;
+
+    // Channel statistics
+    struct {
+        struct {
+            uint32_t bytes;
+            uint32_t packets;
+        } wr, rd;
+    } Stats;
 public:
     ChannelTest();
     static void *WriterThreadS(void *param);
