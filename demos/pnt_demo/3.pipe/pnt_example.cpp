@@ -36,27 +36,19 @@ void setupGps(Sender<Position> gpsSender)
   startTimer(10, [gps](){ gps->read(msecs(10)); });
 }
 
-void setupTarget(Receiver<Position> uav, Receiver<Distance> rf, Receiver<Position> gps)
+void setupTarget(Receiver<Position> uav, Receiver<Distance> rf)
 {
   
   Target* tgt    = new Target(10); // updates at 10 Hz frequency
-  auto tgtMutex = new std::mutex();
 
   asyncReadMessages<Position>(uav,
-    [tgt, tgtMutex](const Position& p) { 
-        std::lock_guard<std::mutex> g(*tgtMutex);
-        tgt->setUAVLocation(p); 
+    [tgt](const Position& p) {
+        tgt->setUAVLocation(p);
       });
-  asyncReadMessages<Distance>(rf, 
-    [tgt, tgtMutex](const Distance& d) { 
-        std::lock_guard<std::mutex> g(*tgtMutex);
+  asyncReadMessages<Distance>(rf,
+    [tgt](const Distance& d) {
         tgt->setDistance(d);
       });
-  asyncReadMessages<Position>(gps,
-    [tgt, tgtMutex](const Position& p) { 
-      std::lock_guard<std::mutex> g(*tgtMutex); 
-      tgt->onGpsPositionChange(p); 
-    });
 }
 
 // This doesn't reurn ans must be last.
@@ -79,18 +71,16 @@ void setupUAV(Sender<Position> uavSender, Receiver<Position> gps)
 
 int main()
 {
-  auto gpsToTargetChan = initPipe<Position>(); // Green to green
   auto gpsToUAVChan    = initPipe<Position>(); // Green to yellow
   auto uavToTargetChan = initPipe<Position>(); // Yellow to green
   auto rfToTargetChan  = initPipe<Distance>(); // Yellow to green
 
   // Setup sender for gps that broadcasts to two other channels.
-  Sender<Position> gpsSender = [gpsToUAVChan, gpsToTargetChan](const Position& p) {
+  Sender<Position> gpsSender = [gpsToUAVChan](const Position& p) {
     gpsToUAVChan.sender(p);
-    gpsToTargetChan.sender(p);
   };
 
-  setupTarget(uavToTargetChan.receiver, rfToTargetChan.receiver, gpsToTargetChan.receiver);
+  setupTarget(uavToTargetChan.receiver, rfToTargetChan.receiver);
   setupUAV(uavToTargetChan.sender, gpsToUAVChan.receiver);
   setupGps(gpsSender);
   setupRfSensor(rfToTargetChan.sender);

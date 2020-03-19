@@ -20,8 +20,6 @@ public:
   ~Target() {};
 
   Track getTracking() { return _track; }
-  
-  void onGpsPositionChange(const Position& p);
 
   void print_track() {
     std::cout << "\t\t--- Target TRACK ---" << std::endl
