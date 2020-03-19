@@ -47,7 +47,7 @@
 #include <sys/socket.h>
 #include <linux/genetlink.h>
 #include <linux/netlink.h>
-#include "ilip_nl.h"
+#include "gaps_ilip.h"
 #include "mercury_cntl.h"
 
 /* netlink message */

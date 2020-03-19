@@ -27,7 +27,7 @@ endif(PIRATE_SHMEM_FEATURE)
 
 include_directories(
     .
-    ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip
+    ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
 )
 
 add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
