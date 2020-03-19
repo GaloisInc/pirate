@@ -7,7 +7,6 @@
 #include "ownship.h"
 #include "target.h"
 #include "timer.h"
-#include <mutex>
 #include <string.h>
 
 #pragma pirate enclave declare(green)
@@ -68,22 +67,17 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   }
 
   // Create channels
-  piratePipe(gpsToTarget, 0);
-  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
-  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
   auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 1);       // Green to orange
   auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 2);  // Orange to green
   auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 3);   // Orange to green
 
   // Setup sender for gps that broadcasts to two other channels.
   Sender<Position> gpsSender(
-        [gpsToUAVSend, gpsToTargetSend](const Position& p) {
+        [gpsToUAVSend](const Position& p) {
           gpsToUAVSend(p);
-          gpsToTargetSend(p);
         },
-        [&gpsToUAVSend, &gpsToTargetSend]() {
+        [&gpsToUAVSend]() {
           gpsToUAVSend.close();
-          gpsToTargetSend.close();
         });
 
   Time start;
@@ -95,23 +89,14 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
   // Create target and event handling threads.
   Target tgt(10); // updates at 10 Hz frequency
-  std::mutex tgtMutex;
   auto uavToTargetThread = 
     asyncReadMessages<Position>(uavToTargetRecv,
-      [&tgt, &tgtMutex](const Position& p) {
-        std::lock_guard<std::mutex> g(tgtMutex);
+      [&tgt](const Position& p) {
         tgt.setUAVLocation(p);
       });
   std::thread rfToTargetThread(rfToTargetRecv,
-    [&tgt, &tgtMutex](const Distance& d) {
-        std::lock_guard<std::mutex> g(tgtMutex);
+    [&tgt](const Distance& d) {
         tgt.setDistance(d);
-      });
-  auto gpsToTargetThread =
-    asyncReadMessages<Position>(gpsToTargetRecv,
-      [&tgt, &tgtMutex](const Position& p) {
-        std::lock_guard<std::mutex> g(tgtMutex);
-        tgt.onGpsPositionChange(p);
       });
 
   // Run every 10 gps milliseconds.
@@ -124,7 +109,6 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
   rfToTargetThread.join();
-  gpsToTargetThread.join();
   return 0;
 }
 

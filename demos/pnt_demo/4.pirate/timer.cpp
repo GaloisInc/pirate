@@ -19,7 +19,7 @@ void onTimer(TimerMsec start,
       now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now());
     }
   } else {  
-    TimerMsec now = start;
+    TimerMsec now = start + step;
     TimerMsec total = now + dur;
     while (now < total)
     {

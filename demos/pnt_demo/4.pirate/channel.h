@@ -1,6 +1,19 @@
 #pragma once
 #include <functional>
+#include <iostream>
+#include <sstream>
 #include <thread>
+#include <unistd.h>
+
+// This prints out the string written to ostream in a single
+// system call.
+inline
+void print(std::function<void(std::ostream& o)> p) {
+  std::stringstream o;
+  p(o);
+  std::string s=o.str();
+  write(STDOUT_FILENO, s.c_str(), s.size());  
+}
 
 template<typename T>
 class Sender {

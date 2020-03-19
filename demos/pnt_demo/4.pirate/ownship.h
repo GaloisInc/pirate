@@ -27,10 +27,12 @@ public:
 
   void print_track()
   {
-    std::cout << "---UAV TRACK ---" << std::endl
+    print([this](std::ostream& o) {
+      o << "---UAV TRACK ---" << std::endl
 	      << " x=" << _track._pos._x << std::endl
 	      << " y=" << _track._pos._y << std::endl
 	      << " z=" << _track._pos._z << std::endl << std::endl;
+    });
   }
 protected:
   void setPosition(Position const& p) { _track._pos = p; }
