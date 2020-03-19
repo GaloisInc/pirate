@@ -53,6 +53,7 @@
 #include <linux/uaccess.h>
 
 #include "ilip_base.h"
+#include "ilip_nl.h"
 
 MODULE_AUTHOR("Michael Desrochers");
 MODULE_LICENSE("GPL");
@@ -73,7 +74,8 @@ static unsigned long gaps_ilip_block_size = GAPS_ILIP_BLOCK_SIZE;
  * 
  * @author mdesroch (2/7/20)
  */
-static uint gaps_ilip_verbose_level = 10;
+static uint gaps_ilip_verbose_level = 2;
+static uint gaps_ilip_nt_verbose_level = 2;
 
 module_param(gaps_ilip_levels, int, S_IRUGO);
 MODULE_PARM_DESC( gaps_ilip_levels, "The total number of levels to be created" );
@@ -82,7 +84,9 @@ MODULE_PARM_DESC( gaps_ilip_buffer_size, "Buffer size to use for read and write,
 module_param(gaps_ilip_block_size, ulong, S_IRUGO);
 MODULE_PARM_DESC(gaps_ilip_block_size, "Message block size, must be 256 for demonstration" );
 module_param(gaps_ilip_verbose_level, uint, S_IRUGO);
-MODULE_PARM_DESC(gaps_ilip_verbose_level, "ilip drive verbose mode, larger is more verbose, 0 is quiet");
+MODULE_PARM_DESC(gaps_ilip_verbose_level, "ilip driver verbose mode, larger is more verbose, 0 is quiet");
+module_param(gaps_ilip_nt_verbose_level, uint, S_IRUGO);
+MODULE_PARM_DESC(gaps_ilip_nt_verbose_level, "ilip netlink driver verbose mode, larger is more verbose, 0 is quiet");
 
 /* ================================================================ */
 
@@ -127,12 +131,28 @@ static unsigned int gaps_ilip_copy_read_reject_count[GAPS_ILIP_LEVELS];
  * @brief Session array, each session will have two minor devices created, one 
  *        for read and one for write.
  */
+struct ilip_session_info {
+    unsigned int session;
+    unsigned int level_src;
+    unsigned int level_dst;
+    unsigned int minor_src;
+    unsigned int minor_dst;
+};
+#if 0
 static unsigned int gaps_ilip_sessions[GAPS_ILIP_NSESSIONS] = {0xffffffff};
+#else
+static struct ilip_session_info gaps_ilip_sessions[GAPS_ILIP_NSESSIONS];
+#endif
 /** 
  * @brief Number of session we have created, DCD requires 7, simple demo does 
  *        not use this
  */ 
 static unsigned int gaps_ilip_session_count = 0;
+
+uint gaps_ilip_get_nt_verbose_level( void )
+{
+    return gaps_ilip_nt_verbose_level;
+}
 
 static bool gaps_ilip_save_session_id( unsigned int session_id );
 static bool gaps_ilip_save_session_id( unsigned int session_id )
@@ -140,18 +160,22 @@ static bool gaps_ilip_save_session_id( unsigned int session_id )
     unsigned int i;
 
     for ( i=0; i<GAPS_ILIP_NSESSIONS; i++ ) {
-        if ( gaps_ilip_sessions[i] == session_id ) {
+        if ( gaps_ilip_sessions[i].session == session_id ) {
             /* session exists, return false as we do not have to create the device */
-            printk( KERN_INFO "gaps_ilip_save_session_id( Session: %.8x ) found at [%2u]\n", session_id, i );
+            if ( gaps_ilip_verbose_level >= 6 ) {
+                printk( KERN_INFO "gaps_ilip_save_session_id( Session: %.8x ) found at [%2u]\n", session_id, i );
+            }
             return false;
         }
     }
     for ( i=0; i<GAPS_ILIP_NSESSIONS; i++ ) {
-        if ( gaps_ilip_sessions[i] == 0xffffffff ) {
+        if ( gaps_ilip_sessions[i].session == 0xffffffff ) {
             /* session empty, save session id and return true */
-            gaps_ilip_sessions[i] = session_id;
+            gaps_ilip_sessions[i].session = session_id;
             gaps_ilip_session_count++;
+            if ( gaps_ilip_verbose_level >= 6 ) {
             printk( KERN_INFO "gaps_ilip_save_session_id( Session: %.8x ) New [%2u] Count: %u\n", session_id, i, gaps_ilip_session_count );
+            }
             return true;
         }
     }
@@ -160,28 +184,172 @@ static bool gaps_ilip_save_session_id( unsigned int session_id )
     return false;
 }
 
-static unsigned int gaps_ilip_get_session_index( unsigned int session_id );
-static unsigned int gaps_ilip_get_session_index( unsigned int session_id )
+unsigned int gaps_ilip_get_session_index( unsigned int session_id )
 {
     unsigned int i;
 
     for ( i=0; i<GAPS_ILIP_NSESSIONS; i++ ) {
-        if ( gaps_ilip_sessions[i] == session_id ) {
+        if ( gaps_ilip_sessions[i].session == session_id ) {
             /* session exists, return index in session array */
             return i;
         }
     }
     return GAPS_ILIP_NSESSIONS;
 }
+
+int gaps_ilip_clear_statistics( uint32_t session_id )
+{
+    int rc = -1;
+    uint32_t session_index;
+    uint32_t level_src, level_dst;
+
+    if ( session_id == 0xffffffff ) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Invalid session ID: %.8x\n", session_id );
+        goto error_return;
+    }
+
+    session_index = gaps_ilip_get_session_index( session_id );
+    if ( session_index == GAPS_ILIP_NSESSIONS ) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Session not found: %.8x\n", session_id );
+        goto error_return;
+        }
+
+    /* These are levels and not level index values. */
+    if ( gaps_ilip_sessions[session_index].level_src <= 0 || gaps_ilip_sessions[session_index].level_src >= 3) {
+        printk( KERN_WARNING "gaps_ilip_clear_statistics() Session src not initialized correctly: %.8x (%u)\n", 
+                session_id, gaps_ilip_sessions[session_index].level_src );
+        goto error_return;
+    }
+    if ( gaps_ilip_sessions[session_index].level_dst <= 0 || gaps_ilip_sessions[session_index].level_dst >= 3) {
+        printk( KERN_WARNING "gaps_ilip_clear_statistics() Session dst not initialized correctly: %.8x (%u)\n", 
+                session_id, gaps_ilip_sessions[session_index].level_dst  );
+        goto error_return;
+    }
+
+    level_src = gaps_ilip_sessions[session_index].level_src - 1;
+    level_dst = gaps_ilip_sessions[session_index].level_dst - 1;
+
+    /** @bug Fix this   */
+
+    gaps_ilip_message_write_count[level_src] = 0;
+    gaps_ilip_message_read_count[level_src] = 0;
+    gaps_ilip_message_write_reject_count[level_src] = 0;
+    gaps_ilip_message_read_reject_count[level_src] = 0;
+
+    gaps_ilip_copy_write_count[level_src] = 0;
+    gaps_ilip_copy_write_reject_count[level_src] = 0;
+    gaps_ilip_copy_read_count[level_src] = 0;
+    gaps_ilip_copy_read_reject_count[level_src] = 0;
+
+    rc = 0;
+
+error_return:
+    return rc;
+}
+
+int gaps_ilip_get_statistics( uint32_t session_id, struct ilip_session_statistics *stat )
+{
+    int rc = -1;
+    uint32_t session_index;
+    uint32_t level_src, level_dst;
+
+    if ( session_id == 0xffffffff ) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Invalid session ID: %.8x\n", session_id );
+        goto error_return;
+    }
+
+    if ( stat == NULL ) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Invalid statistics buffer\n" );
+        goto error_return;
+    }
+
+    session_index = gaps_ilip_get_session_index( session_id );
+    if ( session_index == GAPS_ILIP_NSESSIONS ) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Session not found: %.8x\n", session_id );
+        goto error_return;
+    }
+
+    level_src = gaps_ilip_sessions[session_index].level_src - 1;
+    level_dst = gaps_ilip_sessions[session_index].level_dst - 1;
+
+    /* These are levels and not level index values. */
+    if ( gaps_ilip_sessions[session_index].level_src <= 0 || gaps_ilip_sessions[session_index].level_src >= 3) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Session src not initialized correctly: %.8x (%u)\n", 
+                session_id, gaps_ilip_sessions[session_index].level_src );
+        goto error_return;
+    }
+    if ( gaps_ilip_sessions[session_index].level_dst <= 0 || gaps_ilip_sessions[session_index].level_dst >= 3) {
+        printk( KERN_WARNING "gaps_ilip_get_statistics() Session dst not initialized correctly: %.8x (%u)\n", 
+                session_id, gaps_ilip_sessions[session_index].level_dst  );
+        goto error_return;
+    }
+
+    /** @bug Fix this   */
+    stat->send_count = gaps_ilip_message_write_count[level_src];
+    stat->receive_count = gaps_ilip_message_read_count[level_src];
+    stat->send_reject_count = gaps_ilip_message_write_reject_count[level_src];
+    stat->receive_reject_count = gaps_ilip_message_read_reject_count[level_src];
+
+    stat->send_ilip_count = gaps_ilip_copy_write_count[level_src];
+    stat->send_ilip_reject_count = gaps_ilip_copy_write_reject_count[level_src];
+    stat->receive_ilip_count = gaps_ilip_copy_read_count[level_src];
+    stat->receive_ilip_reject_count = gaps_ilip_copy_read_reject_count[level_src];
+
+    if ( gaps_ilip_get_nt_verbose_level()  >= 5 ) {
+        printk(KERN_INFO "\ngaps_ilip_get_statistics( Session: %.8x ) Index: %u SrcLevel: %u DstLevel: %u\n",
+                session_id, session_index, level_src, level_dst );
+        printk( KERN_INFO "                   send: %u ( ilip )\n", stat->send_count );
+        printk( KERN_INFO "                receive: %u ( ilip )\n", stat->receive_count );
+        printk( KERN_INFO "            send reject: %u ( ilip )\n", stat->send_reject_count );
+        printk( KERN_INFO "         receive reject: %u ( ilip )\n", stat->receive_reject_count );
+        printk( KERN_INFO "              send ilip: %u ( ilip )\n", stat->send_ilip_count );
+        printk( KERN_INFO "           receive ilip: %u ( ilip )\n", stat->receive_ilip_count );
+        printk( KERN_INFO "       send ilip reject: %u ( ilip )\n", stat->send_ilip_reject_count );
+        printk( KERN_INFO "    receive ilip reject: %u ( ilip )\n", stat->receive_ilip_reject_count );
+
+        printk( KERN_INFO "\ngaps_ilip_get_statistics( Session: %.8x ) Index: %u SrcLevel: %u\n", 
+                session_id, session_index, level_src );
+        printk( KERN_INFO "                   send: %u ( ilip )\n", gaps_ilip_message_write_count[level_src] );
+        printk( KERN_INFO "                receive: %u ( ilip )\n", gaps_ilip_message_read_count[level_src] );
+        printk( KERN_INFO "            send reject: %u ( ilip )\n", gaps_ilip_message_write_reject_count[level_src] );
+        printk( KERN_INFO "         receive reject: %u ( ilip )\n", gaps_ilip_message_read_reject_count[level_src] );
+        printk( KERN_INFO "              send ilip: %u ( ilip )\n", gaps_ilip_copy_write_count[level_src] );
+        printk( KERN_INFO "           receive ilip: %u ( ilip )\n", gaps_ilip_copy_read_count[level_src] );
+        printk( KERN_INFO "       send ilip reject: %u ( ilip )\n", gaps_ilip_copy_write_reject_count[level_src] );
+        printk( KERN_INFO "    receive ilip reject: %u ( ilip )\n", gaps_ilip_copy_read_reject_count[level_src] );
+
+        printk( KERN_INFO "\ngaps_ilip_get_statistics( Session: %.8x ) Index: %u DstLevel: %u\n", 
+                session_id, session_index, level_dst );
+        printk( KERN_INFO "                   send: %u ( ilip )\n", gaps_ilip_message_write_count[level_dst] );
+        printk( KERN_INFO "                receive: %u ( ilip )\n", gaps_ilip_message_read_count[level_dst] );
+        printk( KERN_INFO "            send reject: %u ( ilip )\n", gaps_ilip_message_write_reject_count[level_dst] );
+        printk( KERN_INFO "         receive reject: %u ( ilip )\n", gaps_ilip_message_read_reject_count[level_dst] );
+        printk( KERN_INFO "              send ilip: %u ( ilip )\n", gaps_ilip_copy_write_count[level_dst] );
+        printk( KERN_INFO "           receive ilip: %u ( ilip )\n", gaps_ilip_copy_read_count[level_dst] );
+        printk( KERN_INFO "       send ilip reject: %u ( ilip )\n", gaps_ilip_copy_write_reject_count[level_dst] );
+        printk( KERN_INFO "    receive ilip reject: %u ( ilip )\n", gaps_ilip_copy_read_reject_count[level_dst] );
+    }
+
+    rc = 0;
+
+error_return:
+    return rc;
+}
+
+
 static bool gaps_ilip_remove_session_index( unsigned int session_id );
 static bool gaps_ilip_remove_session_index( unsigned int session_id )
 {
     unsigned int i;
 
     for ( i=0; i<gaps_ilip_session_count; i++ ) {
-        if ( gaps_ilip_sessions[i] == session_id ) {
+        if ( gaps_ilip_sessions[i].session == session_id ) {
             /* session exists, return index in session array */
-            gaps_ilip_sessions[i] = 0xffffffff;
+            gaps_ilip_sessions[i].session = 0xffffffff;
+            gaps_ilip_sessions[i].level_src = 0xffffffff;
+            gaps_ilip_sessions[i].level_dst = 0xffffffff;
+            gaps_ilip_sessions[i].minor_src = 0xffffffff;
+            gaps_ilip_sessions[i].minor_dst = 0xffffffff;
             gaps_ilip_session_count--;
             return true;
         }
@@ -365,7 +533,7 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
        as to compute the correct session data */
     if( mn == 0 && gaps_ilip_open_count[mn] > 1  ) {
         printk(KERN_WARNING "gaps_ilip_open() open: root busy\n");
-        return -EAGAIN; /* Try later */
+        return -EBUSY; /* Try later, root busy */
     }
 
 	/* if opened the 1st time, allocate the buffer */
@@ -378,6 +546,10 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 			return -ENOMEM;
 		}
 	}
+
+    if ( gaps_ilip_verbose_level >= 1 ) {
+    printk( KERN_INFO "gaps_ilip_open( Minor: %d ) Data@ %p Length: %lu\n", mn, dev->data, dev->buffer_size );
+    }
 
     /* On a root device open, zero out the buffer, we may have used it before. */
     if ( mn == 0 ) {
@@ -476,7 +648,9 @@ gaps_ilip_release(struct inode *inode, struct file *filp)
                gaps_ilip_open_count[mn], level+1, mj, mn );
     }
 
-    printk( KERN_INFO "gaps_ilip_release(Minor: %u ) Level: %x OpenCount: %u\n", mn, level, gaps_ilip_open_count[mn] );
+    if ( gaps_ilip_verbose_level >= 2 ) {
+        printk( KERN_INFO "gaps_ilip_release(Minor: %u ) Level: %x OpenCount: %u\n", mn, level, gaps_ilip_open_count[mn] );
+    }
 
     /* Close and reset the device if all users have done the close */
     if ( gaps_ilip_open_count[mn] == 0 ) {
@@ -503,8 +677,10 @@ gaps_ilip_release(struct inode *inode, struct file *filp)
             dev->destination_id = 0;
             dev->session_message_count = 0;
             dev->message_data_array = NULL;
+            if ( gaps_ilip_verbose_level >= 2 ) {
             printk( KERN_INFO "gaps_ilip_release(Minor: %u ) Level: %x OpenCount: %u Clear\n", mn, level, gaps_ilip_open_count[mn] );
         }
+    }
     }
 
     /* dump the stats */
@@ -538,13 +714,31 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
 {
     bool rc = false;
 
+    if ( cp == NULL || msg == NULL || cp->dst == NULL || cp->src == NULL ) {
+        printk(KERN_WARNING "gaps_ilip_access_read( cp: %p, msg: %p ) Invalid call parameters\n", cp, msg );
+        goto error_return;
+    }
+
     /* count has to be one for the demo */
     if ( ntohl(msg->header.count) != 1 ) {
+        printk(KERN_WARNING "gaps_ilip_access_read( count: %u ) Invalid\n", ntohl(msg->header.count) );
         goto error_return;
     }
     /* Session 1, level 1, application 1 in minor number 1 */
     switch (ntohl(msg->header.session)) {
     case 1:
+        /* A hack as we should not really have the session ID attached to the device minor number */
+        if( cp->dst->mn != 2 ) {
+            printk( KERN_WARNING "gaps_ilip_access_read(1) Invalid minor number: Src: %d Dst: %d for session: %.8x\n",
+                    cp->src->mn, cp->dst->mn, ntohl(msg->header.session) );
+            goto error_return;
+        }
+/* See https://stackoverflow.com/questions/45349079/how-to-use-attribute-fallthrough-correctly-in-gcc */
+#if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
+        /* fall through */
+#else
+        __attribute__((fallthrough));
+#endif
     case 0xeca51756:
         if ( gaps_ilip_verbose_level >= 8 ) {
         printk( KERN_INFO "gaps_ilip_access_read( Session: %.8x SrcMn: %u, DstMn: %u Dst: %p )\n", 
@@ -552,10 +746,6 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
                 cp->src->mn,
                 cp->dst->mn,
                 cp->dst );
-        }
-        /* A hack as we should not really have the session ID attached to the device minor number */
-        if( cp->src->mn != 1 && cp->dst->mn != 6 ) {
-            goto error_return;
         }
         switch ( ntohl(msg->header.message) ) {
         case 1:
@@ -588,6 +778,18 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
         }
         break;
     case 2:
+        /* A hack as we should not really have the session ID attached to the device minor number */
+        if( cp->dst->mn != 4 ) {
+            printk( KERN_WARNING "gaps_ilip_access_read(2) Invalid minor number: Src: %d Dst: %d for session: %.8x\n",
+                    cp->src->mn, cp->dst->mn, ntohl(msg->header.session) );
+            goto error_return;
+        }
+/* See https://stackoverflow.com/questions/45349079/how-to-use-attribute-fallthrough-correctly-in-gcc */
+#if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
+        /* fall through */
+#else
+        __attribute__((fallthrough));
+#endif
     case 0x67ff90f4:
         if ( gaps_ilip_verbose_level >= 8 ) {
         printk( KERN_INFO "gaps_ilip_access_read( Session: %.8x SrcMn: %u, DstMn: %u, Dst: %p )\n", 
@@ -595,10 +797,6 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
                 cp->src->mn,
                 cp->dst->mn,
                 cp->dst );
-        }
-        /* A hack as we should not really have the session ID attached to the device minor number */
-        if( cp->src->mn != 3 && cp->dst->mn != 8 ) {
-            goto error_return;
         }
         switch ( ntohl(msg->header.message) ) {
         case 2:
@@ -716,13 +914,46 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
             break;
         }
         break;
+    case 0xbc5a32fb:
+        /* establish_session_id( Level: 1 Src: 1, Dst: 2, Msg: 1 ): new session ID 0xbc5a32fb */
+        switch ( ntohl(msg->header.message) ) {
+        case 1:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 2:
+            case 5:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x574c9a21:
+        /* establish_session_id( Level: 2 Src: 2, Dst: 1, Msg: 2 ): new session ID 0x574c9a21 */
+        switch ( ntohl(msg->header.message) ) {
+        case 2:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 1:
+            case 3:
+            case 4:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
     default:
         goto error_return;
     }
 
     if ( gaps_ilip_verbose_level > 5 ) {
-    printk(KERN_INFO "gaps_ilip_access_read() Msg: %x Level: %u, Session: %.8x, Message: %u, Data: %u read allowed\n", 
-           cp->end_marker, cp->src->mn, 
+    printk(KERN_INFO "gaps_ilip_access_read() Msg: %x Minor: %u, Session: %.8x, Message: %u, Data: %u read allowed\n", 
+           cp->end_marker, cp->dst->mn, 
            ntohl(msg->header.session), ntohl(msg->header.message), ntohl(msg->header.data_tag) );
     }
     rc = true;
@@ -730,7 +961,7 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
 
 error_return:
     printk(KERN_WARNING "gaps_ilip_access_read() Msg: %x Level: %u, Session: %.8x, Message: %u, Data: %u read rejected\n", 
-           cp->end_marker, cp->src->mn, 
+           cp->end_marker, cp->dst->mn, 
            ntohl(msg->header.session), ntohl(msg->header.message), ntohl(msg->header.data_tag) );
     return rc;
 }
@@ -739,23 +970,41 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
 {
     bool rc = false;
 
+    /**
+     * @note At this point in time the dst pointer, who will receive 
+     *       the message has not neen setup yet.
+     */
+    if ( cp == NULL || msg == NULL || cp->src == NULL ) {
+        printk(KERN_WARNING "gaps_ilip_access_write( cp: %p, msg: %p ) Invalid call parameters\n", cp, msg );
+        goto error_return;
+    }
+
     /* count has to be one for the demo */
     if ( ntohl(msg->header.count) != 1 ) {
+        printk(KERN_WARNING "gaps_ilip_access_write( count: %u ) Invalid\n", ntohl(msg->header.count) );
         goto error_return;
     }
     /* Session 1, level 1, application 1 in minor number 1 */
     switch ( ntohl(msg->header.session) ) {
     case 1:
+        /* A hack as we should not really have the session ID attached to the device minor number */
+        if( cp->src->mn != 1 ) {
+            printk( KERN_WARNING "gaps_ilip_access_write(1) Invalid minor number: Src: %d Dst: %p for session: %.8x\n",
+                    cp->src->mn, cp->dst, ntohl(msg->header.session) );
+            goto error_return;
+        }
+/* See https://stackoverflow.com/questions/45349079/how-to-use-attribute-fallthrough-correctly-in-gcc */
+#if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
+        /* fall through */
+#else
+        __attribute__((fallthrough));
+#endif
     case 0xeca51756:
         if ( gaps_ilip_verbose_level >= 8 ) {
         printk( KERN_INFO "gaps_ilip_access_write( Session: %.8x SrcMn: %u, Dst: %p )\n", 
                 ntohl(msg->header.session),
                 cp->src->mn,
                 cp->dst );
-        }
-        /* A hack as we should not really have the session ID attached to the device minor number */
-        if( cp->src->mn != 1 && cp->src->mn != 5 ) {
-            goto error_return;
         }
         switch ( ntohl(msg->header.message) ) {
         case 1:
@@ -788,16 +1037,24 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
         }
         break;
     case 2:
+        /* A hack as we should not really have the session ID attached to the device minor number */
+        if( cp->src->mn != 3  ) {
+            printk( KERN_WARNING "gaps_ilip_access_write(2) Invalid minor number: Src: %d Dst: %p for session: %.8x\n",
+                    cp->src->mn, cp->dst, ntohl(msg->header.session) );
+            goto error_return;
+        }
+/* See https://stackoverflow.com/questions/45349079/how-to-use-attribute-fallthrough-correctly-in-gcc */
+#if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
+        /* fall through */
+#else
+        __attribute__((fallthrough));
+#endif
     case 0x67ff90f4:
         if ( gaps_ilip_verbose_level >= 8 ) {
         printk( KERN_INFO "gaps_ilip_access_write( Session: %.8x SrcMn: %u, Dst: %p )\n", 
                 ntohl(msg->header.session),
                 cp->src->mn,
                 cp->dst );
-        }
-        /* A hack as we should not really have the session ID attached to the device minor number */
-        if( cp->src->mn != 3 && cp->src->mn != 7 ) {
-            goto error_return;
         }
         switch ( ntohl(msg->header.message) ) {
         case 1:
@@ -924,13 +1181,46 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
             break;
         }
         break;
+    case 0xbc5a32fb:
+        /* establish_session_id( Level: 1 Src: 1, Dst: 2, Msg: 1 ): new session ID 0xbc5a32fb */
+        switch ( ntohl(msg->header.message) ) {
+        case 1:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 2:
+            case 5:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x574c9a21:
+        /* establish_session_id( Level: 2 Src: 2, Dst: 1, Msg: 2 ): new session ID 0x574c9a21 */
+        switch ( ntohl(msg->header.message) ) {
+        case 2:
+            switch ( ntohl(msg->header.data_tag) ) {
+            case 1:
+            case 3:
+            case 4:
+                break;
+            default:
+                goto error_return;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
     default:
             goto error_return;
             break;
     }
 
     if ( gaps_ilip_verbose_level > 5 ) {
-        printk(KERN_INFO "gaps_ilip_access_write() Msg: %x Level: %u, Session: %.8x, Message: %u, Data: %u write allowed\n", 
+        printk(KERN_INFO "gaps_ilip_access_write() Msg: %x Minor: %u, Session: %.8x, Message: %u, Data: %u write allowed\n", 
                cp->end_marker, cp->src->mn, 
                ntohl(msg->header.session), ntohl(msg->header.message), ntohl(msg->header.data_tag) );
     }
@@ -1053,12 +1343,21 @@ static void gaps_ilip_copy( struct work_struct *work )
     printk(KERN_INFO "gaps_ilip_copy(  %p : EndMarker: %x )\n", cp, cp->end_marker );
     }
 
+    if ( cp->src == NULL ) {
+        printk(KERN_WARNING "gaps_ilip_copy( Copy: %p ) Source %p is invalid\n", cp, cp->src );
+        return;
+    }
+
     level = gaps_ilip_get_level_from_minor( cp->src, cp->src->mn );
 
     if ( level == 0xffffffffu ) {
         printk( KERN_WARNING "gaps_ilip_copy(  %p : %x ) level invalid\n", cp, cp->src->mn );
         return;
     } else {
+        if ( level >= (GAPS_ILIP_LEVELS) ) {
+            printk( KERN_WARNING "gaps_ilip_copy( level_index: %u ) level invalid\n", level );
+            return;
+        }
         /* Increment the copy write count */
         gaps_ilip_copy_write_count[level] ++;
 
@@ -1079,7 +1378,7 @@ static void gaps_ilip_copy( struct work_struct *work )
             /* There is room in the FIFO either first time of FIFO not full */
             do_copy_first_time = false;
             gaps_ilip_write_completions_fifo[level][write_driver_index] = (uintptr_t)cp->src_data;
-            if ( gaps_ilip_verbose_level > 5 ) {
+            if ( gaps_ilip_verbose_level >= 5 ) {
             printk(KERN_INFO "gaps_ilip_copy( FIFO (User: %2u - Driver: %2u) ): %lx write completion posted\n", 
                    gaps_ilip_write_user_index[level], gaps_ilip_write_driver_index[level],
                    gaps_ilip_write_completions_fifo[level][write_driver_index] );
@@ -1110,8 +1409,8 @@ static void gaps_ilip_copy( struct work_struct *work )
     if( (end_marker=jenkins_one_at_a_time_hash(cp, offsetof(struct gaps_ilip_copy_workqueue, length )+sizeof(size_t), 0x76543210u )) != cp->end_marker ) {
         printk( KERN_WARNING "gaps_ilip_copy(  %p : %x ): %x  end marker invalid\n", cp, cp->end_marker, end_marker );
         if ( gaps_ilip_verbose_level > 4 ) {
-        printk( KERN_INFO "Copy: %p\n",      cp );\
-        printk( KERN_INFO "      start_marker: %x ilip\n",  cp->start_marker );
+        printk( KERN_INFO "Copy: %p (level: %u)\n",      cp, level );\
+        printk( KERN_INFO "      start_marker: %.8x ilip\n",  cp->start_marker );
         printk( KERN_INFO "             minor: %d ilip\n",  cp->read_minor );
         printk( KERN_INFO "               src: %p ilip\n",  cp->src );
         printk( KERN_INFO "               dst: %p ilip\n",  cp->dst );
@@ -1126,7 +1425,7 @@ static void gaps_ilip_copy( struct work_struct *work )
 #endif
 
     msg = (struct ilip_message *)cp->src_data;
-    if ( gaps_ilip_verbose_level >= 8 ) {
+    if ( gaps_ilip_verbose_level >= 4 ) {
         printk( KERN_INFO "gaps_ilip_copy() Message@ %p ilip\n",      msg );
         printk( KERN_INFO "      session: %.8x ilip\n",  ntohl(msg->header.session) );
         printk( KERN_INFO "      message: %u ilip\n",  ntohl(msg->header.message) );
@@ -1156,13 +1455,29 @@ static void gaps_ilip_copy( struct work_struct *work )
      * =============== Receive side of ILIP processing =============== 
      */
 
-    /* cp->minor has the read device, associated to the write device */
-    if ( gaps_ilip_verbose_level > 8 ) {
+    /* cp->read_minor has the read device, associated to the write device */
+    if ( gaps_ilip_verbose_level >= 8 ) {
         printk(KERN_INFO "gaps_ilip_copy( level: %u ): Dev index: %u, ReadMinor: %d, Dev@ %p \n", 
                level, 2*(level+1), cp->read_minor, &gaps_ilip_devices[cp->read_minor] );
     }
     /* Get the read device minor number, private device control structure */
+    if ( cp->read_minor < 0 || cp->read_minor >= gaps_ilip_total_devices ) {
+        printk(KERN_WARNING "gaps_ilip_copy( read minor: %d ) Invalid\n", cp->read_minor );
+    } else {
+        if ( gaps_ilip_verbose_level >= 5) {
+        printk(KERN_WARNING "gaps_ilip_copy( read minor: %d )\n", cp->read_minor );
+        }
+    }
     cp->dst = &gaps_ilip_devices[cp->read_minor];
+    if ( gaps_ilip_verbose_level >= 5) {
+        printk(KERN_INFO "gaps_ilip_copy( read minor: %d ) device minor: %u target: %p\n", 
+               cp->read_minor, cp->dst->mn, cp->dst->data );
+    }
+    if ( cp->read_minor != cp->dst->mn ) {
+        printk(KERN_WARNING "gaps_ilip_copy( read minor: %d/%u ) Invalid\n", 
+               cp->read_minor, cp->dst->mn  );
+        return;
+    }
 
     /* Are we allowed to receive this message */
     if ( gaps_ilip_access_read(cp, msg) == false ) {
@@ -1178,13 +1493,37 @@ static void gaps_ilip_copy( struct work_struct *work )
     /* Reset the copy first time as it now applies to the read side of the copy */
     do_copy_first_time = false;
 
-    /* Is there a read side driver that has initialized the receive buffers */
+    /**
+     *  Is there a read side driver that has initialized the receive
+     *  buffers.
+     *  
+     *  @note: This is using the [level_index], i.e. did an
+     *       application on the read side open up the driver. This
+     *       does not mean that the driver is open on the correct
+     *       session, just means some sesion is open.
+     */
     if ( gaps_ilip_read_driver_initialized[level] == false ) {
         /* So we just exit, increment the failure count */
         gaps_ilip_copy_read_reject_count[level]++;
-        if ( gaps_ilip_verbose_level > 5 ) {
+        if ( gaps_ilip_verbose_level >= 4 ) {
             printk(KERN_INFO "gaps_ilip_copy( Read level: %u ): Read driver buffers not initialized\n", level );
         }
+        return;
+    }
+
+    /* has the read section of the driver been opened and buffers allocated , done on first open
+       of the specific driver and ILIP session. */
+    if( gaps_ilip_open_count[cp->read_minor] == 0 ) {
+        printk(KERN_WARNING "gaps_ilip_copy( Read minor: %d ): Read driver session not open\n", 
+               cp->read_minor );
+        printk(KERN_WARNING "gaps_ilip_copy( Read minor: %d ): Read buffers@ %p\n", 
+               cp->read_minor, cp->dst->data );
+        if ( cp->dst->data == NULL ) {
+            printk(KERN_WARNING "gaps_ilip_copy( Read minor: %d ): Read buffers@ %p Offset: %llu Not initialized\n", 
+                   cp->read_minor, cp->dst->data, gaps_ilip_copy_read_offset[level] );
+            /* Increment the reject count as there is no place to deliver the data */
+        }
+        gaps_ilip_copy_read_reject_count[level] ++;
         return;
     }
 
@@ -1210,15 +1549,22 @@ static void gaps_ilip_copy( struct work_struct *work )
         /* There is room in the FIFO either first time of FIFO not full */
         do_copy_first_time = false;
         /* Get the address on the read side of where the message is to be placed */
-        cp->dst_data = &(cp->dst->data[gaps_ilip_copy_read_offset[level]]);
+        cp->dst_data = &cp->dst->data[gaps_ilip_copy_read_offset[level]];
         msg = (struct ilip_message*)cp->dst_data;
-        if ( gaps_ilip_verbose_level > 8 ) {
-            printk(KERN_INFO "gaps_ilip_copy( Read buffer offset: %lld ): Read Buffer@ %p Driver: %u, User: %u\n", 
+        if ( gaps_ilip_verbose_level >= 4 ) {
+            printk(KERN_INFO "gaps_ilip_copy( Read buffer offset: %lld ): Read Buffer@ %p DstB@ %p SrcB@ %p Driver: %u, User: %u\n", 
                    gaps_ilip_copy_read_offset[level],
-                   &(cp->dst->data[gaps_ilip_copy_read_offset[level]]),
+                   &cp->dst->data[gaps_ilip_copy_read_offset[level]], cp->dst_data, cp->src_data,
                    read_driver_index, gaps_ilip_read_user_index[level] );
         }
+        if ( gaps_ilip_verbose_level >= 6 ) {
+        printk(KERN_INFO "gaps_ilip_copy() memcpy( %p, %p, %lu ) ...\n", 
+               cp->dst_data, cp->src_data, cp->dst->block_size );
+        }
         memcpy(cp->dst_data, cp->src_data, cp->dst->block_size );
+        if ( gaps_ilip_verbose_level >= 6 ) {
+        printk( KERN_INFO "... memcpy() completed\n" );
+        }
         /* Record delta ILIP time in the receive buffer */
         #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
         /* Ubuntu 19.10 */
@@ -1230,6 +1576,9 @@ static void gaps_ilip_copy( struct work_struct *work )
         /* RedHat 7.x */
         msg->time.ilip_time = ktime_get_boot_ns() - msg->time.ilip_time ;
         #endif
+        if ( gaps_ilip_verbose_level >= 4 ) {
+            printk( KERN_WARNING "gaps_ilip_copy() memcpy completed, detal time assigned: %llu\n", msg->time.ilip_time );
+        }
         /* Has an open been called on the user receiver side,  */
         if( gaps_ilip_read_do_read_first_time[level] == true ) {
             /* do this in the read() routine */
@@ -1251,12 +1600,12 @@ static void gaps_ilip_copy( struct work_struct *work )
         gaps_ilip_read_driver_index[level] = read_driver_index;
         rmb();
         /* Update the offset, wrapping the offset based on the size. */
-        if ( gaps_ilip_verbose_level > 9 ) {
+        if ( gaps_ilip_verbose_level >= 4 ) {
         printk(KERN_INFO "gaps_ilip_copy( Increment read buffer: %lld, Dev@ %p ): Current offset %lld\n", 
                cp->dst->increment, cp->dst, gaps_ilip_copy_read_offset[level] );
         }
         gaps_ilip_copy_read_offset[level] = (gaps_ilip_copy_read_offset[level]+cp->dst->increment)%(loff_t)cp->dst->buffer_size;
-        if ( gaps_ilip_verbose_level > 9 ) {
+        if ( gaps_ilip_verbose_level >= 4 ) {
         printk(KERN_INFO "gaps_ilip_copy( Increment read buffer: %lld, Dev@ %p): Updated offset %lld\n", 
                cp->dst->increment, cp->dst, gaps_ilip_copy_read_offset[level] );
         }
@@ -1266,7 +1615,7 @@ static void gaps_ilip_copy( struct work_struct *work )
         gaps_ilip_read_driver_index[level] = read_driver_index_save;
         rmb();
         if ( gaps_ilip_verbose_level > 3 ) {
-        printk( KERN_WARNING "gaps_ilip_copy(  %p : %x ) read completion FIFO overflow D: %u U: %u\n", 
+        printk( KERN_WARNING "gaps_ilip_copy(  %p : Minor %u ) read completion FIFO overflow D: %u U: %u\n", 
                 cp, cp->src->mn, gaps_ilip_read_driver_index[level], gaps_ilip_read_user_index[level] );
         }
         gaps_ilip_copy_read_reject_count[level] ++;
@@ -1410,7 +1759,9 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
             session_id_adr = (uint32_t*)&(dev->data[*f_pos]);
             source_id = session_id_adr[0];
             destination_id = session_id_adr[2];
+            if ( gaps_ilip_verbose_level >= 6 ) {
             printk( KERN_INFO "gaps_ilip_read() Session read: Src: %u Dst: %u MsgCount: %u\n", source_id, destination_id, dev->session_message_count );
+            }
             /* Record the session ID associated to the source ID - why ??? */
             if ( 0 <= source_id && source_id < GAPS_ILIP_NSESSIONS ) {
                 if ( 0 <= destination_id && destination_id < GAPS_ILIP_NSESSIONS ) {
@@ -1441,9 +1792,40 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
                 *session_id_adr = hash;
                 /* Need to create the session device */
                 create_session_device = gaps_ilip_save_session_id( *session_id_adr );
+                if ( gaps_ilip_verbose_level >= 6 ) {
                 printk( KERN_INFO "gaps_ilip_save_session_id( %.8x ): %d {Src: %u, Dst: %u, Level: %u}\n", 
                         *session_id_adr, create_session_device, source_id, destination_id, session_id_adr[1] );
+                }
             } else {
+                uint32_t session_index;
+                (void)gaps_ilip_save_session_id( *session_id_adr );
+                session_index = gaps_ilip_get_session_index(*session_id_adr);
+                if ( session_index == GAPS_ILIP_NSESSIONS) {
+                    printk( KERN_WARNING "gaps_ilip_init_session_id( %.8x ): Invalid index\n", *session_id_adr );
+                }
+                if ( gaps_ilip_verbose_level >= 2 ) {
+                printk(KERN_INFO "gaps_ilip_save_session_id( %.8x ): %d {Src: %u, Dst: %u, Level: %u} [index: %u]\n",
+                        *session_id_adr, false, source_id, destination_id, session_id_adr[1], session_index );
+                }
+                if ( *session_id_adr  == 1 ) {
+                    /**
+                     * @todo need a init session with set commands 
+                     */
+                    gaps_ilip_sessions[session_index].level_src = 1;
+                    gaps_ilip_sessions[session_index].level_dst = 2;
+                    gaps_ilip_sessions[session_index].minor_src = 1;
+                    gaps_ilip_sessions[session_index].minor_dst = 2;
+                } else if ( *session_id_adr  == 2 ) {
+                    /**
+                     * @todo need a init session with set commands 
+                     */
+                    gaps_ilip_sessions[session_index].level_dst = 1;
+                    gaps_ilip_sessions[session_index].level_src = 2;
+                    gaps_ilip_sessions[session_index].minor_dst = 4;
+                    gaps_ilip_sessions[session_index].minor_src = 3;
+                }else {
+                    printk( KERN_WARNING "gaps_ilip_init_session_id( %.8x ): Invalid\n", *session_id_adr );
+                }
             }
         } else {
             /* Only allowed to read offset 0 and 32 bits */
@@ -1476,6 +1858,16 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
                 } else {
                     new_dev->src_level = session_id_adr[1];
                     new_dev->dst_level = (session_id_adr[1]==1)?2:1;
+                    gaps_ilip_sessions[session_index].level_src = new_dev->src_level;
+                    gaps_ilip_sessions[session_index].level_dst = new_dev->dst_level;
+                    /** @bug fix this */
+                    if ( ((new_minor+1)%2) == 0 ) {
+                        /* Write device, source in this case */
+                        gaps_ilip_sessions[session_index].minor_src = new_minor;
+                    } else {
+                        gaps_ilip_sessions[session_index].minor_dst = new_minor;
+                        /* Read device, destination in this case */
+                    }
                     if ( gaps_ilip_verbose_level >= 6 ) {
                         printk( KERN_INFO "Create session device [%2u]: Src: %u Dst: %u Session: %.8x srcLevel: %u dstLevel: %u\n", 
                                 new_minor, source_id, destination_id, *session_id_adr, new_dev->src_level, new_dev->dst_level );
@@ -1542,7 +1934,7 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
     }
 
     /* increment the message write count */
-    if ( level != 0xffffffff ) {
+    if ( level != 0xffffffff && dev->mn != 0 ) {
         gaps_ilip_message_write_count[level]++;
     }
 
@@ -2021,7 +2413,15 @@ gaps_ilip_init_module(void)
 		err = -EINVAL;
 		return err;
 	}
-	
+
+    err = ilip_nl_init();
+    if (err < 0) {
+		printk(KERN_WARNING "ilip_nl_init() failed\n");
+		return err;
+	} else if( gaps_ilip_verbose_level >= 2 ) {
+        printk(KERN_INFO "ilip_nl_init() succeeded\n");
+    }
+
 	/* Get a range of minor numbers (starting with 0) to work with, include session count */
 	err = alloc_chrdev_region(&dev, 0, gaps_ilip_total_devices, GAPS_ILIP_DEVICE_NAME);
 	if (err < 0) {
@@ -2052,7 +2452,11 @@ gaps_ilip_init_module(void)
 	
     /* Init session ID array */
     for ( i = 0; i<GAPS_ILIP_NSESSIONS; i++ ) {
-        gaps_ilip_sessions[i] = 0xffffffff;
+        gaps_ilip_sessions[i].session = 0xffffffff;
+        gaps_ilip_sessions[i].level_src = 0xffffffff;
+        gaps_ilip_sessions[i].level_dst = 0xffffffff;
+        gaps_ilip_sessions[i].minor_src = 0xffffffff;
+        gaps_ilip_sessions[i].minor_dst = 0xffffffff;
     }
     gaps_ilip_session_count = 0;
 
@@ -2103,8 +2507,9 @@ gaps_ilip_init_module(void)
         }
     }
 
-    printk( KERN_INFO "gaps_ilip_init_module() gaps_ilip_verbose_level = %u\n", gaps_ilip_verbose_level );
     if ( gaps_ilip_verbose_level > 0 ) {
+        printk( KERN_INFO "gaps_ilip_init_module() gaps_ilip_verbose_level = %u\n", gaps_ilip_verbose_level );
+        printk( KERN_INFO "gaps_ilip_init_module() gaps_ilip_nt_verbose_level = %u\n", gaps_ilip_nt_verbose_level );
     }
 
     /* create the work queue to do the copy between the write and read instances */
@@ -2120,6 +2525,7 @@ fail:
 static void __exit
 gaps_ilip_exit_module(void)
 {
+    ilip_nl_exit();
 	gaps_ilip_cleanup_module(gaps_ilip_total_devices);
 	return;
 }

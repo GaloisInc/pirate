@@ -74,6 +74,12 @@ protected:
     // If false the producer and consumer
     // assume the channel is open.
     bool childOpen;
+
+    // Channel statistics
+    struct {
+        uint32_t bytes;
+        uint32_t packets;
+    } statsWr, statsRd;
 public:
     ChannelTest();
     static void *WriterThreadS(void *param);

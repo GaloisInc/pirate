@@ -166,6 +166,24 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             break;
         }
 
+        case 0xBC5A32FB:
+        {
+            msg_hdr->header.message = htobe32(1u);
+            const uint32_t data[] = {2, 5};
+            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
+            msg_hdr->header.data_tag = htobe32(data_tag);
+            break;
+        }
+
+        case 0x574C9A21:
+        {
+            msg_hdr->header.message = htobe32(2u);
+            const uint32_t data[] = {1, 3, 4};
+            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
+            msg_hdr->header.data_tag = htobe32(data_tag);
+            break;
+        }
+
         default:
             return -1;
     }

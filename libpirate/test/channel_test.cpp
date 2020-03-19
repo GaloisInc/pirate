@@ -156,6 +156,8 @@ void ChannelTest::WriterTest()
         WriterChannelOpen();
     }
 
+    memset(&statsWr, 0, sizeof(statsWr));
+
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {
         int sts;
@@ -175,6 +177,9 @@ void ChannelTest::WriterTest()
         ASSERT_EQ(l, rv);
         ASSERT_EQ(0, errno);
 
+        statsWr.packets++;
+        statsWr.bytes += l;
+
         sts = sem_wait(&sem);
         ASSERT_EQ(0, sts);
     }
@@ -188,6 +193,8 @@ void ChannelTest::ReaderTest()
     {
         ReaderChannelOpen();
     }
+
+    memset(&statsRd, 0, sizeof(statsRd));
 
     for (ssize_t l = len.start; l < len.stop; l += len.step)
     {
@@ -207,6 +214,9 @@ void ChannelTest::ReaderTest()
 
         } while (remain > 0);
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, l));
+
+        statsRd.packets++;
+        statsRd.bytes += l;
 
         sts = sem_post(&sem);
         ASSERT_EQ(0, sts);

@@ -10,6 +10,7 @@ SET(PIRATE_SOURCES
     "pipe.c"
     "ge_eth.c"
     "mercury.c"
+    "mercury_cntl.c"
     "serial.c"
     "shmem_interface.c"
     "udp_shmem_interface.c"
@@ -24,7 +25,10 @@ if(PIRATE_SHMEM_FEATURE)
     set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
 endif(PIRATE_SHMEM_FEATURE)
 
-include_directories(.)
+include_directories(
+    .
+    ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
+)
 
 add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
