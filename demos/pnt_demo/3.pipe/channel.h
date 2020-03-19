@@ -73,7 +73,6 @@ void readMessages(int fd, std::function<void (const T& d)> f)
 template<typename T>
 void asyncReadMessages(Receiver<T> r, std::function<void (const T& d)> f) 
 {
-  std::cerr << "Async" << std::endl;
   std::thread t(&readMessages<T>, r.fd, f);
   t.detach();
 }

@@ -34,7 +34,6 @@ int main()
 
   // setup the dataflow relationships
   gpsData.addListener([uav](const Position& p) { uav->onGpsPositionChange(p); });
-  gpsData.addListener([tgt](const Position& p) { tgt->onGpsPositionChange(p); });
   uavData.addListener([tgt](const Position& p) { tgt->setUAVLocation(p); });
   rfData.addListener( [tgt](const Distance& d) { tgt->setDistance(d); });
 

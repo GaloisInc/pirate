@@ -10,10 +10,10 @@ public:
   Track _track;
   int _frequency;
   int _cycle;
-  int _cnt;
+  int _cnt, _d_cnt, _uav_pos_cnt;
 
 public:
-  Target(int rate = 1) : _frequency(rate) {
+  Target(int rate = 1) : _frequency(rate), _cnt(0), _d_cnt(0), _uav_pos_cnt(0) {
     _cycle = static_cast<int> (((1.0 / _frequency) / (sleep_msec / 1000)));
   };
 
@@ -29,9 +29,8 @@ public:
 	            << "\t\t y=" << _track._pos._y << std::endl
 	            << "\t\t z=" << _track._pos._z << std::endl << std::endl;
   }
-
-  void setDistance(Distance const& d)    { _d = d; }
-  void setUAVLocation(Position const& p) { _uav_pos = p; }
+  void setDistance(Distance const& d);
+  void setUAVLocation(Position const& p);
 private:
   void targetLocation();
 };
