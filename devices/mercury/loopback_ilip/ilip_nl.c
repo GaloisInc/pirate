@@ -43,6 +43,7 @@
 #include <linux/pci.h>
 #include <net/genetlink.h>
 
+#include "include/gaps_ilip.h"
 #include "ilip_nl.h"
 #include "ilip_base.h"
 
