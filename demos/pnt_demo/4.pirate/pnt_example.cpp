@@ -68,22 +68,24 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   }
 
   // Create channels
-  piratePipe(gpsToTarget, 0);
-  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
-  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
-  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 1);       // Green to orange
-  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 2);  // Orange to green
-  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 3);   // Orange to green
+//  piratePipe(gpsToTarget, 0);
+//  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
+//  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
+  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 0);       // Green to orange
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 1);  // Orange to green
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 2);   // Orange to green
+
+  // Function to call when gps changes to update target.
+  std::function<void(Position)> onGPSChange;
 
   // Setup sender for gps that broadcasts to two other channels.
   Sender<Position> gpsSender(
-        [gpsToUAVSend, gpsToTargetSend](const Position& p) {
+        [&onGPSChange, gpsToUAVSend](const Position& p) {
+          onGPSChange(p);
           gpsToUAVSend(p);
-          gpsToTargetSend(p);
         },
-        [&gpsToUAVSend, &gpsToTargetSend]() {
+        [&gpsToUAVSend]() {
           gpsToUAVSend.close();
-          gpsToTargetSend.close();
         });
 
   Time start;
@@ -107,12 +109,11 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setDistance(d);
       });
-  auto gpsToTargetThread =
-    asyncReadMessages<Position>(gpsToTargetRecv,
-      [&tgt, &tgtMutex](const Position& p) {
+  onGPSChange = 
+    [&tgt, &tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.onGpsPositionChange(p);
-      });
+      };
 
   // Run every 10 gps milliseconds.
   onTimer(start, duration,std::chrono::milliseconds(10), 
@@ -124,7 +125,6 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
   rfToTargetThread.join();
-  gpsToTargetThread.join();
   return 0;
 }
 
