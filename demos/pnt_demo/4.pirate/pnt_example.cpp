@@ -71,29 +71,18 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 //  piratePipe(gpsToTarget, 0);
 //  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
 //  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
-  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 0);       // Green to orange
+  auto gpsToUAVSend    = pirateSender<std::pair<TimerMsec, Position>>(gpsToUAVPath, 0);       // Green to orange
   auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 1);  // Orange to green
   auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 2);   // Orange to green
 
   // Function to call when gps changes to update target.
-  std::function<void(Position)> onGPSChange;
-
-  // Setup sender for gps that broadcasts to two other channels.
-  Sender<Position> gpsSender(
-        [&onGPSChange, gpsToUAVSend](const Position& p) {
-          onGPSChange(p);
-          gpsToUAVSend(p);
-        },
-        [&gpsToUAVSend]() {
-          gpsToUAVSend.close();
-        });
 
   Time start;
 
   // CreateGPS
   Position p(.0, .0, .0); // initial position
   Velocity v(50, 25, 12);
-  GpsSensor gps(start, gpsSender, p, v);
+  GpsSensor gps(start, p, v);
 
   // Create target and event handling threads.
   Target tgt(10); // updates at 10 Hz frequency
@@ -109,7 +98,8 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setDistance(d);
       });
-  onGPSChange = 
+  // Call position change when received.
+  std::function<void(Position)> onGPSChange =
     [&tgt, &tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.onGpsPositionChange(p);
@@ -117,10 +107,14 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
   // Run every 10 gps milliseconds.
   onTimer(start, duration,std::chrono::milliseconds(10), 
-           [&gps](TimerMsec now){ gps.read(now); });
+           [&gps, onGPSChange, gpsToUAVSend](TimerMsec now){ 
+               gps.read(now); 
+               onGPSChange(gps.getPosition());
+               gpsToUAVSend(std::make_pair(now, gps.getPosition()));
+             });
 
   // Close GPS  
-  gpsSender.close();
+  gpsToUAVSend.close();
   
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
@@ -160,7 +154,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   }
 
   // Create channels (Note: Order must match corresponding run_green channel creation order)
-  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath, 1);    // Green to orange
+  auto gpsToUAVRecv    = pirateReceiver<std::pair<TimerMsec, Position>>(gpsToUAVPath, 1);    // Green to orange
   auto uavToTargetSend = pirateSender<Position>(uavToTargetPath, 2);  // Orange to green
   auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath, 3);   // Orange to green
 
@@ -173,17 +167,21 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
 
   // Create UAV and have it start listening.
   OwnShip uav(uavToTargetSend, 100); // updates at 100 Hz frequency
+
   auto gpsToUAVThread =
-    asyncReadMessages<Position>(gpsToUAVRecv,
-      [&uav](const Position& p) { uav.onGpsPositionChange(p); });
+    asyncReadMessages<std::pair<TimerMsec, Position>>(gpsToUAVRecv,
+      [&rfs, &uav](const std::pair<TimerMsec, Position>& p) { 
+          rfs.read(p.first);
+          uav.onGpsPositionChange(p.second); 
+        });
 
   // Run RF sensor
-  onTimer(start, duration, std::chrono::milliseconds(10), 
-          [&rfs](TimerMsec now) { rfs.read(now); });
-  rfToTargetSend.close();
+  //onTimer(start, duration, std::chrono::milliseconds(10), 
+  //        [&rfs](TimerMsec now) { rfs.read(now); });
 
   // Wait for UAV to stop receiving messages and close its channel.    
   gpsToUAVThread.join();
+  rfToTargetSend.close();
   uavToTargetSend.close();
 
   return 0;

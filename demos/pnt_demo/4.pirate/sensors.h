@@ -23,12 +23,11 @@ protected:
 
 class GpsSensor : public Sensor
 {
-  Sender<Position> _c;
   Position _p;
   Velocity _v; // only used for simulation
 
  public:
-  GpsSensor(const Time& now, const Sender<Position>& c, Position const& p, Velocity const& v) : Sensor(now), _c(c), _p(p), _v(v) { }
+  GpsSensor(const Time& now, Position const& p, Velocity const& v) : Sensor(now), _p(p), _v(v) { }
   Position getPosition() { return _p; }
   Time getTimePoint() { return _now; }
 
@@ -46,7 +45,6 @@ class GpsSensor : public Sensor
     _p._y += v._dy * delta;
     _p._z += v._dz * delta;
     _v = v;
-    _c(_p);
   }
 };
 
