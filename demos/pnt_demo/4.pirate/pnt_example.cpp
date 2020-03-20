@@ -75,10 +75,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 1);  // Orange to green
   auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 2);   // Orange to green
 
-  // Function to call when gps changes to update target.
   std::function<void(Position)> onGPSChange;
 
-  // Setup sender for gps that broadcasts to two other channels.
+  // Sender to call when gps changes to update target.
   Sender<Position> gpsSender(
         [&onGPSChange, gpsToUAVSend](const Position& p) {
           onGPSChange(p);
@@ -109,13 +108,14 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setDistance(d);
       });
-  onGPSChange = 
+  // Call position change when received.
+  onGPSChange =
     [&tgt, &tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.onGpsPositionChange(p);
       };
 
-  // Run every 10 gps milliseconds.
+  // Run GPS every 10 milliseconds.
   onTimer(start, duration,std::chrono::milliseconds(10), 
            [&gps](TimerMsec now){ gps.read(now); });
 
@@ -134,7 +134,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   std::string gpsToUAVPath;
   std::string uavToTargetPath;
   std::string rfToTargetPath;
-  std::chrono::milliseconds duration;
+  bool fixedPeriod = false;
   int i = 1;
   while (i < argc) {
     if (strcmp(argv[i], "--gps-to-uav") == 0) {
@@ -146,9 +146,9 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
     } else if (strcmp(argv[i], "--rf-to-target") == 0) {
       rfToTargetPath = argv[i+1];
       i+=2;
-    } else if (strcmp(argv[i], "--duration") == 0) {
-      duration = std::chrono::milliseconds(std::stoul(argv[i+1]));
-      i+=2;
+    } else if (strcmp(argv[i], "--fixed") == 0) {
+      fixedPeriod = true;
+      i+=1;
     } else if (strcmp(argv[i], "--help") == 0) {
       showUsage(argv[0]);
       exit(0);
@@ -159,31 +159,48 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
     }
   }
 
+  // Create a function to get the current time that allows
+  // fixed duration for deterministic execution.
+  std::function<TimerMsec()> getTime;
+  TimerMsec base;
+  if (fixedPeriod) {
+    getTime = [&base] () { 
+      TimerMsec now = base;
+      base = base + std::chrono::milliseconds(10);
+      return now;
+    };
+  } else {
+    getTime = [] () {
+      return std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now());
+    };
+  }
+
   // Create channels (Note: Order must match corresponding run_green channel creation order)
   auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath, 1);    // Green to orange
   auto uavToTargetSend = pirateSender<Position>(uavToTargetPath, 2);  // Orange to green
   auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath, 3);   // Orange to green
 
-  Time start;
-
   // Create RF sensor
   Distance dtgt(1062, 7800, 9000); // initial target distance
   Velocity vtgt(35, 625, 18);
-  RfSensor rfs(start, rfToTargetSend, dtgt, vtgt);
+  RfSensor rfs(getTime(), rfToTargetSend, dtgt, vtgt);
 
   // Create UAV and have it start listening.
   OwnShip uav(uavToTargetSend, 100); // updates at 100 Hz frequency
+
   auto gpsToUAVThread =
     asyncReadMessages<Position>(gpsToUAVRecv,
-      [&uav](const Position& p) { uav.onGpsPositionChange(p); });
-
-  // Run RF sensor
-  onTimer(start, duration, std::chrono::milliseconds(10), 
-          [&rfs](TimerMsec now) { rfs.read(now); });
-  rfToTargetSend.close();
+      [getTime, &rfs, &uav](const Position& p) {
+        // Update RF sensor on GPS receive so that we are in sync.
+        // Note. We could send RF and UAV data simultaneously to reduce
+        // number of messages here.
+        rfs.read(getTime());
+        uav.onGpsPositionChange(p); 
+      });
+  gpsToUAVThread.join();
 
   // Wait for UAV to stop receiving messages and close its channel.    
-  gpsToUAVThread.join();
+  rfToTargetSend.close();
   uavToTargetSend.close();
 
   return 0;
