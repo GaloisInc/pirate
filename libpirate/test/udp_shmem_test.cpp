@@ -102,7 +102,9 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
+        const char *testPath = "/gaps.shmem_test";
         pirate_init_channel_param(UDP_SHMEM, &param);
+        strncpy(param.channel.udp_shmem.path, testPath, PIRATE_LEN_NAME - 1);
         auto test_param = GetParam();
         unsigned buffer_size = std::get<0>(test_param);
         unsigned packet_count = std::get<1>(test_param);
