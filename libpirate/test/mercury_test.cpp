@@ -134,7 +134,7 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, errno);
     ASSERT_GE(rchannel, 0);
 
-    rv = pirate_get_channel_param(wchannel, O_WRONLY, &param);
+    rv = pirate_get_channel_param(wchannel, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(session_id, param.channel.mercury.session.id);
@@ -179,12 +179,12 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0u, stats.send_ilip_reject_count);
     ASSERT_EQ(0u, stats.receive_ilip_reject_count);
 
-    rv = pirate_close(wchannel, O_WRONLY);
+    rv = pirate_close(wchannel);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 
 
-    rv = pirate_close(rchannel, O_RDONLY);
+    rv = pirate_close(rchannel);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 }
@@ -230,7 +230,7 @@ public:
         ASSERT_GE(Writer.channel, 0);
 
 
-        int rv = pirate_get_channel_param(Writer.channel, O_WRONLY, &rdParam);
+        int rv = pirate_get_channel_param(Writer.channel, &rdParam);
         ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
 
@@ -250,7 +250,7 @@ public:
         ASSERT_GE(Reader.channel, 0);
         ASSERT_EQ(0, errno);
 
-        int rv = pirate_get_channel_param(Reader.channel, O_RDONLY, &rdParam);
+        int rv = pirate_get_channel_param(Reader.channel, &rdParam);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 

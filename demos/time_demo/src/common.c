@@ -138,7 +138,7 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
             break;
         }
 
-        pirate_close(c->num, c->flags);
+        pirate_close(c->num);
     }
 
     // Stop worker threads

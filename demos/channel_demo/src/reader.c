@@ -63,7 +63,7 @@ static int reader_init(reader_t *reader) {
 
 static int reader_term(reader_t *reader) {
     test_data_term(&reader->data);
-    return pirate_close(gaps_channel, O_RDONLY);
+    return pirate_close(gaps_channel);
 }
 
 static int reader_run(reader_t *reader) {

@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     // 1e6 bytes per megabytes
     printf("average throughput: %f MB/s\n",
            ((1e9 / 1e6) * (count / PIRATE_IOV_MAX) * (size * PIRATE_IOV_MAX)) / delta);
-    pirate_close(1, O_RDONLY);
+    pirate_close(1);
   } else {
     // parent
     if (set_buffer_size(1, bufsize) < 0) {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       }
     }
     wait(NULL);
-    pirate_close(1, O_WRONLY);
+    pirate_close(1);
   }
   free(buf);
 }

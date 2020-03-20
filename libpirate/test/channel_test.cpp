@@ -16,6 +16,7 @@
 #include <cstring>
 #include <stdlib.h>
 #include "libpirate.h"
+#include "libpirate_internal.h"
 #include "channel_test.hpp"
 
 namespace GAPS
@@ -42,6 +43,8 @@ void ChannelTest::SetUp()
 
     rv = sem_init(&sem, 0, 0);
     ASSERT_EQ(0, rv);
+
+    pirate_reset_gd();
 }
 
 void ChannelTest::TearDown()
@@ -86,14 +89,14 @@ void ChannelTest::ReaderChannelOpen()
 
 void ChannelTest::WriterChannelClose()
 {
-    int rv = pirate_close(Writer.channel, O_WRONLY);
+    int rv = pirate_close(Writer.channel);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 }
 
 void ChannelTest::ReaderChannelClose()
 {
-    int rv = pirate_close(Reader.channel, O_RDONLY);
+    int rv = pirate_close(Reader.channel);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 }
@@ -116,10 +119,14 @@ void ChannelTest::RunChildOpen(bool child)
 
     if (!childOpen)
     {
-        Writer.channel = pirate_pipe_param(&param, O_RDWR);
-        Reader.channel = Writer.channel;
+        int rv, gd[2] = {-1, -1};
+        rv = pirate_pipe_param(gd, &param, O_RDWR);
         ASSERT_EQ(0, errno);
-        ASSERT_GE(Writer.channel, 0);
+        ASSERT_EQ(0, rv);
+        ASSERT_GE(gd[0], 0);
+        ASSERT_GE(gd[1], 0);
+        Reader.channel = gd[0];
+        Writer.channel = gd[1];
     }
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);

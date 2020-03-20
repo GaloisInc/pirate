@@ -216,8 +216,8 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    pirate_close(1, O_RDONLY);
-    pirate_close(2, O_WRONLY);
+    pirate_close(1);
+    pirate_close(2);
   } else {
     // parent
     if (set_buffer_size(1, bufsize) < 0) {
@@ -324,8 +324,8 @@ int main(int argc, char *argv[]) {
       datapoints[i] = delta / (ITERATIONS * 2);
     }
     wait(NULL);
-    pirate_close(1, O_WRONLY);
-    pirate_close(2, O_RDONLY);
+    pirate_close(1);
+    pirate_close(2);
     for (i = 0; i < count; i++) {
       printf("%ld\n", datapoints[i]);
     }

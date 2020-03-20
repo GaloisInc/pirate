@@ -26,7 +26,7 @@ Reader:
     perror("read error");
     exit(2);
   }
-  pirate_close(1, RD_ONLY);
+  pirate_close(1);
 ```
 
 Writer:
@@ -44,7 +44,7 @@ Writer:
     perror("write error");
     exit(2);
   }
-  pirate_close(1, O_WRONLY);
+  pirate_close(1);
 ```
 
 ## Channel types

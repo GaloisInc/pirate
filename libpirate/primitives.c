@@ -48,6 +48,7 @@ typedef std::atomic_int atomic_int
 #include "pirate_common.h"
 
 typedef struct {
+    int flags;
     union {
         device_ctx         device;
         pipe_ctx           pipe;
@@ -68,29 +69,25 @@ typedef struct {
     pirate_channel_ctx_t ctx;
 } pirate_channel_t;
 
-static struct {
-    pirate_channel_t reader;
-    pirate_channel_t writer;
-} gaps_channels[PIRATE_NUM_CHANNELS];
+pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 
 int pirate_close_channel(pirate_channel_t *channel);
 
-static inline pirate_channel_t *pirate_get_channel(int gd, int flags) {
+static inline pirate_channel_t *pirate_get_channel(int gd) {
+    pirate_channel_t *channel;
     if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
         errno = EBADF;
         return NULL;
     }
 
-    if (flags == O_RDONLY) {
-        return &gaps_channels[gd].reader;
-    } else if (flags == O_WRONLY) {
-        return &gaps_channels[gd].writer;
+    channel = &gaps_channels[gd];
+    if (channel->param.channel_type == INVALID) {
+        errno = EBADF;
+        return NULL;
     }
 
-    errno = EINVAL;
-    return NULL;
+    return channel;
 }
-
 
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param) {
     memset(param, 0, sizeof(*param));
@@ -145,11 +142,10 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     return -1;
 }
 
-int pirate_get_channel_param(int gd, int flags,
-                            pirate_channel_param_t *param) {
+int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     pirate_channel_t *channel = NULL;
 
-    if ((channel = pirate_get_channel(gd, flags)) == NULL) {
+    if ((channel = pirate_get_channel(gd)) == NULL) {
         return -1;
     }
     memcpy(param, &channel->param, sizeof(pirate_channel_param_t));
@@ -164,6 +160,11 @@ static int pirate_next_gd() {
         return -1;
     }
     return next;
+}
+
+// Declared in libpirate_internal.h for testing purposes only
+void pirate_reset_gd() {
+    next_gd = 0;
 }
 
 static int pirate_open(pirate_channel_t *channel, int flags) {
@@ -226,6 +227,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     }
 
     memcpy(&channel.param, param, sizeof(pirate_channel_param_t));
+    channel.ctx.flags = flags;
 
     if (pirate_open(&channel, flags) < 0) {
         return -1;
@@ -238,9 +240,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    pirate_channel_t *dest = pirate_get_channel(gd, flags);
-    memcpy(dest, &channel, sizeof(pirate_channel_t));
-
+    memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
     return gd;
 }
 
@@ -272,13 +272,13 @@ static void* pirate_pipe_open_write(void *channel) {
     return 0;
 }
 
-int pirate_pipe_param(pirate_channel_param_t *param, int flags) {
+int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     pthread_t read_id, write_id;
     pirate_channel_t read_channel, write_channel;
     intptr_t result;
-    int rv;
+    int rv, read_gd, write_gd;
 
-    if (next_gd >= PIRATE_NUM_CHANNELS) {
+    if (next_gd >= (PIRATE_NUM_CHANNELS - 1)) {
         errno = EMFILE;
         return -1;
     }
@@ -290,6 +290,8 @@ int pirate_pipe_param(pirate_channel_param_t *param, int flags) {
 
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
+    read_channel.ctx.flags = O_RDONLY;
+    write_channel.ctx.flags = O_WRONLY;
 
     rv = pthread_create(&read_id, NULL, pirate_pipe_open_read, (void*) &read_channel);
     if (rv != 0) {
@@ -323,79 +325,94 @@ int pirate_pipe_param(pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    int gd = pirate_next_gd();
-    if (gd < 0) {
+    read_gd = pirate_next_gd();
+    write_gd = pirate_next_gd();
+    if ((read_gd < 0) || (write_gd < 0)) {
         pirate_close_channel(&read_channel);
         pirate_close_channel(&write_channel);
         errno = EMFILE;
         return -1;
     }
 
-    memcpy(&gaps_channels[gd].reader, &read_channel, sizeof(pirate_channel_t));
-    memcpy(&gaps_channels[gd].writer, &write_channel, sizeof(pirate_channel_t));
-    return gd;
+    memcpy(&gaps_channels[read_gd], &read_channel, sizeof(pirate_channel_t));
+    memcpy(&gaps_channels[write_gd], &write_channel, sizeof(pirate_channel_t));
+
+    gd[0] = read_gd;
+    gd[1] = write_gd;
+    return 0;
 }
 
 
-int pirate_close(int gd, int flags) {
+int pirate_close(int gd) {
     pirate_channel_t *channel;
 
-    if ((channel = pirate_get_channel(gd, flags)) == NULL) {
+    if ((channel = pirate_get_channel(gd)) == NULL) {
         return -1;
     }
     return pirate_close_channel(channel);
 }
 
 int pirate_close_channel(pirate_channel_t *channel) {
-
+    int rv;
     pirate_channel_ctx_t *ctx = &channel->ctx;
 
     switch (channel->param.channel_type) {
 
     case DEVICE:
-        return pirate_device_close(&ctx->channel.device);
-
+        rv = pirate_device_close(&ctx->channel.device);
+        break;
     case PIPE:
-        return pirate_pipe_close(&ctx->channel.pipe);
-
+        rv = pirate_pipe_close(&ctx->channel.pipe);
+        break;
     case UNIX_SOCKET:
-        return pirate_unix_socket_close(&ctx->channel.unix_socket);
-
+        rv = pirate_unix_socket_close(&ctx->channel.unix_socket);
+        break;
     case TCP_SOCKET:
-        return pirate_tcp_socket_close(&ctx->channel.tcp_socket);
-
+        rv = pirate_tcp_socket_close(&ctx->channel.tcp_socket);
+        break;
     case UDP_SOCKET:
-        return pirate_udp_socket_close(&ctx->channel.udp_socket);
-
+        rv = pirate_udp_socket_close(&ctx->channel.udp_socket);
+        break;
     case SHMEM:
-        return pirate_shmem_close(&ctx->channel.shmem);
-
+        rv = pirate_shmem_close(&ctx->channel.shmem);
+        break;
     case UDP_SHMEM:
-        return pirate_udp_shmem_close(&ctx->channel.udp_shmem);
-
+        rv = pirate_udp_shmem_close(&ctx->channel.udp_shmem);
+        break;
     case UIO_DEVICE:
-        return pirate_uio_close(&ctx->channel.uio);
-
+        rv = pirate_uio_close(&ctx->channel.uio);
+        break;
     case SERIAL:
-        return pirate_serial_close(&ctx->channel.serial);
-
+        rv = pirate_serial_close(&ctx->channel.serial);
+        break;
     case MERCURY:
-        return pirate_mercury_close(&ctx->channel.mercury);
-
+        rv = pirate_mercury_close(&ctx->channel.mercury);
+        break;
     case GE_ETH:
-        return pirate_ge_eth_close(&ctx->channel.ge_eth);
-
+        rv = pirate_ge_eth_close(&ctx->channel.ge_eth);
+        break;
     case INVALID:
     default:
         errno = ENODEV;
-        return -1;
+        rv = -1;
+        break;
     }
+    if (rv < 0) {
+        return rv;
+    }
+    channel->param.channel_type = INVALID;
+    return rv;
 }
 
 ssize_t pirate_read(int gd, void *buf, size_t count) {
     pirate_channel_t *channel = NULL;
 
-    if ((channel = pirate_get_channel(gd, O_RDONLY)) == NULL) {
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    if (channel->ctx.flags != O_RDONLY) {
+        errno = EBADF;
         return -1;
     }
 
@@ -447,7 +464,12 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
 ssize_t pirate_write(int gd, const void *buf, size_t count) {
     pirate_channel_t *channel = NULL;
 
-    if ((channel = pirate_get_channel(gd, O_WRONLY)) == NULL) {
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    if (channel->ctx.flags != O_WRONLY) {
+        errno = EBADF;
         return -1;
     }
 

@@ -16,7 +16,7 @@ void piratePipe(const std::string& config, int gd);
 template<typename T>
 Sender<T> gdSender(const std::string& config, int gd) {
   auto sendFn = [config, gd](const T& d) { gdCheckedWrite(config, gd, &d, sizeof(T)); };
-  auto closeFn = [gd]() { pirate_close(gd, O_WRONLY); };
+  auto closeFn = [gd]() { pirate_close(gd); };
   return Sender<T>(sendFn, closeFn);
 }
 
@@ -58,7 +58,7 @@ void gdDatagramReadMessages(const std::string& config, int gd, std::function<voi
     }
     f(x);
   }
-  pirate_close(gd, O_RDONLY);
+  pirate_close(gd);
 }
 
 template<typename T>

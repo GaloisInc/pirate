@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2019-2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 #ifndef __PIRATE_PRIMITIVES_H
@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 #define PIRATE_LEN_NAME 64
-#define PIRATE_NUM_CHANNELS 64
+#define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
 
 typedef enum {
@@ -279,14 +279,13 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  flags        - O_RDONLY or O_WRONLY
 //  param        - channel-specific parameters
 //
 // Return:
 //  0 on success
 // -1 on failure, errno is set
 
-int pirate_get_channel_param(int gd, int flags, pirate_channel_param_t *param);
+int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
 // Opens the gaps channel specified by parameter string.
 //
@@ -318,12 +317,12 @@ int pirate_open_param(pirate_channel_param_t *param, int flags);
 //
 // The caller is responsible for closing the reader and the writer.
 //
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// On success, zero is returned. On error, -1 is returned,
+// and errno is set appropriately.
 //
 // The argument flags must be O_RDWR.
 
-int pirate_pipe_param(pirate_channel_param_t *param, int flags);
+int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
@@ -344,7 +343,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 //
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
-int pirate_close(int gd, int flags);
+int pirate_close(int gd);
 
 #ifdef __cplusplus
 }

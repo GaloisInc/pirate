@@ -40,13 +40,9 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(UDP_SHMEM, param.channel_type);
-    ASSERT_STREQ("", udp_shmem_param->path);
-    ASSERT_EQ(0u, udp_shmem_param->buffer_size);
-    ASSERT_EQ(0u, udp_shmem_param->packet_count);
-    ASSERT_EQ(0u, udp_shmem_param->packet_size);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);

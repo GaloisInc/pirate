@@ -453,11 +453,11 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
         retval = -1;
     }
 
-    if (pirate_close(high_to_low, O_WRONLY) < 0) {
+    if (pirate_close(high_to_low) < 0) {
         perror("close high to low channel in write-only mode");
         retval = -1;
     }
-    if (pirate_close(low_to_high, O_RDONLY) < 0) {
+    if (pirate_close(low_to_high) < 0) {
         perror("close low to high channel in read-only mode");
         retval = -1;
     }
@@ -544,11 +544,11 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
         retval = -1;
     }
 
-    if (pirate_close(high_to_low, O_RDONLY) < 0) {
+    if (pirate_close(high_to_low) < 0) {
         perror("close high to low channel in read-only mode");
         retval = -1;
     }
-    if (pirate_close(low_to_high, O_WRONLY) < 0) {
+    if (pirate_close(low_to_high) < 0) {
         perror("close low to high channel in write-only mode");
         retval = -1;
     }

@@ -41,26 +41,20 @@ TEST(CommonChannel, InvalidCLose)
     int rv;
 
     // Invalid channel number - negative
-    rv = pirate_close(-1, O_WRONLY);
+    rv = pirate_close(-1);
     ASSERT_EQ(EBADF, errno);
     ASSERT_EQ(-1, rv);
     errno = 0;
 
     // Invalid channel number - exceeds bound
-    rv = pirate_close(PIRATE_NUM_CHANNELS, O_WRONLY);
+    rv = pirate_close(PIRATE_NUM_CHANNELS);
     ASSERT_EQ(EBADF, errno);
     ASSERT_EQ(-1, rv);
     errno = 0;
 
-    // Invalid flags
-    rv = pirate_close(ChannelTest::TEST_CHANNEL, O_RDWR);
-    ASSERT_EQ(EINVAL, errno);
-    ASSERT_EQ(-1, rv);
-    errno = 0;
-
     // Close unopened channel
-    rv = pirate_close(ChannelTest::TEST_CHANNEL, O_WRONLY);
-    ASSERT_EQ(ENODEV, errno);
+    rv = pirate_close(ChannelTest::TEST_CHANNEL);
+    ASSERT_EQ(EBADF, errno);
     ASSERT_EQ(-1, rv);
     errno = 0;
 }
@@ -74,13 +68,13 @@ TEST(CommonChannel, InvalidReadWrite)
     // Read unopened channel
     rv = pirate_read(ChannelTest::TEST_CHANNEL, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
-    ASSERT_EQ(ENODEV, errno);
+    ASSERT_EQ(EBADF, errno);
     errno = 0;
 
     // Write unopened channel
     rv = pirate_write(ChannelTest::TEST_CHANNEL, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
-    ASSERT_EQ(ENODEV, errno);
+    ASSERT_EQ(EBADF, errno);
     errno = 0;
 }
 

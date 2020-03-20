@@ -81,7 +81,7 @@ static int writer_init(writer_t *writer) {
 
 static int writer_term(writer_t *writer) {
     test_data_term(&writer->test.data);
-    return pirate_close(gaps_channel, O_WRONLY);
+    return pirate_close(gaps_channel);
 }
 
 static int writer_run(writer_t *writer) {
