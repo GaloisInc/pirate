@@ -226,6 +226,10 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
 }
 
 static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
+    if (param->session.source_id == 0) {
+        param->session.source_id = 1;
+    }
+
     if (param->mtu == 0) {
         param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
     }

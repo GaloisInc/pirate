@@ -107,7 +107,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 TEST(ChannelMercuryTest, DefaultSession) {
     int rv = 0;
     int rchannel, wchannel;
-
+    pirate_channel_param_t param;
     const uint32_t session_id = 1;
     const uint8_t wr_data[] = { 0xC0, 0xDE, 0xDA, 0xDA };
     const ssize_t data_len = sizeof(wr_data);
@@ -122,17 +122,20 @@ TEST(ChannelMercuryTest, DefaultSession) {
         return;
     }
 
-    pirate_channel_param_t param;
     pirate_init_channel_param(MERCURY, &param);
-
     wchannel = pirate_open_param(&param, O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(wchannel, 0);
 
-
+    pirate_init_channel_param(MERCURY, &param);
     rchannel = pirate_open_param(&param, O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(rchannel, 0);
+
+    rv = pirate_get_channel_param(wchannel, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(session_id, param.channel.mercury.session.id);
 
     rv = pirate_get_channel_param(wchannel, &param);
     ASSERT_EQ(0, errno);
@@ -182,7 +185,6 @@ TEST(ChannelMercuryTest, DefaultSession) {
     rv = pirate_close(wchannel);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
-
 
     rv = pirate_close(rchannel);
     ASSERT_EQ(0, errno);
