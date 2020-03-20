@@ -73,7 +73,6 @@ class ShmemTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        int rv;
         pirate_init_channel_param(SHMEM, &param);
         unsigned buffer_size = GetParam();
         if (buffer_size) {

@@ -106,7 +106,6 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        int rv;
         pirate_init_channel_param(UDP_SHMEM, &param);
         auto test_param = GetParam();
         unsigned buffer_size = std::get<0>(test_param);

@@ -25,25 +25,19 @@
 static char buffer[BUF_SIZE];
 
 int main(int argc, char* argv[]) {
-    int rv, len;
+    int gd, rv, len;
     pirate_channel_param_t param;
 
     pirate_init_channel_param(PIPE, &param);
 
-    rv = pirate_set_channel_param(0, O_RDONLY, &param);
-    if (rv < 0) {
-        perror("pirate_init_channel_param");
-        return 1;
-    }
-
-    rv = pirate_open(0, O_RDONLY);
-    if (rv < 0) {
+    gd = pirate_open_param(&param, O_RDONLY);
+    if (gd < 0) {
         perror("pirate_open");
         return 1;
     }
 
     for (;;) {
-        rv = pirate_read(0, &len, sizeof(len));
+        rv = pirate_read(gd, &len, sizeof(len));
         if (rv != sizeof(len)) {
             std::cerr << "write error" << "\n";
             return 1;
@@ -51,7 +45,7 @@ int main(int argc, char* argv[]) {
         if (len == 0) {
             break;
         }
-        rv = pirate_read(0, buffer, len);
+        rv = pirate_read(gd, buffer, len);
         if (rv != len) {
             std::cerr << "write error" << "\n";
             return 1;

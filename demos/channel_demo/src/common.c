@@ -34,6 +34,8 @@
 #endif
 const char *argp_program_version = DEMO_VERSION;
 
+int gaps_channel;
+
 static const char *pattern_str(data_pattern_t p) {
     switch (p) {
         case ZEROS:
@@ -81,13 +83,8 @@ static int parse_channel_opt(char *str, int flags) {
         return rv;
     }
 
-    rv = pirate_set_channel_param(GAPS_CHANNEL, flags, &param);
-    if (rv != 0) {
-        log_msg(ERROR, "failed to set channel options '%s'", str);
-        return -1;
-    }
-
-    if (pirate_open(GAPS_CHANNEL, flags) != GAPS_CHANNEL) {
+    gaps_channel = pirate_open_param(&param, flags);
+    if (gaps_channel < 0) {
         log_msg(ERROR, "Failed to open GAPS channel");
         return -1;
     }

@@ -90,13 +90,8 @@ int gaps_app_run(gaps_app_t *ctx) {
             return rv;
         }
 
-        rv = pirate_set_channel_param(c->num, c->flags, &param);
-        if (rv != 0) {
-            ts_log(ERROR, "Failed to set channel parameters for %s", c->desc);
-            return -1;
-        }
-
-        if (pirate_open(c->num, c->flags) != c->num) {
+        c->num = pirate_open_param(&param, c->flags);
+        if (c->num < 0) {
             ts_log(ERROR, "Failed to open channel %s", c->desc);
             return -1;
         }

@@ -57,7 +57,6 @@ class UioTest : public ChannelTest
 public:
     void ChannelInit()
     {
-        int rv;
         pirate_init_channel_param(UIO_DEVICE, &param);
     }
 };
