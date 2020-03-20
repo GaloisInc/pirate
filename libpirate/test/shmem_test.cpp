@@ -73,7 +73,10 @@ class ShmemTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
+        const char *testPath = "/gaps.shmem_test";
         pirate_init_channel_param(SHMEM, &param);
+        strncpy(param.channel.shmem.path, testPath, PIRATE_LEN_NAME - 1);
+
         unsigned buffer_size = GetParam();
         if (buffer_size) {
             param.channel.shmem.buffer_size = buffer_size;
