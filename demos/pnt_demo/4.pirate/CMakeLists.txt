@@ -44,3 +44,5 @@ set_target_properties(pnt_orange PROPERTIES
 install(TARGETS pnt_green pnt_orange)
 install(FILES run.sh DESTINATION bin)
 configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)
+install(FILES run_async.sh DESTINATION bin)
+configure_file(run_async.sh ${PROJECT_BINARY_DIR} COPYONLY)
