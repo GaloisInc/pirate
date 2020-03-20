@@ -225,11 +225,7 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     return count;
 }
 
-static void pirate_mercury_init_param(int gd, pirate_mercury_param_t *param) {
-    if (param->session.level == 0) {
-        param->session.level = param->session.source_id = gd + 1;
-    }
-
+static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     if (param->mtu == 0) {
         param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
     }
@@ -287,8 +283,7 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
     return 0;
 }
 
-int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param, 
-                            mercury_ctx *ctx) {
+int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *ctx) {
     const uint32_t cfg_len = sizeof(uint32_t);
     ssize_t sz;
     int fd_root = -1;
@@ -296,7 +291,7 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
     const mode_t mode = ctx->flags == O_RDONLY ? S_IRUSR : S_IWUSR;
 
     /* Open the root device to configure and establish a session */
-    pirate_mercury_init_param(gd, param);
+    pirate_mercury_init_param(param);
 
     if (pthread_mutex_lock(&open_lock) != 0) {
         return -1;
@@ -377,7 +372,7 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
         goto error;
     }
 
-    return gd;
+    return 0;
 error_session:
     pthread_mutex_unlock(&open_lock);
 error:

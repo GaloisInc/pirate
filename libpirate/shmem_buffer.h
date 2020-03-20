@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 #include <atomic>
-using namespace std;
+typedef std::atomic_uint_fast64_t atomic_uint_fast64_t
 #elif HAVE_STD_ATOMIC
 #include <stdatomic.h>
 #else

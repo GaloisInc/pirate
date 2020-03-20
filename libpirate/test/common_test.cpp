@@ -24,24 +24,15 @@ namespace GAPS {
 
 TEST(CommonChannel, InvalidOpen)
 {
+    pirate_channel_param_t param;
     int rv;
 
-    // Invalid channel number - negative
-    rv = pirate_open(-1, O_WRONLY);
-    ASSERT_EQ(-1, rv);
-    ASSERT_EQ(EBADF, errno);
-    errno = 0;
-
-    // Invalid channel number - exceeds bound
-    rv = pirate_open(PIRATE_NUM_CHANNELS, O_WRONLY);
-    ASSERT_EQ(-1, rv);
-    ASSERT_EQ(EBADF, errno);
-    errno = 0;
+    pirate_init_channel_param(PIPE, &param);
 
     // Invalid flags
-    rv = pirate_open(ChannelTest::TEST_CHANNEL, O_RDWR);
-    ASSERT_EQ(-1, rv);
+    rv = pirate_open_param(&param, O_RDWR);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 }
 
@@ -51,26 +42,26 @@ TEST(CommonChannel, InvalidCLose)
 
     // Invalid channel number - negative
     rv = pirate_close(-1, O_WRONLY);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 
     // Invalid channel number - exceeds bound
     rv = pirate_close(PIRATE_NUM_CHANNELS, O_WRONLY);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 
     // Invalid flags
     rv = pirate_close(ChannelTest::TEST_CHANNEL, O_RDWR);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 
     // Close unopened channel
     rv = pirate_close(ChannelTest::TEST_CHANNEL, O_WRONLY);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(ENODEV, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 }
 

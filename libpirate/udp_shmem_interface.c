@@ -28,11 +28,11 @@ int pirate_udp_shmem_parse_param(char *str, pirate_udp_shmem_param_t *param) {
 #endif
 }
 
-int pirate_udp_shmem_open(int gd, int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int pirate_udp_shmem_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_open(gd, flags, param, ctx);
+    return udp_shmem_buffer_open(flags, param, ctx);
 #else
-    (void) gd, (void) flags, (void) param, (void) ctx;
+    (void) flags, (void) param, (void) ctx;
     return -1;
 #endif
 }

@@ -40,8 +40,8 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ("", udp_shmem_param->path);
     ASSERT_EQ(0u, udp_shmem_param->buffer_size);
@@ -50,8 +50,8 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(0u, udp_shmem_param->buffer_size);
@@ -60,8 +60,8 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
@@ -82,8 +82,8 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, path, buffer_size,
                 packet_size, packet_count);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SHMEM, param.channel_type);
     ASSERT_STREQ(path, udp_shmem_param->path);
     ASSERT_EQ(buffer_size, udp_shmem_param->buffer_size);
@@ -124,15 +124,6 @@ public:
         if (packet_size) {
             param.channel.udp_shmem.packet_size = packet_size;
         }
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;
