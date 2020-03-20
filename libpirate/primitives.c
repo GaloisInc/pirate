@@ -26,10 +26,11 @@
 
 #ifdef __cplusplus
 #include <atomic>
-typedef std::atomic_int atomic_int
+typedef std::atomic_int pirate_atomic_int;
 #define ATOMIC_INC(PTR) std::atomic_fetch_add(PTR, 1)
 #elif HAVE_STD_ATOMIC
 #include <stdatomic.h>
+typedef atomic_int pirate_atomic_int;
 #define ATOMIC_INC(PTR) atomic_fetch_add(PTR, 1)
 #endif
 
@@ -152,7 +153,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
-static atomic_int next_gd;
+static pirate_atomic_int next_gd;
 
 static int pirate_next_gd() {
     int next = ATOMIC_INC(&next_gd);
