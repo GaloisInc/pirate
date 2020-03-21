@@ -32,6 +32,9 @@ typedef std::atomic_int pirate_atomic_int;
 #include <stdatomic.h>
 typedef atomic_int pirate_atomic_int;
 #define ATOMIC_INC(PTR) atomic_fetch_add(PTR, 1)
+#else
+typedef int pirate_atomic_int;
+#define ATOMIC_INC(PTR) __atomic_fetch_add(PTR, 1, __ATOMIC_SEQ_CST)
 #endif
 
 #include "libpirate.h"
