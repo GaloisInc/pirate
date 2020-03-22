@@ -258,29 +258,23 @@ int pirate_open_parse(const char *param, int flags) {
     return pirate_open_param(&vals, flags);
 }
 
-static void* pirate_pipe_open_read(void *channel) {
-    int rv;
-    rv = pirate_open((pirate_channel_t*) channel, O_RDONLY);
-    if (rv < 0) {
-        return (void*) ((intptr_t) errno);
+int pirate_pipe_channel_type(channel_enum_t channel_type) {
+    switch (channel_type) {
+    case PIPE:
+        return 1;
+    default:
+        return 0;
     }
-    return 0;
-}
-
-static void* pirate_pipe_open_write(void *channel) {
-    int rv;
-    rv = pirate_open((pirate_channel_t*) channel, O_WRONLY);
-    if (rv < 0) {
-        return (void*) ((intptr_t) errno);
-    }
-    return 0;
 }
 
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
-    pthread_t read_id, write_id;
     pirate_channel_t read_channel, write_channel;
-    intptr_t result;
     int rv, read_gd, write_gd;
+
+    if (!pirate_pipe_channel_type(param->channel_type)) {
+        errno = ENOSYS;
+        return -1;
+    }
 
     if (next_gd >= (PIRATE_NUM_CHANNELS - 1)) {
         errno = EMFILE;
@@ -297,36 +291,19 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     read_channel.ctx.flags = O_RDONLY;
     write_channel.ctx.flags = O_WRONLY;
 
-    rv = pthread_create(&read_id, NULL, pirate_pipe_open_read, (void*) &read_channel);
-    if (rv != 0) {
-        errno = rv;
-        return -1;
+    switch (param->channel_type) {
+    case PIPE:
+        rv = pirate_pipe_pipe(flags, &param->channel.pipe,
+            &read_channel.ctx.channel.pipe,
+            &write_channel.ctx.channel.pipe);
+        break;
+    default:
+        errno = ENOSYS;
+        rv = -1;
     }
 
-    rv = pthread_create(&write_id, NULL, pirate_pipe_open_write, (void*) &write_channel);
-    if (rv != 0) {
-        errno = rv;
-        return -1;
-    }
-
-    rv = pthread_join(read_id, (void*) &result);
-    if (rv != 0) {
-        errno = rv;
-        return -1;
-    }
-    if (result != 0) {
-        errno = result;
-        return -1;
-    }
-
-    rv = pthread_join(write_id, (void*) &result);
-    if (rv != 0) {
-        errno = rv;
-        return -1;
-    }
-    if (result != 0) {
-        errno = result;
-        return -1;
+    if (rv < 0) {
+        return rv;
     }
 
     read_gd = pirate_next_gd();
