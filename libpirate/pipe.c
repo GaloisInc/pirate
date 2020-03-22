@@ -68,6 +68,21 @@ int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx) {
     return 0;
 }
 
+int pirate_pipe_pipe(int flags, pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
+    (void) flags;
+    (void) param;
+    int rv, fd[2];
+
+    rv = pipe(fd);
+    if (rv < 0) {
+        return rv;
+    }
+
+    read_ctx->fd = fd[0];
+    write_ctx->fd = fd[1];
+    return 0;
+}
+
 int pirate_pipe_close(pipe_ctx *ctx) {
     int rv = -1;
 

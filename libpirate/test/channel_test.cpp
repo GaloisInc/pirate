@@ -104,7 +104,9 @@ void ChannelTest::ReaderChannelClose()
 void ChannelTest::Run()
 {
     RunChildOpen(true);
-    RunChildOpen(false);
+    if (pirate_pipe_channel_type(param.channel_type)) {
+        RunChildOpen(false);
+    }
 }
 
 void ChannelTest::RunChildOpen(bool child)
