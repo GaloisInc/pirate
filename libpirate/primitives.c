@@ -323,6 +323,15 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     return 0;
 }
 
+int pirate_pipe_parse(int gd[2], const char *param, int flags) {
+    pirate_channel_param_t vals;
+
+    if (pirate_parse_channel_param(param, &vals) < 0) {
+        return -1;
+    }
+
+    return pirate_pipe_param(gd, &vals, flags);
+}
 
 int pirate_close(int gd) {
     pirate_channel_t *channel;

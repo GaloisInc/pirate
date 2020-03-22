@@ -311,8 +311,14 @@ int pirate_open_parse(const char *param, int flags);
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
+// Returns 1 if the channel type supports the
+// pirate_pipe_param() and pirate_pipe_parse()
+// functions. Otherwise return 0.
+
+int pirate_pipe_channel_type(channel_enum_t channel_type);
+
 // Opens both ends of the gaps channel specified by the
-// gaps descriptor. See pipe() system call. Some channel
+// parameter value. See pipe() system call. Some channel
 // types cannot be opened for both reading and writing.
 //
 // The caller is responsible for closing the reader and the writer.
@@ -326,11 +332,20 @@ int pirate_open_param(pirate_channel_param_t *param, int flags);
 
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 
-// Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
+// Opens both ends of the gaps channel specified by the
+// parameter string. See pipe() system call. Some channel
+// types cannot be opened for both reading and writing.
+//
+// The caller is responsible for closing the reader and the writer.
+//
+// On success, zero is returned. On error, -1 is returned,
+// and errno is set appropriately. If the channel type
+// does not support this functionality then errno is set
+// to ENOSYS.
+//
+// The argument flags must be O_RDWR.
 
-int pirate_pipe_channel_type(channel_enum_t channel_type);
+int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
