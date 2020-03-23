@@ -174,8 +174,9 @@ void pirate_reset_gd() {
 static int pirate_open(pirate_channel_t *channel, int flags) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
+    int access = flags & O_ACCMODE;
 
-    if ((flags != O_RDONLY) && (flags != O_WRONLY)) {
+    if ((access != O_RDONLY) && (access != O_WRONLY)) {
         errno = EINVAL;
         return -1;
     }
@@ -270,6 +271,8 @@ int pirate_pipe_channel_type(channel_enum_t channel_type) {
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     pirate_channel_t read_channel, write_channel;
     int rv, read_gd, write_gd;
+    int access = flags & O_ACCMODE;
+    int behavior = flags & ~O_ACCMODE;
 
     if (!pirate_pipe_channel_type(param->channel_type)) {
         errno = ENOSYS;
@@ -281,15 +284,15 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if (flags != O_RDWR) {
+    if (access != O_RDWR) {
         errno = EINVAL;
         return -1;
     }
 
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
-    read_channel.ctx.flags = O_RDONLY;
-    write_channel.ctx.flags = O_WRONLY;
+    read_channel.ctx.flags = behavior | O_RDONLY;
+    write_channel.ctx.flags = behavior | O_WRONLY;
 
     switch (param->channel_type) {
     case PIPE:
@@ -401,7 +404,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
         return -1;
     }
 
-    if (channel->ctx.flags != O_RDONLY) {
+    if ((channel->ctx.flags & O_ACCMODE) != O_RDONLY) {
         errno = EBADF;
         return -1;
     }
@@ -458,7 +461,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         return -1;
     }
 
-    if (channel->ctx.flags != O_WRONLY) {
+    if ((channel->ctx.flags & O_ACCMODE) != O_WRONLY) {
         errno = EBADF;
         return -1;
     }

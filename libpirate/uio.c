@@ -102,6 +102,7 @@ int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx)
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
+    int access = flags & O_ACCMODE;
 
     pirate_uio_init_param(param);
     ctx->fd = open(param->path, O_RDWR | O_SYNC);
@@ -116,7 +117,7 @@ int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx)
         goto error;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         if (!atomic_compare_exchange_strong(&buf->reader_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
@@ -154,12 +155,14 @@ error:
 
 int pirate_internal_uio_close(uio_ctx *ctx) {
     shmem_buffer_t* buf = ctx->buf;
+    int access = ctx->flags & O_ACCMODE;
+
     if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    if (ctx->flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
     } else {
         atomic_store(&buf->writer_pid, 0);

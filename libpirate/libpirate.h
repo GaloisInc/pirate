@@ -295,7 +295,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 // The return value is the input gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
-// The argument flags must be O_RDONLY or O_WRONLY.
+// The argument flags must have access mode O_RDONLY or O_WRONLY.
 
 int pirate_open_parse(const char *param, int flags);
 
@@ -307,7 +307,7 @@ int pirate_open_parse(const char *param, int flags);
 // The return value is a unique gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
-// The argument flags must be O_RDONLY or O_WRONLY.
+// The argument flags must have access mode O_RDONLY or O_WRONLY.
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
@@ -328,7 +328,7 @@ int pirate_pipe_channel_type(channel_enum_t channel_type);
 // does not support this functionality then errno is set
 // to ENOSYS.
 //
-// The argument flags must be O_RDWR.
+// The argument flags must have access mode O_RDWR.
 
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 
@@ -343,7 +343,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 // does not support this functionality then errno is set
 // to ENOSYS.
 //
-// The argument flags must be O_RDWR.
+// The argument flags must have access mode O_RDWR.
 
 int pirate_pipe_parse(int gd[2], const char *param, int flags);
 

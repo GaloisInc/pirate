@@ -203,6 +203,7 @@ int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
+    int access = flags & O_ACCMODE;
 
     shmem_buffer_init_param(param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
@@ -219,7 +220,7 @@ int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
         goto error;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         if (!atomic_compare_exchange_strong(&buf->reader_pid,
                                             &init_pid, (uint64_t)getpid())) {
             errno = EBUSY;
@@ -274,8 +275,9 @@ error:
 int shmem_buffer_close(shmem_ctx *ctx) {
     shmem_buffer_t* buf = ctx->buf;
     const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
+    int access = ctx->flags & O_ACCMODE;
 
-    if (ctx->flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
         pthread_mutex_lock(&buf->mutex);
         pthread_cond_signal(&buf->is_not_full);

@@ -181,15 +181,16 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
 int pirate_tcp_socket_open(int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv = -1;
+    int access = flags & O_ACCMODE;
 
     pirate_tcp_socket_init_param(param);
     if (param->port <= 0) {
         errno = EINVAL;
         return -1;
     }
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         rv = tcp_socket_reader_open(param, ctx);
-    } else if (flags == O_WRONLY) {
+    } else {
         rv = tcp_socket_writer_open(param, ctx);
     }
 
