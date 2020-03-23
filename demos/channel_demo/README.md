@@ -29,11 +29,11 @@ Output artifacts are located in ```pirate/build/demos/channel_demo```
 
 Test the functionality with a GAPS unix pipe channel
 ```
-$ ./reader -l 10,20,1 -C pipe -v
+$ ./reader -l 10,20,1 -C pipe,/tmp/gaps.channel -v
 ```
 in a separate terminal window
 ```
-$ ./writer -l 10,20,1 -C pipe -v
+$ ./writer -l 10,20,1 -C pipe,/tmp/gaps.channel -v
 ```
 
 ## Implementation Overview
@@ -71,10 +71,10 @@ GAPS channel type and parameters are passed with the ```-C``` option
 ```-C channel,options,...  ```
 
 ##### Supported GAPS Channels
-* **PIPE** - ```-C pipe```      
-* **UDP Socket** - ``` -C udp,<ip_addr>,<ip_port>```
-* **GE Ethernet** - ```- C ge_eth,<ip_addr>,<ip_port>```
-* **Mercury** - ``` -C mercury,<path>```
+* **PIPE** - ```-C pipe,path```      
+* **UDP Socket** - ``` -C udp,ip_addr,ip_port```
+* **GE Ethernet** - ```- C ge_eth,ip_addr,ip_port```
+* **Mercury** - ``` -C mercury,path```
 
 #### Test Data Type and Length Selection
 Auto-generated patterns are selected with the ```-p``` option:
@@ -147,16 +147,16 @@ Test utility for writing deterministic GAPS packets
 
  Supported channels:
    DEVICE        device,path[,iov_len]
-   PIPE          pipe[,path,iov_len]
-   UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]
-   UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]
-   SHMEM         shmem[,path,buffer_size]
-   UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]
-   UIO           uio[,path]
-   SERIAL        serial[,path,baud,mtu]
+   PIPE          pipe,path[,iov_len]
+   UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]
+   UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]
+   SHMEM         shmem,path[,buffer_size]
+   UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
+   UIO           uio,path
+   SERIAL        serial,path[,baud,mtu]
    MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
-   GE_ETH        ge_eth[,addr,port,mtu]
+   GE_ETH        ge_eth,addr,port[,mtu]
 
 
   -?, --help                 Give this help list
@@ -179,16 +179,16 @@ Test utility for reading deterministic GAPS packets
 
  Supported channels:
    DEVICE        device,path[,iov_len]
-   PIPE          pipe[,path,iov_len]
-   UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]
-   UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]
-   SHMEM         shmem[,path,buffer_size]
-   UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]
-   UIO           uio[,path]
-   SERIAL        serial[,path,baud,mtu]
+   PIPE          pipe,path[,iov_len]
+   UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]
+   UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]
+   SHMEM         shmem,path[,buffer_size]
+   UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
+   UIO           uio,path
+   SERIAL        serial,path[,baud,mtu]
    MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
-   GE_ETH        ge_eth[,addr,port,mtu]
+   GE_ETH        ge_eth,addr,port[,mtu]
 
 
   -?, --help                 Give this help list

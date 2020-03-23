@@ -2,8 +2,8 @@
 
 Pirate primitives layer. The PIRATE core primitives layer
 will provide a series of capabilities for executing PIRATE executables
-on TA1 hardware. At minimum, there are four basic primitives that must
-be supported: configuring TA1 hardware, loading code and data onto the
+on GAPS hardware. At minimum, there are four basic primitives that must
+be supported: configuring GAPS hardware, loading code and data onto the
 appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
@@ -14,65 +14,57 @@ See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
 Reader:
 
 ```
-  pirate_channel_param_t param
-  pirate_init_channel_param(PIPE, &param);
-
-  int data;
-  if (pirate_open(1, O_RDONLY) < 0) {
+  int gd, data;
+  gd = pirate_open_parse("pipe,/tmp/gaps", O_RDONLY);
+  if (gd < 0) {
     perror("reader open error");
     exit(1);
   }
-  if (pirate_read(1, &data, sizeof(data)) != sizeof(data)) {
+  if (pirate_read(gd, &data, sizeof(data)) != sizeof(data)) {
     perror("read error");
     exit(2);
   }
-  pirate_close(1, RD_ONLY);
+  pirate_close(gd);
 ```
 
 Writer:
 
 ```
-  pirate_channel_param_t param
-  pirate_init_channel_param(PIPE, &param);
-
-  int data = 1234;
-  if (pirate_open(1, O_WRONLY) < 0) {
+  int gd, data = 1234;
+  gd = pirate_open_parse("pipe,/tmp/gaps", O_WRONLY);
+  if (gd < 0) {
     perror("writer open error");
     exit(1);
   }
-  if (pirate_write(1, &data, sizeof(data)) != sizeof(data)) {
+  if (pirate_write(gd, &data, sizeof(data)) != sizeof(data)) {
     perror("write error");
     exit(2);
   }
-  pirate_close(1, O_WRONLY);
+  pirate_close(gd);
 ```
 
 ## Channel types
 
 ### PIPE type
 
-Linux named pipes are the default channel type. A pipe file is
-created at `/tmp/gaps.channel.%d` if one does not exist.
+Linux named pipes. Path to named pipe must be specified.
 
 ### DEVICE type
 
-The pathname to the character device must be specified using
-`pirate_set_pathname(int, char *)` prior to opening the channel.
+The pathname to the character device must be specified
+prior to opening the channel.
 
 ### UNIX_SOCKET type
 
-Unix domain socket communication. A unix socket file is
-created at `/tmp/gaps.channel.%d.sock` if one does not exist.
+Unix domain socket communication. Path to Unix socket must be specified.
 
 ### TCP_SOCKET type
 
-TCP socket communication. The port number is (26427 + d)
-where d is the gaps descriptor.
+TCP socket communication. Host and port must be specified.
 
 ### UDP_SOCKET type
 
-UDP socket communication. The port number is (26427 + d)
-where d is the gaps descriptor.
+UDP socket communication. Host and port must be specified.
 
 ### SHMEM type
 
@@ -81,10 +73,6 @@ for the SHMEM type requires the librt.so POSIX real-time extensions
 library. This support is not included by default. Set
 the PIRATE_SHMEM_FEATURE flag in [CMakeLists.txt](/libpirate/CMakeLists.txt)
 to enable support for shared memory.
-
-If the reader or writer process is killed while blocked
-on pirate_open() then you must delete the file
-`/dev/shm/gaps.channel.%d` prior to launching another reader or writer.
 
 The SHMEM type is intended for benchmarking purposes only.
 The size of the shared memory buffer can be specified using

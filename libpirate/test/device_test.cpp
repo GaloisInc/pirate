@@ -42,17 +42,17 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(DEVICE, param.channel_type);
-    ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);
     ASSERT_EQ(0u, device_param->iov_len);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(DEVICE, param.channel_type);
-    ASSERT_EQ(0, errno);
     ASSERT_STREQ(path, device_param->path);
     ASSERT_EQ(iov_len, device_param->iov_len);
 }
@@ -61,7 +61,6 @@ class DeviceTest : public ChannelTest, public WithParamInterface<int>
 {
 public:
     void ChannelInit() {
-        int rv;
         pirate_init_channel_param(DEVICE, &param);
         snprintf(param.channel.device.path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
         param.channel.device.iov_len = GetParam();
@@ -70,14 +69,6 @@ public:
             ASSERT_EQ(EEXIST, errno);
             errno = 0;
         }
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 };
 

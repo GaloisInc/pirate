@@ -23,7 +23,7 @@ typedef struct {
 } unix_socket_ctx;
 
 int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param);
-int pirate_unix_socket_open(int gd, int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx);
+int pirate_unix_socket_open(int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx);
 int pirate_unix_socket_close(unix_socket_ctx *ctx);
 ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count);

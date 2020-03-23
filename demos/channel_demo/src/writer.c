@@ -27,6 +27,8 @@ typedef struct {
     channel_test_t test;
 } writer_t;
 
+extern int gaps_channel;
+
 static struct argp_option options[] = {
     { "delay",   'd', "US",   0, "Inter-packet delay",               0 },
     COMMON_OPTIONS,
@@ -79,7 +81,7 @@ static int writer_init(writer_t *writer) {
 
 static int writer_term(writer_t *writer) {
     test_data_term(&writer->test.data);
-    return pirate_close(GAPS_CHANNEL, O_WRONLY);
+    return pirate_close(gaps_channel);
 }
 
 static int writer_run(writer_t *writer) {
@@ -101,7 +103,7 @@ static int writer_run(writer_t *writer) {
             }
         }
 
-        if (pirate_write(GAPS_CHANNEL, wr_buf, wr_len) != wr_len) {
+        if (pirate_write(gaps_channel, wr_buf, wr_len) != wr_len) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;
         }

@@ -225,9 +225,9 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     return count;
 }
 
-static void pirate_mercury_init_param(int gd, pirate_mercury_param_t *param) {
-    if (param->session.level == 0) {
-        param->session.level = param->session.source_id = gd + 1;
+static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
+    if (param->session.source_id == 0) {
+        param->session.source_id = 1;
     }
 
     if (param->mtu == 0) {
@@ -287,16 +287,16 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
     return 0;
 }
 
-int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param, 
-                            mercury_ctx *ctx) {
+int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *ctx) {
     const uint32_t cfg_len = sizeof(uint32_t);
     ssize_t sz;
     int fd_root = -1;
     ctx->flags = flags;
-    const mode_t mode = ctx->flags == O_RDONLY ? S_IRUSR : S_IWUSR;
+    int access = ctx->flags & O_ACCMODE;
+    const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
 
     /* Open the root device to configure and establish a session */
-    pirate_mercury_init_param(gd, param);
+    pirate_mercury_init_param(param);
 
     if (pthread_mutex_lock(&open_lock) != 0) {
         return -1;
@@ -360,10 +360,10 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.id, flags == O_RDONLY ? "read" : "write");
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
-                    param->session.id, flags == O_RDONLY ? "read" : "write");
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     }
 
     /* Open the device */
@@ -377,7 +377,7 @@ int pirate_mercury_open(int gd, int flags, pirate_mercury_param_t *param,
         goto error;
     }
 
-    return gd;
+    return 0;
 error_session:
     pthread_mutex_unlock(&open_lock);
 error:

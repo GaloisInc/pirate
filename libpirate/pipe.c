@@ -24,12 +24,6 @@
 #include "pirate_common.h"
 #include "pipe.h"
 
-static void pirate_pipe_init_param(int gd, pirate_pipe_param_t *param) {
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_PIPE_NAME_FMT, gd);
-    }
-}
-
 int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     char *ptr = NULL;
 
@@ -38,9 +32,11 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -49,10 +45,13 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     return 0;
 }
 
-int pirate_pipe_open(int gd, int flags, pirate_pipe_param_t *param,
-                        pipe_ctx *ctx) {
+int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx) {
     int err;
-    pirate_pipe_init_param(gd, param);
+
+    if (strnlen(param->path, 1) == 0) {
+        errno = EINVAL;
+        return -1;
+    }
     err = errno;
     if (mkfifo(param->path, 0660) == -1) {
         if (errno == EEXIST) {
@@ -62,16 +61,26 @@ int pirate_pipe_open(int gd, int flags, pirate_pipe_param_t *param,
         }
     }
 
-    if (ctx->fd > 0) {
-        errno = EBUSY;
-        return -1;
-    }
-
     if ((ctx->fd = open(param->path, flags)) < 0) {
         return -1;
     }
 
-    return gd;
+    return 0;
+}
+
+int pirate_pipe_pipe(int flags, pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
+    (void) flags;
+    (void) param;
+    int rv, fd[2];
+
+    rv = pipe(fd);
+    if (rv < 0) {
+        return rv;
+    }
+
+    read_ctx->fd = fd[0];
+    write_ctx->fd = fd[1];
+    return 0;
 }
 
 int pirate_pipe_close(pipe_ctx *ctx) {

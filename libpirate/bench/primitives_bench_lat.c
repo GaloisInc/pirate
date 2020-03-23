@@ -218,8 +218,8 @@ int main(int argc, char *argv[]) {
         nbytes -= rv;
       }
     }
-    pirate_close(1, O_RDONLY);
-    pirate_close(2, O_WRONLY);
+    pirate_close(1);
+    pirate_close(2);
   } else {
     // parent
     if (set_buffer_size(1, bufsize) < 0) {
@@ -328,8 +328,8 @@ int main(int argc, char *argv[]) {
       perror("clock_gettime");
       return 1;
     }
-    pirate_close(1, O_WRONLY);
-    pirate_close(2, O_RDONLY);
+    pirate_close(1);
+    pirate_close(2);
     // nanoseconds difference
     delta = ((stop.tv_sec - start.tv_sec) * 1000000000 +
              (stop.tv_nsec - start.tv_nsec));

@@ -16,23 +16,16 @@ void piratePipe(const std::string& config, int gd);
 template<typename T>
 Sender<T> gdSender(const std::string& config, int gd) {
   auto sendFn = [config, gd](const T& d) { gdCheckedWrite(config, gd, &d, sizeof(T)); };
-  auto closeFn = [gd]() { pirate_close(gd, O_WRONLY); };
+  auto closeFn = [gd]() { pirate_close(gd); };
   return Sender<T>(sendFn, closeFn);
 }
 
 template<typename T>
-Sender<T> pirateSender(const std::string& config, int gd) {
-    pirate_channel_param_t param;
+Sender<T> pirateSender(const std::string& config) {
+    int gd;
 
-    if (pirate_parse_channel_param(config.c_str(), &param) < 0) {
-        channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set channel parameter", config.c_str()); });
-        exit(-1);
-    }
-    if (pirate_set_channel_param(gd, O_WRONLY, &param) < 0) {
-        channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set channel parameter", config.c_str()); });
-        exit(-1);
-    }
-    if (pirate_open(gd, O_WRONLY) < 0) {
+    gd = pirate_open_parse(config.c_str(), O_WRONLY);
+    if (gd < 0) {
         channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
         exit(-1);
     }
@@ -65,7 +58,7 @@ void gdDatagramReadMessages(const std::string& config, int gd, std::function<voi
     }
     f(x);
   }
-  pirate_close(gd, O_RDONLY);
+  pirate_close(gd);
 }
 
 template<typename T>
@@ -76,18 +69,11 @@ Receiver<T> gdReceiver(const std::string& config, int gd) {
 }
 
 template<typename T>
-Receiver<T> pirateReceiver(const std::string& config, int gd) {
-    pirate_channel_param_t param;
+Receiver<T> pirateReceiver(const std::string& config) {
+    int gd;
 
-    if (pirate_parse_channel_param(config.c_str(), &param) < 0) {
-        channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set channel parameter", config.c_str()); });
-        exit(-1);
-    }
-    if (pirate_set_channel_param(gd, O_RDONLY, &param) < 0) {
-        channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set channel parameter", config.c_str()); });
-        exit(-1);
-    }
-    if (pirate_open(gd, O_RDONLY) < 0) {
+    gd = pirate_open_parse(config.c_str(), O_RDONLY);
+    if (gd < 0) {
         channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
         exit(-1);
     }

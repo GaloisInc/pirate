@@ -71,9 +71,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 //  piratePipe(gpsToTarget, 0);
 //  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
 //  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
-  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath, 0);       // Green to orange
-  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath, 1);  // Orange to green
-  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath, 2);   // Orange to green
+  auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath);       // Green to orange
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);  // Orange to green
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);   // Orange to green
 
   std::function<void(Position)> onGPSChange;
 
@@ -176,9 +176,9 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   }
 
   // Create channels (Note: Order must match corresponding run_green channel creation order)
-  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath, 1);    // Green to orange
-  auto uavToTargetSend = pirateSender<Position>(uavToTargetPath, 2);  // Orange to green
-  auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath, 3);   // Orange to green
+  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath);    // Green to orange
+  auto uavToTargetSend = pirateSender<Position>(uavToTargetPath);  // Orange to green
+  auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath);   // Orange to green
 
   // Create RF sensor
   Distance dtgt(1062, 7800, 9000); // initial target distance

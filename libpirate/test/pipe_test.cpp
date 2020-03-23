@@ -37,24 +37,22 @@ TEST(ChannelPipeTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(PIPE, param.channel_type);
-    ASSERT_STREQ("", pipe_param->path);
-    ASSERT_EQ(0u, pipe_param->iov_len);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
     ASSERT_EQ(0u, pipe_param->iov_len);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
     ASSERT_EQ(iov_len, pipe_param->iov_len);
@@ -65,19 +63,9 @@ class PipeTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        int rv;
-
         pirate_init_channel_param(PIPE, &param);
+        strncpy(param.channel.pipe.path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
         param.channel.pipe.iov_len = GetParam();
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // Write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 };
 

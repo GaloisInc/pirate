@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2019-2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 #ifndef __PIRATE_PRIMITIVES_H
@@ -46,13 +46,12 @@ typedef enum {
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe).
     // Configuration parameters - pirate_pipe_param_t
-    //  - path    - if "" then PIRATE_FILENAME format is used instead
+    //  - path    - file path to named pipe
     //  - iov_len - I/O vector chunk length
     PIPE,
 
-    // The name of the socket is formatted with PIRATE_DOMAIN_FILENAME
-    // where %d is the gaps descriptor.
-    //  - path        - if "" then PIRATE_FILENAME format is used instead
+    // The gaps channel is implemented using a Unix domain socket.
+    //  - path        - file path to unix socket
     //  - iov_len     - I/O vector chunk length
     //  - buffer_size - unix socket buffer size
     UNIX_SOCKET,
@@ -60,7 +59,7 @@ typedef enum {
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port, if empty, then 26427 + aps descriptor is used
+    //  - port        - IP port
     //  - iov_len     - I/O vector chunk length
     //  - buffer_size - TCP socket buffer size
     TCP_SOCKET,
@@ -68,7 +67,7 @@ typedef enum {
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port, if empty, then 26427 + aps descriptor is used
+    //  - port        - IP port
     //  - iov_len     - I/O vector chunk length
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
@@ -119,7 +118,7 @@ typedef enum {
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
     //  - addr - IP address, if empty then 127.0.0.1 is used
-    //  - port - IP port, if empty, then 0x4745 + aps descriptor is used
+    //  - port - IP port
     //  - mtu  - maximum frame length, default 1454
     GE_ETH
 } channel_enum_t;
@@ -131,14 +130,12 @@ typedef struct {
 } pirate_device_param_t;
 
 // PIPE parameters
-#define PIRATE_PIPE_NAME_FMT                "/tmp/gaps.channel.%d"
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned iov_len;
 } pirate_pipe_param_t;
 
 // UNIX_SOCKET parameters
-#define PIRATE_UNIX_SOCKET_NAME_FMT         "/tmp/gaps.channel.%d.sock"
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned iov_len;
@@ -147,7 +144,6 @@ typedef struct {
 
 // TCP_SOCKET parameters
 #define DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
-#define PIRATE_TCP_PORT_BASE                26427
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -157,7 +153,6 @@ typedef struct {
 
 // UDP_SOCKET parameters
 #define DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
-#define PIRATE_UDP_PORT_BASE                26427
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -167,7 +162,6 @@ typedef struct {
 
 // SHMEM parameters
 #define DEFAULT_SMEM_BUF_LEN                (128u << 10)
-#define PIRATE_SHMEM_NAME_FMT               "/gaps.channel.%d"
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
@@ -187,10 +181,10 @@ typedef struct {
 #define DEFAULT_UIO_DEVICE  "/dev/uio0"
 typedef struct {
     char path[PIRATE_LEN_NAME];
+    unsigned short region;
 } pirate_uio_param_t;
 
 // SERIAL parameters
-#define PIRATE_SERIAL_NAME_FMT  "/dev/ttyUSB%d"
 #define SERIAL_DEFAULT_BAUD     B230400
 #define SERIAL_DEFAULT_MTU      1024u
 typedef struct {
@@ -220,7 +214,6 @@ typedef struct {
 
 // GE_ETH parameters
 #define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
-#define DEFAULT_GE_ETH_IP_PORT  0x4745
 #define DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
@@ -271,69 +264,88 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 #define GAPS_CHANNEL_OPTIONS                                                   \
     "Supported channels:\n"                                                    \
     "  DEVICE        device,path[,iov_len]\n"                                  \
-    "  PIPE          pipe[,path,iov_len]\n"                                    \
-    "  UNIX SOCKET   unix_socket[,path,iov_len,buffer_size]\n"                 \
-    "  TCP SOCKET    tcp_socket[,addr,port,iov_len,buffer_size]\n"             \
-    "  UDP SOCKET    udp_socket[,addr,port,iov_len,buffer_size]\n"             \
-    "  SHMEM         shmem[,path,buffer_size]\n"                               \
-    "  UDP_SHMEM     udp_shmem[,path,buffer_size,packet_size,packet_count]\n"  \
+    "  PIPE          pipe,path[,iov_len]\n"                                    \
+    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                 \
+    "  TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]\n"             \
+    "  UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]\n"             \
+    "  SHMEM         shmem,path[,buffer_size]\n"                               \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
-    "  SERIAL        serial[,path,baud,mtu]\n"                                 \
+    "  SERIAL        serial,path[,baud,mtu]\n"                                 \
     "  MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]\n"  \
-    "  GE_ETH        ge_eth[,addr,port,mtu]\n"
-
-// Copies channel parameters from param argument into configuration.
-//
-// Parameters:
-//  gd           - GAPS channel number
-//  flags        - O_RDONLY or O_WRONLY
-//  param        - channel-specific parameters.
-// Return:
-//  0 on success
-// -1 on failure, errno is set
-
-int pirate_set_channel_param(int gd, int flags, const pirate_channel_param_t *param);
+    "  GE_ETH        ge_eth,addr,port[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
 // Parameters
 //  gd           - GAPS channel number
-//  flags        - O_RDONLY or O_WRONLY
 //  param        - channel-specific parameters
 //
 // Return:
 //  0 on success
 // -1 on failure, errno is set
 
-int pirate_get_channel_param(int gd, int flags, pirate_channel_param_t *param);
+int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
-// Opens the gaps channel specified by the gaps descriptor.
+// Opens the gaps channel specified by parameter string.
 //
-// Channels must be opened in order from smaller to largest
-// gaps descriptor. pirate_open() will block until both the
-// reader and the writer have opened the channel.
+// Channels must be opened in the same order across all
+// processes.
 
 // The return value is the input gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
-// The argument flags must be O_RDONLY or O_WRONLY.
+// The argument flags must have access mode O_RDONLY or O_WRONLY.
 
-int pirate_open(int gd, int flags);
+int pirate_open_parse(const char *param, int flags);
+
+// Opens the gaps channel specified by the parameter value.
+//
+// Channels must be opened in the same order across all
+// processes.
+
+// The return value is a unique gaps descriptor, or -1 if an
+// error occurred (in which case, errno is set appropriately).
+//
+// The argument flags must have access mode O_RDONLY or O_WRONLY.
+
+int pirate_open_param(pirate_channel_param_t *param, int flags);
+
+// Returns 1 if the channel type supports the
+// pirate_pipe_param() and pirate_pipe_parse()
+// functions. Otherwise return 0.
+
+int pirate_pipe_channel_type(channel_enum_t channel_type);
 
 // Opens both ends of the gaps channel specified by the
-// gaps descriptor. Some channel types cannot be opened
-// for both reading and writing.
+// parameter value. See pipe() system call. Some channel
+// types cannot be opened for both reading and writing.
 //
-// The caller is responsible for setting channel params on
-// both the reader and the writer. The caller is responsible
-// for closing the reader and the writer.
+// The caller is responsible for closing the reader and the writer.
 //
-// The return value is the input gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// On success, zero is returned. On error, -1 is returned,
+// and errno is set appropriately. If the channel type
+// does not support this functionality then errno is set
+// to ENOSYS.
 //
-// The argument flags must be O_RDWR.
+// The argument flags must have access mode O_RDWR.
 
-int pirate_pipe(int gd, int flags);
+int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
+
+// Opens both ends of the gaps channel specified by the
+// parameter string. See pipe() system call. Some channel
+// types cannot be opened for both reading and writing.
+//
+// The caller is responsible for closing the reader and the writer.
+//
+// On success, zero is returned. On error, -1 is returned,
+// and errno is set appropriately. If the channel type
+// does not support this functionality then errno is set
+// to ENOSYS.
+//
+// The argument flags must have access mode O_RDWR.
+
+int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
@@ -354,7 +366,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 //
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
-int pirate_close(int gd, int flags);
+int pirate_close(int gd);
 
 #ifdef __cplusplus
 }

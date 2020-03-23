@@ -39,8 +39,7 @@
 #define GAPS_MAIN(name) __attribute__((pirate_enclave_main(name)))
 #endif
 
-#define HIGH_TO_LOW_CH 0
-#define LOW_TO_HIGH_CH 1
+int high_to_low, low_to_high;
 
 #define DATA_LEN            (32 << 10)         // 32 KB
 typedef struct {
@@ -114,13 +113,13 @@ static int load_web_content_low(data_t* data, char *path) {
     ssize_t num;
 
     len = strnlen(path, PATHSIZE);
-    num = pirate_write(LOW_TO_HIGH_CH, &len, sizeof(int));
+    num = pirate_write(low_to_high, &len, sizeof(int));
     if (num != sizeof(int)) {
         fprintf(stderr, "Failed to send request length\n");
         return 500;
     }
 
-    num = pirate_write(LOW_TO_HIGH_CH, path, len);
+    num = pirate_write(low_to_high, path, len);
     if (num != len) {
         fprintf(stderr, "Failed to send request path\n");
         return 500;
@@ -128,7 +127,7 @@ static int load_web_content_low(data_t* data, char *path) {
 
     fputs("Sent read request to the HIGH_NAME side\n", stdout);
 
-    num = pirate_read(HIGH_TO_LOW_CH, &rv, sizeof(rv));
+    num = pirate_read(high_to_low, &rv, sizeof(rv));
     if (num != sizeof(rv)) {
         fprintf(stderr, "Failed to receive status code\n");
         return 500;
@@ -138,7 +137,7 @@ static int load_web_content_low(data_t* data, char *path) {
     }
 
     /* Read and validate response length */
-    num = pirate_read(HIGH_TO_LOW_CH, &len, sizeof(len));
+    num = pirate_read(high_to_low, &len, sizeof(len));
     if (num != sizeof(len)) {
         fprintf(stderr, "Failed to receive response length\n");
         return 500;
@@ -150,7 +149,7 @@ static int load_web_content_low(data_t* data, char *path) {
     }
 
     /* Read back the response */
-    num = pirate_read(HIGH_TO_LOW_CH, data->buf, len);
+    num = pirate_read(high_to_low, data->buf, len);
     if (num != len) {
         fprintf(stderr, "Failed to read back the response\n");
         return 500;
@@ -192,7 +191,7 @@ static void* gaps_thread(void *arg) {
         int rv, len = 0;
         char path[PATHSIZE];
 
-        ssize_t num = pirate_read(LOW_TO_HIGH_CH, &len, sizeof(len));
+        ssize_t num = pirate_read(low_to_high, &len, sizeof(len));
         if (num != sizeof(len)) {
             if (!terminated) {
                 fprintf(stderr, "Failed to read request from the low side\n");
@@ -208,7 +207,7 @@ static void* gaps_thread(void *arg) {
         }
 
         memset(path, 0, sizeof(path));
-        num = pirate_read(LOW_TO_HIGH_CH, &path, len);
+        num = pirate_read(low_to_high, &path, len);
         if (num != len) {
             fprintf(stderr, "Invalid request path from the low side %d\n", len);
             terminate();
@@ -219,7 +218,7 @@ static void* gaps_thread(void *arg) {
 
         /* Read in high data */
         rv = load_web_content_high(&data, path);
-        num = pirate_write(HIGH_TO_LOW_CH, &rv, sizeof(rv));
+        num = pirate_write(high_to_low, &rv, sizeof(rv));
         if (num != sizeof(rv)) {
             fprintf(stderr, "Failed to send status code\n");
             terminate();
@@ -247,14 +246,14 @@ static void* gaps_thread(void *arg) {
         }
 
         /* Reply back. Data length is sent first */
-        num = pirate_write(HIGH_TO_LOW_CH, &data.len, sizeof(data.len));
+        num = pirate_write(high_to_low, &data.len, sizeof(data.len));
         if (num != sizeof(data.len)) {
             fprintf(stderr, "Failed to send response length\n");
             terminate();
             continue;
         }
 
-        num = pirate_write(HIGH_TO_LOW_CH, &data.buf, data.len);
+        num = pirate_write(high_to_low, &data.buf, data.len);
         if (num != data.len) {
             fprintf(stderr, "Failed to send response content\n");
             terminate();
@@ -406,22 +405,14 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
 
     pirate_init_channel_param(PIPE, &param);
 
-    if (pirate_set_channel_param(HIGH_TO_LOW_CH, O_WRONLY, &param) < 0) {
-        perror("channel parameter set: high->low");
-        return -1;
-    }
-
-    if (pirate_set_channel_param(LOW_TO_HIGH_CH, O_RDONLY, &param) < 0) {
-        perror("channel parameter set: high<-low");
-        return -1;
-    }
-
-    if (pirate_open(HIGH_TO_LOW_CH, O_WRONLY) < 0) {
+    high_to_low = pirate_open_param(&param, O_WRONLY);
+    if (high_to_low < 0) {
         perror("open high to low channel in write-only mode");
         return -1;
     }
 
-    if (pirate_open(LOW_TO_HIGH_CH, O_RDONLY) < 0) {
+    low_to_high = pirate_open_param(&param, O_RDONLY);
+    if (low_to_high < 0) {
         perror("open low to high channel in read-only mode");
         return -1;
     }
@@ -462,11 +453,11 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
         retval = -1;
     }
 
-    if (pirate_close(HIGH_TO_LOW_CH, O_WRONLY) < 0) {
+    if (pirate_close(high_to_low) < 0) {
         perror("close high to low channel in write-only mode");
         retval = -1;
     }
-    if (pirate_close(LOW_TO_HIGH_CH, O_RDONLY) < 0) {
+    if (pirate_close(low_to_high) < 0) {
         perror("close low to high channel in read-only mode");
         retval = -1;
     }
@@ -520,21 +511,13 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
 
     pirate_init_channel_param(PIPE, &param);
 
-    if (pirate_set_channel_param(HIGH_TO_LOW_CH, O_RDONLY, &param) < 0) {
-        perror("channel parameter set: high->low");
-        return -1;
-    }
-
-    if (pirate_set_channel_param(LOW_TO_HIGH_CH, O_WRONLY, &param) < 0) {
-        perror("channel parameter set: high<-low");
-        return -1;
-    }
-
-    if (pirate_open(HIGH_TO_LOW_CH, O_RDONLY) < 0) {
+    high_to_low = pirate_open_param(&param, O_RDONLY);
+    if (high_to_low < 0) {
         perror("open high to low channel in read-only mode");
         return -1;
     }
-    if (pirate_open(LOW_TO_HIGH_CH, O_WRONLY) < 0) {
+    low_to_high = pirate_open_param(&param, O_WRONLY);
+    if (low_to_high < 0) {
         perror("open low to high channel in write-only mode");
         return -1;
     }
@@ -561,11 +544,11 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
         retval = -1;
     }
 
-    if (pirate_close(HIGH_TO_LOW_CH, O_RDONLY) < 0) {
+    if (pirate_close(high_to_low) < 0) {
         perror("close high to low channel in read-only mode");
         retval = -1;
     }
-    if (pirate_close(LOW_TO_HIGH_CH, O_WRONLY) < 0) {
+    if (pirate_close(low_to_high) < 0) {
         perror("close low to high channel in write-only mode");
         retval = -1;
     }

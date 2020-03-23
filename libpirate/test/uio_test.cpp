@@ -31,22 +31,22 @@ TEST(ChannelUioTest, ConfigurationParser) {
     const pirate_uio_param_t *uio_param = &param.channel.uio;
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UIO_DEVICE, param.channel_type);
     ASSERT_STREQ("", uio_param->path);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UIO_DEVICE, param.channel_type);
     ASSERT_STREQ(path, uio_param->path);
 #else
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 #endif
 }
@@ -57,17 +57,7 @@ class UioTest : public ChannelTest
 public:
     void ChannelInit()
     {
-        int rv;
         pirate_init_channel_param(UIO_DEVICE, &param);
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 };
 

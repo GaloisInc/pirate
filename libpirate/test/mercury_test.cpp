@@ -41,26 +41,26 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
     
     snprintf(opt, sizeof(opt) - 1, "%s,%u", name, level);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
  
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u", name, level, src_id);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u", name, level, src_id, dst_id);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     expParam.channel.mercury.session.level = level;
     expParam.channel.mercury.session.source_id = src_id;
     expParam.channel.mercury.session.destination_id = dst_id;
@@ -71,16 +71,16 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u", name, level, src_id,
             dst_id, timeout_ms);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     expParam.channel.mercury.timeout_ms = timeout_ms;
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u", name, level, src_id,
             dst_id, timeout_ms, msg_ids[0]);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     expParam.channel.mercury.session.message_count = 1;
     expParam.channel.mercury.session.messages[0] = msg_ids[0];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
@@ -88,8 +88,8 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u,%u", name, level, src_id,
             dst_id, timeout_ms, msg_ids[0], msg_ids[1]);
     rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     expParam.channel.mercury.session.message_count = 2;
     expParam.channel.mercury.session.messages[1] = msg_ids[1];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
@@ -106,8 +106,8 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
 
 TEST(ChannelMercuryTest, DefaultSession) {
     int rv = 0;
-    const int channel = 0;
-
+    int rchannel, wchannel;
+    pirate_channel_param_t param;
     const uint32_t session_id = 1;
     const uint8_t wr_data[] = { 0xC0, 0xDE, 0xDA, 0xDA };
     const ssize_t data_len = sizeof(wr_data);
@@ -122,43 +122,39 @@ TEST(ChannelMercuryTest, DefaultSession) {
         return;
     }
 
-    pirate_channel_param_t param;
     pirate_init_channel_param(MERCURY, &param);
-
-    rv =  pirate_set_channel_param(channel, O_WRONLY, &param);
-    ASSERT_EQ(0, rv);
+    wchannel = pirate_open_param(&param, O_WRONLY);
     ASSERT_EQ(0, errno);
+    ASSERT_GE(wchannel, 0);
 
-    rv =  pirate_set_channel_param(channel, O_RDONLY, &param);
-    ASSERT_EQ(0, rv);
+    pirate_init_channel_param(MERCURY, &param);
+    rchannel = pirate_open_param(&param, O_RDONLY);
     ASSERT_EQ(0, errno);
+    ASSERT_GE(rchannel, 0);
 
-    rv = pirate_open(channel, O_WRONLY);
-    ASSERT_EQ(channel, rv);
-    ASSERT_EQ(0, errno);
-
-    rv = pirate_open(channel, O_RDONLY);
-    ASSERT_EQ(channel, rv);
-    ASSERT_EQ(0, errno);
-
-    rv = pirate_get_channel_param(channel, O_WRONLY, &param);
+    rv = pirate_get_channel_param(wchannel, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(session_id, param.channel.mercury.session.id);
 
-    io_size = pirate_write(channel, wr_data, data_len);
-    ASSERT_EQ(io_size, data_len);
+    rv = pirate_get_channel_param(wchannel, &param);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(session_id, param.channel.mercury.session.id);
 
-    io_size = pirate_read(channel, rd_data, data_len);
-    ASSERT_EQ(io_size, data_len);
+    io_size = pirate_write(wchannel, wr_data, data_len);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(io_size, data_len);
+
+    io_size = pirate_read(rchannel, rd_data, data_len);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(io_size, data_len);
 
     EXPECT_TRUE(0 == std::memcmp(wr_data, rd_data, data_len));
 
     rv = mercury_cmd_stat(session_id, &stats);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
 
     ASSERT_EQ(1u, stats.send_count);
     ASSERT_EQ(1u, stats.receive_count);
@@ -170,12 +166,12 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0u, stats.receive_ilip_reject_count);
 
     rv = mercury_cmd_stat_clear(session_id);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
 
     rv = mercury_cmd_stat(session_id, &stats);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
 
     ASSERT_EQ(0u, stats.send_count);
     ASSERT_EQ(0u, stats.receive_count);
@@ -186,13 +182,13 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0u, stats.send_ilip_reject_count);
     ASSERT_EQ(0u, stats.receive_ilip_reject_count);
 
-    rv = pirate_close(channel, O_WRONLY);
-    ASSERT_EQ(0, rv);
+    rv = pirate_close(wchannel);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
 
-    rv = pirate_close(channel, O_RDONLY);
-    ASSERT_EQ(0, rv);
+    rv = pirate_close(rchannel);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
 }
 
 
@@ -213,7 +209,6 @@ public:
     {
         WriteDelayUs = 10000;
 
-        int rv;
         mMercuryParam = GetParam();
         Writer.channel = Reader.channel = mMercuryParam.channel;
 
@@ -226,35 +221,20 @@ public:
         for (uint32_t i = 0; i < param.channel.mercury.session.message_count; ++i) {
             param.channel.mercury.session.messages[i] = mMercuryParam.messages[i];
         }
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // Reader
-        pirate_init_channel_param(MERCURY, &param);
-        param.channel.mercury.session.level          = mMercuryParam.level;
-        param.channel.mercury.session.source_id      = mMercuryParam.source_id;
-        param.channel.mercury.session.destination_id = mMercuryParam.destination_id;
-        param.channel.mercury.session.message_count  = mMercuryParam.message_count;
-        for (uint32_t i = 0; i < param.channel.mercury.session.message_count; ++i) {
-            param.channel.mercury.session.messages[i] = mMercuryParam.messages[i];
-        }
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     void WriterChannelOpen() override
     {
         pirate_channel_param_t rdParam;
 
-        int rv = pirate_open(Writer.channel, O_WRONLY);
-        ASSERT_EQ(Writer.channel, rv);
+        Writer.channel = pirate_open_param(&param, O_WRONLY);
         ASSERT_EQ(0, errno);
+        ASSERT_GE(Writer.channel, 0);
 
-        rv = pirate_get_channel_param(Writer.channel, O_WRONLY, &rdParam);
-        ASSERT_EQ(0, rv);
+
+        int rv = pirate_get_channel_param(Writer.channel, &rdParam);
         ASSERT_EQ(0, errno);
+        ASSERT_EQ(0, rv);
 
         ASSERT_EQ(MERCURY, rdParam.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
@@ -268,11 +248,11 @@ public:
     {
         pirate_channel_param_t rdParam;
 
-        int rv = pirate_open(Reader.channel, O_RDONLY);
-        ASSERT_EQ(Reader.channel, rv);
+        Reader.channel = pirate_open_param(&param, O_RDONLY);
+        ASSERT_GE(Reader.channel, 0);
         ASSERT_EQ(0, errno);
 
-        rv = pirate_get_channel_param(Writer.channel, O_RDONLY, &rdParam);
+        int rv = pirate_get_channel_param(Reader.channel, &rdParam);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 

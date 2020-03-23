@@ -36,26 +36,20 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(GE_ETH, param.channel_type);
-    ASSERT_STREQ("", ge_eth_param->addr);
-    ASSERT_EQ(0, ge_eth_param->port);
-    ASSERT_EQ(0u, ge_eth_param->mtu);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(GE_ETH, param.channel_type);
-    ASSERT_STREQ(addr, ge_eth_param->addr);
-    ASSERT_EQ(0, ge_eth_param->port);
-    ASSERT_EQ(0u, ge_eth_param->mtu);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
@@ -76,26 +70,16 @@ class GeEthTest : public ChannelTest, public WithParamInterface<unsigned>
 public:
     void ChannelInit()
     {
-        int rv;
-
         // Since UDP is unreliable it's possible to get out of sync.
         // Use write delay to reduce the chance of that
         WriteDelayUs = 1000;
 
         pirate_init_channel_param(GE_ETH, &param);
+        param.channel.ge_eth.port = 0x4745;
         const unsigned mtu = GetParam();
         if (mtu) {
             param.channel.ge_eth.mtu = mtu;
         }
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const unsigned TEST_MTU_LEN = DEFAULT_GE_ETH_MTU / 2;

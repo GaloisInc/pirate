@@ -17,24 +17,3 @@ void gdCheckedWrite(const std::string& config, int gd, const void* buf, size_t n
     exit(-1);
   }
 }
-
-void piratePipe(const std::string& config, int gd) {
-  pirate_channel_param_t param;
-
-  if (pirate_parse_channel_param(config.c_str(), &param) < 0) {
-    channel_errlog([config](FILE* f) { fprintf(f, "%s unable to parse channel parameter", config.c_str()); });
-    exit(-1);
-  }
-  if (pirate_set_channel_param(gd, O_RDONLY, &param) < 0) {
-    channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set read channel parameter", config.c_str()); });
-    exit(-1);
-  }
-  if (pirate_set_channel_param(gd, O_WRONLY, &param) < 0) {
-    channel_errlog([config](FILE* f) { fprintf(f, "%s unable to set write channel parameter", config.c_str()); });
-    exit(-1);
-  }
-  if (pirate_pipe(gd, O_RDWR) < 0) {
-    channel_errlog([config](FILE* f) { fprintf(f, "%s unable to open pirate pipe", config.c_str()); });
-    exit(-1);
-  }
-}

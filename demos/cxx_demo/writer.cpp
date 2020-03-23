@@ -25,19 +25,13 @@
 static char buffer[BUF_SIZE];
 
 int main(int argc, char* argv[]) {
-    int rv, len;
+    int gd, rv, len;
     pirate_channel_param_t param;
 
     pirate_init_channel_param(PIPE, &param);
 
-    rv = pirate_set_channel_param(0, O_WRONLY, &param);
-    if (rv < 0) {
-        perror("pirate_init_channel_param");
-        return 1;
-    }
-
-    rv = pirate_open(0, O_WRONLY);
-    if (rv < 0) {
+    gd = pirate_open_param(&param, O_WRONLY);
+    if (gd < 0) {
         perror("pirate_open");
         return 1;
     }
@@ -45,12 +39,12 @@ int main(int argc, char* argv[]) {
     while(std::cin.getline(buffer, BUF_SIZE)) {
         // send the terminating null byte
         len = strlen(buffer) + 1;
-        rv = pirate_write(0, &len, sizeof(len));
+        rv = pirate_write(gd, &len, sizeof(len));
         if (rv != sizeof(len)) {
             std::cerr << "write error" << "\n";
             return 1;
         }
-        rv = pirate_write(0, buffer, len);
+        rv = pirate_write(gd, buffer, len);
         if (rv != len) {
             std::cerr << "write error" << "\n";
             return 1;
@@ -63,7 +57,7 @@ int main(int argc, char* argv[]) {
     }
 
     len = 0;
-    rv = pirate_write(0, &len, sizeof(len));
+    rv = pirate_write(gd, &len, sizeof(len));
     if (rv != sizeof(len)) {
         std::cerr << "write error" << "\n";
         return 1;

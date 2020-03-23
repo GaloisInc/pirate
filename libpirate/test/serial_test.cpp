@@ -39,17 +39,14 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(SERIAL, param.channel_type);
-    ASSERT_STREQ("", serial_param->path);
-    ASSERT_EQ((speed_t)0, serial_param->baud);
-    ASSERT_EQ(0u, serial_param->mtu);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ((speed_t)0, serial_param->baud);
@@ -57,8 +54,8 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
@@ -66,8 +63,8 @@ TEST(ChannelSerialTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
     ASSERT_EQ(baud, serial_param->baud);
@@ -76,8 +73,8 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path,
                 invalid_baud_str, mtu);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(-1, rv);
     ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
     errno = 0;
 }
 
@@ -87,46 +84,22 @@ class SerialTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        Writer.channel = 0;
-        Reader.channel = 1;
-
         auto test_param = GetParam();
         const speed_t baud = std::get<0>(test_param);
         const unsigned mtu = std::get<0>(test_param);
-        int rv;
 
-        pirate_init_channel_param(SERIAL, &wr_param);
+        pirate_init_channel_param(SERIAL, &param);
         if (baud) {
-            wr_param.channel.serial.baud = baud;
+            param.channel.serial.baud = baud;
         }
 
         if (mtu) {
-            wr_param.channel.serial.mtu = mtu;
+            param.channel.serial.mtu = mtu;
         }
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &wr_param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        pirate_init_channel_param(SERIAL, &rd_param);
-        if (baud) {
-            rd_param.channel.serial.baud = baud;
-        }
-
-        if (mtu) {
-            rd_param.channel.serial.mtu = mtu;
-        }
-
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &rd_param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const speed_t TEST_BAUD = B115200;
     static const unsigned TEST_MTU = SERIAL_DEFAULT_MTU / 2;
-
-    pirate_channel_param_t wr_param;
-    pirate_channel_param_t rd_param;
 };
 
 

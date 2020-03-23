@@ -117,12 +117,9 @@ static int ge_message_unpack(const void *buf, void *data, uint32_t mtu,
     return 0;
 }
 
-static void pirate_ge_eth_init_param(int gd, pirate_ge_eth_param_t *param) {
+static void pirate_ge_eth_init_param(pirate_ge_eth_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_GE_ETH_IP_ADDR);
-    }
-    if (param->port == 0) {
-        param->port = DEFAULT_GE_ETH_IP_PORT + gd;
     }
     if (param->mtu == 0) {
         param->mtu = DEFAULT_GE_ETH_MTU;
@@ -137,13 +134,17 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->addr, ptr, sizeof(param->addr));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->port = strtol(ptr, NULL, 10);
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    param->port = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->mtu = strtol(ptr, NULL, 10);
@@ -213,22 +214,27 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     return 0;
 }
 
-int pirate_ge_eth_open(int gd, int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
+int pirate_ge_eth_open(int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int rv = -1;
+    int access = flags & O_ACCMODE;
 
-    pirate_ge_eth_init_param(gd, param);
+    pirate_ge_eth_init_param(param);
+    if (param->port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
     ctx->buf = (uint8_t *) malloc(param->mtu);
     if (ctx->buf == NULL) {
         return -1;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         rv = ge_eth_reader_open(param, ctx);
-    } else if (flags == O_WRONLY) {
+    } else if (access == O_WRONLY) {
         rv = ge_eth_writer_open(param, ctx);
     }
 
-    return rv == 0 ? gd : rv;
+    return rv;
 }
 
 int pirate_ge_eth_close(ge_eth_ctx *ctx) {
