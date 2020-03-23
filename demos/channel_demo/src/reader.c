@@ -21,6 +21,8 @@
 
 typedef channel_test_t reader_t;
 
+extern int gaps_channel;
+
 static struct argp_option options[] = {
     COMMON_OPTIONS,
     { NULL, 0, NULL, 0, NULL, 0 }
@@ -61,7 +63,7 @@ static int reader_init(reader_t *reader) {
 
 static int reader_term(reader_t *reader) {
     test_data_term(&reader->data);
-    return pirate_close(GAPS_CHANNEL, O_RDONLY);
+    return pirate_close(gaps_channel);
 }
 
 static int reader_run(reader_t *reader) {
@@ -87,7 +89,7 @@ static int reader_run(reader_t *reader) {
             }
         }
 
-        ssize_t rd_len = pirate_read(GAPS_CHANNEL, rd_buf, buf_len);
+        ssize_t rd_len = pirate_read(gaps_channel, rd_buf, buf_len);
         if (rd_len < 0) {
             log_msg(ERROR, "Failed to read GAPS data");
             rv = -1;

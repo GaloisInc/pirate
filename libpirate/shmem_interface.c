@@ -28,11 +28,11 @@ int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param) {
 #endif
 }
 
-int pirate_shmem_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int pirate_shmem_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_open(gd, flags, param, ctx);
+    return shmem_buffer_open(flags, param, ctx);
 #else
-    (void) gd, (void) flags, (void) param, (void) ctx;
+    (void) flags, (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

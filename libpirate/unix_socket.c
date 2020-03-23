@@ -25,12 +25,6 @@
 #include "pirate_common.h"
 #include "unix_socket.h"
 
-static void pirate_unix_socket_init_param(int gd, pirate_unix_socket_param_t *param) {
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UNIX_SOCKET_NAME_FMT, gd);
-    }
-}
-
 int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param) {
     char *ptr = NULL;
 
@@ -39,9 +33,11 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -161,17 +157,21 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     return -1;
 }
 
-int pirate_unix_socket_open(int gd, int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
+int pirate_unix_socket_open(int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     int rv = -1;
+    int access = flags & O_ACCMODE;
 
-    pirate_unix_socket_init_param(gd, param);
-    if (flags == O_RDONLY) {
+    if (strnlen(param->path, 1) == 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (access == O_RDONLY) {
         rv = unix_socket_reader_open(param, ctx);
-    } else if (flags == O_WRONLY) {
+    } else {
         rv = unix_socket_writer_open(param, ctx);
     }
 
-    return rv == 0 ? gd : rv;
+    return rv;
 }
 
 

@@ -73,21 +73,14 @@ class ShmemTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        int rv;
+        const char *testPath = "/gaps.shmem_test";
         pirate_init_channel_param(SHMEM, &param);
+        strncpy(param.channel.shmem.path, testPath, PIRATE_LEN_NAME - 1);
+
         unsigned buffer_size = GetParam();
         if (buffer_size) {
             param.channel.shmem.buffer_size = buffer_size;
         }
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;

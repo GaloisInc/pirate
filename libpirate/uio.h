@@ -19,7 +19,7 @@
 #include "uio_interface.h"
 
 int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param);
-int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx);
+int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx);
 int pirate_internal_uio_close(uio_ctx *ctx);
 ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf, size_t count);

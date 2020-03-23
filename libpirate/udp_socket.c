@@ -24,12 +24,9 @@
 #include "pirate_common.h"
 #include "udp_socket.h"
 
-static void pirate_udp_socket_init_param(int gd, pirate_udp_socket_param_t *param) {
+static void pirate_udp_socket_init_param(pirate_udp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_UDP_IP_ADDR);
-    }
-    if (param->port == 0) {
-        param->port = PIRATE_UDP_PORT_BASE + gd;
     }
 }
 
@@ -41,13 +38,17 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->addr, ptr, sizeof(param->addr));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->port = strtol(ptr, NULL, 10);
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    param->port = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -147,16 +148,22 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
     return 0;
 }
 
-int pirate_udp_socket_open(int gd, int flags, pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
+int pirate_udp_socket_open(int flags, pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int rv = -1;
-    pirate_udp_socket_init_param(gd, param);
-    if (flags == O_RDONLY) {
+    int access = flags & O_ACCMODE;
+
+    pirate_udp_socket_init_param(param);
+    if (param->port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (access == O_RDONLY) {
         rv = udp_socket_reader_open(param, ctx);
-    } else if (flags == O_WRONLY) {
+    } else {
         rv = udp_socket_writer_open(param, ctx);
     }
 
-    return rv == 0 ? gd : rv;
+    return rv;
 }
 
 int pirate_udp_socket_close(udp_socket_ctx *ctx) {

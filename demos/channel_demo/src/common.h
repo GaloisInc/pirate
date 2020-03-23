@@ -19,8 +19,6 @@
 #include <argp.h>
 #include <stdint.h>
 
-#define GAPS_CHANNEL 0
-
 #define OPT_DELIM ","
 
 /* Verbosity levels */

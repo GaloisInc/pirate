@@ -85,9 +85,9 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
     return 0;
 }
 
-static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
+static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     shmem_buffer_t *uio_buffer = mmap(NULL, buffer_size(),
-        PROT_READ | PROT_WRITE, MAP_SHARED, fd, gd * getpagesize());
+        PROT_READ | PROT_WRITE, MAP_SHARED, fd, region * getpagesize());
 
     if (uio_buffer == MAP_FAILED) {
         return NULL;
@@ -98,10 +98,11 @@ static shmem_buffer_t *uio_buffer_init(int gd, int fd) {
     return uio_buffer;
 }
 
-int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
+    int access = flags & O_ACCMODE;
 
     pirate_uio_init_param(param);
     ctx->fd = open(param->path, O_RDWR | O_SYNC);
@@ -110,13 +111,13 @@ int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_c
         return -1;
     }
 
-    buf = uio_buffer_init(gd, ctx->fd);
+    buf = uio_buffer_init(param->region, ctx->fd);
     ctx->buf = buf;
     if (ctx->buf == NULL) {
         goto error;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         if (!atomic_compare_exchange_strong(&buf->reader_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
@@ -139,7 +140,7 @@ int pirate_internal_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_c
     }
 
     ctx->flags = flags;
-    return gd;
+    return 0;
 error:
     err = errno;
     close(ctx->fd);
@@ -154,12 +155,14 @@ error:
 
 int pirate_internal_uio_close(uio_ctx *ctx) {
     shmem_buffer_t* buf = ctx->buf;
+    int access = ctx->flags & O_ACCMODE;
+
     if (buf == NULL) {
         errno = EBADF;
         return -1;
     }
 
-    if (ctx->flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
     } else {
         atomic_store(&buf->writer_pid, 0);

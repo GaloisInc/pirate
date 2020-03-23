@@ -38,28 +38,20 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(UDP_SOCKET, param.channel_type);
-    ASSERT_STREQ("", udp_socket_param->addr);
-    ASSERT_EQ(0, udp_socket_param->port);
-    ASSERT_EQ(0u, udp_socket_param->iov_len);
-    ASSERT_EQ(0u, udp_socket_param->buffer_size);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(UDP_SOCKET, param.channel_type);
-    ASSERT_STREQ(addr, udp_socket_param->addr);
-    ASSERT_EQ(0, udp_socket_param->port);
-    ASSERT_EQ(0u, udp_socket_param->iov_len);
-    ASSERT_EQ(0u, udp_socket_param->buffer_size);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
@@ -68,8 +60,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
@@ -79,8 +71,8 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
             buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
     ASSERT_EQ(port, udp_socket_param->port);
@@ -98,20 +90,11 @@ public:
         // Use write delay to reduce the chance of that
         WriteDelayUs = 1000;
 
-        int rv;
         pirate_init_channel_param(UDP_SOCKET, &param);
+        param.channel.udp_socket.port = 26427;
         auto test_param = GetParam();
         param.channel.udp_socket.iov_len = std::get<0>(test_param);
         param.channel.udp_socket.buffer_size = std::get<1>(test_param);
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const int TEST_BUF_LEN = 4096;

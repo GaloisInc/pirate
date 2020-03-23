@@ -26,12 +26,9 @@
 #include "pirate_common.h"
 #include "tcp_socket.h"
 
-static void pirate_tcp_socket_init_param(int gd, pirate_tcp_socket_param_t *param) {
+static void pirate_tcp_socket_init_param(pirate_tcp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
-    }
-    if (param->port == 0) {
-        param->port = PIRATE_TCP_PORT_BASE + gd;
     }
 }
 
@@ -43,13 +40,17 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->addr, ptr, sizeof(param->addr));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->addr, ptr, sizeof(param->addr));
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->port = strtol(ptr, NULL, 10);
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    param->port = strtol(ptr, NULL, 10);
     
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->iov_len = strtol(ptr, NULL, 10);
@@ -178,17 +179,22 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     return -1;
 }
 
-int pirate_tcp_socket_open(int gd, int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
+int pirate_tcp_socket_open(int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv = -1;
+    int access = flags & O_ACCMODE;
 
-    pirate_tcp_socket_init_param(gd, param);
-    if (flags == O_RDONLY) {
+    pirate_tcp_socket_init_param(param);
+    if (param->port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (access == O_RDONLY) {
         rv = tcp_socket_reader_open(param, ctx);
-    } else if (flags == O_WRONLY) {
+    } else {
         rv = tcp_socket_writer_open(param, ctx);
     }
 
-    return rv == 0 ? gd : rv;
+    return rv;
 }
 
 int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {

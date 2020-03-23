@@ -174,10 +174,7 @@ error:
     return NULL;
 }
 
-static void shmem_buffer_init_param(int gd, pirate_shmem_param_t *param) {
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
-    }
+static void shmem_buffer_init_param(pirate_shmem_param_t *param) {
     if (param->buffer_size == 0) {
         param->buffer_size = DEFAULT_SMEM_BUF_LEN;
     }
@@ -202,12 +199,13 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
     return 0;
 }
 
-int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
+    int access = flags & O_ACCMODE;
 
-    shmem_buffer_init_param(gd, param);
+    shmem_buffer_init_param(param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
     // this function
     int fd = shm_open(param->path, O_RDWR | O_CREAT, 0660);
@@ -222,7 +220,7 @@ int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx 
         goto error;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         if (!atomic_compare_exchange_strong(&buf->reader_pid,
                                             &init_pid, (uint64_t)getpid())) {
             errno = EBUSY;
@@ -265,7 +263,7 @@ int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx 
     }
 
     ctx->flags = flags;
-    return gd;
+    return 0;
 error:
     err = errno;
     ctx->buf = NULL;
@@ -277,8 +275,9 @@ error:
 int shmem_buffer_close(shmem_ctx *ctx) {
     shmem_buffer_t* buf = ctx->buf;
     const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
+    int access = ctx->flags & O_ACCMODE;
 
-    if (ctx->flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
         pthread_mutex_lock(&buf->mutex);
         pthread_cond_signal(&buf->is_not_full);

@@ -44,17 +44,16 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
     return 0;
 }
 
-int pirate_device_open(int gd, int flags, pirate_device_param_t *param, device_ctx *ctx) {
-    if (ctx->fd > 0) {
-        errno = EBUSY;
+int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx) {
+    if (strnlen(param->path, 1) == 0) {
+        errno = EINVAL;
         return -1;
     }
-
     if ((ctx->fd = open(param->path, flags)) < 0) {
         return -1;
     }
     
-    return gd;
+    return 0;
 }
 
 int pirate_device_close(device_ctx *ctx) {

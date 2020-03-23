@@ -59,7 +59,7 @@ void __attribute__ ((destructor(PIRATE_DTOR_PRIO))) pirate_channel_term() {
             continue;
         }
 
-        pirate_close(ch->num, ch->flags);
+        pirate_close(ch->num);
         ch->gd = -1;
     }
 }

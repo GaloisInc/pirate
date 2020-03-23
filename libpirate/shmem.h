@@ -19,7 +19,7 @@
 #include "shmem_interface.h"
 
 int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param);
-int shmem_buffer_open(int gd, int flags, pirate_shmem_param_t *param, shmem_ctx *ctx);
+int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx);
 int shmem_buffer_close(shmem_ctx *ctx);
 ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count);
 ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf, size_t count);

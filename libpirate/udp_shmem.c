@@ -99,10 +99,7 @@ static inline int is_empty(uint64_t value) {
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
 
-static void udp_shmem_buffer_init_param(int gd, pirate_udp_shmem_param_t *param) {
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SHMEM_NAME_FMT, gd);
-    }
+static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
     if (param->buffer_size == 0) {
         param->buffer_size = DEFAULT_SMEM_BUF_LEN;
     }
@@ -122,9 +119,11 @@ int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         param->buffer_size = strtol(ptr, NULL, 10);
@@ -254,12 +253,17 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
+    int access = flags & O_ACCMODE;
 
-    udp_shmem_buffer_init_param(gd, param);
+    udp_shmem_buffer_init_param(param);
+    if (strnlen(param->path, 1) == 0) {
+        errno = EINVAL;
+        return -1;
+    }
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
     // this function
     int fd = shm_open(param->path, O_RDWR | O_CREAT, 0660);
@@ -274,7 +278,7 @@ int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, ud
         goto error;
     }
 
-    if (flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         if (!atomic_compare_exchange_strong(&buf->reader_pid, &init_pid,
                                             (uint64_t)getpid())) {
             errno = EBUSY;
@@ -317,7 +321,7 @@ int udp_shmem_buffer_open(int gd, int flags, pirate_udp_shmem_param_t *param, ud
     }
 
     ctx->flags = flags;
-    return gd;
+    return 0;
 error:
     err = errno;
     ctx->buf = NULL;
@@ -328,9 +332,10 @@ error:
 
 int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
   shmem_buffer_t* buf = ctx->buf;
+  int access = ctx->flags & O_ACCMODE;
   const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
 
-    if (ctx->flags == O_RDONLY) {
+    if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
         pthread_mutex_lock(&buf->mutex);
         pthread_cond_signal(&buf->is_not_full);

@@ -27,10 +27,7 @@
 #include "pirate_common.h"
 #include "serial.h"
 
-static void pirate_serial_init_param(int gd, pirate_serial_param_t *param) {
-    if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_SERIAL_NAME_FMT, gd);
-    }
+static void pirate_serial_init_param(pirate_serial_param_t *param) {
     if (param->baud == 0) {
         param->baud = SERIAL_DEFAULT_BAUD;
     }
@@ -47,9 +44,11 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+    strncpy(param->path, ptr, sizeof(param->path));
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         if (strncmp("4800", ptr, strlen("4800")) == 0) {
@@ -81,10 +80,14 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
     return 0;
 }
 
-int pirate_serial_open(int gd, int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
+int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
     struct termios attr;
 
-    pirate_serial_init_param(gd, param);
+    pirate_serial_init_param(param);
+    if (strnlen(param->path, 1) == 0) {
+        errno = EINVAL;
+        return -1;
+    }
     ctx->fd = open(param->path, flags | O_NOCTTY);
     if (ctx->fd < 0) {
         return -1;
@@ -105,7 +108,7 @@ int pirate_serial_open(int gd, int flags, pirate_serial_param_t *param, serial_c
         return -1;
     }
 
-    return gd;
+    return 0;
 }
 
 int pirate_serial_close(serial_ctx *ctx) {

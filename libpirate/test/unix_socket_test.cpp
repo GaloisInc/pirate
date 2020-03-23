@@ -37,17 +37,14 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(UNIX_SOCKET, param.channel_type);
-    ASSERT_STREQ("", unix_socket_param->path);
-    ASSERT_EQ(0u, unix_socket_param->iov_len);
-    ASSERT_EQ(0u, unix_socket_param->buffer_size);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
     ASSERT_EQ(0u, unix_socket_param->iov_len);
@@ -55,8 +52,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
     ASSERT_EQ(iov_len, unix_socket_param->iov_len);
@@ -65,8 +62,8 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, iov_len,
             buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
     ASSERT_EQ(iov_len, unix_socket_param->iov_len);
@@ -79,20 +76,11 @@ class UnixSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        int rv;
         pirate_init_channel_param(UNIX_SOCKET, &param);
+        strncpy(param.channel.unix_socket.path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
         auto test_param = GetParam();
         param.channel.unix_socket.iov_len = std::get<0>(test_param);
         param.channel.unix_socket.buffer_size = std::get<1>(test_param);
-
-        rv = pirate_set_channel_param(Writer.channel, O_WRONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        // write and read parameters are the same
-        rv = pirate_set_channel_param(Reader.channel, O_RDONLY, &param);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     static const int TEST_BUF_LEN = 32;

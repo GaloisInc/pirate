@@ -28,11 +28,11 @@ int pirate_uio_parse_param(char *str, pirate_uio_param_t *param) {
 #endif
 }
 
-int pirate_uio_open(int gd, int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return pirate_internal_uio_open(gd, flags, param, ctx);
+    return pirate_internal_uio_open(flags, param, ctx);
 #else
-    (void) gd, (void) flags, (void) param, (void) ctx;
+    (void) flags, (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
