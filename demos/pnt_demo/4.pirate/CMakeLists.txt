@@ -27,14 +27,14 @@ else()
     target_link_options(pnt_orange PRIVATE "LINKER:-enclave,orange")
 endif(GAPS_DISABLE)
 
-target_link_libraries(pnt_green ${PIRATE_APP_LIBS})
+target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread)
 set_target_properties(pnt_green PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange ${PIRATE_APP_LIBS})
+target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread)
 set_target_properties(pnt_orange PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
