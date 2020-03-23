@@ -292,7 +292,8 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     ssize_t sz;
     int fd_root = -1;
     ctx->flags = flags;
-    const mode_t mode = ctx->flags == O_RDONLY ? S_IRUSR : S_IWUSR;
+    int access = ctx->flags & O_ACCMODE;
+    const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
 
     /* Open the root device to configure and establish a session */
     pirate_mercury_init_param(param);
@@ -359,10 +360,10 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.id, flags == O_RDONLY ? "read" : "write");
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
-                    param->session.id, flags == O_RDONLY ? "read" : "write");
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     }
 
     /* Open the device */
