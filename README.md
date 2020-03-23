@@ -78,7 +78,7 @@ $ cmake -D<OPTION_NAME>=ON ..
 ```
 
  * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests (requires googletest v1.10 or greater)
- * ```GAPS_ENABLE``` enable compilation with GAPS annotations
+ * ```GAPS_DISABLE``` disable compilation with GAPS annotations
  * ```CHANNEL_DEMO``` enable compilation of GAPS channel application
  * ```GAPS_DEMOS``` enable compilation of all GAPS demo applications
  * ```GAPS_BENCH``` enable compilation of GAPS benchmark applications

@@ -52,12 +52,12 @@ class GpsSensor : public Sensor
 
 class RfSensor : public Sensor
 {
-  Sender<Distance> _c; 
+  Sender<Distance> _c;
   Distance _d;
   Velocity _v; // only used for simulation
 
  public:
-  RfSensor(const Time& now, Sender<Distance> c, Distance const& d, Velocity const& v) : Sensor(now), _c(c), _d(d), _v(v) { }
+  RfSensor(const Time& now, const Sender<Distance>& c, Distance const& d, Velocity const& v) : Sensor(now), _c(c), _d(d), _v(v) { }
   Distance getDistance() { return _d; };
 
   void read(const Time& now) override {
