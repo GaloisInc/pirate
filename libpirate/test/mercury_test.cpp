@@ -33,7 +33,6 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     const uint32_t level = 1;
     const uint32_t src_id = 2;
     const uint32_t dst_id = 3;
-    const uint32_t timeout_ms = 2000;
     const uint32_t msg_ids[] = { 4, 5, 6 };
 
     pirate_init_channel_param(MERCURY, &expParam);
@@ -65,19 +64,10 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.session.source_id = src_id;
     expParam.channel.mercury.session.destination_id = dst_id;
     expParam.channel.mercury.mtu = PIRATE_MERCURY_DEFAULT_MTU;
-    expParam.channel.mercury.timeout_ms = PIRATE_MERCURY_DEFAULT_TIMEOUT_MS;
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u", name, level, src_id,
-            dst_id, timeout_ms);
-    rv = pirate_parse_channel_param(opt, &rdParam);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
-    expParam.channel.mercury.timeout_ms = timeout_ms;
-    EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
-
-    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u", name, level, src_id,
-            dst_id, timeout_ms, msg_ids[0]);
+            dst_id, msg_ids[0]);
     rv = pirate_parse_channel_param(opt, &rdParam);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -85,8 +75,8 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.session.messages[0] = msg_ids[0];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u,%u", name, level, src_id,
-            dst_id, timeout_ms, msg_ids[0], msg_ids[1]);
+    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u", name, level, src_id,
+            dst_id, msg_ids[0], msg_ids[1]);
     rv = pirate_parse_channel_param(opt, &rdParam);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -94,8 +84,8 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.session.messages[1] = msg_ids[1];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u,%u,%u", name, level,
-            src_id, dst_id, timeout_ms, msg_ids[0], msg_ids[1], msg_ids[2]);
+    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u,%u,%u", name, level,
+            src_id, dst_id, msg_ids[0], msg_ids[1], msg_ids[2]);
     rv = pirate_parse_channel_param(opt, &rdParam);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);

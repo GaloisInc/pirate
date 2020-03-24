@@ -233,10 +233,6 @@ static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     if (param->mtu == 0) {
         param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
     }
-
-    if (param->timeout_ms == 0) {
-        param->timeout_ms = PIRATE_MERCURY_DEFAULT_TIMEOUT_MS;
-    }
 }
 
 int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
@@ -249,7 +245,6 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
 
     // Non-parsed and default parameters
     param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
-    param->timeout_ms = PIRATE_MERCURY_DEFAULT_TIMEOUT_MS;
 
     // Level
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
@@ -271,11 +266,6 @@ int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
         return -1;
     }
     param->session.destination_id = strtol(ptr, NULL, 10);
-
-    // Timeout
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->timeout_ms = strtol(ptr, NULL, 10);
-    }
 
     // Messages
     while (((ptr = strtok(NULL, OPT_DELIM)) != NULL) &&
@@ -420,29 +410,15 @@ int pirate_mercury_close(mercury_ctx *ctx) {
 ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
                             mercury_ctx *ctx, void *buf, size_t count) {
     ssize_t rd_len;
-    int err;
-    uint32_t wait_counter = 0;
 
     if (ctx->fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    for(;;) {
-        err = errno;
-        rd_len = read(ctx->fd, ctx->buf, param->mtu);
-        if (rd_len >= 0) {
-            break;
-        }
-        if (errno != EAGAIN) {
-            return -1;
-        } else {
-            usleep(100);
-            if (++wait_counter >= (10*param->timeout_ms) ) {
-                return -1;
-            }
-            errno = err;
-        }
+    rd_len = read(ctx->fd, ctx->buf, param->mtu);
+    if (rd_len < 0) {
+        return -1;
     }
 
     return mercury_message_unpack(ctx->buf, rd_len, buf, count, param);
@@ -450,9 +426,7 @@ ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
 
 ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
                              mercury_ctx *ctx, const void *buf, size_t count) {
-    ssize_t wr_len;
-    int err;
-    uint32_t wait_counter = 0;
+    ssize_t wr_len, rv;
 
     if (ctx->fd <= 0) {
         errno = ENODEV;
@@ -463,23 +437,9 @@ ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
         return -1;
     }
 
-    for(;;) {
-        err = errno;
-        ssize_t rv = write(ctx->fd, ctx->buf, wr_len);
-        if (rv < 0) {
-            if (errno != EAGAIN) {
-                return -1;
-            } else {
-                usleep(100);
-                if (++wait_counter >= 10 * param->timeout_ms) {
-                    errno = ETIME;
-                    return -1;
-                }
-                errno = err;
-            }
-        } else if (rv == wr_len) {
-            return count;
-        }
+    rv = write(ctx->fd, ctx->buf, wr_len);
+    if (rv == wr_len) {
+        return count;
     }
 
     return -1;

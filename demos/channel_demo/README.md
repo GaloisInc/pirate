@@ -74,7 +74,7 @@ GAPS channel type and parameters are passed with the ```-C``` option
 * **PIPE** - ```-C pipe,path```      
 * **UDP Socket** - ``` -C udp,ip_addr,ip_port```
 * **GE Ethernet** - ```- C ge_eth,ip_addr,ip_port,msg_id```
-* **Mercury** - ``` -C mercury,path```
+* **Mercury** - ``` -C mercury,level,src_id,dst_id```
 
 #### Test Data Type and Length Selection
 Auto-generated patterns are selected with the ```-p``` option:
@@ -155,7 +155,7 @@ Test utility for writing deterministic GAPS packets
    UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
    UIO           uio[,path]
    SERIAL        serial,path[,baud,mtu]
-   MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
+   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
    GE_ETH        ge_eth,addr,port,msg_id[,mtu]
 
 
@@ -187,7 +187,7 @@ Test utility for reading deterministic GAPS packets
    UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
    UIO           uio[,path]
    SERIAL        serial,path[,baud,mtu]
-   MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]
+   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
    GE_ETH        ge_eth,addr,port,msg_id[,mtu]
 
 
