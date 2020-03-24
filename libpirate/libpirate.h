@@ -117,9 +117,10 @@ typedef enum {
 
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
-    //  - addr - IP address, if empty then 127.0.0.1 is used
-    //  - port - IP port
-    //  - mtu  - maximum frame length, default 1454
+    //  - addr       - IP address, if empty then 127.0.0.1 is used
+    //  - port       - IP port
+    //  - message_id - send/receive message ID
+    //  - mtu        - maximum frame length, default 1454
     GE_ETH
 } channel_enum_t;
 
@@ -218,7 +219,8 @@ typedef struct {
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
-    unsigned mtu;
+    uint32_t message_id;
+    uint32_t mtu;
 } pirate_ge_eth_param_t;
 
 typedef struct {
@@ -273,7 +275,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial,path[,baud,mtu]\n"                                 \
     "  MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]\n"  \
-    "  GE_ETH        ge_eth,addr,port[,mtu]\n"
+    "  GE_ETH        ge_eth,addr,port,msg_id[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
