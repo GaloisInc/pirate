@@ -18,7 +18,7 @@
  */
 
 /* 
- * Portions of this filoe have been copied from:
+ * Portions of this file have been copied from:
  * 
  * This file is part of the Xilinx DMA IP Core driver for Linux
  *
@@ -56,4 +56,11 @@
  * @return int 0 on success otherwise an error occured
  */
 int ilip_nl_init(void);
+/**
+ * @brief Tear down the netlink interface
+ * 
+ * @author mdesroch (20 Mar 2020)
+ * 
+ * @param void 
+ */
 void ilip_nl_exit(void);

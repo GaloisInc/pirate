@@ -42,13 +42,21 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
+#include <linux/proc_fs.h>
 #include <linux/errno.h>
+#include <linux/types.h>
 #include <linux/err.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
+#include <linux/spinlock.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/stat.h>
+#include <linux/wait.h>
+#include <linux/poll.h>
+#include <linux/sched.h>
+#include <linux/sched/signal.h>
+#include <linux/seq_file.h>
 
 #include <linux/uaccess.h>
 
@@ -107,9 +115,33 @@ static struct class *gaps_ilip_class = NULL;
  */
 static struct workqueue_struct *gaps_ilip_wq[GAPS_ILIP_LEVELS*2] = {NULL};
 
+/**
+ * @note The use of levels is not really correct, a level is an instance of the ILIP hardware 
+ * DMA engine. Each DMA engine presents a set of completion FIFOs and is generally 
+ * associated to a specific level of security but it does not have to be the case. 
+ */
+
+/**
+ * Address FIFO of the buffer that has been consumed, read, by the ILIP and can now be 
+ * recycled and used again for the next message. 
+ * 
+ * @author mdesroch (3/16/20)
+ */
 static uintptr_t gaps_ilip_write_completions_fifo[GAPS_ILIP_LEVELS][GAPS_ILIP_MESSAGE_COUNT];
+/**
+ * Address FIFO of read buffers by the ILIP that are ready to be copied to the user buffer presented in the application 
+ * read() call. We extract the address from this FIFO and use it as a source address t the copy_to_user() 
+ * call in the read() driver function. 
+ * 
+ * @author mdesroch (3/16/20)
+ */
 static uintptr_t  gaps_ilip_read_completions_fifo[GAPS_ILIP_LEVELS][GAPS_ILIP_MESSAGE_COUNT];
 static unsigned int gaps_ilip_write_driver_index[GAPS_ILIP_LEVELS] = {0};
+/**
+ * Message index of where the last message was placed into the drivers
+ * 
+ * @author mdesroch (3/16/20)
+ */
 static unsigned int gaps_ilip_write_user_index[GAPS_ILIP_LEVELS] = {0};
 static unsigned int gaps_ilip_read_driver_index[GAPS_ILIP_LEVELS] = {0};
 static unsigned int gaps_ilip_read_user_index[GAPS_ILIP_LEVELS] = {0};
@@ -128,6 +160,13 @@ static unsigned int gaps_ilip_copy_read_count[GAPS_ILIP_LEVELS];
 static unsigned int gaps_ilip_copy_read_reject_count[GAPS_ILIP_LEVELS];
 
 /**
+ * The individual session device have a mutex or a semaphore for mutual exclusion, but 
+ * we should have and may need a mutual exclusion at the ILIP DMA context level, or 
+ * in the case of the loopback driver as implemented at the 'level' context. 
+ */
+struct mutex gaps_ilip_context_mutex[GAPS_ILIP_LEVELS];
+
+/**
  * @brief Session array, each session will have two minor devices created, one 
  *        for read and one for write.
  */
@@ -138,11 +177,9 @@ struct ilip_session_info {
     unsigned int minor_src;
     unsigned int minor_dst;
 };
-#if 0
-static unsigned int gaps_ilip_sessions[GAPS_ILIP_NSESSIONS] = {0xffffffff};
-#else
+
 static struct ilip_session_info gaps_ilip_sessions[GAPS_ILIP_NSESSIONS];
-#endif
+
 /** 
  * @brief Number of session we have created, DCD requires 7, simple demo does 
  *        not use this
@@ -362,6 +399,7 @@ static bool gaps_ilip_remove_session_index( unsigned int session_id )
  *        number.
  * 
  */
+static DEFINE_SPINLOCK(root_open_lock);
 static unsigned int gaps_ilip_open_count[GAPS_ILIP_TOTAL_DEVICES] = {0};
 
 /**
@@ -514,6 +552,19 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 			mj, mn);
 		return -ENODEV; /* No such device */
 	}
+
+    /* Root device can only be opened one application at a time so
+       as to compute the correct session data */
+    spin_lock(&root_open_lock);
+    if( mn == 0 && gaps_ilip_open_count[mn] >= 1  ) {
+        spin_unlock(&root_open_lock);
+        printk(KERN_WARNING "gaps_ilip_open() open: root busy\n");
+        return -EBUSY; /* Try later, root busy */
+    }
+
+    /* increment the open count on this device */
+    gaps_ilip_open_count[mn]++;
+    spin_unlock(&root_open_lock);
 	
 	/* store a pointer to struct gaps_ilip_dev here for other methods */
 	dev = &gaps_ilip_devices[mn];
@@ -525,16 +576,6 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 		printk(KERN_WARNING "gaps_ilip_open() open: internal error\n");
 		return -ENODEV; /* No such device */
 	}
-	
-    /* increment the open count on this device */
-    gaps_ilip_open_count[mn]++;
-
-    /* Root device can only be opened one application at a time so
-       as to compute the correct session data */
-    if( mn == 0 && gaps_ilip_open_count[mn] > 1  ) {
-        printk(KERN_WARNING "gaps_ilip_open() open: root busy\n");
-        return -EBUSY; /* Try later, root busy */
-    }
 
 	/* if opened the 1st time, allocate the buffer */
 	if (dev->data == NULL)
@@ -548,7 +589,7 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 	}
 
     if ( gaps_ilip_verbose_level >= 1 ) {
-    printk( KERN_INFO "gaps_ilip_open( Minor: %d ) Data@ %p Length: %lu\n", mn, dev->data, dev->buffer_size );
+    printk( KERN_INFO "gaps_ilip_open( Minor: %d ) Data@ %p Length: %lu Non-Blocking flag: %d\n", mn, dev->data, dev->buffer_size, ((filp->f_flags & O_NONBLOCK) != 0) );
     }
 
     /* On a root device open, zero out the buffer, we may have used it before. */
@@ -606,9 +647,11 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
             /* Indicate the driver is initialized for read or write operations */
             if ( level != 0xffffffff ) {
                 if ( (filp->f_flags & O_ACCMODE) == O_WRONLY ) {
+                    /* To handle the case of the first write */
                     gaps_ilip_write_driver_initialized[level] = true;
                 } else if( (filp->f_flags & O_ACCMODE) == O_RDONLY ) {
                     /* There is interest in this channel so all messages to be posted */
+                    /* To handle the case of the first read */
                     gaps_ilip_read_do_read_first_time[level] = true;
                     /* Driver initialized */
                     gaps_ilip_read_driver_initialized[level] = true;
@@ -641,11 +684,19 @@ gaps_ilip_release(struct inode *inode, struct file *filp)
     unsigned int level = gaps_ilip_get_level_from_minor( dev, mn );
 
     /* decrement the open count on this device */
+    if (mn == 0) {
+        spin_lock(&root_open_lock);
+    }
+    
     if ( gaps_ilip_open_count[mn] > 0 ) {
         gaps_ilip_open_count[mn]--;
     } else {
         printk(KERN_WARNING "gaps_ilip_release( %u ): level: %x Major: %u - Minor: %u open counter error\n", 
                gaps_ilip_open_count[mn], level+1, mj, mn );
+    }
+
+    if (mn == 0) {
+        spin_unlock(&root_open_lock);
     }
 
     if ( gaps_ilip_verbose_level >= 2 ) {
@@ -697,13 +748,6 @@ gaps_ilip_release(struct inode *inode, struct file *filp)
 
     return 0;
 }
-#if 0
-application_test_messages: Session ID
-establish_session_id( Level: 1 Src: 1 Dst: 2 ): new session ID 0xeca51756
-establish_session_id( Level: 2 Src: 2 Dst: 1 ): new session ID 0x67ff90f4
-Main session ID: 0x67ff90f4 (index: 0)
-
-#endif
 
 /**
  * @todo Need a way to send a message that will be rejected on the read side as
@@ -1235,40 +1279,6 @@ error_return:
     return rc;
 }
 
-#if 0
-static unsigned int gaps_ilip_get_level_from_session( unsigned int session );
-static unsigned int gaps_ilip_get_level_from_session( unsigned int session )
-{
-    unsigned int level = 0xffffffffu;
-    switch ( session ) {
-    case 0x27ecedcf:
-        /* establish_session_id( App: 1, Dst: 4 ): new session ID 0x27ecedcf */
-        break;
-    case 0xa54f0dab:
-        /* establish_session_id( App: 4, Dst: 2 ): new session ID 0xa54f0dab */
-        break;
-    case 0xc5df7412:
-        /* establish_session_id( App: 4, Dst: 3 ): new session ID 0xc5df7412 */
-        break;
-    case 0x20550de5:
-        /* establish_session_id( App: 5, Dst: 2 ): new session ID 0x20550de5 */
-        break;
-    case 0xe399f4a2:
-        /* establish_session_id( App: 6, Dst: 2 ): new session ID 0xe399f4a2 */
-        break;
-    case 0x6cfcec7d:
-        /* establish_session_id( App: 3, Dst: 6 ): new session ID 0x6cfcec7d */
-        break;
-    case 0x9aeccf33:
-        /* establish_session_id( App: 3, Dst: 7 ): new session ID 0x9aeccf33 */
-        break;
-    default:
-        break;
-    }
-    return level;
-}
-#endif
-
 static unsigned int gaps_ilip_get_level_from_minor( struct gaps_ilip_dev *dev, unsigned int mn )
 {
     unsigned int level = 0xffffffffu;
@@ -1312,6 +1322,7 @@ static void gaps_ilip_copy( struct work_struct *work )
     unsigned int read_driver_index;
     unsigned int read_driver_index_save;
     u64 t;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0) && LINUX_VERSION_CODE < KERNEL_VERSION(5,3,0)
     struct timespec64 ts64;
 #endif
@@ -1375,7 +1386,7 @@ static void gaps_ilip_copy( struct work_struct *work )
             wmb();
         }
         if ( write_driver_index != gaps_ilip_write_user_index[level] || do_copy_first_time == true ) {
-            /* There is room in the FIFO either first time of FIFO not full */
+            /* There is room in the FIFO either first time or the FIFO is not full */
             do_copy_first_time = false;
             gaps_ilip_write_completions_fifo[level][write_driver_index] = (uintptr_t)cp->src_data;
             if ( gaps_ilip_verbose_level >= 5 ) {
@@ -1452,6 +1463,14 @@ static void gaps_ilip_copy( struct work_struct *work )
     }
 
     /**
+     * @note The write side of the driver buffer is still in use until the memcpy 
+     * that happens later. We have already posted tot he completion queue, but due to the mutex 
+     * in the write() call we are single threaded until the copy function of the 
+     * work queue is completed. So there is no need for a sleep/wake processing 
+     * for the send function as it is synchonous at this time. 
+     */
+
+    /**
      * =============== Receive side of ILIP processing =============== 
      */
 
@@ -1497,7 +1516,7 @@ static void gaps_ilip_copy( struct work_struct *work )
      *  Is there a read side driver that has initialized the receive
      *  buffers.
      *  
-     *  @note: This is using the [level_index], i.e. did an
+     *  @note This is using the [level_index], i.e. did an
      *       application on the read side open up the driver. This
      *       does not mean that the driver is open on the correct
      *       session, just means some sesion is open.
@@ -1531,6 +1550,7 @@ static void gaps_ilip_copy( struct work_struct *work )
     /* Post the address to the write completion FIFO after the copy */
     /* It is the driver open that sets the gaps_ilip_read_driver_index to gaps_ilip_messages */
     if ( gaps_ilip_read_driver_index[level] == gaps_ilip_messages ) {
+        /* First time through, we set the read driver index to zero */
         //gaps_ilip_read_driver_index[level] = 0;
         read_driver_index = 0;
         /* Allow the read copy as this is the first time through */
@@ -1544,7 +1564,8 @@ static void gaps_ilip_copy( struct work_struct *work )
         //gaps_ilip_read_driver_index[level] = (gaps_ilip_read_driver_index[level] + 1)%gaps_ilip_messages;
         rmb();
     }
-    /* Is there room in the FIFO */
+    /* Is there room in the read FIFO to accept the message from the writer. First time the read driver
+       and the read user will be set to zero but there is a message to be handled. */
     if ( read_driver_index != gaps_ilip_read_user_index[level] || do_copy_first_time == true ) {
         /* There is room in the FIFO either first time of FIFO not full */
         do_copy_first_time = false;
@@ -1558,13 +1579,21 @@ static void gaps_ilip_copy( struct work_struct *work )
                    read_driver_index, gaps_ilip_read_user_index[level] );
         }
         if ( gaps_ilip_verbose_level >= 6 ) {
-        printk(KERN_INFO "gaps_ilip_copy() memcpy( %p, %p, %lu ) ...\n", 
+        printk(KERN_INFO "gaps_ilip_copy() memcpy( Dst: %p, Src: %p, Len: %lu ) ...\n", 
                cp->dst_data, cp->src_data, cp->dst->block_size );
         }
         memcpy(cp->dst_data, cp->src_data, cp->dst->block_size );
         if ( gaps_ilip_verbose_level >= 6 ) {
         printk( KERN_INFO "... memcpy() completed\n" );
         }
+        /**
+         * @todo At this point the data has been copied out of the write side of the driver, so it is really 
+         * only at this time we can post to the write completion queue as this is when the buffer is 
+         * free and can be returned to the write part of the driver. However this is on the read side of the 
+         * copy routine. What we should have is additiona set of bufferes in the copy part of the driver to 
+         * represent the storage of the packets in the ILIP hardware first on the send side and then on the 
+         * receive side. 
+         */
         /* Record delta ILIP time in the receive buffer */
         #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
         /* Ubuntu 19.10 */
@@ -1599,6 +1628,14 @@ static void gaps_ilip_copy( struct work_struct *work )
         /* Pointer is valid, so we can bump the driver pointer index to say there is something there */
         gaps_ilip_read_driver_index[level] = read_driver_index;
         rmb();
+        if (  cp->dst != NULL ) {
+            if ( gaps_ilip_verbose_level >= 6 ) {
+                printk(KERN_INFO "gaps_ilip_copy(): Wake any destination readers\n" );
+            }
+            wake_up_interruptible(&cp->dst->read_wq);
+        } else {
+            printk( KERN_WARNING "gaps_ilip_copy() destination device structure missing\n" );
+        }
         /* Update the offset, wrapping the offset based on the size. */
         if ( gaps_ilip_verbose_level >= 4 ) {
         printk(KERN_INFO "gaps_ilip_copy( Increment read buffer: %lld, Dev@ %p ): Current offset %lld\n", 
@@ -1615,7 +1652,7 @@ static void gaps_ilip_copy( struct work_struct *work )
         gaps_ilip_read_driver_index[level] = read_driver_index_save;
         rmb();
         if ( gaps_ilip_verbose_level > 3 ) {
-        printk( KERN_WARNING "gaps_ilip_copy(  %p : Minor %u ) read completion FIFO overflow D: %u U: %u\n", 
+        printk( KERN_WARNING "gaps_ilip_copy(  %p : Minor %u ) read completion/buffer FIFO overflow D: %u U: %u\n", 
                 cp, cp->src->mn, gaps_ilip_read_driver_index[level], gaps_ilip_read_user_index[level] );
         }
         gaps_ilip_copy_read_reject_count[level] ++;
@@ -1623,6 +1660,28 @@ static void gaps_ilip_copy( struct work_struct *work )
     }
 
     return;
+}
+
+/**
+ * @brief Is there data to be read
+ * 
+ * @author mdesroch (3/17/20)
+ * 
+ * @param level What level (index) of ILIP context we are running at
+ * 
+ * @return bool true if there is data to be read and false if no data
+ */
+static bool gaps_ilip_read_data_available( unsigned int level )
+{
+    bool rc;
+
+    rc = ((gaps_ilip_read_user_index[level] != gaps_ilip_read_driver_index[level]) || /* OR */
+        /* This is the first time and slot zero has stuff in it to read and the read index has been set by the copy routine */
+        ((gaps_ilip_read_do_read_first_time[level] == true) && 
+         (gaps_ilip_read_user_index[level] < gaps_ilip_messages) && 
+         (gaps_ilip_read_completions_fifo[level][gaps_ilip_read_user_index[level]] != (uintptr_t)-1)) );
+
+    return rc;
 }
 
 ssize_t 
@@ -1672,7 +1731,7 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
     #endif
 
 	if (mutex_lock_killable(&dev->gaps_ilip_mutex)) {
-        printk( KERN_WARNING "gaps_ilip_read() mutex lock failed\n" );
+        printk( KERN_WARNING "gaps_ilip_read() device mutex lock failed\n" );
         if ( level != 0xffffffff ) {
             gaps_ilip_message_read_reject_count[level]++;
         }
@@ -1689,19 +1748,55 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
             *f_pos, dev->buffer_size, count, &(dev->data[*f_pos]) );
     }
 
-    /* not the root device */
+    /* not the root device, blocking allowed */
     if ( dev->mn > 0 ) {
-        /* Something in the FIFO queue */
+        /* Something in the FIFO queue, copy() increments driver index for new content, we increment
+           read_user_index to get that content. The first time we do a read the driver index and the read user index are the
+           same and the result, even though there is a message to transfer is the same the user and
+           driver indexes are the same and after we read out the message the two indeces are the same indicating
+           there is nothing in the FIFO to read. */
+        #if 0
         if ((gaps_ilip_read_user_index[level] != gaps_ilip_read_driver_index[level]) || /* OR */
-            /* This is the first time and slot zero has stuff in it to read and the read index has be set by the copy routine */
+            /* This is the first time and slot zero has stuff in it to read and the read index has been set by the copy routine */
             ((gaps_ilip_read_do_read_first_time[level] == true) && 
              (gaps_ilip_read_user_index[level] < gaps_ilip_messages) && 
-             (gaps_ilip_read_completions_fifo[level][gaps_ilip_read_user_index[level]] != (uintptr_t)-1)) ) {
+             (gaps_ilip_read_completions_fifo[level][gaps_ilip_read_user_index[level]] != (uintptr_t)-1)) ) 
+        #else
+        #if 0
+        if (  gaps_ilip_read_data_available(level) == true )
+        #else 
+        while (  gaps_ilip_read_data_available(level) == false ) {
+            /* Release the mutex */
+            mutex_unlock(&dev->gaps_ilip_mutex);
+            if (  (filp->f_flags & O_NONBLOCK) != 0 ) {
+                return -EAGAIN;
+            }
+            if ( gaps_ilip_verbose_level >= 6 ) {
+                printk(KERN_INFO "gaps_ilip_read( \"%s\" ) [Minor: %2d] Reader going to sleep\n", current->comm, dev->mn );
+            }
+            if ( wait_event_interruptible( dev->read_wq, (gaps_ilip_read_data_available(level) == true) ) ) {
+                return -ERESTARTSYS;
+            }
+            if (mutex_lock_killable(&dev->gaps_ilip_mutex)) {
+                printk( KERN_WARNING "gaps_ilip_read() device mutex lock failed\n" );
+                if ( level != 0xffffffff ) {
+                    gaps_ilip_message_read_reject_count[level]++;
+                }
+                return -ERESTARTSYS;
+            }
+            if ( gaps_ilip_verbose_level >= 6 ) {
+                printk(KERN_INFO "gaps_ilip_read( \"%s\" ) [Minor: %2d] Reader was woken up\n", current->comm, dev->mn );
+            }
+        }
+        #endif
+        #endif
+        {
             /* Increment to the FIFO location when it is not the very first read we have ever done */
             if (gaps_ilip_read_do_read_first_time[level] == false) {
+                /* Next entry we are going to read from, the copy() function increments the gaps_ilip_read_driver_index[] */
                 gaps_ilip_read_user_index[level] = (gaps_ilip_read_user_index[level] + 1) % gaps_ilip_messages;
             } else {
-                /* clear the first read command, now we will increment the read offset */
+                /* clear the first read command, from now on we will increment the read offset */
                 gaps_ilip_read_do_read_first_time[level] = false;
             }
             if ( gaps_ilip_verbose_level > 8 ) {
@@ -1726,7 +1821,10 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
                            (void *)gaps_ilip_read_completions_fifo[level][gaps_ilip_read_user_index[level]] );
                 }
             }
-        } else if ( gaps_ilip_read_do_read_first_time[level] == false ) {
+        }
+        #if 0
+        else if ( gaps_ilip_read_do_read_first_time[level] == false ) {
+            /* Not first time and nothing to be read, here is where we would sleep  */
             if ( gaps_ilip_verbose_level > 9 ) {
                 printk(KERN_WARNING "gaps_ilip_read( FIFO (User: %2u - Driver: %2u) ): %lx, return EAGAIN\n",
                        gaps_ilip_read_user_index[level], gaps_ilip_read_driver_index[level],
@@ -1735,10 +1833,16 @@ gaps_ilip_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
             retval =  -EAGAIN;
             goto out;
         } else {
+            /* First time, but other read conditions not met, shoud we also sleep in this case. */
             retval =  -EAGAIN;
             goto out;
         }
+        #endif
     } else {
+        /**
+         * Process the root device read of the session ID from the material 
+         * provided in the write part of the session ID calculation. 
+         */
         /* Location of the session and application ID in driver buffer */
         uint32_t *session_id_adr = NULL;
         /* Get the application ID, resides */
@@ -1970,6 +2074,10 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
 		goto out;
 	}
 	
+	if ( gaps_ilip_verbose_level >= 8 ) {
+    printk( KERN_WARNING "gaps_ilip_write() File blocking flag: %.8x\n", (filp->f_flags & O_NONBLOCK) );
+    }
+
 	if (*f_pos + count > dev->buffer_size) {
 		count = dev->buffer_size - *f_pos;
     }
@@ -1979,7 +2087,8 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
     }
 	
     if ( gaps_ilip_verbose_level >= 8 ) {
-        printk(KERN_INFO "gaps_ilip_write( copy_from_user() ) Offset: %llu, Buffer length: %lu, Message Length: %lu, Address: %p\n",
+        printk(KERN_INFO "gaps_ilip_write( copy_from_user() ) "
+                         "Offset: %llu, Buffer length: %lu, Message Length: %lu, Address: %p\n",
             *f_pos, dev->buffer_size, count, &(dev->data[*f_pos]) );
     }
 
@@ -1989,7 +2098,8 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
         if ( (*f_pos == (loff_t)12u) && (count != 0) && (count%(sizeof(uint32_t)) == 0) ) {
             dev->session_message_count = count/sizeof(uint32_t);
             if ( gaps_ilip_verbose_level > 6 ) {
-                printk(KERN_INFO "gaps_ilip_write( session_messages ) Offset: %llu, Buffer length: %lu, Message Length: %lu, Address: %p\n",
+                printk(KERN_INFO "gaps_ilip_write( session_messages ) "
+                                 "Offset: %llu, Buffer length: %lu, Message Length: %lu, Address: %p\n",
                        *f_pos, dev->buffer_size, count, &(dev->data[*f_pos]) );
             }
         } else if ( (*f_pos == (loff_t)0u) && (count == sizeof(uint32_t) ) ) {
@@ -2005,16 +2115,22 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
         }
     }
 
+    /**
+     * How do we know if there is room for this copy, i.e. is this buffer busy with data and if so we need a sleep in 
+     * blocking mode so data is not lost. 
+     */ 
+
     /* Copy data from the user buffer */
     if (copy_from_user(&(dev->data[*f_pos]), buf, count) != 0) {
 		retval = -EFAULT;
-        if ( level != 0xffffffff ) {
+        if ( dev->mn != 0 && level != 0xffffffff ) {
             gaps_ilip_message_write_reject_count[level]++;
         }
 		goto out;
 	}
 
-    /* Is this a root device write, application and message ID information  */
+    /* Is this a root device write, application and message ID information is
+       extracted based on the currect offset the application is writting to.  */
     if ( dev->mn == 0 ) {
         /* Application ID write ? */
         if ( (*f_pos == (loff_t)0u) && (count == sizeof(uint32_t) ) ) {
@@ -2084,12 +2200,8 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
                 level+1, wq_index, (level*gaps_ilip_messages)+wq_index );
         }
         /* Get the address of the copy workqueue element we have to fill out */
-        #if 0
-        wq = &gaps_ilip_local_workqueue;
-        #else
         /* Need a queue for each level and send and receive */
         wq = &gaps_ilip_queues[(level*gaps_ilip_messages)+wq_index];
-        #endif
         /* Fill out the work request */
         wq->start_marker = 0x01234567;
         /* Read device minor number */
@@ -2112,7 +2224,9 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
         printk(KERN_INFO "gaps_ilip_write( schedule_work( %p ) )\n", &wq->workqueue );
         }
         schedule_work( &wq->workqueue );
-        /* Wait for the work to be done */
+        /* Wait for the work to be done, this make the writes synchronous, so there is never a need for the
+           writes to sleep as the application cannot exceed the completion FIFO or the incoming buffer as
+           we do not return to the caller until the buffer is copied to the read side. */
         flush_scheduled_work();
         if ( gaps_ilip_verbose_level > 8 ) {
         printk(KERN_INFO "gaps_ilip_write( flush_scheduled_work( ) ) completed)\n" );
@@ -2132,13 +2246,14 @@ gaps_ilip_write(struct file *filp, const char __user *buf, size_t count, loff_t 
 
         /* Use the completion FIFO for the proper ending condition */
         if ( gaps_ilip_write_user_index[level] == gaps_ilip_messages ) {
-            /* Initialize the read index into the FIFO on first time use */
+            /* Initialize the write index into the FIFO on first time use */
             gaps_ilip_write_user_index[level] = 0;
             write_user_index = 0;
             do_read_first_time = true;
         } else {
             write_user_index = gaps_ilip_write_user_index[level];
         }
+        /* On the very first time write is called the user and driver index value will be the same, this only happens once */
         if ( (write_user_index != gaps_ilip_write_driver_index[level]) || 
              ((do_read_first_time == true) && (gaps_ilip_write_completions_fifo[level][write_user_index] != (uintptr_t)-1)) ) {
             /* Increment to the FIFO location */
@@ -2212,6 +2327,50 @@ gaps_ilip_llseek(struct file *filp, loff_t off, int whence)
 	return newpos;
 }
 
+unsigned int
+gaps_ilip_poll( struct file *filp, struct poll_table_struct *wait )
+{
+    unsigned mask = 0;
+	struct gaps_ilip_dev *dev = (struct gaps_ilip_dev *)filp->private_data;
+    unsigned int level;
+
+    /* Get the level */
+    level = gaps_ilip_get_level_from_minor( dev, dev->mn );
+
+    if (mutex_lock_killable(&dev->gaps_ilip_mutex)) {
+        printk( KERN_WARNING "gaps_ilip_poll() device mutex lock failed\n" );
+        return -EINTR;
+    }
+
+    /* Root device can also be read and written at any time */
+    if ( dev->mn == 0 ) {
+        mask  = (POLLIN | POLLRDNORM);
+        mask |= (POLLOUT | POLLWRNORM);
+        goto quick_return;
+    }
+
+    poll_wait( filp, &dev->read_wq,  wait );
+    poll_wait( filp, &dev->write_wq, wait );
+
+    /* need to look at the read/write flags in file and only return the correct mask */
+    if ((filp->f_flags & O_ACCMODE) == O_RDONLY ) {
+        /* Read will return if data is available  */
+        if (gaps_ilip_read_data_available(gaps_ilip_get_level_from_minor( dev, dev->mn )) == true) {
+            if ( gaps_ilip_verbose_level >= 8 ) {
+                printk( KERN_INFO "gaps_ilip_poll( Minor: %u, Session: %.8x ) read set\n", dev->mn, dev->session_id );
+            }
+            mask = (POLLIN | POLLRDNORM);
+}
+    } else if( (filp->f_flags & O_ACCMODE) == O_WRONLY ) {
+        /* Write will return if we can write, this is always true */
+        mask = (POLLOUT | POLLWRNORM);
+    }
+
+quick_return:
+    mutex_unlock(&dev->gaps_ilip_mutex);
+    return mask;
+}
+
 struct file_operations gaps_ilip_fops = {
 	.owner =    THIS_MODULE,
 	.read =     gaps_ilip_read,
@@ -2219,6 +2378,7 @@ struct file_operations gaps_ilip_fops = {
 	.open =     gaps_ilip_open,
 	.release =  gaps_ilip_release,
 	.llseek =   gaps_ilip_llseek,
+    .poll   =   gaps_ilip_poll,
 };
 
 /* ================================================================ */
@@ -2251,6 +2411,9 @@ gaps_ilip_construct_device(struct gaps_ilip_dev *dev, int minor, struct class *c
     dev->source_id = 0;
     dev->destination_id = 0;
 	mutex_init(&dev->gaps_ilip_mutex);
+
+    init_waitqueue_head( &dev->write_wq );
+    init_waitqueue_head( &dev->read_wq );
 
     dev->mj = gaps_ilip_major;
     dev->mn = (unsigned int)minor;
@@ -2436,6 +2599,11 @@ gaps_ilip_init_module(void)
 		err = PTR_ERR(gaps_ilip_class);
 		goto fail;
 	}
+
+    /* Initialize the ILIP 'level' mutex */
+    for ( i = 0; i < gaps_ilip_levels; i++ ) {
+        mutex_init(&gaps_ilip_context_mutex[i]);
+	}
     
     /* Routine to setup the correct permissions */
     gaps_ilip_class->devnode = gaps_ilip_devnode;
@@ -2470,16 +2638,7 @@ gaps_ilip_init_module(void)
 		}
 	}
 
-    /* Allocate the array of message work queues times number of levels */
-    #if 0
-    gaps_ilip_queues = (struct gaps_ilip_copy_workqueue *)kzalloc(
-        gaps_ilip_levels*gaps_ilip_messages*sizeof(struct gaps_ilip_copy_workqueue), GFP_KERNEL);
-    if (gaps_ilip_queues == NULL) {
-        err = -ENOMEM;
-        goto fail;
-    }
-    #else
-    /* Static allocation */
+    /* Static allocation of message work queues */
 	for (i = 0; i < gaps_ilip_levels; ++i) {
         for (j = 0; j < gaps_ilip_messages; ++j) {
             k = (i*gaps_ilip_messages) + j;
@@ -2489,7 +2648,6 @@ gaps_ilip_init_module(void)
             gaps_ilip_queues[i].end_marker   = 0xffffffff;
         }
     }
-    #endif
 
     /* Create our own work queue for the processing of the messages, has to be single threaded,
        we create a write and read for each level. */

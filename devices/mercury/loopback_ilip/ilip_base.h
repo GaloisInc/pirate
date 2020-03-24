@@ -37,6 +37,7 @@
 
 #include <linux/cdev.h>
 #include <linux/mutex.h>
+#include <linux/wait.h>
 
 #ifndef GAPS_ILIP_H_1727_INCLUDED
 #define GAPS_ILIP_H_1727_INCLUDED
@@ -101,6 +102,8 @@ struct gaps_ilip_dev {
     unsigned int session_id;
     unsigned int source_id;
     unsigned int destination_id;
+    wait_queue_head_t write_wq;
+    wait_queue_head_t read_wq;
 };
 
 struct gaps_ilip_copy_workqueue {

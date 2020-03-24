@@ -111,7 +111,6 @@ typedef enum {
     //  - Level          - Sensitivity level, required
     //  - Source ID      - Source ID, required
     //  - Destination ID - Destination ID, required
-    //  - Timeout (ms)   - Read/write timeout in milliseconds, optional
     //  - Messages       - Message IDs, optional
     MERCURY,
 
@@ -197,7 +196,6 @@ typedef struct {
 // MERCURY parameters
 #define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
 #define PIRATE_MERCURY_DEFAULT_MTU          256u
-#define PIRATE_MERCURY_DEFAULT_TIMEOUT_MS   1000u
 #define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
 typedef struct {
     struct {
@@ -210,7 +208,6 @@ typedef struct {
     } session;
 
     uint32_t mtu;
-    uint32_t timeout_ms;
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
@@ -274,7 +271,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial,path[,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,level,src_id,dst_id[,timeout_ms,msg_id_1,...]\n"  \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"             \
     "  GE_ETH        ge_eth,addr,port,msg_id[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
