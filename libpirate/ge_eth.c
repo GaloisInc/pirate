@@ -271,7 +271,7 @@ int pirate_ge_eth_close(ge_eth_ctx *ctx) {
 ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
                             void *buf, size_t count) {
     ssize_t rd_size;
-    ge_header_t hdr = { 0 };
+    ge_header_t hdr = { 0, 0, 0 };
 
     if (ctx->sock <= 0) {
         errno = EBADF;
