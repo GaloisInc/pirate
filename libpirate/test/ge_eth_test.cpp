@@ -32,7 +32,8 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     const char *name = "ge_eth";
     const char *addr = "1.2.3.4";
     const short port = 0x4242;
-    const unsigned mtu = 42;
+    const uint32_t message_id = 0x4745;
+    const uint32_t mtu = 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
@@ -48,20 +49,28 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, message_id);
+    rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
+    ASSERT_EQ(message_id, ge_eth_param->message_id);
     ASSERT_EQ(0u, ge_eth_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, mtu);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u,%u", name, addr, port, message_id, mtu);
     rv  = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
+    ASSERT_EQ(message_id, ge_eth_param->message_id);
     ASSERT_EQ(mtu, ge_eth_param->mtu);
 }
 
@@ -76,6 +85,7 @@ public:
 
         pirate_init_channel_param(GE_ETH, &param);
         param.channel.ge_eth.port = 0x4745;
+        param.channel.ge_eth.message_id = 0x5F475243;
         const unsigned mtu = GetParam();
         if (mtu) {
             param.channel.ge_eth.mtu = mtu;
