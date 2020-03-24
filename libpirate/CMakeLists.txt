@@ -75,7 +75,7 @@ if(PIRATE_UNIT_TEST)
     include_directories(${GTEST_INCLUDE_DIR})
 
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
-    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS})
+    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
     set(GAPS_CHANNELS_TEST gaps_channels_test)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
     add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})

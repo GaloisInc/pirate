@@ -30,7 +30,7 @@ if(NOT X11_LIB)
 endif()
 set(CRYPTO_KIT openssl)
 include_directories(./include ${OPENSSL_INCLUDE_DIR})
-set(COMMON_LIB ${OPENSSL_LIBRARIES} ${PIRATE_APP_LIBS} "X11" "jpeg")
+set(COMMON_LIB ${OPENSSL_LIBRARIES} ${PIRATE_APP_LIBS} pthread X11 jpeg)
 set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 
