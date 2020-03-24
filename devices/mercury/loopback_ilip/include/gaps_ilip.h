@@ -1,6 +1,44 @@
 #ifndef _MERCURY_GAPS_ILIP_H
 #define _MERCURY_GAPS_ILIP_H
 
+/* ------------------ MERCURY SYSTEMS INC IP COPYRIGHT HEADER  ------------------------
+ *
+ * Copyright:
+ *  Copyright (c) 1984-2020,  Mercury Systems, Inc.,
+ *  Andover MA.,and all third party embedded software sources.
+ *  All rights reserved under the Copyright laws of US. and international treaties.
+ *
+ * ------------------ MERCURY SYSTEMS INC IP COPYRIGHT HEADER  ------------------------*/
+
+/*
+ * This material is based upon work supported by the Defense Advanced Research Projects 
+ * Agency (DARPA) under Contract No. HR011-19-C-0105. 
+ * Any opinions, findings and conclusions or recommendations expressed in this 
+ * material are those of the author(s) and do not necessarily reflect the views 
+ * of the Defense Advanced Research Projects Agency (DARPA).
+ */
+
+/* 
+ * Portions of this file have been copied from:
+ * 
+ * This file is part of the Xilinx DMA IP Core driver for Linux
+ *
+ * Copyright (c) 2017-2019,  Xilinx, Inc.
+ * All rights reserved.
+ *
+ * This source code is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * The full GNU General Public License is included in this distribution in
+ * the file called "COPYING".
+ */
+
 #define GAPS_ILIP_ERR_BUFLEN		 (64)
 #define GAPS_ILIP_RESP_BUFLEN_MAX	 (2048 * 6)
 #define GAPS_ILIP_RESP_BUFLEN_MIN	 (256)
