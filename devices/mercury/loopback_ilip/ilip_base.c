@@ -48,6 +48,7 @@
 #include <linux/err.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
+#include <linux/spinlock.h>
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include <linux/stat.h>
@@ -398,6 +399,7 @@ static bool gaps_ilip_remove_session_index( unsigned int session_id )
  *        number.
  * 
  */
+static DEFINE_SPINLOCK(root_open_lock);
 static unsigned int gaps_ilip_open_count[GAPS_ILIP_TOTAL_DEVICES] = {0};
 
 /**
@@ -550,6 +552,19 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 			mj, mn);
 		return -ENODEV; /* No such device */
 	}
+
+    /* Root device can only be opened one application at a time so
+       as to compute the correct session data */
+    spin_lock(&root_open_lock);
+    if( mn == 0 && gaps_ilip_open_count[mn] >= 1  ) {
+        spin_unlock(&root_open_lock);
+        printk(KERN_WARNING "gaps_ilip_open() open: root busy\n");
+        return -EBUSY; /* Try later, root busy */
+    }
+
+    /* increment the open count on this device */
+    gaps_ilip_open_count[mn]++;
+    spin_unlock(&root_open_lock);
 	
 	/* store a pointer to struct gaps_ilip_dev here for other methods */
 	dev = &gaps_ilip_devices[mn];
@@ -561,16 +576,6 @@ gaps_ilip_open(struct inode *inode, struct file *filp)
 		printk(KERN_WARNING "gaps_ilip_open() open: internal error\n");
 		return -ENODEV; /* No such device */
 	}
-	
-    /* increment the open count on this device */
-    gaps_ilip_open_count[mn]++;
-
-    /* Root device can only be opened one application at a time so
-       as to compute the correct session data */
-    if( mn == 0 && gaps_ilip_open_count[mn] > 1  ) {
-        printk(KERN_WARNING "gaps_ilip_open() open: root busy\n");
-        return -EBUSY; /* Try later, root busy */
-    }
 
 	/* if opened the 1st time, allocate the buffer */
 	if (dev->data == NULL)
@@ -679,11 +684,19 @@ gaps_ilip_release(struct inode *inode, struct file *filp)
     unsigned int level = gaps_ilip_get_level_from_minor( dev, mn );
 
     /* decrement the open count on this device */
+    if (mn == 0) {
+        spin_lock(&root_open_lock);
+    }
+    
     if ( gaps_ilip_open_count[mn] > 0 ) {
         gaps_ilip_open_count[mn]--;
     } else {
         printk(KERN_WARNING "gaps_ilip_release( %u ): level: %x Major: %u - Minor: %u open counter error\n", 
                gaps_ilip_open_count[mn], level+1, mj, mn );
+    }
+
+    if (mn == 0) {
+        spin_unlock(&root_open_lock);
     }
 
     if ( gaps_ilip_verbose_level >= 2 ) {
