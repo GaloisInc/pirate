@@ -21,7 +21,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <endian.h>
-#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "pirate_common.h"
@@ -62,8 +61,6 @@ typedef struct ilip_message {
     uint32_t data_length;
 } ilip_message_t;
 #pragma pack()
-
-static pthread_mutex_t open_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static ssize_t mercury_message_pack(void *buf, const void *data,
         uint32_t data_len, const pirate_mercury_param_t *param) {
@@ -281,6 +278,7 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     const uint32_t cfg_len = sizeof(uint32_t);
     ssize_t sz;
     int fd_root = -1;
+    unsigned wait_counter = 0;
     ctx->flags = flags;
     int access = ctx->flags & O_ACCMODE;
     const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
@@ -288,13 +286,25 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     /* Open the root device to configure and establish a session */
     pirate_mercury_init_param(param);
 
-    if (pthread_mutex_lock(&open_lock) != 0) {
-        return -1;
-    }
-
-    fd_root = open(PIRATE_MERCURY_ROOT_DEV, O_RDWR, S_IRUSR | S_IWUSR);
-    if (fd_root == -1) {
-        goto error_session;
+    /* Root device enforces single open */
+    for(;;) {
+        int err = errno;
+        fd_root = open(PIRATE_MERCURY_ROOT_DEV, O_RDWR, S_IRUSR | S_IWUSR);
+        if (fd_root != -1) {
+            break;
+        }
+    
+        if (errno != EBUSY) {
+            return -1;
+        } else {
+            usleep(100);
+            /* Timeout 1 second */
+            if (++wait_counter >= 10 * 1000) {
+                errno = ETIME;
+                return -1;
+            }
+            errno = err;
+        }
     }
 
     if (param->session.message_count > 0) {
@@ -304,44 +314,40 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
         sz = pwrite(fd_root, &param->session.level, cfg_len, 
                     MERCURY_CFG_OFF_LEVEL);
         if (sz != cfg_len) {
-            goto error_session;
+            goto error;
         }
 
         // Destination ID
         sz = pwrite(fd_root, &param->session.destination_id, cfg_len,
                     MERCURY_CFG_OFF_DESTINATION_ID);
         if (sz != cfg_len) {
-            goto error_session;
+            goto error;
         }
 
         // Message tags
         sz = pwrite(fd_root, param->session.messages, msg_cgf_len,
                     MERCURY_CFG_OFF_MESSAGES);
         if (sz != msg_cgf_len) {
-            goto error_session;
+            goto error;
         }
     }
 
     sz = pwrite(fd_root, &param->session.source_id, cfg_len,
                     MERCURY_CFG_OFF_SOURCE_ID);
     if (sz != cfg_len) {
-        goto error_session;
+        goto error;
     }
 
     sz = pread(fd_root, &param->session.id, cfg_len, MERCURY_CFG_OFF_SESSION_ID);
     if (sz != sizeof(param->session.id)) {
-        goto error_session;
+        goto error;
     }
 
     /* Must close the root device as only one open() at a time is allowed */
     if (close(fd_root) != 0) {
-        goto error_session;
-    }
-    fd_root = -1;
-
-    if (pthread_mutex_unlock(&open_lock) != 0) {
         goto error;
     }
+    fd_root = -1;
 
     if (param->session.message_count == 0) {
         if (param->session.source_id != param->session.id) {
@@ -368,8 +374,6 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     }
 
     return 0;
-error_session:
-    pthread_mutex_unlock(&open_lock);
 error:
     if (fd_root > 0) {
         close(fd_root);
