@@ -265,14 +265,14 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
     "  DEVICE        device,path[,iov_len]\n"                                  \
     "  PIPE          pipe,path[,iov_len]\n"                                    \
     "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                 \
-    "  TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]\n"             \
-    "  UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]\n"             \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
     "  SHMEM         shmem,path[,buffer_size]\n"                               \
     "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"  \
     "  UIO           uio[,path]\n"                                             \
     "  SERIAL        serial,path[,baud,mtu]\n"                                 \
     "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"             \
-    "  GE_ETH        ge_eth,addr,port,msg_id[,mtu]\n"
+    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
 //

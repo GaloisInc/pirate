@@ -149,14 +149,14 @@ Test utility for writing deterministic GAPS packets
    DEVICE        device,path[,iov_len]
    PIPE          pipe,path[,iov_len]
    UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]
-   UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]
+   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]
    SHMEM         shmem,path[,buffer_size]
    UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
    UIO           uio[,path]
    SERIAL        serial,path[,baud,mtu]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
-   GE_ETH        ge_eth,addr,port,msg_id[,mtu]
+   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]
 
 
   -?, --help                 Give this help list
@@ -181,14 +181,14 @@ Test utility for reading deterministic GAPS packets
    DEVICE        device,path[,iov_len]
    PIPE          pipe,path[,iov_len]
    UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket,addr,port[,iov_len,buffer_size]
-   UDP SOCKET    udp_socket,addr,port[,iov_len,buffer_size]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]
+   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]
    SHMEM         shmem,path[,buffer_size]
    UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
    UIO           uio[,path]
    SERIAL        serial,path[,baud,mtu]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
-   GE_ETH        ge_eth,addr,port,msg_id[,mtu]
+   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]
 
 
   -?, --help                 Give this help list
