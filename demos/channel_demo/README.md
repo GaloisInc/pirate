@@ -72,7 +72,7 @@ GAPS channel type and parameters are passed with the ```-C``` option
 
 ##### Supported GAPS Channels
 * **PIPE** - ```-C pipe,path```      
-* **UDP Socket** - ``` -C udp,ip_addr,ip_port```
+* **UDP Socket** - ``` -C udp_socket,ip_addr,ip_port```
 * **GE Ethernet** - ```- C ge_eth,ip_addr,ip_port,msg_id```
 * **Mercury** - ``` -C mercury,level,src_id,dst_id```
 
