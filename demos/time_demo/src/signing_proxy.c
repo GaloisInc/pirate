@@ -371,9 +371,9 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
             },
             .on_shutdown = NULL,
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_RDONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_RDONLY, "pipe,/tmp/client.proxy.gaps",
                     "client->proxy"),
-                GAPS_CHANNEL(PROXY_TO_CLIENT, O_WRONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_WRONLY, "pipe,/tmp/proxy.client.gaps",
                     "client<-proxy"),
 #ifdef GAPS_SERIAL
                 GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PROXY_TO_SIGNER_WR,
@@ -381,9 +381,9 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
                 GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SIGNER_TO_PROXY_RD,
                             "proxy<-signer")
 #else
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_WRONLY, "pipe,/tmp/proxy.signer.gaps",
                     "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_RDONLY, "pipe,/tmp/signer.proxy.gaps",
                     "proxy<-signer")
 #endif
             }

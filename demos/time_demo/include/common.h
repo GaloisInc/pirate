@@ -42,7 +42,7 @@ typedef struct {
 #define THREAD_END          THREAD_ADD(NULL, NULL, NULL)
 
 typedef struct {
-    int num;
+    int *num;
     int flags;
     const char *conf;
     const char* desc;
@@ -61,7 +61,7 @@ typedef struct {
     .conf  = c,                     \
     .desc  = d                      \
 }
-#define GAPS_CHANNEL_END        GAPS_CHANNEL(-1, 0, NULL, NULL)
+#define GAPS_CHANNEL_END        GAPS_CHANNEL(NULL, 0, NULL, NULL)
 
 #define DEFAULT_GAPS_CHANNEL    "pipe"
 
@@ -70,13 +70,12 @@ int gaps_app_wait_exit(gaps_app_t *ctx);
 void gaps_terminate();
 int gaps_running();
 
+
 /* GAPS channel assignments */
-typedef enum {
-    CLIENT_TO_PROXY = 0,
-    PROXY_TO_CLIENT = 1,
-    PROXY_TO_SIGNER = 2,
-    SIGNER_TO_PROXY = 3
-} demo_channel_t;
+extern int CLIENT_TO_PROXY;
+extern int PROXY_TO_CLIENT;
+extern int PROXY_TO_SIGNER;
+extern int SIGNER_TO_PROXY;
 
 #define PROXY_TO_SIGNER_WR "serial,/dev/tty_P_TO_S_WR"
 #define PROXY_TO_SIGNER_RD "serial,/dev/tty_P_TO_S_RD"

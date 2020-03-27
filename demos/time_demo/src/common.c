@@ -33,6 +33,11 @@ const char *argp_program_version = DEMO_VERSION;
 
 volatile sig_atomic_t terminated = 0;
 
+int CLIENT_TO_PROXY;
+int PROXY_TO_CLIENT;
+int PROXY_TO_SIGNER;
+int SIGNER_TO_PROXY;
+
 // Register an empty signal handler for SIGUSR1.
 // Replaces the default action for SIGUSR1
 // which is to terminate the process.
@@ -80,7 +85,7 @@ int gaps_app_run(gaps_app_t *ctx) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
         pirate_channel_param_t param;
         int rv = -1;
-        if (c->num == -1) {
+        if (c->num == NULL) {
             break;
         }
 
@@ -90,8 +95,8 @@ int gaps_app_run(gaps_app_t *ctx) {
             return rv;
         }
 
-        c->num = pirate_open_param(&param, c->flags);
-        if (c->num < 0) {
+        *c->num = pirate_open_param(&param, c->flags);
+        if (*c->num < 0) {
             ts_log(ERROR, "Failed to open channel %s", c->desc);
             return -1;
         }
@@ -134,11 +139,11 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
     // Close GAPS channels
     for (int i = 0; i < MAX_APP_GAPS_CHANNELS; i++) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
-        if (c->num == -1) {
+        if (c->num == NULL) {
             break;
         }
 
-        pirate_close(c->num);
+        pirate_close(*c->num);
     }
 
     // Stop worker threads

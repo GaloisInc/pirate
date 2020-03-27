@@ -405,12 +405,13 @@ int main_high(int argc, char* argv[]) GAPS_MAIN("high")
 
     pirate_init_channel_param(PIPE, &param);
 
+    strncpy(param.channel.pipe.path, "/tmp/gaps.high.low", sizeof(param.channel.pipe.path));
     high_to_low = pirate_open_param(&param, O_WRONLY);
     if (high_to_low < 0) {
         perror("open high to low channel in write-only mode");
         return -1;
     }
-
+    strncpy(param.channel.pipe.path, "/tmp/gaps.low.high", sizeof(param.channel.pipe.path));
     low_to_high = pirate_open_param(&param, O_RDONLY);
     if (low_to_high < 0) {
         perror("open low to high channel in read-only mode");
@@ -511,11 +512,13 @@ int main_low(int argc, char* argv[]) GAPS_MAIN("low")
 
     pirate_init_channel_param(PIPE, &param);
 
+    strncpy(param.channel.pipe.path, "/tmp/gaps.high.low", sizeof(param.channel.pipe.path));
     high_to_low = pirate_open_param(&param, O_RDONLY);
     if (high_to_low < 0) {
         perror("open high to low channel in read-only mode");
         return -1;
     }
+    strncpy(param.channel.pipe.path, "/tmp/gaps.low.high", sizeof(param.channel.pipe.path));
     low_to_high = pirate_open_param(&param, O_WRONLY);
     if (low_to_high < 0) {
         perror("open low to high channel in write-only mode");

@@ -344,9 +344,9 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
             .on_shutdown = sensor_manager_terminate,
 
             .ch = {
-                GAPS_CHANNEL(CLIENT_TO_PROXY, O_WRONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_WRONLY, "pipe,/tmp/client.proxy.gaps",
                             "client->proxy"),
-                GAPS_CHANNEL(PROXY_TO_CLIENT, O_RDONLY, DEFAULT_GAPS_CHANNEL,
+                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_RDONLY, "pipe,/tmp/proxy.client.gaps",
                             "client<-proxy"),
                 GAPS_CHANNEL_END
             }
