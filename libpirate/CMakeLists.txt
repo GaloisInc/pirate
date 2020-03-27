@@ -43,6 +43,9 @@ install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 
 if(GAPS_BENCH)
+    include_directories(BEFORE libpirate)
+    link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
+
     add_executable(primitives_bench_thr ${PIRATE_SOURCES} bench/primitives_bench_thr.c)
     add_executable(primitives_bench_thr_vector ${PIRATE_SOURCES} bench/primitives_bench_thr_vector.c)
     add_executable(primitives_bench_lat ${PIRATE_SOURCES} bench/primitives_bench_lat.c)
@@ -73,6 +76,9 @@ endif(GAPS_BENCH)
 if(PIRATE_UNIT_TEST)
     find_package(GTest REQUIRED)
     include_directories(${GTEST_INCLUDE_DIR})
+
+    include_directories(BEFORE libpirate)
+    link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
     set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)

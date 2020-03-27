@@ -47,31 +47,6 @@ if (HAVE_STD_ATOMIC)
 endif(HAVE_STD_ATOMIC)
 
 add_subdirectory(libpirate)
-
-if (CHANNEL_DEMO)
-    include_directories(${CMAKE_SOURCE_DIR}/libpirate)
-    link_directories(${CMAKE_BINARY_DIR}/libpirate)
-    add_subdirectory(demos/channel_demo)
-endif(CHANNEL_DEMO)
-
-if (PNT_DEMO)
-    include_directories(${CMAKE_SOURCE_DIR}/libpirate)
-    link_directories(${CMAKE_BINARY_DIR}/libpirate)
-    add_subdirectory(demos/pnt_demo/4.pirate)
-endif(PNT_DEMO)
-
-if (GAPS_DEMOS)
-    include_directories(${CMAKE_SOURCE_DIR}/libpirate)
-    link_directories(${CMAKE_BINARY_DIR}/libpirate)
-
-    add_subdirectory(demos/simple_demo)
-    add_subdirectory(demos/time_demo)
-    add_subdirectory(demos/channel_demo)
-    add_subdirectory(demos/cxx_demo)
-    add_subdirectory(demos/pnt_demo/4.pirate)
-
-    if (NOT GAPS_DISABLE)
-        add_subdirectory(demos/enclave_demo)
-    endif(NOT GAPS_DISABLE)
-
-endif(GAPS_DEMOS)
+include_directories(BEFORE libpirate)
+link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
+add_subdirectory(demos)
