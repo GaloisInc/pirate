@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-include(CheckIncludeFile)
 
 project(pirate_demos)
 
@@ -17,11 +16,6 @@ if(BUILD_ALL)
     SET(GAPS_DEMOS ON BOOL)
     SET(GAPS_BENCH ON BOOL)
 endif(BUILD_ALL)
-
-CHECK_INCLUDE_FILE(stdatomic.h HAVE_STD_ATOMIC)
-if (HAVE_STD_ATOMIC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_STD_ATOMIC")
-endif(HAVE_STD_ATOMIC)
 
 if (NOT GAPS_DISABLE)
   # Use lld for demos if a linker is not already set.
