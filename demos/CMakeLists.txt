@@ -35,10 +35,10 @@ set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
-set(PIRATE_APP_LIBS pirate pthread)
+set(PIRATE_APP_LIBS pirate)
 
 if (PIRATE_SHMEM_FEATURE)
-    set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} rt)
+    set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} pthread rt)
 endif(PIRATE_SHMEM_FEATURE)
 
 if (GAPS_DEMOS)
