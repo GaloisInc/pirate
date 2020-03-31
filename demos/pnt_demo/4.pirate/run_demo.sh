@@ -22,8 +22,8 @@ green_pid=$!
 
 wait $orange_pid
 
-GREEN_STS=`pgrep ${PNT_GREEN}`
-if [ ! -z $GREEN_STS ]
+GREEN_STS=$(pgrep ${PNT_GREEN})
+if [ ! -z "$GREEN_STS" ]
 then
     killall -9 -q ${PNT_GREEN} > /dev/null
 fi
