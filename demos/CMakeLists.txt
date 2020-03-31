@@ -47,15 +47,14 @@ if (GAPS_DEMOS)
     add_subdirectory(channel_demo)
     add_subdirectory(cxx_demo)
     add_subdirectory(pnt_demo/4.pirate)
+    if (NOT GAPS_DISABLE)
+        add_subdirectory(enclave_demo)
+    endif(NOT GAPS_DISABLE)
 endif(GAPS_DEMOS)
 
 if (CHANNEL_DEMO)
     add_subdirectory(channel_demo)
 endif(CHANNEL_DEMO)
-
-if (NOT GAPS_DISABLE)
-   add_subdirectory(enclave_demo)
-endif(NOT GAPS_DISABLE)
 
 if (PNT_DEMO)
     add_subdirectory(pnt_demo/4.pirate)

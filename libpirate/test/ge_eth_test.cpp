@@ -79,10 +79,6 @@ class GeEthTest : public ChannelTest, public WithParamInterface<unsigned>
 public:
     void ChannelInit()
     {
-        // Since UDP is unreliable it's possible to get out of sync.
-        // Use write delay to reduce the chance of that
-        WriteDelayUs = 1000;
-
         pirate_init_channel_param(GE_ETH, &param);
         param.channel.ge_eth.port = 0x4745;
         param.channel.ge_eth.message_id = 0x5F475243;

@@ -197,8 +197,6 @@ class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestPar
 public:
     void ChannelInit() override
     {
-        WriteDelayUs = 10000;
-
         mMercuryParam = GetParam();
         Writer.channel = Reader.channel = mMercuryParam.channel;
 
@@ -232,6 +230,9 @@ public:
         rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
+
+        int sts = pthread_barrier_wait(&barrier);
+        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     void ReaderChannelOpen() override
@@ -252,6 +253,9 @@ public:
         rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
+
+        int sts = pthread_barrier_wait(&barrier);
+        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     void WriterChannelClose() override {

@@ -86,10 +86,6 @@ class UdpSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        // Since UDP is unreliable it's possible to get out of sync.
-        // Use write delay to reduce the chance of that
-        WriteDelayUs = 1000;
-
         pirate_init_channel_param(UDP_SOCKET, &param);
         param.channel.udp_socket.port = 26427;
         auto test_param = GetParam();
