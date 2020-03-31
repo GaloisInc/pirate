@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 
 project(time_demo)
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
@@ -76,7 +76,7 @@ function(add_gaps_target TGT SRC LVL)
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} ${COMMON_LIB})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
-    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${LVL}" "-fuse-ld=lld")
+    set_target_properties(${TGT} PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,${LVL} -fuse-ld=lld")
     set_target_properties(
         ${TGT}
         PROPERTIES
