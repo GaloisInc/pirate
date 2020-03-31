@@ -5,7 +5,7 @@ function(add_gaps_target TGT SRC)
     SET(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O3" "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
     add_executable(${TGT} ${SRC})
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
-    target_link_options(${TGT} PRIVATE "LINKER:-enclave" "LINKER:${TGT}" "-fuse-ld=lld")
+    set_target_properties(${TGT} PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,${TGT} -fuse-ld=lld")
 endfunction()
 
 if(GAPS_DISABLE)

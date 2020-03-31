@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 project(libpirate)
 
 set(CMAKE_BUILD_TYPE RelwithDebInfo)

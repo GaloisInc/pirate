@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 include(CheckIncludeFile)
 
 # This must be done before any language is set (ie before any project() or

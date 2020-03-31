@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.5)
 
 project(pnt)
 
@@ -23,8 +23,8 @@ if (GAPS_DISABLE)
 else()
     add_executable(pnt_green ${COMMON_SRC})
     add_executable(pnt_orange ${COMMON_SRC})
-    target_link_options(pnt_green PRIVATE "LINKER:-enclave,green")
-    target_link_options(pnt_orange PRIVATE "LINKER:-enclave,orange")
+    set_target_properties(pnt_green  PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,green  -fuse-ld=lld")
+    set_target_properties(pnt_orange PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,orange -fuse-ld=lld")
 endif(GAPS_DISABLE)
 
 target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread)
