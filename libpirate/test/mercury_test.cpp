@@ -197,8 +197,6 @@ class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestPar
 public:
     void ChannelInit() override
     {
-        WriteDelayUs = 10000;
-
         mMercuryParam = GetParam();
         Writer.channel = Reader.channel = mMercuryParam.channel;
 

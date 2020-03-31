@@ -24,8 +24,7 @@ namespace GAPS
 
 ChannelTest::ChannelTest() : testing::Test() ,
     Writer({TEST_CHANNEL, NULL, -1}),  Reader({TEST_CHANNEL, NULL, -1}), 
-    len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN}),
-    WriteDelayUs(0)
+    len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN})
 {
 
 }
@@ -41,7 +40,7 @@ void ChannelTest::SetUp()
     Reader.buf = (uint8_t *) malloc(len.stop);
     ASSERT_NE(nullptr, Reader.buf);
 
-    rv = sem_init(&sem, 0, 0);
+    rv = pthread_barrier_init(&barrier, NULL, 2);
     ASSERT_EQ(0, rv);
 
     pirate_reset_gd();
@@ -49,9 +48,9 @@ void ChannelTest::SetUp()
 
 void ChannelTest::TearDown()
 {
-    if (Writer.buf  != NULL)
+    if (Writer.buf != NULL)
     {
-        free(Writer.buf );
+        free(Writer.buf);
         Writer.buf  = NULL;
     }
 
@@ -61,7 +60,7 @@ void ChannelTest::TearDown()
         Reader.buf = NULL;
     }
 
-    sem_destroy(&sem);
+    pthread_barrier_destroy(&barrier);
     errno = 0;
 }
 
@@ -78,13 +77,19 @@ void ChannelTest::WriterChannelOpen()
     Writer.channel = pirate_open_param(&param, O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Writer.channel, 0);
- }
+
+    int sts = pthread_barrier_wait(&barrier);
+    ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+}
 
 void ChannelTest::ReaderChannelOpen()
 {
     Reader.channel = pirate_open_param(&param, O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Reader.channel, 0);
+
+    int sts = pthread_barrier_wait(&barrier);
+    ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
 }
 
 void ChannelTest::WriterChannelClose()
@@ -174,14 +179,6 @@ void ChannelTest::WriterTest()
 
         WriteDataInit(l);
 
-        if (WriteDelayUs)
-        {
-            struct timespec ts;
-            ts.tv_sec = WriteDelayUs / 1000000;
-            ts.tv_nsec = (WriteDelayUs % 1000000) * 1000;
-            nanosleep(&ts, NULL);
-        }
-
         rv = pirate_write(Writer.channel, Writer.buf, l);
         ASSERT_EQ(l, rv);
         ASSERT_EQ(0, errno);
@@ -189,8 +186,8 @@ void ChannelTest::WriterTest()
         statsWr.packets++;
         statsWr.bytes += l;
 
-        sts = sem_wait(&sem);
-        ASSERT_EQ(0, sts);
+        sts = pthread_barrier_wait(&barrier);
+        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     WriterChannelClose();
@@ -227,9 +224,8 @@ void ChannelTest::ReaderTest()
         statsRd.packets++;
         statsRd.bytes += l;
 
-        sts = sem_post(&sem);
-        ASSERT_EQ(0, sts);
-        pthread_yield();
+        sts = pthread_barrier_wait(&barrier);
+        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     ReaderChannelClose();

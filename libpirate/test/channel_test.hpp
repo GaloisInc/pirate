@@ -61,13 +61,10 @@ protected:
     static const ssize_t DEFAULT_STEP_LEN = 1;
 
     // Reader writer synchronization
-    sem_t sem;
+    pthread_barrier_t barrier;
 
     // Channel parameters
     pirate_channel_param_t param;
-
-    // Optional inter-write delay
-    uint32_t WriteDelayUs;
 
     // If true the producer and consumer
     // open the channel.
