@@ -222,6 +222,7 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
+    unsigned char control;
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -237,9 +238,23 @@ typedef struct {
     } channel;
 } pirate_channel_param_t;
 
+typedef struct {
+    unsigned char yield;
+} pirate_options_t;
+
 //
 // API
 //
+
+// Sets pirate options to the default values.
+// The default value is represented by the zero value.
+// Parameters:
+//  options        - pirate options to be initialized
+void pirate_init_options(pirate_options_t *options);
+
+void pirate_set_options(pirate_options_t *options);
+
+void pirate_get_options(pirate_options_t *options);
 
 // Sets channel properties to the default values.
 // The default value is represented by the zero value.
@@ -368,6 +383,10 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd);
+
+int pirate_cooperative_listen();
+
+int pirate_cooperative_yield(int id);
 
 #ifdef __cplusplus
 }
