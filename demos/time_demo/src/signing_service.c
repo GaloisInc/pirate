@@ -42,6 +42,8 @@ static struct argp_option options[] = {
     { "conf",      'c', "PATH",    0, "Configuration file path",    0 },
     { "conf_sect", 's', "SECTION", 0, "Configuration section",      0 },
     { "verbose",   'v', NULL,      0, "Increase verbosity level",   0 },
+    { "proxy-to-signer", 1000, "DESCRIPTION", 0, "Proxy to signer channel", 0 },
+    { "signer-to-proxy", 1001, "DESCRIPTION", 0, "Signer to proxy channel", 0 },
     { 0 }
 };
 
@@ -49,6 +51,14 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     signer_t *signer = (signer_t *) state->input;
 
     switch (key) {
+
+    case 1000:
+        strncpy(signer->app.ch[0].conf, arg, 64);
+        break;
+
+    case 1001:
+        strncpy(signer->app.ch[1].conf, arg, 64);
+        break;
 
     case 'c':
         signer->ts.conf_file = arg;
@@ -82,6 +92,14 @@ static void parse_args(int argc, char *argv[], signer_t *signer) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
+
+#ifdef GAPS_SERIAL
+    strncpy(signer->app.ch[0].conf, PROXY_TO_SIGNER_RD, 64);
+    strncpy(signer->app.ch[1].conf, SIGNER_TO_PROXY_WR, 64);
+#else
+    strncpy(signer->app.ch[0].conf, "pipe,/tmp/proxy.signer.gaps", 64);
+    strncpy(signer->app.ch[1].conf, "pipe,/tmp/signer.proxy.gaps", 64);
+#endif
 
     argp_parse(&argp, argc, argv, 0, 0, signer);
 }
@@ -153,17 +171,8 @@ int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
             },
             .on_shutdown = NULL,
             .ch = {
-#ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_RDONLY, PROXY_TO_SIGNER_RD,
-                            "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_WRONLY, SIGNER_TO_PROXY_WR,
-                            "proxy<-signer"),
-#else
-                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_RDONLY, "pipe,/tmp/proxy.signer.gaps",
-                            "proxy->signer"),
-                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_WRONLY, "pipe,/tmp/signer.proxy.gaps",
-                            "proxy<-signer"),
-#endif
+                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_RDONLY, "proxy->signer"),
+                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_WRONLY, "proxy<-signer"),
                 GAPS_CHANNEL_END
             }
         }

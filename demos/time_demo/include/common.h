@@ -44,7 +44,7 @@ typedef struct {
 typedef struct {
     int *num;
     int flags;
-    const char *conf;
+    char conf[64];
     const char* desc;
 } gaps_channel_ctx_t;
 
@@ -54,16 +54,13 @@ typedef struct {
     int signal_fd;
     void (*on_shutdown) (void);
 } gaps_app_t;
-#define GAPS_CHANNEL(n, f, c, d)    \
-{                                   \
-    .num   = n,                     \
-    .flags = f,                     \
-    .conf  = c,                     \
-    .desc  = d                      \
+#define GAPS_CHANNEL(n, f, d)    \
+{                                \
+    .num   = n,                  \
+    .flags = f,                  \
+    .desc  = d                   \
 }
-#define GAPS_CHANNEL_END        GAPS_CHANNEL(NULL, 0, NULL, NULL)
-
-#define DEFAULT_GAPS_CHANNEL    "pipe"
+#define GAPS_CHANNEL_END        GAPS_CHANNEL(NULL, 0, NULL)
 
 int gaps_app_run(gaps_app_t *ctx);
 int gaps_app_wait_exit(gaps_app_t *ctx);
