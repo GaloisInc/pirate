@@ -41,7 +41,7 @@ int open_channel(std::string config, int flags) {
   return gd;
 }
 
-void send_control(int gd) {
+void pirate_yield(int gd) {
   unsigned char ctrl = 0;
   pirate_write(gd, &ctrl, sizeof(ctrl));
 }
@@ -126,7 +126,7 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       usleep(sleep_msec * 500);
 #endif
       // send control to the orange enclave
-      send_control(writeCtrlGd);
+      pirate_yield(writeCtrlGd);
       // wait for control from the orange enclave
       listener.listen();
   }
@@ -207,7 +207,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       usleep(sleep_msec * 500);
 #endif
     // send control to the green enclave
-      send_control(writeCtrlGd);
+      pirate_yield(writeCtrlGd);
   }
 
   return 0;
