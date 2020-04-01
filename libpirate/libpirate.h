@@ -346,6 +346,8 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 
 int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
+int pirate_get_fd(int gd);
+
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
 //

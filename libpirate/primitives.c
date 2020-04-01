@@ -336,6 +336,28 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags) {
     return pirate_pipe_param(gd, &vals, flags);
 }
 
+int pirate_get_fd(int gd) {
+    pirate_channel_t *channel;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    switch (channel->param.channel_type) {
+    case PIPE:
+        return channel->ctx.channel.pipe.fd;
+    case TCP_SOCKET:
+        return channel->ctx.channel.tcp_socket.sock;
+    case UDP_SOCKET:
+        return channel->ctx.channel.udp_socket.sock;
+    case GE_ETH:
+        return channel->ctx.channel.ge_eth.sock;
+    default:
+        errno = ENODEV;
+        return -1;
+    }
+}
+
 int pirate_close(int gd) {
     pirate_channel_t *channel;
 
