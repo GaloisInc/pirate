@@ -70,7 +70,11 @@ static void convert_jpg_to_ximage(const unsigned char *buf, unsigned long len) {
     cinfo.err = jpeg_std_error(&jerr);
 
     jpeg_create_decompress(&cinfo);
+#ifdef LIBJPEG_TURBO_VERSION
     jpeg_mem_src(&cinfo, buf, len);
+#else
+    jpeg_mem_src(&cinfo, (unsigned char *) buf, len);
+#endif
     jpeg_read_header(&cinfo, 1);
     cinfo.scale_num = 1;
     cinfo.scale_denom = 1;
