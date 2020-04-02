@@ -19,23 +19,22 @@
 #include <functional>
 
 namespace pirate {
-
     namespace internal {
-        int cooperative_register(int gd, void* listener);
+        int cooperative_register(int gd, void* listener, size_t len);
 
         template <typename T>
         union listener_union_hack {
-            std::function<void(const T& val)> *listener;
+            std::function<void(T* val)> *listener;
             void *ptr;
         };
     }
+}
 
-    template <typename T>
-    int cooperative_register(int gd, std::function<void(const T& val)> listener) {
-        pirate::internal::listener_union_hack<T> lu;
-        lu.listener = &listener;
-        return pirate::internal::cooperative_register(gd, lu.ptr);
-    }
+template <typename T>
+int pirate_register(int gd, std::function<void(T* val)> listener) {
+    pirate::internal::listener_union_hack<T> lu;
+    lu.listener = &listener;
+    return pirate::internal::cooperative_register(gd, lu.ptr, sizeof(T));
 }
 
 #endif

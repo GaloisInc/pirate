@@ -223,6 +223,9 @@ typedef struct {
 typedef struct {
     channel_enum_t channel_type;
     uint8_t control;
+    uint8_t pipe; // TODO YIELD: replace with src and dst enclave id
+    // uint32_t src_enclave;
+    // uint32_t dst_enclave;
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -361,8 +364,6 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 
 int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
-int pirate_get_fd(int gd);
-
 // pirate_read() attempts to read up to count bytes from
 // gaps descriptor gd into the buffer starting at buf.
 //
@@ -384,9 +385,9 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // -1 is returned, and errno is set appropriately.
 int pirate_close(int gd);
 
-int pirate_cooperative_listen();
+int pirate_listen();
 
-int pirate_cooperative_yield(int id);
+int pirate_yield(int enclave_id);
 
 #ifdef __cplusplus
 }

@@ -80,6 +80,9 @@ pirate_options_t gaps_options;
 int gaps_reader_gds[PIRATE_NUM_CHANNELS];
 int gaps_reader_gds_num;
 
+// TODO YIELD: convert this into an array
+int gaps_writer_control_gd;
+
 int pirate_close_channel(pirate_channel_t *channel);
 
 static inline pirate_channel_t *pirate_get_channel(int gd) {
@@ -173,6 +176,16 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
+pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
+    pirate_channel_t *channel = NULL;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return NULL;
+    }
+
+    return &channel->param;
+}
+
 static pirate_atomic_int next_gd;
 
 static int pirate_next_gd() {
@@ -239,10 +252,21 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
     }
 }
 
+void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
+    if (gaps_options.yield) {
+        if (access == O_RDONLY) {
+            gaps_reader_gds[gaps_reader_gds_num++] = gd;
+        }
+        if ((access == O_WRONLY) && param->control) {
+            gaps_writer_control_gd = gd;
+        }
+    }    
+}
+
 // gaps descriptors must be opened from smallest to largest
 int pirate_open_param(pirate_channel_param_t *param, int flags) {
     pirate_channel_t channel;
-    int access = flags & O_ACCMODE;    
+    int access = flags & O_ACCMODE;
 
     if (next_gd >= PIRATE_NUM_CHANNELS) {
         errno = EMFILE;
@@ -264,9 +288,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     }
 
     memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
-    if (gaps_options.yield && (access == O_RDONLY)) {
-        gaps_reader_gds[gaps_reader_gds_num++] = gd;
-    }
+    pirate_yield_setup(gd, param, access);
     return gd;
 }
 
@@ -310,6 +332,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
+    param->pipe = 1; // TODO YIELD: remove and rely on src and dst enclave id
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
     read_channel.ctx.flags = behavior | O_RDONLY;
@@ -341,6 +364,8 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
 
     memcpy(&gaps_channels[read_gd], &read_channel, sizeof(pirate_channel_t));
     memcpy(&gaps_channels[write_gd], &write_channel, sizeof(pirate_channel_t));
+    pirate_yield_setup(read_gd, param, O_RDONLY);
+    pirate_yield_setup(write_gd, param, O_WRONLY);
 
     gd[0] = read_gd;
     gd[1] = write_gd;
@@ -569,7 +594,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         return rv;
     }
     if ((rv > 0) && gaps_options.yield && !param->control) {
-        int ret = pirate_cooperative_listen();
+        int ret = pirate_listen();
         if (ret < 0) {
             return ret;
         }

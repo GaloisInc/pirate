@@ -26,6 +26,7 @@ if(PIRATE_SHMEM_FEATURE)
 endif(PIRATE_SHMEM_FEATURE)
 
 set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES} "yield.cpp")
+set(PIRATE_SOURCES ${PIRATE_SOURCES} "yield.c")
 
 include_directories(
     .
