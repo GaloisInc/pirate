@@ -10,6 +10,8 @@ TEST(PirateCxx, RegisterListener)
 {
     int rv, gd[2];
     pirate_channel_param_t param;
+    errno = 0;
+    
     rv = pirate_parse_channel_param("pipe,/tmp/test_pipe_yield", &param);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
