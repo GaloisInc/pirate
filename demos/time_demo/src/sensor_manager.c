@@ -54,6 +54,9 @@ static struct argp_option options[] = {
     { "req_delay",    'd', "MS",   0, "Request delay in milliseconds",    0 },
     { "verbose",      'v', NULL,   0, "Increase verbosity level",         0 },
     { "headless",     'x', NULL,   0, "Run in headless mode",             0 },
+    { "client-to-proxy", 1000, "CONFIG", 0, "Client to proxy channel",    1 },
+    { "proxy-to-client", 1001, "CONFIG", 0, "Proxy to client channel",    1 },
+    { NULL,            0,  NULL,   0, GAPS_CHANNEL_OPTIONS,               2 },
     { 0 }
 };
 
@@ -68,6 +71,14 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     client_t *client = (client_t*) state->input;
 
     switch (key) {
+
+    case 1000:
+        strncpy(client->app.ch[0].conf, arg, 64);
+        break;
+
+    case 1001:
+        strncpy(client->app.ch[1].conf, arg, 64);
+        break;
 
     case 'C':
         client->ca_path = arg;
@@ -122,6 +133,9 @@ static void parse_args(int argc, char *argv[], client_t *client) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
+
+    strncpy(client->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
+    strncpy(client->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
 
     argp_parse(&argp, argc, argv, 0, 0, client);
 }
@@ -344,10 +358,8 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
             .on_shutdown = sensor_manager_terminate,
 
             .ch = {
-                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_WRONLY, "pipe,/tmp/client.proxy.gaps",
-                            "client->proxy"),
-                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_RDONLY, "pipe,/tmp/proxy.client.gaps",
-                            "client<-proxy"),
+                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_WRONLY, "client->proxy"),
+                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_RDONLY, "client<-proxy"),
                 GAPS_CHANNEL_END
             }
         }

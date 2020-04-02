@@ -72,7 +72,7 @@ All demo components are built by following instructions provided
 $ cd pirate
 $ mkdir build
 $ cd build
-$ cmake ..
+$ cmake -DGAPS_DEMOS=ON -DGAPS_DISABLE=ON ..
 $ make
 ```
 
@@ -92,17 +92,25 @@ Run three terminals for each of the three executables.
 
 ```
 cd build/demos/time_demo/purple
-./signing_service -v
+./signing_service -v \
+  --proxy-to-signer="pipe,/tmp/proxy.signer.gaps" \
+  --signer-to-proxy="pipe,/tmp/signer.proxy.gaps"
 ```
 
 ```
 cd build/demos/time_demo/yellow
-./signing_proxy -v
+./signing_proxy -v \
+  --client-to-proxy="pipe,/tmp/client.proxy.gaps" \
+  --proxy-to-client="pipe,/tmp/proxy.client.gaps" \
+  --signer-to-proxy="pipe,/tmp/signer.proxy.gaps" \
+  --proxy-to-signer="pipe,/tmp/proxy.signer.gaps"
 ```
 
 ```
 cd build/demos/time_demo/orange
-./sensor_manager -v
+./sensor_manager -v \
+  --client-to-proxy="pipe,/tmp/client.proxy.gaps" \
+  --proxy-to-client="pipe,/tmp/proxy.client.gaps"
 ```
 
 The sensor manager will use the `/dev/video0` camera by default
