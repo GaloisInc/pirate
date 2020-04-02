@@ -20,7 +20,7 @@ TEST(PirateCxx, RegisterListener)
 
     int a = 6;
     int b = 7;
-    rv = pirate_register<int>(gd[0], [&a](int* b) { a *= *b; });
+    rv = pirate_register_listener<int>(gd[0], [&a](int* b) { a *= *b; });
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 

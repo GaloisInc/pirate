@@ -31,7 +31,7 @@ namespace pirate {
 }
 
 template <typename T>
-int pirate_register(int gd, std::function<void(T* val)> listener) {
+int pirate_register_listener(int gd, std::function<void(T* val)> listener) {
     pirate::internal::listener_union_hack<T> lu;
     lu.listener = &listener;
     return pirate::internal::cooperative_register(gd, lu.ptr, sizeof(T));

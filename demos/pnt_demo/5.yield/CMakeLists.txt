@@ -9,7 +9,7 @@ if (GAPS_DISABLE)
 endif(GAPS_DISABLE)
 
 set(COMMON_SRC
-    channel.h channel.cpp
+    channel.h
     print.h print.cpp
     pnt_data.h
     sensors.h
@@ -28,14 +28,14 @@ else()
     set_target_properties(pnt_orange_yield PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,orange -fuse-ld=lld")
 endif(GAPS_DISABLE)
 
-target_link_libraries(pnt_green_yield ${PIRATE_APP_LIBS})
+target_link_libraries(pnt_green_yield ${PIRATE_APP_CXX_LIBS})
 set_target_properties(pnt_green_yield PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange_yield ${PIRATE_APP_LIBS})
+target_link_libraries(pnt_orange_yield ${PIRATE_APP_CXX_LIBS})
 set_target_properties(pnt_orange_yield PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES

@@ -7,6 +7,9 @@
 #include "sensors.h"
 #include "target.h"
 
+#include "libpirate.h"
+#include "libpirate.hpp"
+
 #include <string.h>
 #include <unistd.h>
 
@@ -41,9 +44,20 @@ int open_channel(std::string config, int flags) {
   return gd;
 }
 
-void pirate_yield(int gd) {
-  unsigned char ctrl = 0;
-  pirate_write(gd, &ctrl, sizeof(ctrl));
+int open_control_channel(std::string config, int flags) {
+  pirate_channel_param_t param;
+  int rv = pirate_parse_channel_param(config.c_str(), &param);
+  if (rv < 0) {
+      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+      exit(-1);
+  }
+  param.control = 1;
+  int gd = pirate_open_param(&param, flags);
+  if (gd < 0) {
+      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+      exit(-1);
+  }
+  return gd;
 }
 
 int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
@@ -89,6 +103,11 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
     }
   }
 
+  pirate_options_t options;
+  pirate_init_options(&options);
+  options.yield = 1;
+  pirate_set_options(&options);
+
   int gpsTargetGd[2];
 
   int rv = pirate_pipe_parse(gpsTargetGd, gpsToTargetPath.c_str(), O_RDWR);
@@ -98,24 +117,20 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   int gpsUavGd = open_channel(gpsToUAVPath, O_WRONLY);
   int uavGd = open_channel(uavToTargetPath, O_RDONLY);
   int rfGd = open_channel(rfToTargetPath, O_RDONLY);
-  int readCtrlGd = open_channel(orangeToGreenPath, O_RDONLY);
-  int writeCtrlGd = open_channel(greenToOrangePath, O_WRONLY);
-
-  GreenListener listener(uavGd, rfGd, gpsTargetGd[0], readCtrlGd, writeCtrlGd);
+  int readCtrlGd = open_control_channel(orangeToGreenPath, O_RDONLY);
+  int writeCtrlGd = open_control_channel(greenToOrangePath, O_WRONLY);
 
   // CreateGPS
   Position p(.0, .0, .0); // initial position
   Velocity v(50, 25, 12);
-  SendChannel<Position> gpsSender(listener);
+  SendChannel<Position> gpsSender({gpsUavGd, gpsTargetGd[1]});
   GpsSensor gps(gpsSender, p, v);
-  gpsSender.add(gpsUavGd);
-  gpsSender.add(gpsTargetGd[1]);
 
   Target tgt(10); // updates at 10 Hz frequency
 
-  listener._uavFunc = [&tgt](const Position& p) { tgt.setUAVLocation(p); };
-  listener._rfFunc = [&tgt](const Distance& d) { tgt.setDistance(d); };
-  listener._gpsFunc = [&tgt](const Position& p) { tgt.onGpsPositionChange(p); };
+  pirate_register_listener<Position>(uavGd, [&tgt](Position *p) { tgt.setUAVLocation(*p); });
+  pirate_register_listener<Distance>(rfGd, [&tgt](Distance *d) { tgt.setDistance(*d); });
+  pirate_register_listener<Position>(gpsTargetGd[0], [&tgt](Position *p) { tgt.onGpsPositionChange(*p); });
 
   for(int i = 0; i < duration / 10; i++) {
       // here we simulate sensor data streams
@@ -126,9 +141,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       usleep(sleep_msec * 500);
 #endif
       // send control to the orange enclave
-      pirate_yield(writeCtrlGd);
+      pirate_yield(-1);
       // wait for control from the orange enclave
-      listener.listen();
+      pirate_listen();
   }
 
   return 0;
@@ -173,18 +188,19 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
     }
   }
 
+  pirate_options_t options;
+  pirate_init_options(&options);
+  options.yield = 1;
+  pirate_set_options(&options);
+
   int gpsGd = open_channel(gpsToUAVPath, O_RDONLY);
   int uavGd = open_channel(uavToTargetPath, O_WRONLY);
   int rfGd = open_channel(rfToTargetPath, O_WRONLY);
-  int writeCtrlGd = open_channel(orangeToGreenPath, O_WRONLY);
-  int readCtrlGd = open_channel(greenToOrangePath, O_RDONLY);
+  int writeCtrlGd = open_control_channel(orangeToGreenPath, O_WRONLY);
+  int readCtrlGd = open_control_channel(greenToOrangePath, O_RDONLY);
 
-  OrangeListener listener(gpsGd, readCtrlGd, writeCtrlGd);
-
-  SendChannel<Distance> rfSender(listener);
-  SendChannel<Position> uavSender(listener);
-  rfSender.add(rfGd);
-  uavSender.add(uavGd);
+  SendChannel<Distance> rfSender({rfGd});
+  SendChannel<Position> uavSender({uavGd});
 
   // Create RF sensor
   Distance dtgt(1062, 7800, 9000); // initial target distance
@@ -194,11 +210,11 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   // Create UAV and have it start listening.
   OwnShip uav(uavSender, 100); // updates at 100 Hz frequency
 
-  listener._gpsFunc = [&uav](const Position& p) { uav.onGpsPositionChange(p); };
+  pirate_register_listener<Position>(gpsGd, [&uav](Position *p) { uav.onGpsPositionChange(*p); });
 
   for (int i = 0; i < duration / 10; i++) {
       // wait for control from the green enclave
-      listener.listen();
+      pirate_listen();
       // here we simulate sensor data streams
       rfs.read(msecs(10));
 #ifdef _WIN32	  
@@ -207,7 +223,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       usleep(sleep_msec * 500);
 #endif
     // send control to the green enclave
-      pirate_yield(writeCtrlGd);
+      pirate_yield(-1);
   }
 
   return 0;
