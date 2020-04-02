@@ -102,25 +102,42 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
+        char opt[128];
+        pirate_udp_shmem_param_t *param = &Reader.param.channel.udp_shmem;
+
         const char *testPath = "/gaps.shmem_test";
-        pirate_init_channel_param(UDP_SHMEM, &param);
-        strncpy(param.channel.udp_shmem.path, testPath, PIRATE_LEN_NAME - 1);
+        pirate_init_channel_param(UDP_SHMEM, &Reader.param);
+        strncpy(param->path, testPath, PIRATE_LEN_NAME - 1);
         auto test_param = GetParam();
         unsigned buffer_size = std::get<0>(test_param);
         unsigned packet_count = std::get<1>(test_param);
         unsigned packet_size = std::get<2>(test_param);
 
         if (buffer_size) {
-            param.channel.udp_shmem.buffer_size = buffer_size;
+            param->buffer_size = buffer_size;
+        } else {
+            buffer_size = DEFAULT_SMEM_BUF_LEN;
         }
 
         if (packet_count) {
-            param.channel.udp_shmem.packet_count = packet_count;
+            param->packet_count = packet_count;
+        } else {
+            packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
         }
 
         if (packet_size) {
-            param.channel.udp_shmem.packet_size = packet_size;
+            param->packet_size = packet_size;
+        } else {
+            packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
         }
+
+        Writer.param = Reader.param;
+
+        snprintf(opt, sizeof(opt) - 1, "udp_shmem,%s,%u,%u,%u",
+                    param->path, buffer_size, packet_size,
+                    packet_count);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;

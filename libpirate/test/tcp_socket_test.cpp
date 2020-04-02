@@ -85,11 +85,21 @@ class TcpSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        pirate_init_channel_param(TCP_SOCKET, &param);
-        param.channel.tcp_socket.port = 26427;
+        char opt[128];
+        pirate_tcp_socket_param_t *param = &Reader.param.channel.tcp_socket;
+
+        pirate_init_channel_param(TCP_SOCKET, &Reader.param);
+        param->port = 26427;
         auto test_param = GetParam();
-        param.channel.tcp_socket.iov_len = std::get<0>(test_param);
-        param.channel.tcp_socket.buffer_size = std::get<1>(test_param);
+        param->iov_len = std::get<0>(test_param);
+        param->buffer_size = std::get<1>(test_param);
+        Writer.param = Reader.param;
+
+        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,%u,%u",
+                    DEFAULT_TCP_IP_ADDR, param->port, param->iov_len,
+                    param->buffer_size);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 
     static const unsigned TEST_BUF_LEN = 4096;

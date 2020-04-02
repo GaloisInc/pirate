@@ -24,6 +24,7 @@ typedef struct {
 } device_ctx;
 
 int pirate_device_parse_param(char *str, pirate_device_param_t *param);
+int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len);
 int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx);
 int pirate_device_close(device_ctx *ctx);
 ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count);

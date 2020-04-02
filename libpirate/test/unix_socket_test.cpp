@@ -76,11 +76,20 @@ class UnixSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        pirate_init_channel_param(UNIX_SOCKET, &param);
-        strncpy(param.channel.unix_socket.path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
+        char opt[128];
+        pirate_unix_socket_param_t *param = &Reader.param.channel.unix_socket;
+
+        pirate_init_channel_param(UNIX_SOCKET, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
         auto test_param = GetParam();
-        param.channel.unix_socket.iov_len = std::get<0>(test_param);
-        param.channel.unix_socket.buffer_size = std::get<1>(test_param);
+        param->iov_len = std::get<0>(test_param);
+        param->buffer_size = std::get<1>(test_param);
+        Writer.param = Reader.param;
+
+        snprintf(opt, sizeof(opt) - 1, "unix_socket,%s,%u,%u", param->path, 
+                    param->iov_len, param->buffer_size);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = 32;

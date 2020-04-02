@@ -260,18 +260,18 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 
 #define OPT_DELIM ","
-#define GAPS_CHANNEL_OPTIONS                                                   \
-    "Supported channels:\n"                                                    \
-    "  DEVICE        device,path[,iov_len]\n"                                  \
-    "  PIPE          pipe,path[,iov_len]\n"                                    \
-    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                 \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
-    "  SHMEM         shmem,path[,buffer_size]\n"                               \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"  \
-    "  UIO           uio[,path]\n"                                             \
-    "  SERIAL        serial,path[,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"             \
+#define GAPS_CHANNEL_OPTIONS                                                     \
+    "Supported channels:\n"                                                      \
+    "  DEVICE        device,path[,iov_len]\n"                                    \
+    "  PIPE          pipe,path[,iov_len]\n"                                      \
+    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
+    "  SHMEM         shmem,path[,buffer_size]\n"                                 \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"    \
+    "  UIO           uio[,path]\n"                                               \
+    "  SERIAL        serial,path[,baud,mtu]\n"                                   \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"               \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
@@ -285,6 +285,18 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 // -1 on failure, errno is set
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
+
+// Get channel configuration
+//
+// Parameters
+//  gd           - GAPS channel number
+//  desc         - string to contain channel description
+//  len          - max len allowed in desc
+//
+// Return:
+//  length of the channel description string
+// -1 on failure, errno is set
+int pirate_get_channel_description(int gd, char *desc, int len);
 
 // Opens the gaps channel specified by parameter string.
 //

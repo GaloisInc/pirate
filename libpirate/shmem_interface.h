@@ -25,6 +25,7 @@ typedef struct {
 } shmem_ctx;
 
 int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param);
+int pirate_shmem_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len);
 int pirate_shmem_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx);
 int pirate_shmem_close(shmem_ctx *ctx);
 ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count);

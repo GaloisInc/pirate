@@ -86,11 +86,21 @@ class UdpSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        pirate_init_channel_param(UDP_SOCKET, &param);
-        param.channel.udp_socket.port = 26427;
+        char opt[128];
+        pirate_udp_socket_param_t *param = &Reader.param.channel.udp_socket;
+
+        pirate_init_channel_param(UDP_SOCKET, &Reader.param);
+        param->port = 26427;
         auto test_param = GetParam();
-        param.channel.udp_socket.iov_len = std::get<0>(test_param);
-        param.channel.udp_socket.buffer_size = std::get<1>(test_param);
+        param->iov_len = std::get<0>(test_param);
+        param->buffer_size = std::get<1>(test_param);
+        Writer.param = Reader.param;
+
+        snprintf(opt, sizeof(opt) - 1, "udp_socket,%s,%u,%u,%u",
+                    DEFAULT_TCP_IP_ADDR, param->port,
+                    param->iov_len, param->buffer_size);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = 4096;

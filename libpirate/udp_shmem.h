@@ -19,6 +19,7 @@
 #include "udp_shmem_interface.h"
 
 int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param);
+int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len);
 int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx);
 int udp_shmem_buffer_close(udp_shmem_ctx *ctx);
 ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf,

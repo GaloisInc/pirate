@@ -45,6 +45,10 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     return 0;
 }
 
+int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
+    return snprintf(desc, len - 1, "pipe,%s,%u", param->path, param->iov_len);
+}
+
 int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx) {
     int err;
 
