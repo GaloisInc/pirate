@@ -60,9 +60,14 @@ typedef struct {
 /* Command-line options */
 extern const char *argp_program_version;
 static struct argp_option options[] = {
-    { "period",    'p', "MS",  0, "Request polling period",      0 },
-    { "queue-len", 'q', "LEN", 0, "Request queue length",        0 },
-    { "verbose",   'v', NULL,  0, "Increase verbosity level",    0 },
+    { "period",         'p', "MS",  0, "Request polling period",         0 },
+    { "queue-len",      'q', "LEN", 0, "Request queue length",           0 },
+    { "verbose",        'v', NULL,  0, "Increase verbosity level",       0 },
+    { "client-to-proxy", 1000, "CONFIG", 0, "Client to proxy channel",   1 },
+    { "proxy-to-client", 1001, "CONFIG", 0, "Proxy to client channel",   1 },
+    { "proxy-to-signer", 1002, "CONFIG", 0, "Proxy to signer channel",   1 },
+    { "signer-to-proxy", 1003, "CONFIG", 0, "Signer to proxy channel",   1 },
+    { NULL,              0,  NULL,   0, GAPS_CHANNEL_OPTIONS,            2 },
     { 0 }
 };
 
@@ -70,6 +75,22 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     proxy_t *proxy = (proxy_t *) state->input;
 
     switch (key) {
+
+    case 1000:
+        strncpy(proxy->app.ch[0].conf, arg, 64);
+        break;
+
+    case 1001:
+        strncpy(proxy->app.ch[1].conf, arg, 64);
+        break;
+
+    case 1002:
+        strncpy(proxy->app.ch[2].conf, arg, 64);
+        break;
+
+    case 1003:
+        strncpy(proxy->app.ch[3].conf, arg, 64);
+        break;
 
     case 'p':
         proxy->poll_period_ms = strtol(arg, NULL, 10);
@@ -103,6 +124,16 @@ static void parse_args(int argc, char *argv[], proxy_t *proxy) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
+
+    strncpy(proxy->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
+    strncpy(proxy->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
+#ifdef GAPS_SERIAL
+    strncpy(proxy->app.ch[2].conf, PROXY_TO_SIGNER_WR, 64);
+    strncpy(proxy->app.ch[3].conf, SIGNER_TO_PROXY_RD, 64);
+#else
+    strncpy(proxy->app.ch[2].conf, "pipe,/tmp/proxy.signer.gaps", 64);
+    strncpy(proxy->app.ch[3].conf, "pipe,/tmp/signer.proxy.gaps", 64);
+#endif
 
     argp_parse(&argp, argc, argv, 0, 0, proxy);
 }
@@ -371,21 +402,10 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
             },
             .on_shutdown = NULL,
             .ch = {
-                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_RDONLY, "pipe,/tmp/client.proxy.gaps",
-                    "client->proxy"),
-                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_WRONLY, "pipe,/tmp/proxy.client.gaps",
-                    "client<-proxy"),
-#ifdef GAPS_SERIAL
-                GAPS_CHANNEL(PROXY_TO_SIGNER, O_WRONLY, PROXY_TO_SIGNER_WR,
-                            "proxy->signer"),
-                GAPS_CHANNEL(SIGNER_TO_PROXY, O_RDONLY, SIGNER_TO_PROXY_RD,
-                            "proxy<-signer")
-#else
-                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_WRONLY, "pipe,/tmp/proxy.signer.gaps",
-                    "proxy->signer"),
-                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_RDONLY, "pipe,/tmp/signer.proxy.gaps",
-                    "proxy<-signer")
-#endif
+                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_RDONLY, "client->proxy"),
+                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_WRONLY, "client<-proxy"),
+                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_WRONLY, "proxy->signer"),
+                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_RDONLY, "proxy<-signer")
             }
         }
     };
