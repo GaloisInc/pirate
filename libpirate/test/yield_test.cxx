@@ -8,13 +8,15 @@ namespace GAPS {
 
 TEST(PirateCxx, RegisterListener)
 {
-    pirate_options_t options;
-    pirate_init_options(&options);
-    options.yield = 1;
-    pirate_set_options(&options);
+    int rv, gd[2];
+    pirate_channel_param_t param;
+    rv = pirate_parse_channel_param("pipe,/tmp/test_pipe_yield", &param);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
 
-    int gd[2];
-    int rv = pirate_pipe_parse(gd, "pipe,/tmp/test_pipe_yield", O_RDWR);
+    param.yield = 1;
+
+    rv = pirate_pipe_param(gd, &param, O_RDWR);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
@@ -29,8 +31,6 @@ TEST(PirateCxx, RegisterListener)
     ASSERT_EQ(rv, sizeof(b));
 
     ASSERT_EQ(a, 42); // meaning of life
-    options.yield = 0;
-    pirate_set_options(&options);    
 }
 
 }

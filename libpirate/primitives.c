@@ -75,8 +75,6 @@ typedef struct {
 
 pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 
-pirate_options_t gaps_options;
-
 int gaps_reader_gds[PIRATE_NUM_CHANNELS];
 int gaps_reader_gds_num;
 
@@ -99,18 +97,6 @@ static inline pirate_channel_t *pirate_get_channel(int gd) {
     }
 
     return channel;
-}
-
-void pirate_init_options(pirate_options_t *options) {
-    memset(options, 0, sizeof(*options));
-}
-
-void pirate_set_options(pirate_options_t *options) {
-    memcpy(&gaps_options, options, sizeof(*options));
-}
-
-void pirate_get_options(pirate_options_t *options) {
-    memcpy(options, &gaps_options, sizeof(*options));
 }
 
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param) {
@@ -253,14 +239,12 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
 }
 
 void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
-    if (gaps_options.yield) {
-        if (access == O_RDONLY) {
-            gaps_reader_gds[gaps_reader_gds_num++] = gd;
-        }
-        if ((access == O_WRONLY) && param->control) {
-            gaps_writer_control_gd = gd;
-        }
-    }    
+    if ((access == O_RDONLY) && (param->yield || param->control)) {
+        gaps_reader_gds[gaps_reader_gds_num++] = gd;
+    }
+    if ((access == O_WRONLY) && param->control) {
+        gaps_writer_control_gd = gd;
+    }
 }
 
 // gaps descriptors must be opened from smallest to largest
@@ -593,7 +577,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     if (rv < 0) {
         return rv;
     }
-    if ((rv > 0) && gaps_options.yield && !param->control) {
+    if ((rv > 0) && param->yield && !param->control) {
         int ret = pirate_listen();
         if (ret < 0) {
             return ret;

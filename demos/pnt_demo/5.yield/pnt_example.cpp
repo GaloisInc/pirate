@@ -36,12 +36,34 @@ void showUsage(const char* arg0) {
 }
 
 int open_channel(std::string config, int flags) {
-  int gd = pirate_open_parse(config.c_str(), flags);
+  pirate_channel_param_t param;
+  int rv = pirate_parse_channel_param(config.c_str(), &param);
+  if (rv < 0) {
+      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+      exit(-1);
+  }
+  param.yield = 1;
+  int gd = pirate_open_param(&param, flags);
   if (gd < 0) {
       channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
       exit(-1);
   }
   return gd;
+}
+
+void open_pipe(int gd[2], std::string config, int flags) {
+  pirate_channel_param_t param;
+  int rv = pirate_parse_channel_param(config.c_str(), &param);
+  if (rv < 0) {
+      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+      exit(-1);
+  }
+  param.yield = 1;
+  rv = pirate_pipe_param(gd, &param, flags);
+  if (rv < 0) {
+      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+      exit(-1);
+  }
 }
 
 int open_control_channel(std::string config, int flags) {
@@ -103,17 +125,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
     }
   }
 
-  pirate_options_t options;
-  pirate_init_options(&options);
-  options.yield = 1;
-  pirate_set_options(&options);
-
   int gpsTargetGd[2];
 
-  int rv = pirate_pipe_parse(gpsTargetGd, gpsToTargetPath.c_str(), O_RDWR);
-  if (rv < 0) {
-      exit(-1);
-  }
+  open_pipe(gpsTargetGd, gpsToTargetPath, O_RDWR);
   int gpsUavGd = open_channel(gpsToUAVPath, O_WRONLY);
   int uavGd = open_channel(uavToTargetPath, O_RDONLY);
   int rfGd = open_channel(rfToTargetPath, O_RDONLY);
@@ -187,11 +201,6 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       exit(-1);
     }
   }
-
-  pirate_options_t options;
-  pirate_init_options(&options);
-  options.yield = 1;
-  pirate_set_options(&options);
 
   int gpsGd = open_channel(gpsToUAVPath, O_RDONLY);
   int uavGd = open_channel(uavToTargetPath, O_WRONLY);

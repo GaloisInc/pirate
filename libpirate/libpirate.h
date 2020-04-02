@@ -222,6 +222,7 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
+    uint8_t yield;
     uint8_t control;
     uint8_t pipe; // TODO YIELD: replace with src and dst enclave id
     // uint32_t src_enclave;
@@ -241,23 +242,9 @@ typedef struct {
     } channel;
 } pirate_channel_param_t;
 
-typedef struct {
-    uint8_t yield;
-} pirate_options_t;
-
 //
 // API
 //
-
-// Sets pirate options to the default values.
-// The default value is represented by the zero value.
-// Parameters:
-//  options        - pirate options to be initialized
-void pirate_init_options(pirate_options_t *options);
-
-void pirate_set_options(pirate_options_t *options);
-
-void pirate_get_options(pirate_options_t *options);
 
 // Sets channel properties to the default values.
 // The default value is represented by the zero value.
