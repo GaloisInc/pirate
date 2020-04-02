@@ -200,8 +200,8 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
 }
 
 int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
-    snprintf(desc, len - 1, "shmem,%s,%u", param->path, param->buffer_size);
-    return 0;
+    return snprintf(desc, len - 1, "shmem,%s,%u", param->path,
+                    param->buffer_size);
 }
 
 int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {

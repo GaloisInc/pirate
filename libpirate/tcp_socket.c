@@ -64,9 +64,8 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 }
 
 int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len) {
-    snprintf(desc, len - 1, "tcp_socket,%s,%u,%u,%u", param->addr, param->port,
-                param->iov_len, param->buffer_size);
-    return 0;
+    return snprintf(desc, len - 1, "tcp_socket,%s,%u,%u,%u", param->addr,
+                    param->port, param->iov_len, param->buffer_size);
 }
 
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {

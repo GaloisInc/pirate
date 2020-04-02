@@ -79,7 +79,7 @@ void ChannelTest::WriterChannelOpen()
     ASSERT_GE(Writer.gd, 0);
 
     rv = pirate_get_channel_description(Writer.gd, desc, sizeof(desc));
-    ASSERT_EQ(0, rv);
+    ASSERT_EQ(Writer.desc.length(), rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(Writer.desc.c_str(), desc);
 
@@ -99,7 +99,7 @@ void ChannelTest::ReaderChannelOpen()
     ASSERT_GE(Reader.gd, 0);
 
     rv = pirate_get_channel_description(Reader.gd, desc, sizeof(desc));
-    ASSERT_EQ(0, rv);
+    ASSERT_EQ(Reader.desc.length(), rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ(Reader.desc.c_str(), desc);
 

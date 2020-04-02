@@ -96,8 +96,8 @@ int pirate_serial_get_channel_description(const pirate_serial_param_t *param, ch
         return -1;
     }
 
-    snprintf(desc, len - 1, "serial,%s,%s,%u", param->path, baud, param->mtu);
-    return 0;
+    return snprintf(desc, len - 1, "serial,%s,%s,%u", param->path, baud,
+                    param->mtu);
 }
 
 int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx) {

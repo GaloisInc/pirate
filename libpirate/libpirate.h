@@ -294,7 +294,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 //  len          - max len allowed in desc
 //
 // Return:
-//  0 on success
+//  length of the channel description string
 // -1 on failure, errno is set
 int pirate_get_channel_description(int gd, char *desc, int len);
 
