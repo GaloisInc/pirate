@@ -52,6 +52,8 @@ target_compile_options(${PIRATE_CXX_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 install(FILES libpirate.h libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_CXX_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_CXX_STATIC_LIB} DESTINATION lib)
 
 if(GAPS_BENCH)
     include_directories(BEFORE libpirate)
