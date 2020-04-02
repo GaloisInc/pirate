@@ -63,10 +63,11 @@ static struct argp_option options[] = {
     { "period",         'p', "MS",  0, "Request polling period",         0 },
     { "queue-len",      'q', "LEN", 0, "Request queue length",           0 },
     { "verbose",        'v', NULL,  0, "Increase verbosity level",       0 },
-    { "client-to-proxy", 1000, "DESCRIPTION", 0, "Client to proxy channel", 0 },
-    { "proxy-to-client", 1001, "DESCRIPTION", 0, "Proxy to client channel", 0 },
-    { "proxy-to-signer", 1002, "DESCRIPTION", 0, "Proxy to signer channel", 0 },
-    { "signer-to-proxy", 1003, "DESCRIPTION", 0, "Signer to proxy channel", 0 },
+    { "client-to-proxy", 1000, "CONFIG", 0, "Client to proxy channel",   1 },
+    { "proxy-to-client", 1001, "CONFIG", 0, "Proxy to client channel",   1 },
+    { "proxy-to-signer", 1002, "CONFIG", 0, "Proxy to signer channel",   1 },
+    { "signer-to-proxy", 1003, "CONFIG", 0, "Signer to proxy channel",   1 },
+    { NULL,              0,  NULL,   0, GAPS_CHANNEL_OPTIONS,            2 },
     { 0 }
 };
 

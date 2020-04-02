@@ -54,8 +54,9 @@ static struct argp_option options[] = {
     { "req_delay",    'd', "MS",   0, "Request delay in milliseconds",    0 },
     { "verbose",      'v', NULL,   0, "Increase verbosity level",         0 },
     { "headless",     'x', NULL,   0, "Run in headless mode",             0 },
-    { "client-to-proxy", 1000, "DESCRIPTION", 0, "Client to proxy channel",  0 },
-    { "proxy-to-client", 1001, "DESCRIPTION", 0, "Proxy to client channel",  0 },
+    { "client-to-proxy", 1000, "CONFIG", 0, "Client to proxy channel",    1 },
+    { "proxy-to-client", 1001, "CONFIG", 0, "Proxy to client channel",    1 },
+    { NULL,            0,  NULL,   0, GAPS_CHANNEL_OPTIONS,               2 },
     { 0 }
 };
 
