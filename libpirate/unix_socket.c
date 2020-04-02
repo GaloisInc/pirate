@@ -50,6 +50,12 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
     return 0;
 }
 
+int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
+    snprintf(desc, len - 1, "unix_socket,%s,%u,%u", param->path, param->iov_len,
+                param->buffer_size);
+    return 0;
+}
+
 static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     int server_fd;
     int err, rv;

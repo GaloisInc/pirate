@@ -28,6 +28,16 @@ int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param) {
 #endif
 }
 
+int pirate_shmem_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return shmem_buffer_get_channel_description(param, desc, len);
+#else
+    (void) param, (void) desc, (void) len;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
 int pirate_shmem_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
     return shmem_buffer_open(flags, param, ctx);
