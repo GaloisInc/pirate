@@ -222,7 +222,7 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
-    unsigned char control;
+    uint8_t control;
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -239,7 +239,7 @@ typedef struct {
 } pirate_channel_param_t;
 
 typedef struct {
-    unsigned char yield;
+    uint8_t yield;
 } pirate_options_t;
 
 //
