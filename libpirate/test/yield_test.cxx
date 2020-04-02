@@ -28,7 +28,7 @@ TEST(PirateCxx, RegisterListener)
 
     rv = pirate_write(gd[1], &b, sizeof(b));
     ASSERT_EQ(errno, 0);
-    ASSERT_EQ(rv, sizeof(b));
+    ASSERT_EQ(rv, (int) sizeof(b));
 
     ASSERT_EQ(a, 42); // meaning of life
 }
