@@ -52,22 +52,6 @@ void open_pipe(int gd[2], std::string config, int flags) {
   }
 }
 
-int open_control_channel(std::string config, int flags) {
-  pirate_channel_param_t param;
-  int rv = pirate_parse_channel_param(config.c_str(), &param);
-  if (rv < 0) {
-      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
-      exit(-1);
-  }
-  param.control = 1;
-  int gd = pirate_open_param(&param, flags);
-  if (gd < 0) {
-      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
-      exit(-1);
-  }
-  return gd;
-}
-
 int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 {
   // Parse command line arguments
@@ -117,8 +101,8 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   int gpsUavGd = open_channel(gpsToUAVPath, O_WRONLY);
   int uavGd = open_channel(uavToTargetPath, O_RDONLY);
   int rfGd = open_channel(rfToTargetPath, O_RDONLY);
-  int readCtrlGd = open_control_channel(orangeToGreenPath, O_RDONLY);
-  int writeCtrlGd = open_control_channel(greenToOrangePath, O_WRONLY);
+  int readCtrlGd = open_channel(orangeToGreenPath, O_RDONLY);
+  int writeCtrlGd = open_channel(greenToOrangePath, O_WRONLY);
 
   // CreateGPS
   Position p(.0, .0, .0); // initial position
@@ -191,8 +175,8 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   int gpsGd = open_channel(gpsToUAVPath, O_RDONLY);
   int uavGd = open_channel(uavToTargetPath, O_WRONLY);
   int rfGd = open_channel(rfToTargetPath, O_WRONLY);
-  int writeCtrlGd = open_control_channel(orangeToGreenPath, O_WRONLY);
-  int readCtrlGd = open_control_channel(greenToOrangePath, O_RDONLY);
+  int writeCtrlGd = open_channel(orangeToGreenPath, O_WRONLY);
+  int readCtrlGd = open_channel(greenToOrangePath, O_RDONLY);
 
   SendChannel<Distance> rfSender({rfGd});
   SendChannel<Position> uavSender({uavGd});
