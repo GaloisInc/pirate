@@ -85,6 +85,10 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
     return 0;
 }
 
+int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
+    return snprintf(desc, len - 1, "uio,%s", param->path);
+}
+
 static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     shmem_buffer_t *uio_buffer = mmap(NULL, buffer_size(),
         PROT_READ | PROT_WRITE, MAP_SHARED, fd, region * getpagesize());

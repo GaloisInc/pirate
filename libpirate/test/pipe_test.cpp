@@ -63,9 +63,18 @@ class PipeTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        pirate_init_channel_param(PIPE, &param);
-        strncpy(param.channel.pipe.path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
-        param.channel.pipe.iov_len = GetParam();
+        char opt[128];
+        pirate_pipe_param_t *param = &Reader.param.channel.pipe;
+
+        pirate_init_channel_param(PIPE, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
+        param->iov_len = GetParam();
+        Writer.param = Reader.param;
+
+        snprintf(opt, sizeof(opt) - 1, "pipe,%s,%u", param->path,
+                    param->iov_len);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 };
 
