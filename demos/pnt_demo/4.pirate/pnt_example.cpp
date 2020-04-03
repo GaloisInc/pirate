@@ -72,10 +72,8 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 //  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
 //  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
   auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath);       // Green to orange
-  int uavToTargetGd = readOpen(uavToTargetPath);  // Orange to green
-  int rfToTargetGd  = readOpen(rfToTargetPath);   // Orange to green
-  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetGd);
-  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetGd);
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);
 
   std::function<void(Position)> onGPSChange;
 
@@ -105,8 +103,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setUAVLocation(p);
       });
-  std::thread rfToTargetThread(rfToTargetRecv,
-    [&tgt, &tgtMutex](const Distance& d) {
+  std::thread rfToTargetThread = 
+    asyncReadMessages<Distance>(rfToTargetRecv,
+      [&tgt, &tgtMutex](const Distance& d) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setDistance(d);
       });
@@ -123,8 +122,8 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
   // Close GPS  
   gpsSender.close();
-  pirate_close(uavToTargetGd);
-  pirate_close(rfToTargetGd);
+  uavToTargetRecv.close();
+  rfToTargetRecv.close();
   
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
@@ -180,8 +179,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   }
 
   // Create channels (Note: Order must match corresponding run_green channel creation order)
-  int gpsToUAVGd       = readOpen(gpsToUAVPath);
-  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVGd);    // Green to orange
+  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath);    // Green to orange
   auto uavToTargetSend = pirateSender<Position>(uavToTargetPath);  // Orange to green
   auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath);   // Orange to green
 
@@ -207,7 +205,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   // Wait for UAV to stop receiving messages and close its channel.
   rfToTargetSend.close();
   uavToTargetSend.close();
-  pirate_close(gpsToUAVGd);
+  gpsToUAVRecv.close();
 
   return 0;
 }

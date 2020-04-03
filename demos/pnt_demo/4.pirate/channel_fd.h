@@ -11,7 +11,6 @@
 
 /** Write the bytes to a file descriptor, and check that all bytes were written. */
 void gdCheckedWrite(int gd, const void* buf, size_t n);
-int readOpen(const std::string& config);
 
 template<typename T>
 Sender<T> gdSender(int gd) {
@@ -67,13 +66,22 @@ void gdDatagramReadMessages(int gd, std::function<void(const T&)> f)
 
 template<typename T>
 Receiver<T> gdReceiver(int gd) {
-    return [gd](std::function<void (const T& d)> fn) {
-      gdDatagramReadMessages<T>(gd, fn);
-    };
+  auto receiveFn = [gd](std::function<void (const T& d)> fn) {
+    gdDatagramReadMessages<T>(gd, fn);
+  };
+  auto closeFn = [gd]() { pirate_close(gd); };
+  return Receiver<T>(receiveFn, closeFn);
 }
 
 template<typename T>
-Receiver<T> pirateReceiver(int gd) {
-    // Return receiver
+Receiver<T> pirateReceiver(const std::string& config) {
+    int gd;
+
+    gd = pirate_open_parse(config.c_str(), O_RDONLY);
+    if (gd < 0) {
+        channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+        exit(-1);
+    }
+    // Return sender
     return gdReceiver<T>(gd);
 }
