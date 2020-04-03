@@ -36,14 +36,7 @@ void showUsage(const char* arg0) {
 }
 
 int open_channel(std::string config, int flags) {
-  pirate_channel_param_t param;
-  int rv = pirate_parse_channel_param(config.c_str(), &param);
-  if (rv < 0) {
-      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
-      exit(-1);
-  }
-  param.yield = 1;
-  int gd = pirate_open_param(&param, flags);
+  int gd = pirate_open_parse(config.c_str(), flags);
   if (gd < 0) {
       channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
       exit(-1);
@@ -52,14 +45,7 @@ int open_channel(std::string config, int flags) {
 }
 
 void open_pipe(int gd[2], std::string config, int flags) {
-  pirate_channel_param_t param;
-  int rv = pirate_parse_channel_param(config.c_str(), &param);
-  if (rv < 0) {
-      channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
-      exit(-1);
-  }
-  param.yield = 1;
-  rv = pirate_pipe_param(gd, &param, flags);
+  int rv = pirate_pipe_parse(gd, config.c_str(), flags);
   if (rv < 0) {
       channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
       exit(-1);

@@ -265,6 +265,7 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 
 #define OPT_DELIM ","
+#define KV_DELIM "="
 #define GAPS_CHANNEL_OPTIONS                                                   \
     "Supported channels:\n"                                                    \
     "  DEVICE        device,path[,iov_len]\n"                                  \
@@ -291,12 +292,23 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
+// Returns the open() flags associated with the gaps channel
+//
+// Parameters
+//  gd           - GAPS channel number
+//
+// Return:
+//  non-negative value on success
+// -1 on failure, errno is set
+
+int pirate_get_channel_flags(int gd);
+
 // Opens the gaps channel specified by parameter string.
 //
 // Channels must be opened in the same order across all
 // processes.
 
-// The return value is the input gaps descriptor, or -1 if an
+// The return value is a unique gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.

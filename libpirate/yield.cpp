@@ -24,10 +24,27 @@ extern int gaps_writer_control_gd;
 
 int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
     pirate_listener_t listener;
+    pirate_channel_param_t *param;
     listener.func = func;
     listener.len = len;
     if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
         errno = EBADF;
+        return -1;
+    }
+    param = pirate_get_channel_param_ref(gd);
+    if (param == NULL) {
+        return -1;
+    }
+    if (!param->yield) {
+        errno = EPERM;
+        return -1;
+    }
+    if (param->control) {
+        errno = EPERM;
+        return -1;
+    }
+    if ((pirate_get_channel_flags(gd) & O_ACCMODE) != O_RDONLY) {
+        errno = EPERM;
         return -1;
     }
     if (gaps_listeners[gd].size() > 0) {

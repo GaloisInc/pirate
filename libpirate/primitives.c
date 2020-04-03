@@ -104,6 +104,32 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
+static void pirate_parse_common_kv(const char *key, const char *value, pirate_channel_param_t *param) {
+    if (strncmp("yield", key, strlen("yield")) == 0) {
+        param->yield = atoi(value);
+    } else if (strncmp("control", key, strlen("control")) == 0) {
+        param->control = atoi(value);
+    }
+}
+
+static void pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
+    char *token, *key, *value;
+    char *saveptr1, *saveptr2;
+
+    while ((token = strtok_r(str, OPT_DELIM, &saveptr1)) != NULL) {
+        str = NULL;
+        key = strtok_r(token, KV_DELIM, &saveptr2);
+        if (key == NULL) {
+            continue;
+        }
+        value = strtok_r(NULL, KV_DELIM, &saveptr2);
+        if (value == NULL) {
+            continue;
+        }
+        pirate_parse_common_kv(key, value, param);
+    }
+}
+
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
 
     // Channel configuration function is allowed to modify the string
@@ -112,6 +138,10 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     strncpy(opt, str, sizeof(opt));
 
     pirate_init_channel_param(INVALID, param);
+
+    pirate_parse_common_param(opt, param);
+
+    strncpy(opt, str, sizeof(opt));
 
     if (strncmp("device", opt, strlen("device")) == 0) {
         param->channel_type = DEVICE;
@@ -160,6 +190,15 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     }
     memcpy(param, &channel->param, sizeof(pirate_channel_param_t));
     return 0;
+}
+
+int pirate_get_channel_flags(int gd) {
+    pirate_channel_t *channel = NULL;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+    return channel->ctx.flags;
 }
 
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {

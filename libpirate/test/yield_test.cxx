@@ -9,16 +9,9 @@ namespace GAPS {
 TEST(PirateCxx, RegisterListener)
 {
     int rv, gd[2];
-    pirate_channel_param_t param;
     errno = 0;
-    
-    rv = pirate_parse_channel_param("pipe,/tmp/test_pipe_yield", &param);
-    ASSERT_EQ(errno, 0);
-    ASSERT_EQ(rv, 0);
 
-    param.yield = 1;
-
-    rv = pirate_pipe_param(gd, &param, O_RDWR);
+    rv = pirate_pipe_parse(gd, "pipe,/tmp/test_pipe_yield,yield=1", O_RDWR);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
