@@ -251,6 +251,7 @@ typedef struct {
 // Parameters:
 //  channel_type - GAPS channel type
 //  param        - channel parameters to be initialized
+
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param);
 
 // Parse a string with gaps channel configuration options.
@@ -262,22 +263,44 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
 // Return:
 //  0 on success
 // -1 on failure
+
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
+
+// Get channel parameters as a string
+//
+// Parameters
+//  gd           - GAPS channel number
+//  desc         - string to contain channel description
+//  len          - max len allowed in desc
+//
+// Upon successful return, this function returns the
+// number of characters printed (excluding the null byte
+// used to end output to strings). The function does not
+// write more than len bytes (including the terminating null
+// byte ('\0')). If the output was truncated due to this
+//  limit, then the return value is the number of characters
+// (excluding the terminating null byte) which would have been
+// written to the final string if enough space had been
+// available. Thus, a return value of len or more means that
+// the output was truncated. If an output error is encountered,
+// a negative value is returned.
+
+int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str, int len);
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                   \
-    "Supported channels:\n"                                                    \
-    "  DEVICE        device,path[,iov_len]\n"                                  \
-    "  PIPE          pipe,path[,iov_len]\n"                                    \
-    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                 \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n"             \
-    "  SHMEM         shmem,path[,buffer_size]\n"                               \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"  \
-    "  UIO           uio[,path]\n"                                             \
-    "  SERIAL        serial,path[,baud,mtu]\n"                                 \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"             \
+#define GAPS_CHANNEL_OPTIONS                                                     \
+    "Supported channels:\n"                                                      \
+    "  DEVICE        device,path[,iov_len]\n"                                    \
+    "  PIPE          pipe,path[,iov_len]\n"                                      \
+    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
+    "  SHMEM         shmem,path[,buffer_size]\n"                                 \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"    \
+    "  UIO           uio[,path]\n"                                               \
+    "  SERIAL        serial,path[,baud,mtu]\n"                                   \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"               \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]\n"
 
 // Copies channel parameters from configuration into param argument.
@@ -302,6 +325,27 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 // -1 on failure, errno is set
 
 int pirate_get_channel_flags(int gd);
+
+// Get channel parameters as a string
+//
+// Parameters
+//  gd           - GAPS channel number
+//  desc         - string to contain channel description
+//  len          - max len allowed in desc
+//
+// Upon successful return, this function returns the
+// number of characters printed (excluding the null byte
+// used to end output to strings). The function does not
+// write more than len bytes (including the terminating null
+// byte ('\0')). If the output was truncated due to this
+//  limit, then the return value is the number of characters
+// (excluding the terminating null byte) which would have been
+// written to the final string if enough space had been
+// available. Thus, a return value of len or more means that
+// the output was truncated. If an output error is encountered,
+// a negative value is returned.
+
+int pirate_get_channel_description(int gd, char *str, int len);
 
 // Opens the gaps channel specified by parameter string.
 //

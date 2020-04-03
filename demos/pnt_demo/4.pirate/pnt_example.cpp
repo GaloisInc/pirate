@@ -72,8 +72,8 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 //  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
 //  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
   auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath);       // Green to orange
-  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);  // Orange to green
-  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);   // Orange to green
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);
 
   std::function<void(Position)> onGPSChange;
 
@@ -103,8 +103,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setUAVLocation(p);
       });
-  std::thread rfToTargetThread(rfToTargetRecv,
-    [&tgt, &tgtMutex](const Distance& d) {
+  std::thread rfToTargetThread = 
+    asyncReadMessages<Distance>(rfToTargetRecv,
+      [&tgt, &tgtMutex](const Distance& d) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setDistance(d);
       });
@@ -116,11 +117,13 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       };
 
   // Run GPS every 10 milliseconds.
-  onTimer(start, duration,std::chrono::milliseconds(10), 
+  onTimer(start, duration, std::chrono::milliseconds(10), 
            [&gps](TimerMsec now){ gps.read(now); });
 
   // Close GPS  
   gpsSender.close();
+  uavToTargetRecv.close();
+  rfToTargetRecv.close();
   
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
@@ -199,9 +202,10 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       });
   gpsToUAVThread.join();
 
-  // Wait for UAV to stop receiving messages and close its channel.    
+  // Wait for UAV to stop receiving messages and close its channel.
   rfToTargetSend.close();
   uavToTargetSend.close();
+  gpsToUAVRecv.close();
 
   return 0;
 }

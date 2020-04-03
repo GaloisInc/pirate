@@ -24,6 +24,7 @@ typedef struct {
 } ge_eth_ctx;
 
 int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param);
+int pirate_ge_eth_get_channel_description(const pirate_ge_eth_param_t *param, char *desc, int len);
 int pirate_ge_eth_open(int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx);
 int pirate_ge_eth_close(ge_eth_ctx *ctx);
 ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx, void *buf, size_t count);

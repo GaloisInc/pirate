@@ -13,7 +13,6 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <cstring>
 #include <stdlib.h>
 #include "libpirate.h"
 #include "libpirate_internal.h"
@@ -23,10 +22,8 @@ namespace GAPS
 {
 
 ChannelTest::ChannelTest() : testing::Test() ,
-    Writer({TEST_CHANNEL, NULL, -1}),  Reader({TEST_CHANNEL, NULL, -1}), 
     len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN})
 {
-
 }
 
 void ChannelTest::SetUp()
@@ -74,34 +71,62 @@ void ChannelTest::WriteDataInit(ssize_t len)
 
 void ChannelTest::WriterChannelOpen()
 {
-    Writer.channel = pirate_open_param(&param, O_WRONLY);
-    ASSERT_EQ(0, errno);
-    ASSERT_GE(Writer.channel, 0);
+    int rv;
+    char desc[256];
 
-    int sts = pthread_barrier_wait(&barrier);
-    ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+    Writer.gd = pirate_open_param(&Writer.param, O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(Writer.gd, 0);
+
+    rv = pirate_get_channel_description(Writer.gd, desc, sizeof(desc));
+    ASSERT_EQ((int)Writer.desc.length(), rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(Writer.desc.c_str(), desc);
+
+    WriterChannelPostOpen();
+
+    rv = pthread_barrier_wait(&barrier);
+    ASSERT_TRUE(rv == 0 || rv == PTHREAD_BARRIER_SERIAL_THREAD);
 }
 
 void ChannelTest::ReaderChannelOpen()
 {
-    Reader.channel = pirate_open_param(&param, O_RDONLY);
-    ASSERT_EQ(0, errno);
-    ASSERT_GE(Reader.channel, 0);
+    int rv;
+    char desc[256];
 
-    int sts = pthread_barrier_wait(&barrier);
-    ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+    Reader.gd = pirate_open_param(&Reader.param, O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(Reader.gd, 0);
+
+    rv = pirate_get_channel_description(Reader.gd, desc, sizeof(desc));
+    ASSERT_EQ((int)Reader.desc.length(), rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ(Reader.desc.c_str(), desc);
+
+    ReaderChannelPostOpen();
+
+    rv = pthread_barrier_wait(&barrier);
+    ASSERT_TRUE(rv == 0 || rv == PTHREAD_BARRIER_SERIAL_THREAD);
 }
 
 void ChannelTest::WriterChannelClose()
 {
-    int rv = pirate_close(Writer.channel);
+    int rv;
+    
+    WriterChannelPreClose();
+
+    rv = pirate_close(Writer.gd);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 }
 
 void ChannelTest::ReaderChannelClose()
 {
-    int rv = pirate_close(Reader.channel);
+    int rv;
+
+    ReaderChannelPreClose();
+    
+    rv = pirate_close(Reader.gd);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
 }
@@ -109,7 +134,7 @@ void ChannelTest::ReaderChannelClose()
 void ChannelTest::Run()
 {
     RunChildOpen(true);
-    if (pirate_pipe_channel_type(param.channel_type)) {
+    if (pirate_pipe_channel_type(Writer.param.channel_type)) {
         RunChildOpen(false);
     }
 }
@@ -127,13 +152,13 @@ void ChannelTest::RunChildOpen(bool child)
     if (!childOpen)
     {
         int rv, gd[2] = {-1, -1};
-        rv = pirate_pipe_param(gd, &param, O_RDWR);
+        rv = pirate_pipe_param(gd, &Writer.param, O_RDWR);
         ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
         ASSERT_GE(gd[0], 0);
         ASSERT_GE(gd[1], 0);
-        Reader.channel = gd[0];
-        Writer.channel = gd[1];
+        Reader.gd = gd[0];
+        Writer.gd = gd[1];
     }
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
@@ -179,7 +204,7 @@ void ChannelTest::WriterTest()
 
         WriteDataInit(l);
 
-        rv = pirate_write(Writer.channel, Writer.buf, l);
+        rv = pirate_write(Writer.gd, Writer.buf, l);
         ASSERT_EQ(l, rv);
         ASSERT_EQ(0, errno);
 
@@ -212,7 +237,7 @@ void ChannelTest::ReaderTest()
         ssize_t remain = l;
         uint8_t *buf = Reader.buf;
         do {
-            rv = pirate_read(Reader.channel, buf, remain);
+            rv = pirate_read(Reader.gd, buf, remain);
             ASSERT_EQ(0, errno);
             ASSERT_GT(rv, 0);
             remain -= rv;

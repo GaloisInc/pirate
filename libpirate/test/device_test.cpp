@@ -13,8 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <errno.h>
 #include <string>
+#include <errno.h>
 #include "libpirate.h"
 #include "channel_test.hpp"
 
@@ -60,12 +60,22 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
 class DeviceTest : public ChannelTest, public WithParamInterface<int>
 {
 public:
-    void ChannelInit() {
-        pirate_init_channel_param(DEVICE, &param);
-        snprintf(param.channel.device.path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
-        param.channel.device.iov_len = GetParam();
+    void ChannelInit()
+    {
+        char opt[128];
+        pirate_device_param_t *param = &Reader.param.channel.device;
+        
+        pirate_init_channel_param(DEVICE, &Reader.param);
+        snprintf(param->path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
+        param->iov_len = GetParam();
+        Writer.param = Reader.param;
 
-        if (mkfifo(param.channel.device.path, 0660) == -1) {
+        snprintf(opt, sizeof(opt) - 1, "device,%s,%u", param->path, 
+                    param->iov_len);
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
+
+        if (mkfifo(param->path, 0660) == -1) {
             ASSERT_EQ(EEXIST, errno);
             errno = 0;
         }

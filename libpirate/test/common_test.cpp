@@ -53,12 +53,11 @@ TEST(CommonChannel, InvalidCLose)
     errno = 0;
 
     // Close unopened channel
-    rv = pirate_close(ChannelTest::TEST_CHANNEL);
+    rv = pirate_close(0);
     ASSERT_EQ(EBADF, errno);
     ASSERT_EQ(-1, rv);
     errno = 0;
 }
-
 
 TEST(CommonChannel, InvalidReadWrite)
 {
@@ -66,13 +65,13 @@ TEST(CommonChannel, InvalidReadWrite)
     uint8_t buf[16] = { 0 };
 
     // Read unopened channel
-    rv = pirate_read(ChannelTest::TEST_CHANNEL, buf, sizeof(buf));
+    rv = pirate_read(0, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
     errno = 0;
 
     // Write unopened channel
-    rv = pirate_write(ChannelTest::TEST_CHANNEL, buf, sizeof(buf));
+    rv = pirate_write(0, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
     errno = 0;

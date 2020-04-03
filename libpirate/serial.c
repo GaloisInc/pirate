@@ -80,6 +80,26 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
     return 0;
 }
 
+int pirate_serial_get_channel_description(const pirate_serial_param_t *param, char *desc, int len) {
+    const char *baud = NULL;
+    
+    switch (param->baud) {
+    case B4800:   baud = "4800";   break;
+    case B9600:   baud = "9600";   break;
+    case B19200:  baud = "19200";  break;
+    case B38400:  baud = "38400";  break;
+    case B57600:  baud = "57600";  break;
+    case B115200: baud = "115200"; break;
+    case B230400: baud = "230400"; break;
+    case B460800: baud = "460800"; break;
+    default:
+        return -1;
+    }
+
+    return snprintf(desc, len - 1, "serial,%s,%s,%u", param->path, baud,
+                    param->mtu);
+}
+
 int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
     struct termios attr;
 
