@@ -6,6 +6,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+int readOpen(const std::string& config) {
+    int gd;
+
+    gd = pirate_open_parse(config.c_str(), O_RDONLY);
+    if (gd < 0) {
+        channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
+        exit(-1);
+    }
+    return gd;
+}
+
 void gdCheckedWrite(int gd, const void* buf, size_t n) {
   ssize_t cnt = pirate_write(gd, buf, n);
   if (cnt == -1) {
