@@ -172,12 +172,16 @@ int pirate_udp_socket_open(int flags, pirate_udp_socket_param_t *param, udp_sock
 }
 
 int pirate_udp_socket_close(udp_socket_ctx *ctx) {
-    int rv = -1;
+    int err, rv = -1;
 
     if (ctx->sock <= 0) {
         errno = ENODEV;
         return -1;
     }
+
+    err = errno;
+    shutdown(ctx->sock, SHUT_RDWR);
+    errno = err;
 
     rv = close(ctx->sock);
     ctx->sock = -1;

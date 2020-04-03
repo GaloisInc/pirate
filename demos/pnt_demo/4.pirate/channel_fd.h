@@ -11,7 +11,7 @@
 
 /** Write the bytes to a file descriptor, and check that all bytes were written. */
 void gdCheckedWrite(int gd, const void* buf, size_t n);
-void piratePipe(const std::string& config, int gd);
+int readOpen(const std::string& config);
 
 template<typename T>
 Sender<T> gdSender(int gd) {
@@ -73,14 +73,7 @@ Receiver<T> gdReceiver(int gd) {
 }
 
 template<typename T>
-Receiver<T> pirateReceiver(const std::string& config) {
-    int gd;
-
-    gd = pirate_open_parse(config.c_str(), O_RDONLY);
-    if (gd < 0) {
-        channel_errlog([config](FILE* f) { fprintf(f, "Open %s failed (error = %d)", config.c_str(), errno); });
-        exit(-1);
-    }
+Receiver<T> pirateReceiver(int gd) {
     // Return receiver
     return gdReceiver<T>(gd);
 }

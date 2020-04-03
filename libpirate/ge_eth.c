@@ -255,7 +255,7 @@ int pirate_ge_eth_open(int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx)
 }
 
 int pirate_ge_eth_close(ge_eth_ctx *ctx) {
-    int rv = -1;
+    int err, rv = -1;
 
     if (ctx->buf != NULL) {
         free(ctx->buf);
@@ -266,6 +266,10 @@ int pirate_ge_eth_close(ge_eth_ctx *ctx) {
         errno = ENODEV;
         return -1;
     }
+
+    err = errno;
+    shutdown(ctx->sock, SHUT_RDWR);
+    errno = err;
 
     rv = close(ctx->sock);
     ctx->sock = -1;
@@ -284,8 +288,8 @@ ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
     }
 
     rd_size = recv(ctx->sock, ctx->buf, param->mtu, 0);
-    if (rd_size < 0) {
-        return 0;
+    if (rd_size <= 0) {
+        return rd_size;
     }
 
     if (ge_message_unpack(ctx->buf, buf, count, &hdr, param) != 0) {

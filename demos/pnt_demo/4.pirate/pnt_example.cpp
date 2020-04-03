@@ -72,8 +72,10 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 //  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
 //  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
   auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath);       // Green to orange
-  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);  // Orange to green
-  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);   // Orange to green
+  int uavToTargetGd = readOpen(uavToTargetPath);  // Orange to green
+  int rfToTargetGd  = readOpen(rfToTargetPath);   // Orange to green
+  auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetGd);
+  auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetGd);
 
   std::function<void(Position)> onGPSChange;
 
@@ -116,11 +118,13 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       };
 
   // Run GPS every 10 milliseconds.
-  onTimer(start, duration,std::chrono::milliseconds(10), 
+  onTimer(start, duration, std::chrono::milliseconds(10), 
            [&gps](TimerMsec now){ gps.read(now); });
 
   // Close GPS  
   gpsSender.close();
+  pirate_close(uavToTargetGd);
+  pirate_close(rfToTargetGd);
   
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
@@ -176,7 +180,8 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   }
 
   // Create channels (Note: Order must match corresponding run_green channel creation order)
-  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVPath);    // Green to orange
+  int gpsToUAVGd       = readOpen(gpsToUAVPath);
+  auto gpsToUAVRecv    = pirateReceiver<Position>(gpsToUAVGd);    // Green to orange
   auto uavToTargetSend = pirateSender<Position>(uavToTargetPath);  // Orange to green
   auto rfToTargetSend  = pirateSender<Distance>(rfToTargetPath);   // Orange to green
 
@@ -199,9 +204,10 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       });
   gpsToUAVThread.join();
 
-  // Wait for UAV to stop receiving messages and close its channel.    
+  // Wait for UAV to stop receiving messages and close its channel.
   rfToTargetSend.close();
   uavToTargetSend.close();
+  pirate_close(gpsToUAVGd);
 
   return 0;
 }
