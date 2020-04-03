@@ -82,31 +82,69 @@ class SerialTest : public ChannelTest,
     public WithParamInterface<std::tuple<speed_t, int>>
 {
 public:
+    SerialTest() : ChannelTest::ChannelTest(),
+        readerDevice("/dev/ttyUSB0"), writerDevice("/dev/ttyUSB1") {
+    }
+
     void ChannelInit()
     {
-        auto test_param = GetParam();
-        const speed_t baud = std::get<0>(test_param);
-        const unsigned mtu = std::get<0>(test_param);
+        char opt[128];
+        pirate_serial_param_t *param = &Reader.param.channel.serial;
 
-        pirate_init_channel_param(SERIAL, &param);
+        auto test_param = GetParam();
+        const char *baud_str = NULL;
+        speed_t baud = std::get<0>(test_param);
+        unsigned mtu = std::get<0>(test_param);
+
+        pirate_init_channel_param(SERIAL, &Reader.param);
+        strncpy(param->path, readerDevice.c_str(), PIRATE_LEN_NAME - 1);
         if (baud) {
-            param.channel.serial.baud = baud;
+            param->baud = baud;
+        } else {
+            baud = SERIAL_DEFAULT_BAUD;
         }
 
         if (mtu) {
-            param.channel.serial.mtu = mtu;
+            param->mtu = mtu;
+        } else {
+            mtu = SERIAL_DEFAULT_MTU;
         }
+
+        Writer.param = Reader.param;
+        strncpy(Writer.param.channel.serial.path, writerDevice.c_str(), PIRATE_LEN_NAME - 1);
+
+        switch (baud) {
+        case B4800:   baud_str = "4800";   break;
+        case B9600:   baud_str = "9600";   break;
+        case B19200:  baud_str = "19200";  break;
+        case B38400:  baud_str = "38400";  break;
+        case B57600:  baud_str = "57600";  break;
+        case B115200: baud_str = "115200"; break;
+        case B230400: baud_str = "230400"; break;
+        case B460800: baud_str = "460800"; break;
+        default:
+            FAIL() << "Invalid baud rate";
+        }
+
+        snprintf(opt, sizeof(opt) - 1, "serial,%s,%s,%u", readerDevice.c_str(),
+                    baud_str, mtu);
+        Reader.desc.assign(opt);
+        snprintf(opt, sizeof(opt) - 1, "serial,%s,%s,%u", writerDevice.c_str(),
+                    baud_str, mtu);
+        Writer.desc.assign(opt);
     }
 
     static const speed_t TEST_BAUD = B115200;
     static const unsigned TEST_MTU = SERIAL_DEFAULT_MTU / 2;
+    const std::string readerDevice;
+    const std::string writerDevice;
 };
 
 
 TEST_P(SerialTest, Run)
 {
-    if ((access("/dev/ttyUSB0", W_OK) == 0) &&
-        (access("/dev/ttyUSB1", R_OK) == 0)) {
+    if ((access(readerDevice.c_str(), W_OK) == 0) &&
+        (access(writerDevice.c_str(), R_OK) == 0)) {
         Run();
     } else {
         ASSERT_EQ(ENOENT, errno);

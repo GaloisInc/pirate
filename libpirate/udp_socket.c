@@ -61,6 +61,11 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
     return 0;
 }
 
+int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len) {
+    return snprintf(desc, len - 1, "udp_socket,%s,%u,%u,%u", param->addr,
+                    param->port, param->iov_len, param->buffer_size);
+}
+
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int err, rv;
     struct sockaddr_in addr;

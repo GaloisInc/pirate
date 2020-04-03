@@ -15,6 +15,7 @@
 
 #include <fcntl.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -42,6 +43,10 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
     }
 
     return 0;
+}
+
+int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
+    return snprintf(desc, len - 1, "device,%s,%u", param->path, param->iov_len);
 }
 
 int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx) {

@@ -183,7 +183,6 @@ TEST(ChannelMercuryTest, DefaultSession) {
 
 
 typedef struct {
-    int         channel;
     uint32_t    level;
     uint32_t    source_id;
     uint32_t    destination_id;
@@ -197,68 +196,69 @@ class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestPar
 public:
     void ChannelInit() override
     {
+        char opt[128];
+        char *opt_wr = opt;
+        int len = sizeof(opt);
+        int wr_len = 0;
         mMercuryParam = GetParam();
-        Writer.channel = Reader.channel = mMercuryParam.channel;
+        pirate_mercury_param_t *param = &Writer.param.channel.mercury;
 
         // Writer
-        pirate_init_channel_param(MERCURY, &param);
-        param.channel.mercury.session.level          = mMercuryParam.level;
-        param.channel.mercury.session.source_id      = mMercuryParam.source_id;
-        param.channel.mercury.session.destination_id = mMercuryParam.destination_id;
-        param.channel.mercury.session.message_count  = mMercuryParam.message_count;
-        for (uint32_t i = 0; i < param.channel.mercury.session.message_count; ++i) {
-            param.channel.mercury.session.messages[i] = mMercuryParam.messages[i];
+        pirate_init_channel_param(MERCURY, &Writer.param);
+        param->session.level          = mMercuryParam.level;
+        param->session.source_id      = mMercuryParam.source_id;
+        param->session.destination_id = mMercuryParam.destination_id;
+        param->session.message_count  = mMercuryParam.message_count;
+        for (uint32_t i = 0; i < param->session.message_count; ++i) {
+            param->session.messages[i] = mMercuryParam.messages[i];
         }
+
+        Reader.param = Writer.param;
+
+        wr_len = snprintf(opt_wr, len - 1, "mercury,%u,%u,%u", param->session.level, 
+                    param->session.source_id, param->session.destination_id);
+        for (unsigned i = 0; i < param->session.message_count; ++i) {
+            opt_wr += wr_len;
+            len -= wr_len;
+            wr_len = snprintf(opt_wr, len - 1, ",%u", param->session.messages[i]);
+        }
+
+        Reader.desc.assign(opt);
+        Writer.desc.assign(opt);
     }
 
-    void WriterChannelOpen() override
+    void WriterChannelPostOpen() override
     {
-        pirate_channel_param_t rdParam;
-
-        Writer.channel = pirate_open_param(&param, O_WRONLY);
-        ASSERT_EQ(0, errno);
-        ASSERT_GE(Writer.channel, 0);
-
-
-        int rv = pirate_get_channel_param(Writer.channel, &rdParam);
+        pirate_channel_param_t param;
+        int rv = pirate_get_channel_param(Writer.gd, &param);
         ASSERT_EQ(0, errno);
         ASSERT_EQ(0, rv);
 
-        ASSERT_EQ(MERCURY, rdParam.channel_type);
-        ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
+        ASSERT_EQ(MERCURY, param.channel_type);
+        ASSERT_EQ(mMercuryParam.session_id, param.channel.mercury.session.id);
 
-        rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
+        rv = mercury_cmd_stat_clear(param.channel.mercury.session.id);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-
-        int sts = pthread_barrier_wait(&barrier);
-        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
-    void ReaderChannelOpen() override
+    void ReaderChannelPostOpen() override
     {
-        pirate_channel_param_t rdParam;
-
-        Reader.channel = pirate_open_param(&param, O_RDONLY);
-        ASSERT_GE(Reader.channel, 0);
-        ASSERT_EQ(0, errno);
-
-        int rv = pirate_get_channel_param(Reader.channel, &rdParam);
+        pirate_channel_param_t param;
+        int rv = pirate_get_channel_param(Reader.gd, &param);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        ASSERT_EQ(MERCURY, rdParam.channel_type);
-        ASSERT_EQ(mMercuryParam.session_id, rdParam.channel.mercury.session.id);
+        ASSERT_EQ(MERCURY, param.channel_type);
+        ASSERT_EQ(mMercuryParam.session_id, param.channel.mercury.session.id);
 
-        rv = mercury_cmd_stat_clear(rdParam.channel.mercury.session.id);
+        rv = mercury_cmd_stat_clear(param.channel.mercury.session.id);
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
-
-        int sts = pthread_barrier_wait(&barrier);
-        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
-    void WriterChannelClose() override {
+    void WriterChannelPreClose() override
+    {
         mercury_dev_stat_t test_stats;
         int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
         ASSERT_EQ(0, rv);
@@ -268,11 +268,10 @@ public:
         ASSERT_EQ(0u, test_stats.send_reject_count);
         ASSERT_EQ(statsWr.packets, test_stats.send_ilip_count);
         ASSERT_EQ(0u, test_stats.send_ilip_reject_count);
-
-        ChannelTest::WriterChannelClose();
     }
 
-    void ReaderChannelClose() override {
+    void ReaderChannelPreClose() override
+    {
         mercury_dev_stat_t test_stats;
         int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
         ASSERT_EQ(0, rv);
@@ -282,8 +281,6 @@ public:
         ASSERT_EQ(0u, test_stats.receive_reject_count);
         ASSERT_EQ(statsRd.packets, test_stats.receive_ilip_count);
         ASSERT_EQ(0u, test_stats.receive_ilip_reject_count);
-
-        ChannelTest::ReaderChannelClose();
     }
 
 protected:
@@ -302,17 +299,17 @@ TEST_P(MercuryTest, Run)
 
 static MercuryTestParam MercuryParams [] = 
 {
-    // CH,LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
-    {  0, 1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
-    {  2, 2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
-    {  1, 1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
-    {  3, 2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
-    {  0, 1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
-    {  1, 2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
-    {  2, 1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
-    {  3, 2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
-    {  0, 1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
-    {  1, 2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
+    // LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
+    {  1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
+    {  2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
+    {  1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
+    {  2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
+    {  1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
+    {  2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
+    {  1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
+    {  2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
+    {  1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
+    {  2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,

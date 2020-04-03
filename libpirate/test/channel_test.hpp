@@ -13,6 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include <cstring>
 #include <errno.h>
 #include <stdint.h>
 #include <semaphore.h>
@@ -35,6 +36,12 @@ protected:
     virtual void WriterChannelOpen();
     virtual void ReaderChannelOpen();
 
+    virtual void WriterChannelPostOpen() {}
+    virtual void ReaderChannelPostOpen() {}
+
+    virtual void WriterChannelPreClose() {}
+    virtual void ReaderChannelPreClose() {}
+
     virtual void WriterChannelClose();
     virtual void ReaderChannelClose();
 
@@ -43,10 +50,17 @@ protected:
     void WriterTest();
     void ReaderTest();
 
-    struct {
-        int channel;
-        uint8_t * buf;
+    struct TestPoint {
+        TestPoint() : 
+            gd(-1), buf(0), status(-1), desc("") {
+            std::memset(&param, 0, sizeof(param));
+        }
+
+        int gd;
+        uint8_t *buf;
         int status;
+        std::string desc;
+        pirate_channel_param_t param;
     } Writer, Reader;
 
     // Test lengths
@@ -63,9 +77,6 @@ protected:
     // Reader writer synchronization
     pthread_barrier_t barrier;
 
-    // Channel parameters
-    pirate_channel_param_t param;
-
     // If true the producer and consumer
     // open the channel.
     // If false the producer and consumer
@@ -81,9 +92,8 @@ public:
     ChannelTest();
     static void *WriterThreadS(void *param);
     static void *ReaderThreadS(void *param);
-    static const int TEST_CHANNEL = 2;
+    //static const int TEST_CHANNEL = 2;
     static const int TEST_IOV_LEN = 16;
-
 };
 
 } // namespace GAPS

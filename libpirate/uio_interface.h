@@ -26,6 +26,7 @@ typedef struct {
 } uio_ctx;
 
 int pirate_uio_parse_param(char *str, pirate_uio_param_t *param);
+int pirate_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len);
 int pirate_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx);
 int pirate_uio_close(uio_ctx *ctx);
 ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count);

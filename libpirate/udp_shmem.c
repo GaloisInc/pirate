@@ -140,6 +140,12 @@ int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
     return 0;
 }
 
+int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
+    return snprintf(desc, len - 1, "udp_shmem,%s,%u,%zd,%zd", param->path,
+                param->buffer_size, param->packet_size,
+                param->packet_count);
+}
+
 static shmem_buffer_t *udp_shmem_buffer_init(int fd, pirate_udp_shmem_param_t *param) {
     int rv;
     int err;
