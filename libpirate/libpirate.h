@@ -442,14 +442,13 @@ int pirate_close(int gd);
 // "control=1". For example, "pipe,/tmp/gaps,control=1" is the
 // configuration string for a Unix pipe control channel.
 //
-// When a yield channel receives data then all listeners
-// on the yield channel are called. After all the listeners
+// When a yield channel receives data then all registered listeners
+// on the yield channel are called. After the listeners
 // have run then a control message is written to the
-// sender of the data. After the control message is written
-// then continue to block.
+// sender of the data. Then continue to listen.
 //
 // When a control channel receives data then consume
-// the control message and pirate_listen() returns 0.
+// the control message and resume execution (return 0).
 //
 // If a yield channel has both ends in the same enclave
 // (opened with pirate_pipe_param() or pirate_pipe_parse())
