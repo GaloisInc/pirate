@@ -156,6 +156,48 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
+int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {
+    switch (param->channel_type) {
+    case DEVICE:
+        return pirate_device_get_channel_description(&param->channel.device, desc, len);
+
+    case PIPE:
+        return pirate_pipe_get_channel_description(&param->channel.pipe, desc, len);
+
+    case UNIX_SOCKET:
+        return pirate_unix_socket_get_channel_description(&param->channel.unix_socket, desc, len);
+
+    case TCP_SOCKET:
+        return pirate_tcp_socket_get_channel_description(&param->channel.tcp_socket, desc, len);
+
+    case UDP_SOCKET:
+        return pirate_udp_socket_get_channel_description(&param->channel.udp_socket, desc, len);
+
+    case SHMEM:
+        return pirate_shmem_get_channel_description(&param->channel.shmem, desc, len);
+
+    case UDP_SHMEM:
+        return pirate_udp_shmem_get_channel_description(&param->channel.udp_shmem, desc, len);
+
+    case UIO_DEVICE:
+        return pirate_uio_get_channel_description(&param->channel.uio, desc, len);
+
+    case SERIAL:
+        return pirate_serial_get_channel_description(&param->channel.serial, desc, len);
+
+    case MERCURY:
+        return pirate_mercury_get_channel_description(&param->channel.mercury, desc, len);
+
+    case GE_ETH:
+        return pirate_ge_eth_get_channel_description(&param->channel.ge_eth, desc, len);
+
+    case INVALID:
+    default:
+        errno = ENODEV;
+        return -1;
+    }
+}
+
 int pirate_get_channel_description(int gd, char *desc, int len) {
     pirate_channel_t *channel = NULL;
 
@@ -163,47 +205,7 @@ int pirate_get_channel_description(int gd, char *desc, int len) {
         return -1;
     }
 
-    switch (channel->param.channel_type) {
-    case DEVICE:
-        return pirate_device_get_channel_description(&channel->param.channel.device, desc, len);
-
-    case PIPE:
-        return pirate_pipe_get_channel_description(&channel->param.channel.pipe, desc, len);
-
-    case UNIX_SOCKET:
-        return pirate_unix_socket_get_channel_description(&channel->param.channel.unix_socket, desc, len);
-
-    case TCP_SOCKET:
-        return pirate_tcp_socket_get_channel_description(&channel->param.channel.tcp_socket, desc, len);
-
-    case UDP_SOCKET:
-        return pirate_udp_socket_get_channel_description(&channel->param.channel.udp_socket, desc, len);
-
-    case SHMEM:
-        return pirate_shmem_get_channel_description(&channel->param.channel.shmem, desc, len);
-
-    case UDP_SHMEM:
-        return pirate_udp_shmem_get_channel_description(&channel->param.channel.udp_shmem, desc, len);
-
-    case UIO_DEVICE:
-        return pirate_uio_get_channel_description(&channel->param.channel.uio, desc, len);
-
-    case SERIAL:
-        return pirate_serial_get_channel_description(&channel->param.channel.serial, desc, len);
-
-    case MERCURY:
-        return pirate_mercury_get_channel_description(&channel->param.channel.mercury, desc, len);
-
-    case GE_ETH:
-        return pirate_ge_eth_get_channel_description(&channel->param.channel.ge_eth, desc, len);
-
-    case INVALID:
-    default:
-        errno = ENODEV;
-        return -1;
-    }
-
-    return -1;
+    return pirate_unparse_channel_param(&channel->param, desc, len);
 }
 
 static pirate_atomic_int next_gd;
