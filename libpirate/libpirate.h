@@ -246,6 +246,7 @@ typedef struct {
 // Parameters:
 //  channel_type - GAPS channel type
 //  param        - channel parameters to be initialized
+
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param);
 
 // Parse a string with gaps channel configuration options.
@@ -257,7 +258,29 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
 // Return:
 //  0 on success
 // -1 on failure
+
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
+
+// Get channel parameters as a string
+//
+// Parameters
+//  gd           - GAPS channel number
+//  str          - string to contain channel description
+//  len          - max len allowed in desc
+//
+// Upon successful return, this function returns the
+// number of characters printed (excluding the null byte
+// used to end output to strings). The function does not
+// write more than len bytes (including the terminating null
+// byte ('\0')). If the output was truncated due to this
+//  limit, then the return value is the number of characters
+// (excluding the terminating null byte) which would have been
+// written to the final string if enough space had been
+// available. Thus, a return value of len or more means that
+// the output was truncated. If an output error is encountered,
+// a negative value is returned.
+
+int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str, int len);
 
 #define OPT_DELIM ","
 #define GAPS_CHANNEL_OPTIONS                                                     \
@@ -290,20 +313,29 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  desc         - string to contain channel description
+//  str          - string to contain channel description
 //  len          - max len allowed in desc
 //
-// Return:
-//  length of the channel description string
-// -1 on failure, errno is set
-int pirate_get_channel_description(int gd, char *desc, int len);
+// Upon successful return, this function returns the
+// number of characters printed (excluding the null byte
+// used to end output to strings). The function does not
+// write more than len bytes (including the terminating null
+// byte ('\0')). If the output was truncated due to this
+//  limit, then the return value is the number of characters
+// (excluding the terminating null byte) which would have been
+// written to the final string if enough space had been
+// available. Thus, a return value of len or more means that
+// the output was truncated. If an output error is encountered,
+// a negative value is returned.
+
+int pirate_get_channel_description(int gd, char *str, int len);
 
 // Opens the gaps channel specified by parameter string.
 //
 // Channels must be opened in the same order across all
 // processes.
 
-// The return value is the input gaps descriptor, or -1 if an
+// The return value is a unique gaps descriptor, or -1 if an
 // error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
