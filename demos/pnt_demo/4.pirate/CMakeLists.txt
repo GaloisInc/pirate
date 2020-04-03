@@ -41,7 +41,7 @@ set_target_properties(pnt_orange PROPERTIES
     CXX_EXTENSIONS NO
 )
 
-install(TARGETS pnt_green pnt_orange)
+install(TARGETS pnt_green pnt_orange DESTINATION bin)
 install(FILES run.sh DESTINATION bin)
 configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)
 install(FILES run_async.sh DESTINATION bin)

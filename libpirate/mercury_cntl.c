@@ -92,7 +92,7 @@ static int ilip_nl_recv(ilip_nl_ctx_t *ctx, ilip_nl_hdr_t *hdr, int dlen) {
 	}
 
 	/* as long as there is attribute, even if it is shorter than expected */
-	if (!NLMSG_OK((&hdr->n), rv) && ((unsigned)rv <= sizeof(ilip_nl_hdr_t))) {
+	if (!NLMSG_OK((&hdr->n), (unsigned)rv) && ((unsigned)rv <= sizeof(ilip_nl_hdr_t))) {
 		return -1;
 	}
 

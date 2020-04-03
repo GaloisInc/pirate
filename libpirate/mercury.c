@@ -70,7 +70,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     struct timespec tv;
     uint64_t linux_time;
 
-    if (msg_len > param->mtu) {
+    if (msg_len > (ssize_t)param->mtu) {
         errno = ENOBUFS;
         return -1;
     }
@@ -201,7 +201,7 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
     ssize_t payload_len;
 
-    if (buf_len > param->mtu) {
+    if (buf_len > (ssize_t)param->mtu) {
         errno = ENOBUFS;
         return -1;
     }
@@ -348,7 +348,7 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
         // Message tags
         sz = pwrite(fd_root, param->session.messages, msg_cgf_len,
                     MERCURY_CFG_OFF_MESSAGES);
-        if (sz != msg_cgf_len) {
+        if (sz != (ssize_t)msg_cgf_len) {
             goto error;
         }
     }

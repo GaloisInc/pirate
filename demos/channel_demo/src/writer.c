@@ -103,7 +103,7 @@ static int writer_run(writer_t *writer) {
             }
         }
 
-        if (pirate_write(gaps_channel, wr_buf, wr_len) != wr_len) {
+        if (pirate_write(gaps_channel, wr_buf, wr_len) != (ssize_t)wr_len) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;
         }

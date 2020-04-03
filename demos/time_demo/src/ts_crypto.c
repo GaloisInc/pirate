@@ -134,7 +134,7 @@ static ASN1_INTEGER *create_nonce(unsigned len) {
     int err = 1;
 
     if (len >sizeof(buf)) {
-        fprintf(stderr, "Max nonce size is %lu\n", sizeof(buf));
+        fprintf(stderr, "Max nonce size is %zu\n", sizeof(buf));
         goto end;
     }
 
@@ -246,7 +246,7 @@ int ts_create_query(proxy_request_t *req, tsa_request_t *tsa_req) {
     }
 
     if (tsa_req->len > sizeof(tsa_req->req)) {
-        fprintf(stderr, "TS REQ exceeds size of %lu\n", sizeof(tsa_req->req));
+        fprintf(stderr, "TS REQ exceeds size of %zu\n", sizeof(tsa_req->req));
         tsa_req->len = 0;
         goto end;
     }

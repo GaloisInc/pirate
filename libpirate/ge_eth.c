@@ -97,7 +97,7 @@ static int ge_message_unpack(const void *buf, void *data,
                                 size_t data_buf_len, ge_header_t *hdr,
                                 const pirate_ge_eth_param_t *param) {
     const ge_header_t *msg_hdr = (ge_header_t *)buf;
-    const uint8_t *msg_data = (uint8_t *)buf + sizeof(msg_hdr);
+    const uint8_t *msg_data = (uint8_t *)buf + sizeof(ge_header_t);
 
     hdr->message_id = be32toh(msg_hdr->message_id);
     hdr->data_len   = be16toh(msg_hdr->data_len);
