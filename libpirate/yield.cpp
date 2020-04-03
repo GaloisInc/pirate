@@ -84,7 +84,7 @@ int pirate_listen() {
         if (ready == gaps_nfds) {
             continue;
         }
-        void *buf = stackbuf;
+        unsigned char *buf = stackbuf;
         int gd = gaps_reader_gds[ready];
         param = pirate_get_channel_param_ref(gd);
         if (param == NULL) {
@@ -101,7 +101,7 @@ int pirate_listen() {
         pirate_listener_t first = listeners[0];
         size_t count = first.len;
         if (count > sizeof(stackbuf)) {
-            buf = malloc(count);
+            buf = (unsigned char*) malloc(count);
         }
         ssize_t len = pirate_read(gd, buf, count);
         if (len < 0) {
@@ -115,9 +115,9 @@ int pirate_listen() {
             return -1;
         }
         for (pirate_listener_t listener : listeners) {
-            pirate::internal::listener_union_hack<void> lu;
+            pirate::internal::listener_union_hack<unsigned char> lu;
             lu.ptr = listener.func;
-            (*lu.listener)(buf);
+            (*lu.listener)(*buf);
         }
         if (count > sizeof(stackbuf)) {
             free(buf);

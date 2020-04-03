@@ -142,9 +142,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
   Target tgt(10); // updates at 10 Hz frequency
 
-  pirate_register_listener<Position>(uavGd, [&tgt](Position *p) { tgt.setUAVLocation(*p); });
-  pirate_register_listener<Distance>(rfGd, [&tgt](Distance *d) { tgt.setDistance(*d); });
-  pirate_register_listener<Position>(gpsTargetGd[0], [&tgt](Position *p) { tgt.onGpsPositionChange(*p); });
+  pirate_register_listener<Position>(uavGd, [&tgt](const Position &p) { tgt.setUAVLocation(p); });
+  pirate_register_listener<Distance>(rfGd, [&tgt](const Distance &d) { tgt.setDistance(d); });
+  pirate_register_listener<Position>(gpsTargetGd[0], [&tgt](const Position &p) { tgt.onGpsPositionChange(p); });
 
   for(int i = 0; i < duration / 10; i++) {
       // here we simulate sensor data streams
@@ -219,7 +219,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   // Create UAV and have it start listening.
   OwnShip uav(uavSender, 100); // updates at 100 Hz frequency
 
-  pirate_register_listener<Position>(gpsGd, [&uav](Position *p) { uav.onGpsPositionChange(*p); });
+  pirate_register_listener<Position>(gpsGd, [&uav](const Position p) { uav.onGpsPositionChange(p); });
 
   for (int i = 0; i < duration / 10; i++) {
       // wait for control from the green enclave

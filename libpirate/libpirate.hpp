@@ -24,14 +24,14 @@ namespace pirate {
 
         template <typename T>
         union listener_union_hack {
-            std::function<void(T* val)> *listener;
+            std::function<void(const T& val)> *listener;
             void *ptr;
         };
     }
 }
 
 template <typename T>
-int pirate_register_listener(int gd, std::function<void(T* val)> listener) {
+int pirate_register_listener(int gd, std::function<void(const T& val)> listener) {
     pirate::internal::listener_union_hack<T> lu;
     lu.listener = &listener;
     return pirate::internal::cooperative_register(gd, lu.ptr, sizeof(T));
