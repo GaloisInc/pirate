@@ -7,6 +7,8 @@
 #include "ownship.h"
 #include "target.h"
 #include "timer.h"
+#include "resource_loader.h"
+
 #include <mutex>
 #include <string.h>
 
@@ -28,70 +30,42 @@
 
 #define RESOURCE(name, enclave) __attribute__((pirate_resource(name, enclave)))
 #define RESOURCE_TYPE(t)        __attribute__((pirate_resource_type(t)))
+#define DOC(doc)                __attribute__((pirate_resource_param("doc", doc)))
 
 typedef std::string               string_resource       RESOURCE_TYPE("string");
 typedef std::chrono::milliseconds milliseconds_resource RESOURCE_TYPE("milliseconds");
 typedef bool                      bool_resource         RESOURCE_TYPE("bool");
 
-string_resource gpsToTarget
-  RESOURCE("gps-to-target", "green");
-
 string_resource gpsToUAVPath
   RESOURCE("gps-to-uav-path", "orange")
-  RESOURCE("gps-to-uav-path", "green");
+  RESOURCE("gps-to-uav-path", "green")
+  DOC("libpirate connection string from GPS to UAV");
 
 string_resource uavToTargetPath
   RESOURCE("uav-to-target-path", "green")
-  RESOURCE("uav-to-target-path", "orange");
+  RESOURCE("uav-to-target-path", "orange")
+  DOC("libpirate connection string from UAV to Target");
 
 string_resource rfToTargetPath
   RESOURCE("rf-to-target-path", "green")
-  RESOURCE("rf-to-target-path", "orange");
+  RESOURCE("rf-to-target-path", "orange")
+  DOC("libpirate connection string from RF to Target");
 
 milliseconds_resource timerDuration
-  RESOURCE("timer-duration", "green");
+  RESOURCE("timer-duration", "green")
+  DOC("milliseconds between simulation steps");
 
 bool_resource fixedPeriod
-  RESOURCE("fixed-period", "orange");
+  RESOURCE("fixed-period", "orange")
+  DOC("Runs simulation in a deterministic mode");
 
 /* END OF RESOURCES */
 
-void showUsage(const char* arg0) {
-  std::cerr
-       << "Usage:\n"
-       << "  "  << arg0 << " --gps-to-uav path --uav-to-target path --rf-to-target path\n"
-       << std::endl
-       << "  path should be a valid libpirate channel format string." << std::endl;
-}
-
 int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 {
-  // Parse command line arguments
-  int i = 1;
-  while (i < argc) {
-    if (strcmp(argv[i], "--gps-to-target") == 0) {
-      gpsToTarget = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--gps-to-uav") == 0) {
-      gpsToUAVPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--uav-to-target") == 0) {
-      uavToTargetPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--rf-to-target") == 0) {
-      rfToTargetPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--duration") == 0) {
-      timerDuration = std::chrono::milliseconds(std::stoul(argv[i+1]));
-      i+=2;
-    } else if (strcmp(argv[i], "--help") == 0) {
-      showUsage(argv[0]);
-      exit(0);
-    } else {
-      std::cerr << "Unexpected argument " << argv[i] << std::endl;
-      showUsage(argv[0]);
-      exit(-1);
-    }
+  if (load_resources(argc, argv)) {
+    std::cerr << "Failed to process commandline arguments" << std::endl;
+    return EXIT_FAILURE;
   }
 
   // Create channels
@@ -157,29 +131,9 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
 int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
 {
-  // Parse command line arguments
-  int i = 1;
-  while (i < argc) {
-    if (strcmp(argv[i], "--gps-to-uav") == 0) {
-      gpsToUAVPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--uav-to-target") == 0) {
-      uavToTargetPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--rf-to-target") == 0) {
-      rfToTargetPath = argv[i+1];
-      i+=2;
-    } else if (strcmp(argv[i], "--fixed") == 0) {
-      fixedPeriod = true;
-      i+=1;
-    } else if (strcmp(argv[i], "--help") == 0) {
-      showUsage(argv[0]);
-      exit(0);
-    } else {
-      std::cerr << "Unexpected argument " << argv[i] << std::endl;
-      showUsage(argv[0]);
-      exit(-1);
-    }
+  if (load_resources(argc, argv)) {
+    std::cerr << "Failed to process commandline arguments" << std::endl;
+    return EXIT_FAILURE;
   }
 
   // Create a function to get the current time that allows

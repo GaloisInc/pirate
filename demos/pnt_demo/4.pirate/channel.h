@@ -19,12 +19,27 @@ public:
 };
 
 template<typename T>
-using Receiver = std::function<void(std::function<void (const T& d)>)>;
+class Receiver {
+  std::function<void(std::function<void (const T& d)>)> _receive;
+  std::function<void(void)> _close;
+public:
+  Receiver(const std::function<void(std::function<void (const T& d)>)> receive,
+    const std::function<void(void)>& close)
+    : _receive(receive), _close(close) {
+
+    }
+
+  std::function<void(std::function<void (const T& d)>)> receiver() {
+    return _receive;
+  }
+
+  void close(void) { _close(); }
+};
 
 template<typename T>
 std::thread asyncReadMessages(Receiver<T> r, std::function<void (const T& d)> f)
 {
-  return std::thread(r, f);
+  return std::thread(r.receiver(), f);
 }
 
 template<typename T>

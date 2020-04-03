@@ -15,6 +15,7 @@ set(COMMON_SRC
     ownship.h ownship.cpp
     target.h target.cpp
     pnt_example.cpp
+    resource_loader.cpp resource.h resource_loader.h wrapped_array.h
 )
 
 if (GAPS_DISABLE)
