@@ -265,7 +265,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  desc         - string to contain channel description
+//  str          - string to contain channel description
 //  len          - max len allowed in desc
 //
 // Upon successful return, this function returns the
@@ -313,17 +313,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  desc         - string to contain channel description
-//  len          - max len allowed in desc
-//
-// Return:
-//  length of the channel description string
-// -1 on failure, errno is set
-// Get channel parameters as a string
-//
-// Parameters
-//  gd           - GAPS channel number
-//  desc         - string to contain channel description
+//  str          - string to contain channel description
 //  len          - max len allowed in desc
 //
 // Upon successful return, this function returns the
