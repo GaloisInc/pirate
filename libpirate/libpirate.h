@@ -420,15 +420,48 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 // On success, the number of bytes written is returned
 // (zero indicates nothing was written). On error,
 // -1 is returned, and errno is set appropriately.
+
 ssize_t pirate_write(int gd, const void *buf, size_t count);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
+
 int pirate_close(int gd);
 
+// Listen for incoming requests and incoming control messages.
+
+// Listen on all O_RDONLY channels that are yield channels.
+// A yield channel is identified with the configuration parameter
+// "yield=1". For example, "pipe,/tmp/gaps,yield=1" is the
+// configuration string for a Unix pipe yield channel.
+//
+// Also listen on all O_RDONLY channels that are control channels.
+// A control channel is identified with the configuration parameter
+// "control=1". For example, "pipe,/tmp/gaps,control=1" is the
+// configuration string for a Unix pipe control channel.
+//
+// When a yield channel receives data then all listeners
+// on the yield channel are called. After all the listeners
+// have run then a control message is written to the
+// sender of the data. After the control message is written
+// then continue to block.
+//
+// When a control channel receives data then consume
+// the control message and pirate_listen() returns 0.
+//
+// If a yield channel has both ends in the same enclave
+// (opened with pirate_pipe_param() or pirate_pipe_parse())
+// then resume execution after running all the listeners.
+
 int pirate_listen();
+
+// Send a control message to the enclave identified
+// by the enclave_id. A call to pirate_yield()
+// should usually be followed by a call to
+// pirate_listen(). The call to pirate_listen() should
+// be omitted when the process is expected to terminate.
 
 int pirate_yield(int enclave_id);
 
