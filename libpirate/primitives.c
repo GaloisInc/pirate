@@ -192,6 +192,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
+<<<<<<< HEAD
 int pirate_get_channel_flags(int gd) {
     pirate_channel_t *channel = NULL;
 
@@ -211,6 +212,8 @@ pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
     return &channel->param;
 }
 
+=======
+>>>>>>> master
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {
     switch (param->channel_type) {
     case DEVICE:

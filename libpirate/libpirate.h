@@ -270,7 +270,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  desc         - string to contain channel description
+//  str          - string to contain channel description
 //  len          - max len allowed in desc
 //
 // Upon successful return, this function returns the
@@ -278,7 +278,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 // used to end output to strings). The function does not
 // write more than len bytes (including the terminating null
 // byte ('\0')). If the output was truncated due to this
-//  limit, then the return value is the number of characters
+// limit, then the return value is the number of characters
 // (excluding the terminating null byte) which would have been
 // written to the final string if enough space had been
 // available. Thus, a return value of len or more means that
@@ -330,7 +330,7 @@ int pirate_get_channel_flags(int gd);
 //
 // Parameters
 //  gd           - GAPS channel number
-//  desc         - string to contain channel description
+//  str          - string to contain channel description
 //  len          - max len allowed in desc
 //
 // Upon successful return, this function returns the
