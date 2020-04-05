@@ -329,7 +329,7 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
     }
 }
 
-void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
+static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
     if ((access == O_RDONLY) && (param->yield || param->control)) {
         gaps_reader_gds[gaps_reader_gds_num++] = gd;
     }
