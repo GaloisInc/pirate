@@ -112,6 +112,10 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         return rv;
     }
 
+    ctx->prev = NULL;
+    ctx->prevcount = -1;
+    ctx->init = 0;
+
     return 0;
 }
 
@@ -150,6 +154,14 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         return rv;
     }
 
+    ctx->prev = malloc(UDP_MAX_PAYLOAD);
+    ctx->prevcount = -1;
+    ctx->init = 0;
+
+    if ((param->iov_len == 0) && pirate_udp_socket_write(param, ctx, ctx->prev, 0) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -182,6 +194,13 @@ int pirate_udp_socket_close(udp_socket_ctx *ctx) {
     err = errno;
     shutdown(ctx->sock, SHUT_RDWR);
     errno = err;
+
+    if (ctx->prev != NULL) {
+        free(ctx->prev);
+        ctx->prev = NULL;
+    }
+    ctx->prevcount = -1;
+    ctx->init = 0;
 
     rv = close(ctx->sock);
     ctx->sock = -1;
@@ -220,6 +239,14 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
         return -1;
     }
 
+    if ((param->iov_len == 0) && (ctx->init == 0)) {
+        ssize_t rv = recv(ctx->sock, buf, 0, 0);
+        if (rv < 0) {
+            return -1;
+        }
+        ctx->init = 1;
+    }
+
     if (param->iov_len > 0) {
         struct mmsghdr msgvec[PIRATE_IOV_MAX];
         struct iovec iov[PIRATE_IOV_MAX];
@@ -242,6 +269,8 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
 }
 
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+    ssize_t rv;
+    int retry;
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
@@ -254,17 +283,41 @@ ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_sock
             msgvec, iov);
         int wr_bytes = 0;
 
-        int rv = sendmmsg(ctx->sock, msgvec, vlen, 0);
-        if (rv < 0) {
-            return rv;
+        int rvmmsg = sendmmsg(ctx->sock, msgvec, vlen, 0);
+        if (rvmmsg < 0) {
+            return rvmmsg;
         }
 
-        for (int i = 0; i < rv; i++) {
+        for (int i = 0; i < rvmmsg; i++) {
             wr_bytes += iov[i].iov_len;
         }
         
         return wr_bytes;
     }
 
-    return send(ctx->sock, buf, count, 0);
+    do {
+        int err, rv2;
+        retry = 0;
+        err = errno;
+        rv = send(ctx->sock, buf, count, 0);
+        if ((rv < 0) && (errno == ECONNREFUSED) && (ctx->prevcount >= 0)) {
+            rv2 = send(ctx->sock, ctx->prev, ctx->prevcount, 0);
+            if (rv2 < 0) {
+                errno = ECONNREFUSED;
+                return -1;
+            }
+            errno = err;
+            retry = 1;
+            usleep(100);
+        }
+    } while (retry);
+
+    if (rv >= 0) {
+        size_t n = MIN(count, UDP_MAX_PAYLOAD);
+        memcpy(ctx->prev, buf, n);
+        ctx->prevcount = n;
+    }
+
+    return rv;
+
 }

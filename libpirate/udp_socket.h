@@ -20,7 +20,12 @@
 
 typedef struct {
     int sock;
+    void *prev;
+    ssize_t prevcount;
+    uint8_t init;
 } udp_socket_ctx;
+
+#define UDP_MAX_PAYLOAD 65507
 
 int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param);
 int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len);
