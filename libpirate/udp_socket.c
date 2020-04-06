@@ -313,7 +313,7 @@ ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_sock
     } while (retry);
 
     if (rv >= 0) {
-        size_t n = MIN(count, UDP_MAX_PAYLOAD);
+        size_t n = MIN(((size_t) rv), UDP_MAX_PAYLOAD);
         memcpy(ctx->prev, buf, n);
         ctx->prevcount = n;
     }
