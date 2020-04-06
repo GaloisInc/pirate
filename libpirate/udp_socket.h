@@ -20,6 +20,7 @@
 
 typedef struct {
     int sock;
+    uint8_t init;
 } udp_socket_ctx;
 
 int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param);

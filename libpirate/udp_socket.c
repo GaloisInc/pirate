@@ -112,6 +112,8 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         return rv;
     }
 
+    ctx->init = 0;
+
     return 0;
 }
 
@@ -150,6 +152,11 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         return rv;
     }
 
+    ctx->init = 0;
+    if ((param->iov_len == 0) && send(ctx->sock, NULL, 0, 0) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -185,6 +192,7 @@ int pirate_udp_socket_close(udp_socket_ctx *ctx) {
 
     rv = close(ctx->sock);
     ctx->sock = -1;
+    ctx->init = 0;
     return rv;
 }
 
@@ -220,6 +228,14 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
         return -1;
     }
 
+    if ((param->iov_len == 0) && (ctx->init == 0)) {
+        ssize_t rv = recv(ctx->sock, NULL, 0, 0);
+        if (rv < 0) {
+            return -1;
+        }
+        ctx->init = 1;
+    }
+
     if (param->iov_len > 0) {
         struct mmsghdr msgvec[PIRATE_IOV_MAX];
         struct iovec iov[PIRATE_IOV_MAX];
@@ -242,6 +258,9 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
 }
 
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+    ssize_t rv;
+    int retry;
+
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
@@ -254,17 +273,37 @@ ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_sock
             msgvec, iov);
         int wr_bytes = 0;
 
-        int rv = sendmmsg(ctx->sock, msgvec, vlen, 0);
-        if (rv < 0) {
-            return rv;
+        int rvmmsg = sendmmsg(ctx->sock, msgvec, vlen, 0);
+        if (rvmmsg < 0) {
+            return rvmmsg;
         }
 
-        for (int i = 0; i < rv; i++) {
+        for (int i = 0; i < rvmmsg; i++) {
             wr_bytes += iov[i].iov_len;
         }
         
         return wr_bytes;
     }
 
-    return send(ctx->sock, buf, count, 0);
+    do {
+        int err;
+        retry = 0;
+        err = errno;
+        rv = send(ctx->sock, buf, count, 0);
+        if ((rv < 0) && (errno == ECONNREFUSED) && (!ctx->init)) {
+            if (send(ctx->sock, NULL, 0, 0) < 0) {
+                errno = ECONNREFUSED;
+                return -1;
+            }
+            errno = err;
+            retry = 1;
+            usleep(100);
+        }
+    } while (retry);
+
+    if (rv >= 0) {
+        ctx->init = 1;
+    }
+
+    return rv;
 }
