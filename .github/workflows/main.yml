@@ -136,7 +136,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: update apt sources
       run: |
-        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
+        sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
         apt-get update
