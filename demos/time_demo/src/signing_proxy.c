@@ -68,7 +68,7 @@ static struct argp_option options[] = {
     { "proxy-to-signer", 1002, "CONFIG", 0, "Proxy to signer channel",   1 },
     { "signer-to-proxy", 1003, "CONFIG", 0, "Signer to proxy channel",   1 },
     { NULL,              0,  NULL,   0, GAPS_CHANNEL_OPTIONS,            2 },
-    { 0 }
+    { NULL,              0,  NULL,   0, 0,                               0 }
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
