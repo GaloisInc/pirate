@@ -63,7 +63,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
     - name: build demos
       run: |
         cd build
@@ -113,7 +113,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
   gcc:
     runs-on: ubuntu-latest
     steps:
@@ -162,7 +162,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
     - name: Build demos
       run: |
         cd build

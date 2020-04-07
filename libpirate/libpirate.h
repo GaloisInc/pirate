@@ -222,6 +222,11 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
+    uint8_t yield;
+    uint8_t control;
+    uint8_t pipe; // TODO YIELD: replace with src and dst enclave id
+    // uint32_t src_enclave;
+    // uint32_t dst_enclave;
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -273,7 +278,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 // used to end output to strings). The function does not
 // write more than len bytes (including the terminating null
 // byte ('\0')). If the output was truncated due to this
-//  limit, then the return value is the number of characters
+// limit, then the return value is the number of characters
 // (excluding the terminating null byte) which would have been
 // written to the final string if enough space had been
 // available. Thus, a return value of len or more means that
@@ -283,6 +288,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param);
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str, int len);
 
 #define OPT_DELIM ","
+#define KV_DELIM "="
 #define GAPS_CHANNEL_OPTIONS                                                     \
     "Supported channels:\n"                                                      \
     "  DEVICE        device,path[,iov_len]\n"                                    \
@@ -309,7 +315,18 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
-// Get channel configuration
+// Returns the open() flags associated with the gaps channel
+//
+// Parameters
+//  gd           - GAPS channel number
+//
+// Return:
+//  non-negative value on success
+// -1 on failure, errno is set
+
+int pirate_get_channel_flags(int gd);
+
+// Get channel parameters as a string
 //
 // Parameters
 //  gd           - GAPS channel number
@@ -403,13 +420,49 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 // On success, the number of bytes written is returned
 // (zero indicates nothing was written). On error,
 // -1 is returned, and errno is set appropriately.
+
 ssize_t pirate_write(int gd, const void *buf, size_t count);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //
 // pirate_close() returns zero on success.  On error,
 // -1 is returned, and errno is set appropriately.
+
 int pirate_close(int gd);
+
+// Listen for incoming requests and incoming control messages.
+
+// Listen on all O_RDONLY channels that are yield channels.
+// A yield channel is identified with the configuration parameter
+// "yield=1". For example, "pipe,/tmp/gaps,yield=1" is the
+// configuration string for a Unix pipe yield channel.
+//
+// Also listen on all O_RDONLY channels that are control channels.
+// A control channel is identified with the configuration parameter
+// "control=1". For example, "pipe,/tmp/gaps,control=1" is the
+// configuration string for a Unix pipe control channel.
+//
+// When a yield channel receives data then all registered listeners
+// on the yield channel are called. After the listeners
+// have run then a control message is written to the
+// sender of the data. Then continue to listen.
+//
+// When a control channel receives data then consume
+// the control message and resume execution (return 0).
+//
+// If a yield channel has both ends in the same enclave
+// (opened with pirate_pipe_param() or pirate_pipe_parse())
+// then resume execution after running all the listeners.
+
+int pirate_listen();
+
+// Send a control message to the enclave identified
+// by the enclave_id. A call to pirate_yield()
+// should usually be followed by a call to
+// pirate_listen(). The call to pirate_listen() should
+// be omitted when the process is expected to terminate.
+
+int pirate_yield(int enclave_id);
 
 #ifdef __cplusplus
 }

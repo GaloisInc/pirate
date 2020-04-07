@@ -33,12 +33,16 @@ set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
+set(PIRATE_CXX_STATIC_LIB libpirate++_static)
+set(PIRATE_CXX_SHARED_LIB libpirate++_shared)
 set(PIRATE_APP_LIBS ${PIRATE_STATIC_LIB})
+set(PIRATE_APP_CXX_LIBS ${PIRATE_CXX_STATIC_LIB})
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_LIB_LIBS ${PIRATE_LIB_LIBS} pthread rt)
     SET(PIRATE_C_FLAGS ${PIRATE_C_FLAGS} -mavx2)
     set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} pthread rt)
+    set(PIRATE_APP_CXX_LIBS ${PIRATE_APP_CXX_LIBS} pthread rt)
 endif(PIRATE_SHMEM_FEATURE)
 
 CHECK_INCLUDE_FILE(stdatomic.h HAVE_STD_ATOMIC)

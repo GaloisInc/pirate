@@ -1,8 +1,6 @@
 #include "target.h"
-#include "ownship.h"
-#include "sensors.h"
 
-void Target::onGpsPositionChange(const Position& p) {  
+void Target::onGpsPositionChange(const Position& p) {    		
   if (_cycle != 0 && 0 == ++_cnt % _cycle) {
     targetLocation();
     print_track();

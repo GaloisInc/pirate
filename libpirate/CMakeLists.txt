@@ -25,6 +25,9 @@ if(PIRATE_SHMEM_FEATURE)
     set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
 endif(PIRATE_SHMEM_FEATURE)
 
+set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES} "yield.cpp")
+set(PIRATE_SOURCES ${PIRATE_SOURCES} "yield.c")
+
 include_directories(
     .
     ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
@@ -38,9 +41,19 @@ add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
-install(FILES libpirate.h shmem_buffer.h DESTINATION include)
+add_library(${PIRATE_CXX_STATIC_LIB} STATIC ${PIRATE_CXX_SOURCES})
+set_target_properties(${PIRATE_CXX_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate++ CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(${PIRATE_CXX_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
+
+add_library(${PIRATE_CXX_SHARED_LIB} SHARED ${PIRATE_CXX_SOURCES})
+set_target_properties(${PIRATE_CXX_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate++ CLEAN_DIRECT_OUTPUT 1)
+target_compile_options(${PIRATE_CXX_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
+
+install(FILES libpirate.h libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_CXX_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_CXX_STATIC_LIB} DESTINATION lib)
 
 if(GAPS_BENCH)
     include_directories(BEFORE libpirate)
@@ -87,6 +100,13 @@ if(PIRATE_UNIT_TEST)
     add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
     target_compile_options(${GAPS_CHANNELS_TEST} PRIVATE ${PIRATE_C_TEST_FLAGS})
 
+    set(PIRATE_CXX_TEST_FLAGS ${PIRATE_C_FLAGS})
+    set(GAPS_CHANNELS_TEST_CXX_LIBS ${PIRATE_APP_CXX_LIBS} pthread)
+    set(GAPS_CHANNELS_TEST_CXX gaps_channels_test_cxx)
+    file(GLOB GAPS_CHANNELS_TEST_SRC_CXX test/*.cxx)
+    add_executable(${GAPS_CHANNELS_TEST_CXX} ${GAPS_CHANNELS_TEST_SRC_CXX})
+    target_compile_options(${GAPS_CHANNELS_TEST_CXX} PRIVATE ${PIRATE_CXX_TEST_FLAGS})
+
     # Link test executable against gtest & gtest_main
     target_link_libraries(${GAPS_CHANNELS_TEST}
         ${GTEST_MAIN_LIBRARY}
@@ -94,22 +114,21 @@ if(PIRATE_UNIT_TEST)
         ${GAPS_CHANNELS_TEST_LIBS}
     )
 
-    enable_testing()
-
-    add_custom_target(testing COMMAND ${CMAKE_CTEST_COMMAND}
-        --force-new-ctest-process
-        --verbose
-        --output-on-failure
+    target_link_libraries(${GAPS_CHANNELS_TEST_CXX}
+        ${GTEST_MAIN_LIBRARY}
+        ${GTEST_LIBRARIES}
+        ${GAPS_CHANNELS_TEST_CXX_LIBS}
     )
 
-     add_custom_target(valgrind COMMAND valgrind
+    add_custom_target(valgrind COMMAND valgrind
         --leak-check=full
         --error-exitcode=1
         ./${GAPS_CHANNELS_TEST}
     )
 
-    add_test(
-        NAME ${GAPS_CHANNELS_TEST}
-        COMMAND ${GAPS_CHANNELS_TEST}
+    add_custom_target(valgrind-cxx COMMAND valgrind
+        --leak-check=full
+        --error-exitcode=1
+        ./${GAPS_CHANNELS_TEST_CXX}
     )
 endif(PIRATE_UNIT_TEST)
