@@ -14,8 +14,9 @@
  */
 
 #include <iostream>
-#include <cerrno>
 
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "libpirate.h"
@@ -29,6 +30,7 @@ int main(int argc, char* argv[]) {
     pirate_channel_param_t param;
 
     pirate_init_channel_param(PIPE, &param);
+    strncpy(param.channel.pipe.path, "/tmp/gaps", sizeof(param.channel.pipe.path));
 
     gd = pirate_open_param(&param, O_RDONLY);
     if (gd < 0) {

@@ -350,10 +350,10 @@ static int mercury_cmd(mercury_cmd_t *cmd, uint32_t *attrs) {
 	int err;
 	int rv = -1;
 	ilip_nl_hdr_t *hdr = NULL;
-	ilip_nl_ctx_t ctx = { 0 };
+	ilip_nl_ctx_t ctx;
 	unsigned int dlen;
 
-
+	memset(&ctx, 0, sizeof(ctx));
 	rv = ilip_nl_connect(&ctx);
 	if (rv < 0) {
 		return rv;
@@ -396,7 +396,8 @@ done:
 int mercury_cmd_stat(uint32_t session_id, mercury_dev_stat_t *stats) {
 	int rv = -1;
 	uint32_t attrs[GAPS_ILIP_ATTR_MAX] = {0};
-	mercury_cmd_t cmd = { 0 };
+	mercury_cmd_t cmd;
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.op = GAPS_ILIP_CMD_DEV_STAT;
 	cmd.req.stat.session_id = session_id;
 
@@ -410,7 +411,8 @@ int mercury_cmd_stat(uint32_t session_id, mercury_dev_stat_t *stats) {
 
 int mercury_cmd_stat_clear(uint32_t session_id) {
 	uint32_t attrs[GAPS_ILIP_ATTR_MAX] = {0};
-	mercury_cmd_t cmd = { 0 };
+	mercury_cmd_t cmd;
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.op = GAPS_ILIP_CMD_DEV_STAT_CLEAR;
 	cmd.req.stat.session_id = session_id;
 

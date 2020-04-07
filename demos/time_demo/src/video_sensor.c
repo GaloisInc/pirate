@@ -114,10 +114,11 @@ int video_sensor_initialize(const char *video_device, int display) {
 int video_sensor_read(int idx) {
     int read;
     fd_set fds;
-    struct timeval tv = {0};
+    struct timeval tv;
     char path[TS_PATH_MAX];
     FILE *f_in = NULL;
 
+    memset(&tv, 0, sizeof(tv));
     if (video_fd <= 0) {
         snprintf(path, sizeof(path) - 1, "stock/%04u.jpg", idx % 16);
         if ((f_in = fopen(path, "r")) == NULL) {
