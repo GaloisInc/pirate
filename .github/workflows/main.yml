@@ -21,9 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
-        sudo apt-get install -y clang valgrind
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang valgrind
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -73,9 +77,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
-        sudo apt-get install -y clang valgrind
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang valgrind
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -126,6 +134,9 @@ jobs:
     container: docker://pirateteam/llvm-ubuntu:latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
         apt-get update
