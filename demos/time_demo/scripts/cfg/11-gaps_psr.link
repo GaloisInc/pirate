@@ -1,0 +1,5 @@
+[Match]
+MACAddress=00:80:8a:8e:30:0b
+
+[Link]
+Name=psr
