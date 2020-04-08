@@ -349,7 +349,7 @@ static void *proxy_thread(void *arg) {
             continue;
         }
         len = gaps_packet_read(SIGNER_TO_PROXY, &rsp.ts, rsp.hdr.len);
-        if (len != rsp.hdr.len) {
+        if ((len < 0) || (((size_t) len) != rsp.hdr.len)) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to receive timestamp response body");
                 gaps_terminate();

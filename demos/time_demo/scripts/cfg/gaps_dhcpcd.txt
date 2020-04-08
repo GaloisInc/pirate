@@ -1,0 +1,13 @@
+interface psw
+static ip_address=10.2.1.1/22
+static routers=10.2.2.1
+
+interface psr
+static ip_address=10.2.2.1/22
+
+interface spw
+static ip_address=10.3.2.1/22
+static routers=10.3.1.1
+
+interface spr
+static ip_address=10.3.1.1/22
