@@ -38,7 +38,7 @@ int main()
   uavData.addListener([tgt](const Position& p) { tgt->setUAVLocation(p); });
   rfData.addListener( [tgt](const Distance& d) { tgt->setDistance(d); });
 
-  while (true)
+  for (int i = 0; i < 20; i++)
     {
       // here we simulate sensor data streams
       gps->read(msecs(10));

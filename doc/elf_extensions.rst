@@ -242,8 +242,8 @@ resources of that type:
 
 .. code-block:: c
 
-               struct pirate_resource[] __start_pirate_res_<resource_type>;
-               struct pirate_resource[] __stop_pirate_res_<resource_type>;
+               struct pirate_resource __start_pirate_res_<resource_type>[];
+               struct pirate_resource __stop_pirate_res_<resource_type>[];
 
 A library or application can gain access to this array by including
 the ``pirate_resources.h`` header file and declaring an ``extern``
@@ -253,8 +253,8 @@ variable with the appropriate name and type:
 
                #include <pirate_resources.h>
 
-               extern struct pirate_resource[] __start_pirate_res_<resource_type>;
-               extern struct pirate_resource[] __stop_pirate_res_<resource_type>;
+               extern struct pirate_resource __start_pirate_res_<resource_type>[];
+               extern struct pirate_resource __stop_pirate_res_<resource_type>[];
 
 Linking Examples
 ----------------

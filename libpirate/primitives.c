@@ -75,6 +75,12 @@ typedef struct {
 
 pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 
+int gaps_reader_gds[PIRATE_NUM_CHANNELS];
+int gaps_reader_gds_num;
+
+// TODO YIELD: convert this into an array
+int gaps_writer_control_gd;
+
 int pirate_close_channel(pirate_channel_t *channel);
 
 static inline pirate_channel_t *pirate_get_channel(int gd) {
@@ -98,6 +104,32 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
+static void pirate_parse_common_kv(const char *key, const char *value, pirate_channel_param_t *param) {
+    if (strncmp("yield", key, strlen("yield")) == 0) {
+        param->yield = atoi(value);
+    } else if (strncmp("control", key, strlen("control")) == 0) {
+        param->control = atoi(value);
+    }
+}
+
+static void pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
+    char *token, *key, *value;
+    char *saveptr1, *saveptr2;
+
+    while ((token = strtok_r(str, OPT_DELIM, &saveptr1)) != NULL) {
+        str = NULL;
+        key = strtok_r(token, KV_DELIM, &saveptr2);
+        if (key == NULL) {
+            continue;
+        }
+        value = strtok_r(NULL, KV_DELIM, &saveptr2);
+        if (value == NULL) {
+            continue;
+        }
+        pirate_parse_common_kv(key, value, param);
+    }
+}
+
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
 
     // Channel configuration function is allowed to modify the string
@@ -106,6 +138,10 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     strncpy(opt, str, sizeof(opt));
 
     pirate_init_channel_param(INVALID, param);
+
+    pirate_parse_common_param(opt, param);
+
+    strncpy(opt, str, sizeof(opt));
 
     if (strncmp("device", opt, strlen("device")) == 0) {
         param->channel_type = DEVICE;
@@ -154,6 +190,25 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     }
     memcpy(param, &channel->param, sizeof(pirate_channel_param_t));
     return 0;
+}
+
+int pirate_get_channel_flags(int gd) {
+    pirate_channel_t *channel = NULL;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+    return channel->ctx.flags;
+}
+
+pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
+    pirate_channel_t *channel = NULL;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return NULL;
+    }
+
+    return &channel->param;
 }
 
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {
@@ -274,9 +329,19 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
     }
 }
 
+static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
+    if ((access == O_RDONLY) && (param->yield || param->control)) {
+        gaps_reader_gds[gaps_reader_gds_num++] = gd;
+    }
+    if ((access == O_WRONLY) && param->control) {
+        gaps_writer_control_gd = gd;
+    }
+}
+
 // gaps descriptors must be opened from smallest to largest
 int pirate_open_param(pirate_channel_param_t *param, int flags) {
     pirate_channel_t channel;
+    int access = flags & O_ACCMODE;
 
     if (next_gd >= PIRATE_NUM_CHANNELS) {
         errno = EMFILE;
@@ -298,6 +363,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     }
 
     memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
+    pirate_yield_setup(gd, param, access);
     return gd;
 }
 
@@ -341,6 +407,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
+    param->pipe = 1; // TODO YIELD: remove and rely on src and dst enclave id
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
     read_channel.ctx.flags = behavior | O_RDONLY;
@@ -372,6 +439,8 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
 
     memcpy(&gaps_channels[read_gd], &read_channel, sizeof(pirate_channel_t));
     memcpy(&gaps_channels[write_gd], &write_channel, sizeof(pirate_channel_t));
+    pirate_yield_setup(read_gd, param, O_RDONLY);
+    pirate_yield_setup(write_gd, param, O_WRONLY);
 
     gd[0] = read_gd;
     gd[1] = write_gd;
@@ -386,6 +455,28 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags) {
     }
 
     return pirate_pipe_param(gd, &vals, flags);
+}
+
+int pirate_get_fd(int gd) {
+    pirate_channel_t *channel;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    switch (channel->param.channel_type) {
+    case PIPE:
+        return channel->ctx.channel.pipe.fd;
+    case TCP_SOCKET:
+        return channel->ctx.channel.tcp_socket.sock;
+    case UDP_SOCKET:
+        return channel->ctx.channel.udp_socket.sock;
+    case GE_ETH:
+        return channel->ctx.channel.ge_eth.sock;
+    default:
+        errno = ENODEV;
+        return -1;
+    }
 }
 
 int pirate_close(int gd) {
@@ -508,6 +599,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
 
 ssize_t pirate_write(int gd, const void *buf, size_t count) {
     pirate_channel_t *channel = NULL;
+    ssize_t rv;
 
     if ((channel = pirate_get_channel(gd)) == NULL) {
         return -1;
@@ -524,41 +616,63 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     switch (param->channel_type) {
 
     case DEVICE:
-        return pirate_device_write(&param->channel.device, &ctx->channel.device, buf, count);
+        rv = pirate_device_write(&param->channel.device, &ctx->channel.device, buf, count);
+        break;
 
     case PIPE:
-        return pirate_pipe_write(&param->channel.pipe, &ctx->channel.pipe, buf, count);
+        rv = pirate_pipe_write(&param->channel.pipe, &ctx->channel.pipe, buf, count);
+        break;
 
     case UNIX_SOCKET:
-        return pirate_unix_socket_write(&param->channel.unix_socket, &ctx->channel.unix_socket, buf, count);
+        rv = pirate_unix_socket_write(&param->channel.unix_socket, &ctx->channel.unix_socket, buf, count);
+        break;
 
     case TCP_SOCKET:
-        return pirate_tcp_socket_write(&param->channel.tcp_socket, &ctx->channel.tcp_socket, buf, count);
+        rv = pirate_tcp_socket_write(&param->channel.tcp_socket, &ctx->channel.tcp_socket, buf, count);
+        break;
 
     case UDP_SOCKET:
-        return pirate_udp_socket_write(&param->channel.udp_socket, &ctx->channel.udp_socket, buf, count);
+        rv = pirate_udp_socket_write(&param->channel.udp_socket, &ctx->channel.udp_socket, buf, count);
+        break;
 
     case SHMEM:
-        return pirate_shmem_write(&param->channel.shmem, &ctx->channel.shmem, buf, count);
+        rv = pirate_shmem_write(&param->channel.shmem, &ctx->channel.shmem, buf, count);
+        break;
 
     case UDP_SHMEM:
-        return pirate_udp_shmem_write(&param->channel.udp_shmem, &ctx->channel.udp_shmem, buf, count);
+        rv = pirate_udp_shmem_write(&param->channel.udp_shmem, &ctx->channel.udp_shmem, buf, count);
+        break;
 
     case UIO_DEVICE:
-        return pirate_uio_write(&param->channel.uio, &ctx->channel.uio, buf, count);
+        rv = pirate_uio_write(&param->channel.uio, &ctx->channel.uio, buf, count);
+        break;
 
     case SERIAL:
-        return pirate_serial_write(&param->channel.serial, &ctx->channel.serial, buf, count);
+        rv = pirate_serial_write(&param->channel.serial, &ctx->channel.serial, buf, count);
+        break;
 
     case MERCURY:
-        return pirate_mercury_write(&param->channel.mercury, &ctx->channel.mercury, buf, count);
+        rv = pirate_mercury_write(&param->channel.mercury, &ctx->channel.mercury, buf, count);
+        break;
 
     case GE_ETH:
-        return pirate_ge_eth_write(&param->channel.ge_eth, &ctx->channel.ge_eth, buf, count);
+        rv = pirate_ge_eth_write(&param->channel.ge_eth, &ctx->channel.ge_eth, buf, count);
+        break;
 
     case INVALID:
     default:
         errno = ENODEV;
         return -1;
     }
+
+    if (rv < 0) {
+        return rv;
+    }
+    if ((rv > 0) && param->yield && !param->control) {
+        int ret = pirate_listen();
+        if (ret < 0) {
+            return ret;
+        }
+    }
+    return rv;
 }

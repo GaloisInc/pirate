@@ -1,7 +1,9 @@
 name: CI
 
-on: [push]
-
+on:
+  push:
+  release:
+    type: [created]
 jobs:
   docs:
     runs-on: ubuntu-latest
@@ -21,9 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
-        sudo apt-get install -y clang valgrind
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang valgrind
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -59,7 +65,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
     - name: build demos
       run: |
         cd build
@@ -73,9 +79,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
-        sudo apt-get install -y clang valgrind
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang valgrind
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -105,7 +115,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
   gcc:
     runs-on: ubuntu-latest
     steps:
@@ -126,6 +136,9 @@ jobs:
     container: docker://pirateteam/llvm-ubuntu:latest
     steps:
     - uses: actions/checkout@v1
+    - name: update apt sources
+      run: |
+        sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
         apt-get update
@@ -151,7 +164,7 @@ jobs:
       run: |
         cd build/libpirate
         ./gaps_channels_test
-        make valgrind
+        make valgrind valgrind-cxx
     - name: Build demos
       run: |
         cd build
@@ -177,7 +190,6 @@ jobs:
       with:
         name: pnt_demo
         path: build_pnt_demo/pnt_demo
-      if: github.ref == 'refs/heads/master'
   docker-build:
     runs-on: ubuntu-latest
     needs: [docs, build]
@@ -217,5 +229,5 @@ jobs:
     - name: Post docker images
       run: |
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
-        docker push pirateteam/ubuntu
-      if: github.ref == 'refs/heads/master'
+        docker push pirateteam/ubuntu:${{ github.event.release.tag_name }}
+      if: github.event_name == 'release'

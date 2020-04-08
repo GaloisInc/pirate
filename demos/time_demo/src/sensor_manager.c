@@ -57,7 +57,7 @@ static struct argp_option options[] = {
     { "client-to-proxy", 1000, "CONFIG", 0, "Client to proxy channel",    1 },
     { "proxy-to-client", 1001, "CONFIG", 0, "Proxy to client channel",    1 },
     { NULL,            0,  NULL,   0, GAPS_CHANNEL_OPTIONS,               2 },
-    { 0 }
+    { NULL,            0,  NULL,   0, 0,                                  0 }
 };
 
 void sensor_manager_terminate() {
