@@ -103,7 +103,7 @@ static int reader_run(reader_t *reader) {
             }
         }
 
-        if (rd_len != exp_len) {
+        if (((size_t) rd_len) != exp_len) {
             bin_save("exp", out_dir, exp_buf, exp_len);
             bin_save("got", out_dir, rd_buf, rd_len);
             log_msg(ERROR, "Expecting %u bytes, got %u. Binary files saved",

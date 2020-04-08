@@ -42,6 +42,6 @@ set_target_properties(pnt_orange_yield PROPERTIES
     CXX_EXTENSIONS NO
 )
 
-install(TARGETS pnt_green_yield pnt_orange_yield)
+install(TARGETS pnt_green_yield pnt_orange_yield DESTINATION bin)
 install(FILES run.sh DESTINATION bin)
 configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)

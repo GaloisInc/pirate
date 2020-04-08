@@ -43,7 +43,7 @@ set_target_properties(pnt_orange PROPERTIES
     CXX_EXTENSIONS NO
 )
 
-install(TARGETS pnt_green pnt_orange)
+install(TARGETS pnt_green pnt_orange DESTINATION bin)
 
 set(RUN_SCRIPTS run.sh run_async.sh run_ge.sh)
 foreach(SCRPT ${RUN_SCRIPTS})

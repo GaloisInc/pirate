@@ -1,0 +1,31 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    # Proxy to Signing Service Write
+    psw:
+      addresses: [10.2.1.1/22]
+      gateway4: 10.2.2.1
+    enx00808a8eb6bb:
+      addresses: [10.2.1.1/22]
+      gateway4: 10.2.2.1
+
+    # Proxy to Signing Service Read
+    psr:
+      addresses: [10.2.2.1/22]
+    enx00808a8e300b:
+      addresses: [10.2.2.1/22]
+
+    # Signing Service to Proxy Write
+    spw:
+      addresses: [10.3.2.1/22]
+      gateway4: 10.3.1.1
+    enx00808a8e1aef:
+      addresses: [10.3.2.1/22]
+      gateway4: 10.3.1.1
+
+    # Signing Service to Proxy Read
+    spr:
+      addresses: [10.3.1.1/22]
+    enx00808a8eb7bc:
+      addresses: [10.3.1.1/22]

@@ -66,7 +66,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         uint32_t data_len, const pirate_mercury_param_t *param) {
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(ilip_message_t);
-    const ssize_t msg_len = data_len + sizeof(ilip_message_t);
+    const size_t msg_len = data_len + sizeof(ilip_message_t);
     struct timespec tv;
     uint64_t linux_time;
 
@@ -190,7 +190,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     
     msg_hdr->data_length     = htobe32(data_len);
     memcpy(msg_data, data, data_len);
-    return msg_len;
+    return ((ssize_t) msg_len);
 }
 
 
@@ -201,7 +201,7 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
     ssize_t payload_len;
 
-    if (buf_len > param->mtu) {
+    if (buf_len > (ssize_t)param->mtu) {
         errno = ENOBUFS;
         return -1;
     }
@@ -329,7 +329,7 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     }
 
     if (param->session.message_count > 0) {
-        const uint32_t msg_cgf_len = param->session.message_count * cfg_len;
+        const uint32_t msg_cfg_len = param->session.message_count * cfg_len;
 
         // Level
         sz = pwrite(fd_root, &param->session.level, cfg_len, 
@@ -346,9 +346,9 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
         }
 
         // Message tags
-        sz = pwrite(fd_root, param->session.messages, msg_cgf_len,
+        sz = pwrite(fd_root, param->session.messages, msg_cfg_len,
                     MERCURY_CFG_OFF_MESSAGES);
-        if (sz != msg_cgf_len) {
+        if ((sz < 0) || (((size_t) sz) != msg_cfg_len)) {
             goto error;
         }
     }

@@ -87,6 +87,7 @@ static int writer_term(writer_t *writer) {
 static int writer_run(writer_t *writer) {
     uint32_t wr_len = 0;
     uint32_t done = 0;
+    ssize_t rv;
     const uint8_t *wr_buf = writer->test.data.buf;
 
     const struct timespec ts = {
@@ -103,7 +104,8 @@ static int writer_run(writer_t *writer) {
             }
         }
 
-        if (pirate_write(gaps_channel, wr_buf, wr_len) != wr_len) {
+        rv = pirate_write(gaps_channel, wr_buf, wr_len);
+        if ((rv < 0) || (((size_t) rv) != wr_len)) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;
         }

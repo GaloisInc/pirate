@@ -1,0 +1,11 @@
+# Sensor Manager to Proxy Write
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LL8", SYMLINK+="ttyMPW"
+
+# Sensor Manager to Proxy Read
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LUP", SYMLINK+="ttyMPR"
+
+# Proxy to Sensor Manager Write
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LTT", SYMLINK+="ttyPMW"
+
+# Proxy to Sendor Manager Read
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AB0JRO22", SYMLINK+="ttyPMR"

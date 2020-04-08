@@ -1,4 +1,0 @@
-SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LTT", SYMLINK+="tty_P_TO_S_WR"
-SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LUP", SYMLINK+="tty_P_TO_S_RD"
-SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AC018LL8", SYMLINK+="tty_S_TO_P_WR"
-SUBSYSTEMS=="usb", KERNEL=="ttyUSB*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AB0JRO22", SYMLINK+="tty_S_TO_P_RD"
