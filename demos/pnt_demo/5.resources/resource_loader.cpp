@@ -18,11 +18,7 @@
 #define RESOURCE_STOP(name) __stop_pirate_res_##name
 #define KNOWN_RESOURCE(name) wrap_array(RESOURCE_START(name), RESOURCE_STOP(name))
 #define DECLARE_KNOWN_RESOURCE(name) \
-  extern pirate_resource RESOURCE_START(name)[]; \
-  extern pirate_resource RESOURCE_STOP (name)[]; \
-  namespace { \
-    char empty_##name[0] __attribute__((used,section("pirate_res_" #name))); \
-  }
+  extern pirate_resource RESOURCE_START(name)[], RESOURCE_STOP (name)[];
 
 DECLARE_KNOWN_RESOURCE(string)
 DECLARE_KNOWN_RESOURCE(bool)

@@ -16,6 +16,7 @@ set(COMMON_SRC
     target.h target.cpp
     pnt_example.cpp
     resource_loader.cpp resource.h resource_loader.h wrapped_array.h
+    empty_resources.cpp
 )
 
 if (GAPS_DISABLE)
