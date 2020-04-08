@@ -45,7 +45,7 @@ static struct argp_option options[] = {
     { "section",   's', "SECTION",    0, "Configuration TSA section", 0 },
     { "loops",     'n', "ITERATIONS", 0, "Number of test iterations", 0 },
     { "verbosity", 'v', NULL,         0, "Increase verbosity level",  0 },
-    { 0 }
+    { NULL,          0, NULL,         0, NULL,                        0 }
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
