@@ -8,8 +8,9 @@ struct pirate_resource_param {
 
 struct pirate_resource {
     const char *name;
-    pirate_resource_param *params;
     void *object;
+    pirate_resource_param *params;
+    long params_len;
 };
 
 }

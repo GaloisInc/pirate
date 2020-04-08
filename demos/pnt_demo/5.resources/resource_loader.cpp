@@ -14,14 +14,22 @@
 #include <string>
 #include <vector>
 
-#define DECLARE_KNOWN_RESOURCE(name) pirate_resource __attribute__((weak)) *name##_start, *name##_end
-#define KNOWN_RESOURCE(name) wrap_array(name##_start, name##_end)
-DECLARE_KNOWN_RESOURCE(string_resources);
-DECLARE_KNOWN_RESOURCE(bool_resources);
-DECLARE_KNOWN_RESOURCE(int_resources);
-DECLARE_KNOWN_RESOURCE(milliseconds_resources);
+#define RESOURCE_START(name) __start_pirate_res_##name
+#define RESOURCE_STOP(name) __stop_pirate_res_##name
+#define KNOWN_RESOURCE(name) wrap_array(RESOURCE_START(name), RESOURCE_STOP(name))
+#define DECLARE_KNOWN_RESOURCE(name) \
+  namespace { \
+    extern pirate_resource RESOURCE_START(name)[]; \
+    extern pirate_resource RESOURCE_STOP (name)[]; \
+    char empty_##name[0] __attribute__((used,section("pirate_res_" #name))); \
+  }
 
-enum class HasArg { None, Required, Optional, };
+DECLARE_KNOWN_RESOURCE(string)
+DECLARE_KNOWN_RESOURCE(bool)
+DECLARE_KNOWN_RESOURCE(int)
+DECLARE_KNOWN_RESOURCE(milliseconds)
+
+enum class HasArg { None, Required, Optional };
 
 struct Handler {
     char const* name;
@@ -46,7 +54,7 @@ namespace {
     }
 
     int getopt_loader(int &argc, char **&argv, std::vector<Handler> const& handlers) {
-        
+
         std::vector<option> longopts;
         for (auto const& h : handlers) {
             longopts.push_back({h.name, getopt_hasarg(h.hasArg)});
@@ -59,7 +67,7 @@ namespace {
         while (-1 != (ch = getopt_long(argc, argv, "", longopts.data(), &optlongindex))) {
             switch (ch) {
                 default: abort();
-                case '?': return -1;       
+                case '?': return -1;
                 case 0: if (handlers[optlongindex].callback(optarg)) { return -1; }
             }
         }
@@ -70,15 +78,6 @@ namespace {
 
         return 0;
     }
-
-    template<typename T>
-    void for_each_param(pirate_resource const& R, T f) {
-        if (R.params) {
-            for (auto x = R.params; x->key; x++) {
-                f(x->key, x->value);
-            }
-        }
-    }
 }
 
 int load_resources(int &argc, char **&argv) {
@@ -86,12 +85,13 @@ int load_resources(int &argc, char **&argv) {
     std::vector<Handler> handlers;
 
     // Install string resource handlers
-    for (auto const& res : KNOWN_RESOURCE(string_resources)) {
-        
+    for (auto const& res : KNOWN_RESOURCE(string)) {
+
         std::string doc = "";
-        for_each_param(res, [&](char const* key, char const* val) {
-            if (0 == strcmp("doc", key)) {
-                doc = val;
+        std::for_each(res.params, res.params+res.params_len,
+        [&](pirate_resource_param const& p) {
+            if (0 == strcmp("doc", p.key)) {
+                doc = p.value;
             }
         });
 
@@ -106,12 +106,13 @@ int load_resources(int &argc, char **&argv) {
     }
 
     // Install bool resource handlers
-    for (auto const& res : KNOWN_RESOURCE(bool_resources)) {
+    for (auto const& res : KNOWN_RESOURCE(bool)) {
 
         std::string doc = "";
-        for_each_param(res, [&](char const* key, char const* val) {
-            if (0 == strcmp("doc", key)) {
-                doc = val;
+        std::for_each(res.params, res.params+res.params_len,
+        [&](pirate_resource_param const& p) {
+            if (0 == strcmp("doc", p.key)) {
+                doc = p.value;
             }
         });
 
@@ -135,16 +136,17 @@ int load_resources(int &argc, char **&argv) {
     }
 
     // Install int resource handlers
-    for (auto const& res : KNOWN_RESOURCE(int_resources)) {
- 
+    for (auto const& res : KNOWN_RESOURCE(int)) {
+
         std::string doc = "";
         auto base = 0;
-        for_each_param(res, [&](char const* key, char const* val) {
-            if (0 == strcmp("base", key)) {
-                base = atoi(val);
+        std::for_each(res.params, res.params+res.params_len,
+        [&](pirate_resource_param const& p) {
+            if (0 == strcmp("base", p.key)) {
+                base = atoi(p.value);
                 if (base < 2 || base > 36) abort(); // bad base parameter
-            } else if (0 == strcmp("doc", key)) {
-                doc = val;
+            } else if (0 == strcmp("doc", p.key)) {
+                doc = p.value;
             }
         });
 
@@ -167,13 +169,13 @@ int load_resources(int &argc, char **&argv) {
         );
     }
 
-    // Install milliseconds resource handlers
-    for (auto const& res : KNOWN_RESOURCE(milliseconds_resources)) {
-
+    // Install int resource handlers
+    for (auto const& res : KNOWN_RESOURCE(milliseconds)) {
         std::string doc = "";
-        for_each_param(res, [&](char const* key, char const* val) {
-            if (0 == strcmp("doc", key)) {
-                doc = val;
+        std::for_each(res.params, res.params+res.params_len,
+        [&](pirate_resource_param const& p) {
+            if (0 == strcmp("doc", p.key)) {
+                doc = p.value;
             }
         });
 
