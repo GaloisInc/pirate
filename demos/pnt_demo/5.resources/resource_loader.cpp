@@ -18,9 +18,9 @@
 #define RESOURCE_STOP(name) __stop_pirate_res_##name
 #define KNOWN_RESOURCE(name) wrap_array(RESOURCE_START(name), RESOURCE_STOP(name))
 #define DECLARE_KNOWN_RESOURCE(name) \
+  extern pirate_resource RESOURCE_START(name)[]; \
+  extern pirate_resource RESOURCE_STOP (name)[]; \
   namespace { \
-    extern pirate_resource RESOURCE_START(name)[]; \
-    extern pirate_resource RESOURCE_STOP (name)[]; \
     char empty_##name[0] __attribute__((used,section("pirate_res_" #name))); \
   }
 
@@ -88,12 +88,11 @@ int load_resources(int &argc, char **&argv) {
     for (auto const& res : KNOWN_RESOURCE(string)) {
 
         std::string doc = "";
-        std::for_each(res.params, res.params+res.params_len,
-        [&](pirate_resource_param const& p) {
+        for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
             }
-        });
+        }
 
         auto obj = static_cast<std::string*>(res.object);
 
@@ -109,12 +108,11 @@ int load_resources(int &argc, char **&argv) {
     for (auto const& res : KNOWN_RESOURCE(bool)) {
 
         std::string doc = "";
-        std::for_each(res.params, res.params+res.params_len,
-        [&](pirate_resource_param const& p) {
+        for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
             }
-        });
+        }
 
         auto obj = static_cast<bool*>(res.object);
 
@@ -140,15 +138,14 @@ int load_resources(int &argc, char **&argv) {
 
         std::string doc = "";
         auto base = 0;
-        std::for_each(res.params, res.params+res.params_len,
-        [&](pirate_resource_param const& p) {
+        for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("base", p.key)) {
                 base = atoi(p.value);
                 if (base < 2 || base > 36) abort(); // bad base parameter
             } else if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
             }
-        });
+        }
 
         auto obj = static_cast<int*>(res.object);
 
@@ -172,12 +169,11 @@ int load_resources(int &argc, char **&argv) {
     // Install int resource handlers
     for (auto const& res : KNOWN_RESOURCE(milliseconds)) {
         std::string doc = "";
-        std::for_each(res.params, res.params+res.params_len,
-        [&](pirate_resource_param const& p) {
+        for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
             }
-        });
+        }
 
         auto obj = static_cast<std::chrono::milliseconds*>(res.object);
 

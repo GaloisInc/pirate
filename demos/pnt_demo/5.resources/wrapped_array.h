@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 template <typename T>
 struct wrapped_array {
     wrapped_array(T* first, T* last) : begin_ {first}, end_ {last} {}
@@ -15,4 +17,10 @@ template <typename T>
 wrapped_array<T> wrap_array(T* first, T* end) noexcept
 { 
     return {first, end};
+}
+
+template <typename T>
+wrapped_array<T> wrap_array(T* first, std::size_t n) noexcept
+{ 
+    return {first, first + n};
 }
