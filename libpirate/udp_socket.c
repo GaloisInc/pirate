@@ -242,6 +242,9 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
 }
 
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+    int err;
+    ssize_t rv;
+
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
@@ -254,17 +257,24 @@ ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_sock
             msgvec, iov);
         int wr_bytes = 0;
 
-        int rv = sendmmsg(ctx->sock, msgvec, vlen, 0);
-        if (rv < 0) {
-            return rv;
+        int mmsgrv = sendmmsg(ctx->sock, msgvec, vlen, 0);
+        if (mmsgrv < 0) {
+            return mmsgrv;
         }
 
-        for (int i = 0; i < rv; i++) {
+        for (int i = 0; i < mmsgrv; i++) {
             wr_bytes += iov[i].iov_len;
         }
         
         return wr_bytes;
     }
 
-    return send(ctx->sock, buf, count, 0);
+    err = errno;
+    rv = send(ctx->sock, buf, count, 0);
+    if ((rv < 0) && (errno == ECONNREFUSED)) {
+        // TODO create a counter of undelivered messages
+        errno = err;
+        rv = send(ctx->sock, buf, count, 0);
+    }
+    return rv;
 }

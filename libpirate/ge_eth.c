@@ -301,14 +301,23 @@ ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
 
 ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
                             const void *buf, size_t count) {
-    ssize_t wr_len = -1;
+    ssize_t rv, wr_len;
+    int err;
 
     if ((wr_len = ge_message_pack(ctx->buf, buf, count, param)) < 0) {
         errno = ENOMSG;
         return -1;
     }
 
-    if (send(ctx->sock, ctx->buf, wr_len, 0) != wr_len) {
+    err = errno;
+    rv = send(ctx->sock, ctx->buf, wr_len, 0);
+    if ((rv < 0) && (errno == ECONNREFUSED)) {
+        // TODO create a counter of undelivered messages
+        errno = err;
+        rv = send(ctx->sock, ctx->buf, wr_len, 0);
+    }
+
+    if (rv != wr_len) {
         return -1;
     }
 
