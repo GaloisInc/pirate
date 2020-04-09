@@ -7,7 +7,7 @@
 #include "ownship.h"
 #include "target.h"
 #include "timer.h"
-#include "resource_loader.h"
+#include "resource_loader.hpp"
 
 #include <mutex>
 #include <string.h>

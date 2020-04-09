@@ -15,8 +15,6 @@ set(COMMON_SRC
     ownship.h ownship.cpp
     target.h target.cpp
     pnt_example.cpp
-    resource_loader.cpp resource.h resource_loader.h wrapped_array.h
-    empty_resources.cpp
 )
 
 if (GAPS_DISABLE)
@@ -29,14 +27,14 @@ else()
     set_target_properties(pnt_orange PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,orange -fuse-ld=lld")
 endif(GAPS_DISABLE)
 
-target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread pirategetopt)
 set_target_properties(pnt_green PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread pirategetopt)
 set_target_properties(pnt_orange PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES

@@ -1,6 +1,6 @@
-#include "resource.h"
-#include "resource_loader.h"
-#include "wrapped_array.h"
+#include "resource.hpp"
+#include "resource_loader.hpp"
+#include "wrapped_array.hpp"
 
 #include <getopt.h>
 
