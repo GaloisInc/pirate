@@ -13,6 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,9 +104,12 @@ static void convert_jpg_to_ximage(const unsigned char *buf, unsigned long len) {
 }
 
 void xwin_display_render_jpeg(const unsigned char *buf, unsigned long len) {
+    int err;
     convert_jpg_to_ximage(buf, len);
     XPutImage(x_display, x_window, x_context, x_image, 0, 0, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+    err = errno;
     XFlush(x_display);
+    errno = err;
 }
 
 static void show_line(char *msg, int msg_len, int offset) {
@@ -120,7 +124,7 @@ static void show_line(char *msg, int msg_len, int offset) {
 }
 
 void xwin_display_show_response(char *msg, int msg_len) {
-    int pos = 0, row = 0, delta;
+    int err, pos = 0, row = 0, delta;
     char *pch;
 
     // trim message prefix
@@ -147,7 +151,9 @@ void xwin_display_show_response(char *msg, int msg_len) {
         }
         row += 1;
     }
+    err = errno;
     XFlush(x_display);
+    errno = err;
 }
 
 void xwin_display_terminate() {

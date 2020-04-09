@@ -31,10 +31,16 @@ static struct v4l2_buffer video_buf;
 static void* video_mmap;
 
 static int ioctl_wait(int fd, unsigned long request, void *arg) {
-    int ret;
+    int retry, err, ret;
     do {
+        retry = 0;
+        err = errno;
         ret = ioctl(fd, request, arg);
-    } while ((ret == -1) && (errno == EINTR));
+        if ((ret == -1) && (errno == EINTR)) {
+            retry = 1;
+            errno = err;
+        }
+    } while (retry);
     return ret;
 }
 

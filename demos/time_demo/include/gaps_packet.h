@@ -35,6 +35,7 @@
  */
 ssize_t gaps_packet_read(int gd, void *buf, uint32_t buf_len);
 
+int gaps_packet_poll(int gd);
 
 /*
  * Write a packet to the GAPS channel stream

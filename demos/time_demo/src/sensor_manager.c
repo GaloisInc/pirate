@@ -241,6 +241,39 @@ static int save_ts_response(const client_t *client, uint32_t idx, const tsa_resp
     return 0;
 }
 
+int timestamp_response(client_t *client, tsa_response_t *rsp) {
+    int rv = gaps_packet_poll(PROXY_TO_CLIENT);
+    if (rv < 0) {
+        if (gaps_running()) {
+            ts_log(ERROR, "Poll error");
+            gaps_terminate();
+        }
+        return -1;
+    }
+    if (rv == 0) {
+        return 0;
+    }
+    /* Get response */
+    ssize_t sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp->hdr, sizeof(rsp->hdr));
+    if (sts != sizeof(rsp->hdr)) {
+        if (gaps_running()) {
+            ts_log(ERROR, "Failed to receive response header");
+            gaps_terminate();
+        }
+        return -1;
+    }
+    sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp->ts, rsp->hdr.len);
+    if (sts != ((int) rsp->hdr.len)) {
+        if (gaps_running()) {
+            ts_log(ERROR, "Failed to receive response body");
+            gaps_terminate();
+        }
+        return -1;
+    }
+    log_tsa_rsp(client->verbosity, "Timestamp response received", rsp);
+    return 1;
+}
+
 /* Acquire trusted timestamps */
 static void *client_thread(void *arg) {
     client_t *client = (client_t *)arg;
@@ -292,24 +325,13 @@ static void *client_thread(void *arg) {
         }
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
-        /* Get response */
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
-        if (sts != sizeof(rsp.hdr)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response header");
-                gaps_terminate();
-            }
+        sts = timestamp_response(client, &rsp);
+        if (sts < 0) {
+            continue;
+        } else if (sts == 0) {
+            ts_log(WARN, BCLR(RED, "FAILED to receive the timestamp"));
             continue;
         }
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
-        if (sts != ((int) rsp.hdr.len)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response body");
-                gaps_terminate();
-            }
-            continue;
-        }
-        log_tsa_rsp(client->verbosity, "Timestamp response received", &rsp);
 
         /* Optionally validate the signature */
         if (client->validate != 0) {
