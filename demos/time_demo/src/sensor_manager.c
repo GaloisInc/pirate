@@ -40,6 +40,9 @@ typedef struct {
     const char *tsr_dir;
     const char *video_device;
     gaps_app_t app;
+
+    gaps_channel_ctx_t * const client_to_proxy;
+    gaps_channel_ctx_t * const proxy_to_client;
 } client_t;
 
 
@@ -73,11 +76,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
 
     case 1000:
-        strncpy(client->app.ch[0].conf, arg, 64);
+        client->client_to_proxy->conf = arg;
         break;
 
     case 1001:
-        strncpy(client->app.ch[1].conf, arg, 64);
+        client->proxy_to_client->conf = arg;
         break;
 
     case 'C':
@@ -133,9 +136,6 @@ static void parse_args(int argc, char *argv[], client_t *client) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
-
-    strncpy(client->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", CHANNEL_CONF_MAX_LEN - 1);
-    strncpy(client->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", CHANNEL_CONF_MAX_LEN - 1);
 
     argp_parse(&argp, argc, argv, 0, 0, client);
 }
@@ -242,7 +242,7 @@ static int save_ts_response(const client_t *client, uint32_t idx, const tsa_resp
 }
 
 int timestamp_response(client_t *client, tsa_response_t *rsp) {
-    int rv = gaps_packet_poll(PROXY_TO_CLIENT);
+    int rv = gaps_packet_poll(client->proxy_to_client->gd);
     if (rv < 0) {
         if (gaps_running()) {
             ts_log(ERROR, "Poll error");
@@ -254,7 +254,7 @@ int timestamp_response(client_t *client, tsa_response_t *rsp) {
         return 0;
     }
     /* Get response */
-    ssize_t sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp->hdr, sizeof(rsp->hdr));
+    ssize_t sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->hdr, sizeof(rsp->hdr));
     if (sts != sizeof(rsp->hdr)) {
         if (gaps_running()) {
             ts_log(ERROR, "Failed to receive response header");
@@ -262,7 +262,7 @@ int timestamp_response(client_t *client, tsa_response_t *rsp) {
         }
         return -1;
     }
-    sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp->ts, rsp->hdr.len);
+    sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->ts, rsp->hdr.len);
     if (sts != ((int) rsp->hdr.len)) {
         if (gaps_running()) {
             ts_log(ERROR, "Failed to receive response body");
@@ -315,7 +315,7 @@ static void *client_thread(void *arg) {
         }
 
         /* Send request */
-        int sts = gaps_packet_write(CLIENT_TO_PROXY, &req, sizeof(req));
+        int sts = gaps_packet_write(client->client_to_proxy->gd, &req, sizeof(req));
         if (sts == -1) {
             if (gaps_running()) {
                 ts_log(ERROR, "Failed to send signing request to proxy");
@@ -380,11 +380,14 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
             .on_shutdown = sensor_manager_terminate,
 
             .ch = {
-                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_WRONLY, "client->proxy"),
-                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_RDONLY, "client<-proxy"),
+                GAPS_CHANNEL(O_WRONLY, DEFAULT_CLIENT_TO_PROXY_CONF, "client->proxy"),
+                GAPS_CHANNEL(O_RDONLY, DEFAULT_PROXY_TO_CLIENT_CONF, "client<-proxy"),
                 GAPS_CHANNEL_END
             }
-        }
+        },
+
+        .client_to_proxy = &client.app.ch[0],
+        .proxy_to_client = &client.app.ch[1]
     };
 
     parse_args(argc, argv, &client);
