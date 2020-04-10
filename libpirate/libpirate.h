@@ -412,7 +412,7 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 // channel if the gaps channel is implemented using
 // a file descriptor.
 //
-// On success, the number of bytes read is returned.
+// On success, the file descriptor is returned.
 // On error, -1 is returned, and errno is set appropriately.
 // errno is ENODEV if the gaps channel is not implemented
 // using a file descriptor.
