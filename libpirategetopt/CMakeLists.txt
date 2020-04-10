@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(pirategetopt STATIC
-  empty_resources.cpp
   resource.hpp
   wrapped_array.hpp
   resource_loader.cpp

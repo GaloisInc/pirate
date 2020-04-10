@@ -28,7 +28,8 @@
 
 /* AUTOMATIC RESOURCES */
 
-#define RESOURCE(name, enclave) __attribute__((pirate_resource(name, enclave)))
+#define RESOURCE(name, enclave) __attribute__((pirate_resource(name, enclave),\
+					       pirate_resource_param("required","",enclave)))
 #define RESOURCE_TYPE(t)        __attribute__((pirate_resource_type(t)))
 #define DOC(doc)                __attribute__((pirate_resource_param("doc", doc)))
 
@@ -64,7 +65,7 @@ bool_resource fixedPeriod
 int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 {
   if (load_resources(argc, argv)) {
-    std::cerr << "Failed to process commandline arguments" << std::endl;
+    std::cerr << "Failed to process command-line arguments" << std::endl;
     return EXIT_FAILURE;
   }
 

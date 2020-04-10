@@ -32,12 +32,15 @@ struct Handler {
     HasArg hasArg;
     std::string documentation;
     std::function<bool(char const*)> callback;
+    bool required;
 
     Handler(
         char const* name, HasArg hasArg,
         std::string documentation,
+        bool required,
         std::function<bool(char const*)> callback
-    ) : name(name), hasArg(hasArg), documentation(documentation), callback(callback) {}
+    ) : name(name), hasArg(hasArg), documentation(documentation), callback(callback),
+        required(required) {}
 };
 
 namespace {
@@ -51,6 +54,7 @@ namespace {
 
     int getopt_loader(int &argc, char **&argv, std::vector<Handler> const& handlers) {
 
+	std::vector<bool> seen(handlers.size());
         std::vector<option> longopts;
         for (auto const& h : handlers) {
             longopts.push_back({h.name, getopt_hasarg(h.hasArg)});
@@ -59,14 +63,25 @@ namespace {
 
         int ch;
         int optlongindex;
-        opterr = 0; // disable error messages on stderr
         while (-1 != (ch = getopt_long(argc, argv, "", longopts.data(), &optlongindex))) {
             switch (ch) {
                 default: abort();
                 case '?': return -1;
-                case 0: if (handlers[optlongindex].callback(optarg)) { return -1; }
+                case 0:
+                    if (handlers[optlongindex].callback(optarg)) { return -1; }
+                    seen[optlongindex] = true;
             }
         }
+
+        bool missing = false;
+        for (size_t i = 0; i < handlers.size(); i++) {
+            if (handlers[i].required && !seen[i]) {
+                missing = true;
+                std::cerr << "Missing required flag --" << handlers[i].name << std::endl;
+            }
+        }
+
+        if (missing) { return -1; }
 
         // remove flag arguments from program argument array
         argc -= optind;
@@ -84,9 +99,12 @@ int load_resources(int &argc, char **&argv) {
     for (auto const& res : KNOWN_RESOURCE(string)) {
 
         std::string doc = "";
+        bool required = false;
         for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
+            } else if (0 == strcmp("required", p.key)) {
+                required = true;
             }
         }
 
@@ -96,6 +114,7 @@ int load_resources(int &argc, char **&argv) {
             res.name,
             HasArg::Required,
             doc,
+            required,
             [obj](const char *arg){ *obj = arg; return false; }
         );
     }
@@ -104,9 +123,12 @@ int load_resources(int &argc, char **&argv) {
     for (auto const& res : KNOWN_RESOURCE(bool)) {
 
         std::string doc = "";
+        bool required = false;
         for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
+            } else if (0 == strcmp("required", p.key)) {
+                required = true;
             }
         }
 
@@ -116,6 +138,7 @@ int load_resources(int &argc, char **&argv) {
             res.name,
             HasArg::Optional,
             doc,
+            required,
             [obj](char const* arg){
                 if (nullptr == arg || 0 == strcasecmp(arg, "yes")) {
                     *obj = true;
@@ -133,6 +156,7 @@ int load_resources(int &argc, char **&argv) {
     for (auto const& res : KNOWN_RESOURCE(int)) {
 
         std::string doc = "";
+        bool required = false;
         auto base = 0;
         for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("base", p.key)) {
@@ -140,6 +164,8 @@ int load_resources(int &argc, char **&argv) {
                 if (base < 2 || base > 36) abort(); // bad base parameter
             } else if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
+            } else if (0 == strcmp("required", p.key)) {
+                required = true;
             }
         }
 
@@ -149,6 +175,7 @@ int load_resources(int &argc, char **&argv) {
             res.name,
             HasArg::Required,
             doc,
+            required,
             [obj, base](char const* arg){
                 try {
                     *obj = std::stoi(arg, /*pos*/0, base);
@@ -165,9 +192,12 @@ int load_resources(int &argc, char **&argv) {
     // Install int resource handlers
     for (auto const& res : KNOWN_RESOURCE(milliseconds)) {
         std::string doc = "";
+        bool required = false;
         for (auto const& p : wrap_array(res.params, res.params_len)) {
             if (0 == strcmp("doc", p.key)) {
                 doc = p.value;
+            } else if (0 == strcmp("required", p.key)) {
+                required = true;
             }
         }
 
@@ -177,6 +207,7 @@ int load_resources(int &argc, char **&argv) {
             res.name,
             HasArg::Required,
             doc,
+            required,
             [obj](char const* arg){
                 try {
                     auto value = std::stoll(arg);
@@ -196,6 +227,7 @@ int load_resources(int &argc, char **&argv) {
         "help",
         HasArg::None,
         "Show available settings",
+        /*required*/false,
         [&](char const* arg) {
             std::cerr << "Available command-line options:" << std::endl;
             for (auto const& h : handlers) {

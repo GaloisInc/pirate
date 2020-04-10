@@ -41,8 +41,10 @@ set_target_properties(pnt_orange PROPERTIES
     CXX_EXTENSIONS NO
 )
 
-install(TARGETS pnt_green pnt_orange)
-install(FILES run.sh DESTINATION bin)
-configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)
-install(FILES run_async.sh DESTINATION bin)
-configure_file(run_async.sh ${PROJECT_BINARY_DIR} COPYONLY)
+install(TARGETS pnt_green pnt_orange DESTINATION bin)
+
+set(RUN_SCRIPTS run.sh run_async.sh run_ge.sh run_mercury.sh)
+foreach(SCRPT ${RUN_SCRIPTS})
+    install(FILES ${SCRPT} DESTINATION bin)
+    configure_file(${SCRPT} ${PROJECT_BINARY_DIR} COPYONLY)
+endforeach()
