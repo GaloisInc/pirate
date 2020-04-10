@@ -41,10 +41,12 @@ typedef struct {
 #define THREAD_ADD(f, a, n) {.func = f, .arg = a, .name = n, .tid = 0 }
 #define THREAD_END          THREAD_ADD(NULL, NULL, NULL)
 
+#define CHANNEL_CONF_MAX_LEN 64
+
 typedef struct {
     int *num;
     int flags;
-    char conf[64];
+    char conf[CHANNEL_CONF_MAX_LEN];
     const char* desc;
 } gaps_channel_ctx_t;
 

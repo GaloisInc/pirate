@@ -7,13 +7,6 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 set(VERSION 0.0.2)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEMO_VERSION='\"${VERSION}\"'")
 
-# Options
-option(GAPS_SERIAL "Use serial devices for proxy <-> signer GAPS channels" OFF)
-
-if(GAPS_SERIAL)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_SERIAL")
-endif(GAPS_SERIAL)
-
 if (GAPS_DISABLE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGAPS_DISABLE")
 endif(GAPS_DISABLE)
@@ -189,9 +182,3 @@ set(TS_TEST ts_test)
 add_non_gaps_target(${TS_TEST} ${TEST_DIR})
 set(TS_TEST_SCRIPT ${SCRIPTS_DIR}/ts_test.sh)
 configure_file(${TS_TEST_SCRIPT} ${TEST_DIR} COPYONLY)
-
-# UART test
-if(GAPS_SERIAL)
-    set(UART_TEST uart_test)
-    add_non_gaps_target(${UART_TEST} ${TEST_DIR})
-endif(GAPS_SERIAL)

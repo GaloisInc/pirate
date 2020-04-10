@@ -125,15 +125,10 @@ static void parse_args(int argc, char *argv[], proxy_t *proxy) {
         .argp_domain = NULL
     };
 
-    strncpy(proxy->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
-    strncpy(proxy->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
-#ifdef GAPS_SERIAL
-    strncpy(proxy->app.ch[2].conf, PROXY_TO_SIGNER_WR, 64);
-    strncpy(proxy->app.ch[3].conf, SIGNER_TO_PROXY_RD, 64);
-#else
-    strncpy(proxy->app.ch[2].conf, "pipe,/tmp/proxy.signer.gaps", 64);
-    strncpy(proxy->app.ch[3].conf, "pipe,/tmp/signer.proxy.gaps", 64);
-#endif
+    strncpy(proxy->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", CHANNEL_CONF_MAX_LEN - 1);
+    strncpy(proxy->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", CHANNEL_CONF_MAX_LEN - 1);
+    strncpy(proxy->app.ch[2].conf, "pipe,/tmp/proxy.signer.gaps", CHANNEL_CONF_MAX_LEN - 1);
+    strncpy(proxy->app.ch[3].conf, "pipe,/tmp/signer.proxy.gaps", CHANNEL_CONF_MAX_LEN - 1);
 
     argp_parse(&argp, argc, argv, 0, 0, proxy);
 }

@@ -134,8 +134,8 @@ static void parse_args(int argc, char *argv[], client_t *client) {
         .argp_domain = NULL
     };
 
-    strncpy(client->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
-    strncpy(client->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
+    strncpy(client->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", CHANNEL_CONF_MAX_LEN - 1);
+    strncpy(client->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", CHANNEL_CONF_MAX_LEN - 1);
 
     argp_parse(&argp, argc, argv, 0, 0, client);
 }
