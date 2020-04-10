@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,7 +22,7 @@ struct pirate_resource {
     char *pr_name;
     void *pr_obj;
     struct pirate_resource_param *pr_params;
-    unsigned char padding[8];
+    uint64_t pr_params_len;
 } __attribute__((packed));
 
 extern struct pirate_resource __start_pirate_res_int[];
@@ -35,12 +36,11 @@ orange_main(void) {
         struct pirate_resource *pr = &__start_pirate_res_int[i];
 
         printf("resource %lu: %s = %d\n", i, pr->pr_name, *(int *)pr->pr_obj);
-        if(pr->pr_params)
-            for(j = 0; pr->pr_params[j].prp_name; ++j) {
-                struct pirate_resource_param *prp = &pr->pr_params[j];
+        for(j = 0; j < pr->pr_params_len; ++j) {
+            struct pirate_resource_param *prp = &pr->pr_params[j];
 
-                printf("\t\"%s\" = \"%s\"\n", prp->prp_name, prp->prp_value);
-            }
+            printf("\t\"%s\" = \"%s\"\n", prp->prp_name, prp->prp_value);
+        }
     }
 
     return 0;
