@@ -56,6 +56,7 @@ if (HAVE_STD_ATOMIC)
 endif(HAVE_STD_ATOMIC)
 
 add_subdirectory(libpirate)
+add_subdirectory(libpirategetopt)
 include_directories(BEFORE libpirate)
 link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 add_subdirectory(demos)

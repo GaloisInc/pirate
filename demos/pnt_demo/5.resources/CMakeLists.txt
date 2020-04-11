@@ -15,8 +15,6 @@ set(COMMON_SRC
     ownship.h ownship.cpp
     target.h target.cpp
     pnt_example.cpp
-    resource_loader.cpp resource.h resource_loader.h wrapped_array.h
-    empty_resources.cpp
 )
 
 if (GAPS_DISABLE)
@@ -29,22 +27,24 @@ else()
     set_target_properties(pnt_orange PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,orange -fuse-ld=lld")
 endif(GAPS_DISABLE)
 
-target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread pirategetopt)
 set_target_properties(pnt_green PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread pirategetopt)
 set_target_properties(pnt_orange PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-install(TARGETS pnt_green pnt_orange)
-install(FILES run.sh DESTINATION bin)
-configure_file(run.sh ${PROJECT_BINARY_DIR} COPYONLY)
-install(FILES run_async.sh DESTINATION bin)
-configure_file(run_async.sh ${PROJECT_BINARY_DIR} COPYONLY)
+install(TARGETS pnt_green pnt_orange DESTINATION bin)
+
+set(RUN_SCRIPTS run.sh run_async.sh run_ge.sh run_mercury.sh)
+foreach(SCRPT ${RUN_SCRIPTS})
+    install(FILES ${SCRPT} DESTINATION bin)
+    configure_file(${SCRPT} ${PROJECT_BINARY_DIR} COPYONLY)
+endforeach()
