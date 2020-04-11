@@ -58,7 +58,7 @@ int video_sensor_initialize(const char *video_device, int display) {
     memset(&req, 0, sizeof(struct v4l2_requestbuffers));
     video_fd = open(video_device, O_RDWR);
     if (video_fd < 0) {
-        ts_log(INFO, "Failed to open video device. Using stock images");
+        ts_log(INFO, "Using stock images");
         video_mmap = calloc(IMAGE_HEIGHT * IMAGE_WIDTH, 1);
         return 0;
     }
