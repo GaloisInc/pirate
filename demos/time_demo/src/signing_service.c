@@ -24,6 +24,8 @@
 #pragma pirate enclave declare(purple)
 #endif
 
+extern const char *program_name;
+
 typedef struct {
     verbosity_t verbosity;
 
@@ -152,6 +154,8 @@ static void signer_term(signer_t *signer) {
 
 
 int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
+    program_name = CLR(WHITE, "Signing Service");
+
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
 
@@ -179,7 +183,7 @@ int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
 
     parse_args(argc, argv, &signer);
 
-    ts_log(INFO, "Starting signing service");
+    ts_log(INFO, "Starting");
 
     /* Initialize signer crypto resources */
     signer.ts.tsa = ts_init(signer.ts.conf_file, signer.ts.conf_sect);

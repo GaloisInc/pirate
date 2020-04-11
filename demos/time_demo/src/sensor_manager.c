@@ -30,6 +30,8 @@
 #pragma pirate enclave declare(orange)
 #endif
 
+extern const char *program_name;
+
 typedef struct {
     verbosity_t verbosity;
     uint32_t validate;
@@ -362,6 +364,8 @@ static void *client_thread(void *arg) {
 }
 
 int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
+    program_name = CLR(WHITE, "Sensor Manager");
+
     client_t client = {
         .verbosity = VERBOSITY_NONE,
         .validate = 0,
@@ -392,7 +396,7 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
 
     parse_args(argc, argv, &client);
 
-    ts_log(INFO, "Starting sensor manager");
+    ts_log(INFO, "Starting");
 
     if (video_sensor_initialize(client.video_device, client.display) != 0) {
         return -1;

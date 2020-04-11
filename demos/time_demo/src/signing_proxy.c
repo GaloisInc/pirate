@@ -28,6 +28,8 @@
 #pragma pirate enclave declare(yellow)
 #endif
 
+extern const char *program_name;
+
 /* Default values */
 #define DEFAULT_POLL_PERIOD_MS      1000
 #define DEFAULT_REQUEST_QUEUE_LEN   4
@@ -384,6 +386,8 @@ static void *proxy_thread(void *arg) {
 
 
 int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
+    program_name = CLR(WHITE, "Signing Proxy");
+
     proxy_t proxy = {
         .poll_period_ms = DEFAULT_POLL_PERIOD_MS,
         .queue_len = DEFAULT_REQUEST_QUEUE_LEN,
@@ -413,7 +417,7 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
     /* Parse command-line options */
     parse_args(argc, argv, &proxy);
 
-    ts_log(INFO, "Starting signing proxy");
+    ts_log(INFO, "Starting");
 
     if (queues_init(&proxy) != 0) {
         ts_log(ERROR, "Failed to initialize proxy queues");

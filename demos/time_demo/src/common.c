@@ -30,6 +30,7 @@
 #define DEMO_VERSION ""
 #endif
 const char *argp_program_version = DEMO_VERSION;
+const char *program_name = "";
 
 volatile sig_atomic_t terminated = 0;
 
@@ -216,7 +217,7 @@ void ts_log(log_level_t l, const char *fmt, ...) {
     }
 
 
-    fprintf(stream, "[%s] %s ", ts, evt_str);
+    fprintf(stream, "[%s] %s %s ", ts, program_name, evt_str);
     va_start(args, fmt);
     vfprintf(stream, fmt, args);
     va_end(args);
