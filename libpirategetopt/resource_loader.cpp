@@ -49,6 +49,7 @@ namespace {
             case HasArg::None:     return no_argument;
             case HasArg::Required: return required_argument;
             case HasArg::Optional: return optional_argument;
+            default:               return -1;
         }
     }
 
