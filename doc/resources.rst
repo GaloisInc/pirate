@@ -220,16 +220,23 @@ An ``enclave`` object has the following fields:
     A set of key-value pairs to add to the executable's environment.
     This key may be omitted if no environment variables are needed.
     
-``clear_env``
-    A boolean value describing whether the runner should clear the
-    environment when running the executable. If this is ``true``, the
-    program's environment will contain only the keys specified in
-    ``environment``. Otherwise it will inherit environment variables
-    from the runner.
+A ``config`` object has the following fields:
 
-A ``resource`` object has, at a minimum, ``launcher_name``, ``names``,
-and ``type`` fields, as described below. The remaining fields vary,
-depending on the ``type``. See `Channel Resources` for a list).
+``log_level``
+    How much logging information the runner should produce:
+    
+    ``default``
+        Print only fatal errors.
+        
+    ``info``
+        Additionally print warnings and informative messages.
+        
+    ``debug``
+        Print copious information about the runner's operation.
+
+A ``resource`` object has, at a minimum, ``name``, ``ids``, and
+``type`` fields, as described below. Additionally, it has a
+``contents`` field, which varies depending on the ``type``.
 
 ``name``
     The name of this resource as it will appear in launcher debug
@@ -249,8 +256,8 @@ depending on the ``type``. See `Channel Resources` for a list).
     source, this must correspond to the ``<resource_type>`` in the
     annotation.
     
-``...``
-    Additional fields may be present depending on the ``type`` field.
+``contents``
+    An object whose contents depend on the ``type`` field (see below).
 
 The application initialization will report an error if the YAML file
 contains a resource object with a name that is not in any enclave, or
@@ -260,27 +267,28 @@ unsupported type is found, or if the same resource name is associated
 with incompatible source types or parameters (e.g., a channel with
 datagram semantics in one enclave and stream semantics in another
 enclave).
-
-A ``config`` object has the following fields:
-
-``log_level``
-    How much logging information the runner should produce:
-    
-    ``default``
-        Print only fatal errors.
         
-    ``info``
-        Additionally print warnings and informative messages.
-        
-    ``debug``
-        Print copious information about the runner's operation.
+Simple Resources
+^^^^^^^^^^^^^^^^
+
+To ease application configuration, the following simple resource types
+are available:
+
+``boolean``
+    Contents contains the single field ``boolean_value``.
+
+``integer``
+    Contents contains the single field ``integer_value``.
+
+``string``
+    Contents contains the single field ``string_value``.
 
 GAPS Channels and FD Channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To promote interoperability, resources of type ``gaps_channel`` and
 ``fd_channel`` use the same runtime configuration fields in the YAML
-``resource`` objects:
+``contents`` objects:
 
 ``channel_type``
     The Permissible types are as follows:
@@ -407,20 +415,25 @@ The configuration file ``os_1.yml`` might look like this:
         ids:
           - tts_app/to_proxy
           - tts_proxy/to_app
-        channel_type: unix_socket
-        path: /var/run/tts/app_to_proxy.sock
+        contents:
+            channel_type: unix_socket
+            path: /var/run/tts/app_to_proxy.sock
       - name: proxy_to_signserv_1
         type: gaps_channel
         ids:
           - tts_proxy/to_signserv_1
-        channel_type: udp_socket
-        left:
-            id: tts_proxy/to_signserv_1
-            dst_host: example.lan
-            dst_port: 9001
-        right:
-            dst_port: 9002 # The local port on tts_proxy
+        contents:
+            channel_type: udp_socket
+            left:
+                id: tts_proxy/to_signserv_1
+                dst_host: example.lan
+                dst_port: 9001
+            right:
+                dst_port: 9002 # The local port on tts_proxy
       - name: proxy_to_signserv_2
         type: gaps_channel
-        channel_type: device
-        path: /dev/ttyS0
+        ids:
+          - tts_proxy/to_signserv_2
+        contents:
+            channel_type: device
+            path: /dev/ttyS0
