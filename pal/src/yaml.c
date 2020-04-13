@@ -52,42 +52,42 @@ static const cyaml_schema_field_t endpoint_field_schema[] = {
 };
 
 // FIXME: Make this pluggable
-static const cyaml_schema_field_t rsc_cfg_field_schema[] = {
+static const cyaml_schema_field_t rsc_contents_field_schema[] = {
 
     /* gaps_ and fd_channel
      */
     CYAML_FIELD_ENUM("channel_type", CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_type,
+            struct rsc_contents, cc_type,
             channel_type_strings, CYAML_ARRAY_LEN(channel_type_strings)),
     CYAML_FIELD_MAPPING_PTR("left",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_left, endpoint_field_schema),
+            struct rsc_contents, cc_left, endpoint_field_schema),
     CYAML_FIELD_MAPPING_PTR("right",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_right, endpoint_field_schema),
+            struct rsc_contents, cc_right, endpoint_field_schema),
     CYAML_FIELD_STRING_PTR("path",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_path, 0, CYAML_UNLIMITED),
+            struct rsc_contents, cc_path, 0, CYAML_UNLIMITED),
     CYAML_FIELD_UINT("buffer", CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_buffer),
+            struct rsc_contents, cc_buffer),
     CYAML_FIELD_UINT("packet_size", CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_packet_size),
+            struct rsc_contents, cc_packet_size),
     CYAML_FIELD_UINT("iov_length", CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_iov_length),
+            struct rsc_contents, cc_iov_length),
     CYAML_FIELD_UINT("rate", CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_rate),
+            struct rsc_contents, cc_rate),
 
     /* Trivial resources
      */
     CYAML_FIELD_STRING_PTR("string_value",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_string_value, 0, CYAML_UNLIMITED),
+            struct rsc_contents, cc_string_value, 0, CYAML_UNLIMITED),
     CYAML_FIELD_INT_PTR("integer_value",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_integer_value),
+            struct rsc_contents, cc_integer_value),
     CYAML_FIELD_BOOL_PTR("boolean_value",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_cfg, cc_boolean_value),
+            struct rsc_contents, cc_boolean_value),
 
     CYAML_FIELD_END,
 };
@@ -103,8 +103,8 @@ static const cyaml_schema_field_t resource_field_schema[] = {
             struct resource, r_type, 0, CYAML_UNLIMITED),
     CYAML_FIELD_SEQUENCE("ids", CYAML_FLAG_POINTER,
             struct resource, r_ids, &string_ptr_schema, 0, CYAML_UNLIMITED),
-    CYAML_FIELD_MAPPING("config", CYAML_FLAG_DEFAULT,
-            struct resource, r_cfg, rsc_cfg_field_schema), // FIXME: Make this pluggable
+    CYAML_FIELD_MAPPING("contents", CYAML_FLAG_DEFAULT,
+            struct resource, r_contents, rsc_contents_field_schema), // FIXME: Make this pluggable
     CYAML_FIELD_END,
 };
 

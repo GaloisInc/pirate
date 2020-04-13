@@ -28,7 +28,7 @@ struct endpoint {
     uint16_t ep_dst_port;
 };
 
-struct rsc_cfg {
+struct rsc_contents {
 
     /* gaps_ and fd_channel
      */
@@ -53,7 +53,7 @@ struct resource {
     char *r_type;
     char **r_ids;
     size_t r_ids_count;
-    struct rsc_cfg r_cfg; // FIXME: Make this pluggable
+    struct rsc_contents r_contents; // FIXME: Make this pluggable
 };
 
 struct config {

@@ -6,7 +6,7 @@
 int cstring_resource_handler(pal_env_t *env,
         const struct app *app, const struct resource *rsc)
 {
-    const char *s = rsc->r_cfg.cc_string_value;
+    const char *s = rsc->r_contents.cc_string_value;
 
     if(!s)
         return -1;
@@ -20,7 +20,7 @@ int cstring_resource_handler(pal_env_t *env,
 int int64_resource_handler(pal_env_t *env,
         const struct app *app, const struct resource *rsc)
 {
-    const int64_t *n = rsc->r_cfg.cc_integer_value;
+    const int64_t *n = rsc->r_contents.cc_integer_value;
 
     if(!n)
         return -1;
@@ -34,7 +34,7 @@ int int64_resource_handler(pal_env_t *env,
 int bool_resource_handler(pal_env_t *env,
         const struct app *app, const struct resource *rsc)
 {
-    const bool *b = rsc->r_cfg.cc_boolean_value;
+    const bool *b = rsc->r_contents.cc_boolean_value;
 
     if(!b)
         return -1;
