@@ -16,12 +16,23 @@
 #include "libpirate.h"
 #include "channel_test.hpp"
 
+extern "C" {
+    uint16_t pirate_ge_eth_crc16(const uint8_t *data, uint16_t len);
+}
+
 namespace GAPS
 {
 
 using ::testing::WithParamInterface;
 using ::testing::TestWithParam;
 using ::testing::Values;
+
+TEST(ChannelGeEthTest, CRC16X25)
+{
+    uint8_t data[4] = { 0xDE, 0xAD, 0xBE, 0xEF };
+    uint16_t crc = pirate_ge_eth_crc16(&data[0], 4);
+    ASSERT_EQ(0xE5CB, crc);
+}
 
 TEST(ChannelGeEthTest, ConfigurationParser) {
     int rv;
