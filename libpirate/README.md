@@ -2,7 +2,7 @@
 
 Pirate primitives layer. The PIRATE core primitives layer
 will provide a series of capabilities for executing PIRATE executables
-on GAPS hardware. At minimum, there are four basic primitives that must
+on GAPS hardware. At minimum, there are four basic capabilities that must
 be supported: configuring GAPS hardware, loading code and data onto the
 appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
