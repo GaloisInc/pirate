@@ -223,8 +223,8 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
 }
 
 static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
-    if (param->session.source_id == 0) {
-        param->session.source_id = 1;
+    if (param->session.level == 0) {
+        param->session.level = 1;
     }
 
     if (param->mtu == 0) {
@@ -351,12 +351,18 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
         if ((sz < 0) || (((size_t) sz) != msg_cfg_len)) {
             goto error;
         }
-    }
 
-    sz = pwrite(fd_root, &param->session.source_id, cfg_len,
+        sz = pwrite(fd_root, &param->session.source_id, cfg_len,
                     MERCURY_CFG_OFF_SOURCE_ID);
-    if (sz != cfg_len) {
-        goto error;
+        if (sz != cfg_len) {
+            goto error;
+        }
+    } else {
+        sz = pwrite(fd_root, &param->session.level, cfg_len,
+                    MERCURY_CFG_OFF_SOURCE_ID);
+        if (sz != cfg_len) {
+            goto error;
+        }
     }
 
     sz = pread(fd_root, &param->session.id, cfg_len, MERCURY_CFG_OFF_SESSION_ID);
@@ -371,7 +377,7 @@ int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *c
     fd_root = -1;
 
     if (param->session.message_count == 0) {
-        if (param->session.source_id != param->session.id) {
+        if (param->session.level != param->session.id) {
             errno = EBADE;
             goto error;
         }
