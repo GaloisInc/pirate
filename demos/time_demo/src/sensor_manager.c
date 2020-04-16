@@ -244,41 +244,24 @@ static int save_ts_response(const client_t *client, uint32_t idx, const tsa_resp
 }
 
 int timestamp_response(client_t *client, tsa_response_t *rsp) {
-    int rv = gaps_packet_poll(client->proxy_to_client->gd);
-    if (rv < 0) {
-        if (gaps_running()) {
-            ts_log(ERROR, "Poll error");
-            gaps_terminate();
-        }
-        return -1;
-    }
-    if (rv == 0) {
-        return 0;
-    }
     /* Get response */
     ssize_t sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->hdr, sizeof(rsp->hdr));
     if (sts != sizeof(rsp->hdr)) {
-        if (gaps_running()) {
-            ts_log(ERROR, "Failed to receive response header");
-            gaps_terminate();
-        }
         return -1;
     }
+
     sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->ts, rsp->hdr.len);
     if (sts != ((int) rsp->hdr.len)) {
-        if (gaps_running()) {
-            ts_log(ERROR, "Failed to receive response body");
-            gaps_terminate();
-        }
         return -1;
     }
+
     log_tsa_rsp(client->verbosity, "Timestamp response received", rsp);
     return 1;
 }
 
 /* Acquire trusted timestamps */
 static void *client_thread(void *arg) {
-    client_t *client = (client_t *)arg;
+    client_t *client = (client_t *)arg; 
     void* jpeg_buffer;
     unsigned int jpeg_buffer_length;
     int idx = 0;
@@ -292,6 +275,10 @@ static void *client_thread(void *arg) {
     };
 
     while (gaps_running()) {
+        if (client->request_delay_ms != 0) {
+            nanosleep(&ts, NULL);
+        }
+
         /* Read sensor data */
         if (read_sensor(idx)) {
             ts_log(ERROR, "Failed to read sensor data");
@@ -319,18 +306,13 @@ static void *client_thread(void *arg) {
         /* Send request */
         int sts = gaps_packet_write(client->client_to_proxy->gd, &req, sizeof(req));
         if (sts == -1) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send signing request to proxy");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send signing request to proxy");
             continue;
         }
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
         sts = timestamp_response(client, &rsp);
-        if (sts < 0) {
-            continue;
-        } else if (sts == 0) {
+        if (sts <= 0) {
             ts_log(WARN, BCLR(RED, "FAILED to receive the timestamp"));
             continue;
         }
@@ -351,10 +333,6 @@ static void *client_thread(void *arg) {
             ts_log(ERROR, "Failed to save timestamp response");
             gaps_terminate();
             continue;
-        }
-
-        if (client->request_delay_ms != 0) {
-            nanosleep(&ts, NULL);
         }
 
         idx++;

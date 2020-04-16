@@ -258,9 +258,8 @@ static void *request_receive(void *argp) {
     while (gaps_running()) {
         len = gaps_packet_read(proxy->client_to_proxy->gd, &req, sizeof(req));
         if (len != sizeof(req)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive request");
-                gaps_terminate();
+            if (len != 0) {
+                ts_log(WARN, "Failed to receive request");
             }
             continue;
         }
@@ -272,10 +271,7 @@ static void *request_receive(void *argp) {
             rsp.hdr.status = BUSY;
 
             if (gaps_packet_write(proxy->proxy_to_client->gd, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
-                if (gaps_running()) {
-                    ts_log(ERROR, "Failed to send response header");
-                    gaps_terminate();
-                }
+                ts_log(WARN, "Failed to send response header");
                 continue;
             }
 
@@ -330,27 +326,18 @@ static void *proxy_thread(void *arg) {
         request_queue_push(&proxy->queue.free, entry);
         sts = gaps_packet_write(proxy->proxy_to_signer->gd, &req, sizeof(req));
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send timestamp request");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send timestamp request");
             continue;
         }
 
         len = gaps_packet_read(proxy->signer_to_proxy->gd, &rsp.hdr, sizeof(rsp.hdr));
         if (len != sizeof(rsp.hdr)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive timestamp response header");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive timestamp response header");
             continue;
         }
         len = gaps_packet_read(proxy->signer_to_proxy->gd, &rsp.ts, rsp.hdr.len);
         if ((len < 0) || (((size_t) len) != rsp.hdr.len)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive timestamp response body");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive timestamp response body");
             continue;
         }
         log_tsa_rsp(proxy->verbosity, "Timestamp response received", &rsp);
@@ -361,19 +348,13 @@ static void *proxy_thread(void *arg) {
 
         sts = gaps_packet_write(proxy->proxy_to_client->gd, &rsp.hdr, sizeof(rsp.hdr));
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send response header");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send response header");
             continue;
         }
 
         sts = gaps_packet_write(proxy->proxy_to_client->gd, &rsp.ts, rsp.hdr.len);
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send response body");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send response body");
             continue;
         }
 

@@ -113,10 +113,7 @@ static void *signer_thread(void *arg) {
         /* Receive sign request */
         len = gaps_packet_read(signer->proxy_to_signer->gd, &req, sizeof(req));
         if (len != sizeof(req)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive sign request");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive sign request");
             continue;
         }
         log_tsa_req(signer->verbosity, "Timestamp request received", &req);
@@ -126,17 +123,11 @@ static void *signer_thread(void *arg) {
 
         /* Reply */
         if (gaps_packet_write(signer->signer_to_proxy->gd, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send sign response header");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send sign response header");
             continue;
         }
         if (gaps_packet_write(signer->signer_to_proxy->gd, &rsp.ts, rsp.hdr.len) != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send sign response body");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send sign response body");
             continue;
         }
         log_tsa_rsp(signer->verbosity, "Timestamp response sent", &rsp);

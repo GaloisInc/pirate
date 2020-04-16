@@ -62,6 +62,15 @@ int gaps_packet_poll(int gd) {
 }
 
 ssize_t gaps_packet_read(int gd, void *buf, uint32_t buf_len) {
+    int rv = gaps_packet_poll(gd);
+    if (rv < 0) {
+        return -1;
+    }
+
+    if (rv == 0) {
+        return 0;
+    }
+
     /* Read the length */
     uint32_t len = 0;
     if ((gaps_read_len(gd, &len, sizeof(len)) == -1) || (len > buf_len)) {
