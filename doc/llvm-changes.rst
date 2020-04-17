@@ -77,3 +77,30 @@ Propagating information from LLVM AST to object files
 
 Propagating information from object files to executable
 -------------------------------------------------------
+
+**Options.td**
+
+- Define `-enclave` flag that sets enclave name and enables section gc
+
+**InputFiles.h**
+
+- Track per-file enclaves and requirements
+
+**SyntheticSections.h**
+
+- Track combined enclave, requirement, and resource information
+
+**Driver.cpp**
+
+- Combine per-file enclave and requirement information
+- Link enclave start symbol in place of `main()`
+- Ensure symbols unused in current enclave are garbage collected
+- Ensure requirements of all included symbols are met in current enclave
+
+**MarkLive.cpp**
+
+- Ensure symbols required by linker-defined resource arrays are retained
+
+**Writer.cpp**
+
+- Create resource array start/stop symbols
