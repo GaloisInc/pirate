@@ -475,6 +475,8 @@ int pirate_get_fd(int gd) {
         return channel->ctx.channel.tcp_socket.sock;
     case UDP_SOCKET:
         return channel->ctx.channel.udp_socket.sock;
+    case SERIAL:
+        return channel->ctx.channel.serial.fd;
     case MERCURY:
         return channel->ctx.channel.mercury.fd;
     case GE_ETH:
