@@ -42,49 +42,60 @@ definition should not appear in the source.
 
 .. code-block:: c
 
-  extern <c_type> var
-    __attribute__((pirate_resource("<name1>", "<resource_type>", "<enclave1>")))
-    __attribute__((pirate_resource("<name2>", "<resource_type>", "<enclave2>")));
-
-This attribute on a global variable declares that ``var`` is a
-variable with C type ``<c_type>`` that is associated with the
-resource named ``<name1>`` in ``<enclave1>`` and ``<name2>`` in
-``<enclave2>``. Furthermore, this associates a type with the
-resource so that the runtime understands what type of value is
-being initialized.
-
-Before a resource type can be used, it must be declared. This
-declaration specifies the name of a resource type, the type it is
-allowed to annotate.  Annotating a variable of a different type
-causes the compiler to emit an error.
-
-.. code-block:: c
-
-   #pragma pirate_resource_type declare("<resource_type>", <c_type>)
+   typedef <c-type> <type-name> __attribute__((pirate_resource_type("<resource_type>")))
    
-This pragma declares a resource type that can be applied (only) to
-variables with the type ``<c_type>``.  In addition, it will cause the
-linker to define a symbol ``__<resource_type>_gaps_resources`` that
-points to an array of ``struct gaps_resource`` listing all resources
-of the given type annotated in the source (see ``ELF Extensions``).
-
-Many resources may need additional information, and this can be
-provided via parameters specified using pragmas.  These parameters
-are used to, for example, describe whether a channel is a stream or
-series of datagrams, and whether the channel can be read from,
-written to, or both.
+This typedef declares a named resource type and the corresponding
+C type. The resource type name will determine the name of the generated
+ELF sections and will enable resource loading libraries to find resources
+of this type. As a short-hand this attribute could be declared directly
+on a global variable declaration.
 
 .. code-block:: c
 
-   #pragma pirate_resource_param <resource_name> <param_name> <param_value>
+    __attribute__((pirate_resource("<name>", "<enclave>")))
+    
+This attribute on a global variable declares that the variable
+is associated with the resource named ``<name>`` in ``<enclave>``.
+This global variable should be annotated with a `pirate_resource_type`
+attribute described above.
 
-This pragma indicates that the parameter assignment
-``<param_name>=<param_value>`` should be provided to the resource
-with name ``<resource_name>``.  This is typically used to provide
-additional information from the source file about the resource being
-configured.  For example, communication channels can set the
-``permissions`` parameter to indicate if the file descriptor should be
-read only, write only, or read-write.
+Some resources will appear in multiple enclaves. This attribute can be
+provided once for each applicable enclave, and each occurence can optionally
+use a unique resource name.
+
+
+.. code-block:: c
+
+   __attribute__((pirate_resource("<param_name>", "<param_value>" [, "<enclave_name>"])))
+
+This attribute provides a compile-time configuration attribute for
+a resource that is discoverable by resource loader libraries in a
+generated ELF section.
+
+The optional ``enclave_name`` field allows resource parameters to be specific
+to the named enclave. Omitting this field causes the paramter to apply to
+all enclaves.
+
+In contrast to resource configuration parameters found in runtime configuration
+files, these parameters are appropriate for settings that are relied on by
+the source code to be set. For example, channels might set the ``permissions``
+parameter to indicate if the file descriptor should be read only, write only,
+or read-write.
+
+.. code-block:: c
+  typedef const char * string_resource __attribute((pirate_resource_type("str")));
+  
+  string_resource connection_string
+    __attribute__((
+      pirate_resource("server_settings", "blue",
+      pirate_resource_param("encryption", "yes")
+    ));
+
+This example declares a new resource type known as ``str`` to the resource
+system, implemented using a ``const char *`` in C, named ``server_settings``
+in the resource system, only appearing in the ``blue`` enclave, using a
+single key-value entry setting ``encryption`` to ``yes`` in the resource
+system.
 
 
 Channel Resources
@@ -109,19 +120,18 @@ source code:
 
 .. code-block:: c
 
-   extern int clockFD
-   __attribute__((gaps_resource(channel_clock, fd_channel)));
+   int clockFD
+   __attribute__((
+     gaps_resource_type("pirate_channel"),
+     gaps_resource("channel_clock", "enclave")
+   ));
 
-``gaps_channel``
-  This indicates that the channel is represented as a GAPS ``libpirate``
-  channel.  GAPS channels are a library that can communicate across
-  a wide variety of channels, and perform transforms prior to transmitting
+``fd_channel``
+  This indicates that the channel is represented as a ``libpirate``
+  channel.  This library enables communication across
+  a wide variety of channels and perform transforms prior to transmitting
   messages to an underlying character device.
 
-.. code-block:: c
-
-   extern int clockGCD
-   __attribute__((gaps_resource(channel_clock, gaps_channel)));
 
 File Descriptor Channels
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -146,9 +156,11 @@ The following attributes may appear in the source file annotations.
    If this attribute is omitted, it is assumed ``unidirectional=false``.
    
 [NOTE: Isn't ``unidirectional`` redundant, since it's implied by
-``readonly`` or ``writeonly``?]
+``readonly`` or ``writeonly``? ; EM: A read- or write-only channel
+might still acknowledge writes or provide blocking reads while a
+unidirectional channel might carefully restrict information flow.]
 
-GAPS Channels
+Pirate Channels
 ^^^^^^^^^^^^^
 
 [This section is under development.]
