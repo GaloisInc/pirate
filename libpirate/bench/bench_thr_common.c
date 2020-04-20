@@ -33,27 +33,27 @@ int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
 
     test_gd = pirate_open_parse(argv[1], test_flags);
     if (test_gd < 0) {
-        snprintf(message, sizeof(message), "Unable to open test channel %s", argv[1]);
+        snprintf(message, sizeof(message), "Unable to open test channel \"%s\"", argv[1]);
         perror(message);
         return 1;
     }
 
     sync_gd = pirate_open_parse(argv[2], sync_flags);
     if (sync_gd < 0) {
-        snprintf(message, sizeof(message), "Unable to open sync channel %s", argv[2]);
+        snprintf(message, sizeof(message), "Unable to open sync channel \"%s\"", argv[2]);
         perror(message);
         return 1;
     }
 
     message_len = strtol(argv[3], &endptr, 10);
     if (*endptr != '\0') {
-        printf("Unable to parse message length %s\n", argv[3]);
+        printf("Unable to parse message length \"%s\"\n", argv[3]);
         return 1;
     }
 
     nbytes = strtol(argv[4], &endptr, 10);
     if (*endptr != '\0') {
-        snprintf(message, sizeof(message), "Unable to parse number of bytes %s", argv[4]);
+        snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[4]);
         perror(message);
         return 1;
     }

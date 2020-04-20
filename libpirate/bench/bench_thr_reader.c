@@ -89,7 +89,7 @@ int run(int argc, char *argv[]) {
     for (size_t i = 0; i < nbytes; i++) {
         if (buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
             printf("At position %zu expected %zu and read character %d\n",
-                i, (i % UCHAR_MAX), (int) buffer[count]);
+                i, (i % UCHAR_MAX), (int) buffer[i]);
             return 1;
         }
     }

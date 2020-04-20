@@ -71,13 +71,19 @@ if(GAPS_BENCH)
 
     add_executable(bench_thr_reader bench/bench_thr_reader.c bench/bench_thr_common.c)
     add_executable(bench_thr_writer bench/bench_thr_writer.c bench/bench_thr_common.c)
-    add_custom_target(bench DEPENDS bench_thr_reader bench_thr_writer)
+    add_executable(bench_lat1 bench/bench_lat1.c bench/bench_lat_common.c)
+    add_executable(bench_lat2 bench/bench_lat2.c bench/bench_lat_common.c)
+    add_custom_target(bench DEPENDS bench_thr_reader bench_thr_writer bench_lat1 bench_lat2)
 
     target_compile_options(bench_thr_reader PRIVATE ${PIRATE_C_FLAGS})
     target_compile_options(bench_thr_writer PRIVATE ${PIRATE_C_FLAGS})
+    target_compile_options(bench_lat1 PRIVATE ${PIRATE_C_FLAGS})
+    target_compile_options(bench_lat2 PRIVATE ${PIRATE_C_FLAGS})
 
     target_link_libraries(bench_thr_reader ${PIRATE_APP_LIBS})
     target_link_libraries(bench_thr_writer ${PIRATE_APP_LIBS})
+    target_link_libraries(bench_lat1 ${PIRATE_APP_LIBS})
+    target_link_libraries(bench_lat2 ${PIRATE_APP_LIBS})
 endif(GAPS_BENCH)
 
 # GAPS channel unit test
