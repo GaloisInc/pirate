@@ -66,7 +66,7 @@ use a unique resource name.
 
 .. code-block:: c
 
-   __attribute__((pirate_resource("<param_name>", "<param_value>" [, "<enclave_name>"])))
+   __attribute__((pirate_resource_param("<param_name>", "<param_value>" [, "<enclave_name>"])))
 
 This attribute provides a compile-time configuration attribute for
 a resource that is discoverable by resource loader libraries in a
