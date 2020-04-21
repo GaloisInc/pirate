@@ -28,7 +28,7 @@
 extern int test_gd1, test_gd2, sync_gd;
 uint64_t nbytes;
 size_t message_len;
-extern char message[120];
+extern char message[80];
 extern unsigned char *buffer1, *buffer2;
 
 static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *param, int flags) {

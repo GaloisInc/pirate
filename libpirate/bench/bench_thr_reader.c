@@ -30,7 +30,7 @@
 int test_gd = -1, sync_gd = -1;
 uint64_t nbytes;
 size_t message_len;
-char message[120];
+char message[80];
 unsigned char* buffer;
 
 int bench_thr_setup(char *argv[], int test_flags, int sync_flags);
