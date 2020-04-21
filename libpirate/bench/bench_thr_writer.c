@@ -57,7 +57,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        printf("Sync channel expected 1 byte and received %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel expected 1 byte and received %zd bytes\n", rv);
         return 1;
     }
 

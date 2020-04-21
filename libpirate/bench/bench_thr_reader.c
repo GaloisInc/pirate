@@ -59,7 +59,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        printf("Sync channel expected 1 byte and sent %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel expected 1 byte and sent %zd bytes\n", rv);
         return 1;
     }
 
@@ -93,13 +93,13 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        printf("Sync channel expected 1 byte and sent %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel expected 1 byte and sent %zd bytes\n", rv);
         return 1;
     }
 
     for (uint64_t i = 0; i < nbytes; i++) {
         if (buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
-            printf("At position %zu expected %zu and read character %d\n",
+            fprintf(stderr, "At position %zu expected %zu and read character %d\n",
                 i, (i % UCHAR_MAX), (int) buffer[i]);
             return 1;
         }

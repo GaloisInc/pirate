@@ -60,10 +60,10 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
     rv = pirate_open_param(param, flags);
     if (rv < 0) {
         snprintf(message, sizeof(message), "Unable to open test channel %d \"%s\"", num, param_str);
-        if (param->channel_type == UNIX_SOCKET) {
-            snprintf(message, sizeof(message), "%s. Check /proc/sys/net/core/wmem_max", message);
-        }
         perror(message);
+        if (param->channel_type == UNIX_SOCKET) {
+            fprintf(stderr, "Check /proc/sys/net/core/wmem_max\n");
+        }
         return rv;
     }
     err = errno;
@@ -73,9 +73,10 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
         case PIPE:
             if (fcntl(fd, F_SETPIPE_SZ, bufsize) < 0) {
                 snprintf(message, sizeof(message),
-                    "Unable to set F_SETPIPE_SZ option on test channel %d \"%s\". Check /proc/sys/fs/pipe-max-size",
+                    "Unable to set F_SETPIPE_SZ option on test channel %d \"%s\"",
                     num, param_str);
                 perror(message);
+                fprintf(stderr, "Check /proc/sys/fs/pipe-max-size\n");
                 return -1;
             }
             break;
@@ -116,28 +117,28 @@ int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags
     pirate_channel_param_t param1, param2;
 
     if (strstr(argv[3], "tcp_socket,") == NULL) {
-        printf("Sync channel \"%s\" must be a tcp socket\n", argv[2]);
+        fprintf(stderr, "Sync channel \"%s\" must be a tcp socket\n", argv[2]);
         return 1;
     }
 
     if (pirate_parse_channel_param(argv[1], &param1)) {
-        printf("Unable to parse test channel 1 \"%s\"\n", argv[1]);
+        fprintf(stderr, "Unable to parse test channel 1 \"%s\"\n", argv[1]);
         return 1;
     }
 
     if (pirate_parse_channel_param(argv[2], &param2)) {
-        printf("Unable to parse test channel 2 \"%s\"\n", argv[2]);
+        fprintf(stderr, "Unable to parse test channel 2 \"%s\"\n", argv[2]);
         return 1;
     }
 
     if (param1.channel_type != param2.channel_type) {
-        printf("Test channels \"%s\" and \"%s\" are of different type\n", argv[1], argv[2]);
+        fprintf(stderr, "Test channels \"%s\" and \"%s\" are of different type\n", argv[1], argv[2]);
         return 1;
     }
 
     message_len = strtol(argv[4], &endptr, 10);
     if (*endptr != '\0') {
-        printf("Unable to parse message length \"%s\"\n", argv[4]);
+        fprintf(stderr, "Unable to parse message length \"%s\"\n", argv[4]);
         return 1;
     }
 
@@ -170,13 +171,13 @@ int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags
 
     buffer1 = malloc(nbytes);
     if (buffer1 == NULL) {
-        printf("Failed to allocate buffer 1 of %zu bytes\n", nbytes);
+        fprintf(stderr, "Failed to allocate buffer 1 of %zu bytes\n", nbytes);
         return 1;
     }
 
     buffer2 = malloc(nbytes);
     if (buffer2 == NULL) {
-        printf("Failed to allocate buffer 2 of %zu bytes\n", nbytes);
+        fprintf(stderr, "Failed to allocate buffer 2 of %zu bytes\n", nbytes);
         return 1;
     }
 
