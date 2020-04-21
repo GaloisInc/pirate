@@ -28,7 +28,8 @@
 #include "libpirate.h"
 
 int test_gd1 = -1, test_gd2 = -1, sync_gd = -1;
-uint64_t message_len, nbytes;
+uint64_t nbytes;
+size_t message_len;
 char message[80];
 unsigned char *buffer1, *buffer2;
 
@@ -82,7 +83,7 @@ int run(int argc, char *argv[]) {
 
         count = 0;
         while (count < message_len) {
-            uint64_t next = message_len - count;
+            size_t next = message_len - count;
             rv = pirate_write(test_gd2, buffer2 + writecount, next);
             if (rv < 0) {
                 perror("Test channel 2 write error");
@@ -93,7 +94,7 @@ int run(int argc, char *argv[]) {
         }
         count = 0;
         while (count < message_len) {
-            uint64_t next = message_len - count;
+            size_t next = message_len - count;
             rv = pirate_read(test_gd1, buffer1 + readcount, next);
             if (rv < 0) {
                 perror("Test channel 1 read error");

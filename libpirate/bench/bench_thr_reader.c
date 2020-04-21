@@ -28,7 +28,8 @@
 #include "libpirate.h"
 
 int test_gd = -1, sync_gd = -1;
-uint64_t message_len, nbytes;
+uint64_t nbytes;
+size_t message_len;
 char message[80];
 unsigned char* buffer;
 
@@ -96,7 +97,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
 
-    for (size_t i = 0; i < nbytes; i++) {
+    for (uint64_t i = 0; i < nbytes; i++) {
         if (buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
             printf("At position %zu expected %zu and read character %d\n",
                 i, (i % UCHAR_MAX), (int) buffer[i]);

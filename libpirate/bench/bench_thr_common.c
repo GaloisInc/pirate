@@ -26,13 +26,14 @@
 #include "libpirate.h"
 
 extern int test_gd, sync_gd;
-extern uint64_t message_len, nbytes;
+uint64_t nbytes;
+size_t message_len;
 extern char message[80];
 extern unsigned char* buffer;
 
 static int bench_thr_open(char *param_str, pirate_channel_param_t *param, int flags) {
     int err, fd, rv;
-    uint64_t bufsize;
+    size_t bufsize;
 
     bufsize = 8 * message_len;
 
