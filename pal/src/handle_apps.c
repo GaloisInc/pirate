@@ -109,9 +109,7 @@ static int handle_event(struct epoll_event *event,
 
         if(err)
             error("Encountered an error reading resource request from %s: %s",
-                    app->name, err == PAL_ERR_EMPTY
-                                    ? "Improperly formatted request"
-                                    : strerror(-err));
+                    app->name, err > 0 ? pal_strerror(err) : strerror(-err));
 
         else if(!(rsc = lookup_resource(app->name, name, rscs, rscs_count)))
             error("Received request for unknown resource named %s "

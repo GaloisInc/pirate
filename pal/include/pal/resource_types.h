@@ -33,4 +33,11 @@ int get_integer_res(int fd, const char *name, int64_t *outp);
  */
 int get_string_res(int fd, const char *name, char **outp);
 
+/* Get a resource of type "file" from the application launcher.
+ *
+ * Return 0 on success. Return 1 if the format of the received resource
+ * is incorrect. Otherwise, return a negative errno value.
+ */
+int get_file_res(int fd, const char *name, int *outp);
+
 #endif
