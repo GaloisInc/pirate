@@ -24,31 +24,54 @@ Assumed tools: `git`, `cmake`, `ninja`, C compiler
 
 .. code-block:: sh
 
+    # Remeber the top directory
+    $ TOP=$PWD
+
     # clone the repository
     $ git clone git@github.com:GaloisInc/pirate-llvm
 
     # make a build directory and build
-    $ mkdir llvm-ninja
-    $ cd llvm-ninja
-    $ cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
-      -DLLVM_ENABLE_PROJECTS=clang\;lld ../pirate-llvm/llvm
-    $ ninja clang lld llvm-readobj
+    $ mkdir llvm-build
+    $ cd llvm-build
+    $ cmake \
+       -DCMAKE_EXPORT_COMPILE_COMMANDS=YES \
+       -DLLVM_ENABLE_PROJECTS=clang\;lld\;lldb \
+       -DCMAKE_BUILD_TYPE=Release \
+       -DCMAKE_C_FLAGS=-ffunction-sections\ -fdata-sections \
+       -DCMAKE_CXX_FLAGS=-ffunction-sections\ -fdata-sections \
+       -DLLVM_BUILD_TOOLS=Off \
+       -DLLVM_CCACHE_BUILD=On \
+       -DLLVM_DISTRIBUTION_COMPONENTS=clang\;clang-libraries\;clang-resource-headers\;lld\;lldb\;liblldb \
+       -DLLVM_INCLUDE_EXAMPLES=Off \
+       -DLLVM_INSTALL_TOOLCHAIN_ONLY=On \
+       -DLLVM_TARGETS_TO_BUILD=X86\;AArch64\;ARM \
+       -DLLVM_USE_LINKER=lld \
+       ../pirate-llvm/llvm
+    $ make
 
     # leave build directory
-    $ cd ..
+    $ cd $TOP
+    
+    # Build demos
+    $ git clone git@github.com:GaloisInc/pirate-demos
+    $ mkdir build
+    $ cd build
+    $ cmake \
+        -DGAPS_DEMOS=On \
+        -DCMAKE_C_COMPILER=$TOP/llvm-build/bin/clang \
+        -DCMAKE_CXX_COMPILER=$TOP/llvm-build/bin/clang++ \
+        ..
+    $ make
 
-    # build a trivial example
-    $ llvm-ninja/bin/clang -ffunction-sections -fdata-sections \
-      --target=x86_64-pc-linux-elf -c enclave.c
+    # build a trivial example (source below)
+    $ llvm-build/bin/clang --target=x86_64-pc-linux-elf -c enclave.c
 
     # see that the example worked
-    $ llvm-ninja/bin/llvm-readobj --gaps-info enclave.o
+    $ llvm-build/bin/llvm-readobj --gaps-info enclave.o
 
     # link the example to produce an executable for each enclave
-    $ llvm-ninja/bin/clang enclave.o -o enclave_alpha \
-      -fuse-ld=lld -Xlinker -enclave -Xlinker alpha
-    $ llvm-ninja/bin/clang enclave.o -o enclave_beta \
-      -fuse-ld=lld -Xlinker -enclave -Xlinker beta
+    $ llvm-build/bin/clang enclave.o -o enclave_alpha -Xlinker -enclave -Xlinker alpha
+    $ llvm-build/bin/clang enclave.o -o enclave_beta  -Xlinker -enclave -Xlinker beta
 
 Trivial Example: `enclave.c`
 ----------------------------
