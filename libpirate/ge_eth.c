@@ -209,7 +209,7 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->addr, ptr, sizeof(param->addr));
+    strncpy(param->addr, ptr, sizeof(param->addr) - 1);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
         errno = EINVAL;

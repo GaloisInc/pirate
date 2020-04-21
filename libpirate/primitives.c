@@ -135,13 +135,13 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     // Channel configuration function is allowed to modify the string
     // while braking it into delimiter-separated tokens
     char opt[256];
-    strncpy(opt, str, sizeof(opt));
+    strncpy(opt, str, sizeof(opt) - 1);
 
     pirate_init_channel_param(INVALID, param);
 
     pirate_parse_common_param(opt, param);
 
-    strncpy(opt, str, sizeof(opt));
+    strncpy(opt, str, sizeof(opt) - 1);
 
     if (strncmp("device", opt, strlen("device")) == 0) {
         param->channel_type = DEVICE;

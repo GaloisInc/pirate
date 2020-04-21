@@ -135,9 +135,16 @@ int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
         return 1;
     }
 
+    // truncate nbytes to be divisible by message_len
+    nbytes = message_len * (nbytes / message_len);
+
     test_gd = bench_thr_open(argv[1], &param, test_flags);
     if (test_gd < 0) {
         return 1;
+    }
+
+    if ((param.channel_type == UDP_SOCKET) && (test_flags == O_WRONLY)) {
+        nbytes *= 1.5;
     }
 
     buffer = malloc(nbytes);

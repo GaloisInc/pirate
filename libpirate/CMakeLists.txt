@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(libpirate)
 
-set(CMAKE_BUILD_TYPE RelwithDebInfo)
+set(CMAKE_BUILD_TYPE Release)
 
 SET(PIRATE_SOURCES
     "primitives.c"

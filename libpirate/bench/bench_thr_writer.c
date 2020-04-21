@@ -36,7 +36,7 @@ void bench_thr_close(char *argv[]);
 int run(int argc, char *argv[]) {
     unsigned char signal = 1;
     ssize_t rv;
-    uint64_t count = 0;
+    uint64_t writecount = 0, iter;
 
     if (argc != 5) {
         printf("./bench_thr_writer [test channel] [sync channel] [message length] [nbytes]\n\n");
@@ -57,7 +57,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        fprintf(stderr, "Sync channel expected 1 byte and received %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel initial expected 1 byte and received %zd bytes\n", rv);
         return 1;
     }
 
@@ -67,14 +67,21 @@ int run(int argc, char *argv[]) {
         return 1;
     }
 
-    while (count < nbytes) {
-        size_t next = MIN(nbytes - count, message_len);
-        rv = pirate_write(test_gd, buffer + count, next);
-        if (rv < 0) {
-            perror("Test channel write error");
-            return 1;
+    iter = nbytes / message_len;
+
+    for (uint64_t i = 0; i < iter; i++) {
+        size_t count;
+
+        count = message_len;
+        while (count > 0) {
+            rv = pirate_write(test_gd, buffer + writecount, count);
+            if (rv < 0) {
+                perror("Test channel write error");
+                return 1;
+            }
+            writecount += rv;
+            count -= rv;
         }
-        count += rv;
     }
 
     rv = pirate_read(sync_gd, &signal, sizeof(signal));
@@ -83,7 +90,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        printf("Sync channel expected 1 byte and received %zd bytes\n", rv);
+        printf("Sync channel terminating expected 1 byte and received %zd bytes\n", rv);
         return 1;
     }
 

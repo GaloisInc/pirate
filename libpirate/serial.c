@@ -48,7 +48,7 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->path, ptr, sizeof(param->path));
+    strncpy(param->path, ptr, sizeof(param->path) - 1);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
         if (strncmp("4800", ptr, strlen("4800")) == 0) {

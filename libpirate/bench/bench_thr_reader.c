@@ -39,7 +39,7 @@ void bench_thr_close(char *argv[]);
 int run(int argc, char *argv[]) {
     unsigned char signal = 1;
     ssize_t rv;
-    uint64_t count = 0, delta;
+    uint64_t readcount = 0, iter, delta;
     struct timespec start, stop;
 
     if (argc != 5) {
@@ -59,7 +59,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        fprintf(stderr, "Sync channel expected 1 byte and sent %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel initial expected 1 byte and sent %zd bytes\n", rv);
         return 1;
     }
 
@@ -68,19 +68,24 @@ int run(int argc, char *argv[]) {
         perror("Test channel initial read error");
         return 1;
     }
-
+    iter = nbytes / message_len;
     if (clock_gettime(CLOCK_MONOTONIC, &start) < 0) {
       perror("clock_gettime start");
       return 1;
     }
-    while (count < nbytes) {
-        size_t next = MIN(nbytes - count, message_len);
-        rv = pirate_read(test_gd, buffer + count, next);
-        if (rv < 0) {
-            perror("Test channel read error");
-            return 1;
+    for (uint64_t i = 0; i < iter; i++) {
+        size_t count;
+
+        count = message_len;
+        while (count > 0) {
+            rv = pirate_read(test_gd, buffer + readcount, count);
+            if (rv < 0) {
+                perror("Test channel read error");
+                return 1;
+            }
+            readcount += rv;
+            count -= rv;
         }
-        count += rv;
     }
     if (clock_gettime(CLOCK_MONOTONIC, &stop) < 0) {
       perror("clock_gettime stop");
@@ -93,7 +98,7 @@ int run(int argc, char *argv[]) {
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
-        fprintf(stderr, "Sync channel expected 1 byte and sent %zd bytes\n", rv);
+        fprintf(stderr, "Sync channel terminating expected 1 byte and sent %zd bytes\n", rv);
         return 1;
     }
 
@@ -101,7 +106,7 @@ int run(int argc, char *argv[]) {
         if (buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
             fprintf(stderr, "At position %zu expected %zu and read character %d\n",
                 i, (i % UCHAR_MAX), (int) buffer[i]);
-            return 1;
+            break;
         }
     }
     delta = ((stop.tv_sec - start.tv_sec) * 1000000000ll +

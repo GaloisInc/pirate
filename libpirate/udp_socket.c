@@ -42,7 +42,7 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->addr, ptr, sizeof(param->addr));
+    strncpy(param->addr, ptr, sizeof(param->addr) - 1);
 
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
         errno = EINVAL;

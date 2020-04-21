@@ -36,7 +36,7 @@ void bench_lat_close(char *argv[]);
 int run(int argc, char *argv[]) {
     unsigned char signal = 1;
     ssize_t rv;
-    uint64_t readcount = 0, writecount = 0, iter = 0;
+    uint64_t readcount = 0, writecount = 0, iter;
 
     if (argc != 6) {
         printf("./bench_lat1 [test channel 1] [test channel 2] [sync channel] [message length] [nbytes]\n\n");
@@ -71,30 +71,28 @@ int run(int argc, char *argv[]) {
     iter = nbytes / message_len;
 
     for (uint64_t i = 0; i < iter; i++) {
-        uint64_t count;
+        size_t count;
 
-        count = 0;
-        while (count < message_len) {
-            size_t next = message_len - count;
-            rv = pirate_read(test_gd2, buffer2 + readcount, next);
+        count = message_len;
+        while (count > 0) {
+            rv = pirate_read(test_gd2, buffer2 + readcount, count);
             if (rv < 0) {
                 perror("Test channel 2 read error");
                 return 1;
             }
             readcount += rv;
-            count += rv;
+            count -= rv;
         }
 
-        count = 0;
-        while (count < message_len) {
-            size_t next = message_len - count;
-            rv = pirate_write(test_gd1, buffer1 + writecount, next);
+        count = message_len;
+        while (count > 0) {
+            rv = pirate_write(test_gd1, buffer1 + writecount, count);
             if (rv < 0) {
                 perror("Test channel 1 write error");
                 return 1;
             }
             writecount += rv;
-            count += rv;
+            count -= rv;
         }
     }
 
