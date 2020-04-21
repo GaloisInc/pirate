@@ -83,6 +83,8 @@ if(GAPS_BENCH)
     target_link_libraries(bench_thr_writer ${PIRATE_APP_LIBS})
     target_link_libraries(bench_lat1 ${PIRATE_APP_LIBS})
     target_link_libraries(bench_lat2 ${PIRATE_APP_LIBS})
+
+    configure_file(bench/bench.py ${PROJECT_BINARY_DIR} COPYONLY)
 endif(GAPS_BENCH)
 
 # GAPS channel unit test
