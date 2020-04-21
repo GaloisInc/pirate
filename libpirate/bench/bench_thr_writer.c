@@ -25,7 +25,7 @@
 #include "libpirate.h"
 
 int test_gd = -1, sync_gd = -1;
-size_t message_len, nbytes;
+uint64_t message_len, nbytes;
 char message[80];
 unsigned char* buffer;
 
@@ -35,7 +35,7 @@ void bench_thr_close(char *argv[]);
 int run(int argc, char *argv[]) {
     unsigned char signal = 1;
     ssize_t rv;
-    size_t count = 0;
+    uint64_t count = 0;
 
     if (argc != 5) {
         printf("./bench_thr_writer [test channel] [sync channel] [message length] [nbytes]\n\n");
@@ -52,7 +52,7 @@ int run(int argc, char *argv[]) {
 
     rv = pirate_read(sync_gd, &signal, sizeof(signal));
     if (rv < 0) {
-        perror("Sync channel read error");
+        perror("Sync channel initial read error");
         return 1;
     }
     if (((size_t) rv) != sizeof(signal)) {
@@ -75,7 +75,17 @@ int run(int argc, char *argv[]) {
         }
         count += rv;
     }
-    
+
+    rv = pirate_read(sync_gd, &signal, sizeof(signal));
+    if (rv < 0) {
+        perror("Sync channel terminating read error");
+        return 1;
+    }
+    if (((size_t) rv) != sizeof(signal)) {
+        printf("Sync channel expected 1 byte and received %zd bytes\n", rv);
+        return 1;
+    }
+
     return 0;
 }
 

@@ -13,28 +13,103 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "libpirate.h"
 
 extern int test_gd, sync_gd;
-extern size_t message_len, nbytes;
+extern uint64_t message_len, nbytes;
 extern char message[80];
 extern unsigned char* buffer;
 
+static int bench_thr_open(char *param_str, pirate_channel_param_t *param, int flags) {
+    int err, fd, rv;
+    uint64_t bufsize;
+
+    bufsize = 8 * message_len;
+
+    switch (param->channel_type) {
+        case SHMEM:
+            if (param->channel.shmem.buffer_size == 0) {
+                param->channel.shmem.buffer_size = bufsize;
+            }
+            break;
+        case UNIX_SOCKET:
+            if ((bufsize > 212992) && (param->channel.unix_socket.buffer_size == 0)) {
+                param->channel.unix_socket.buffer_size = bufsize;
+            }
+            break;
+        case UDP_SHMEM:
+            if (param->channel.udp_shmem.packet_size == 0) {
+                param->channel.udp_shmem.packet_size = message_len;
+            }
+            break;
+        default:
+            break;
+    }
+
+    rv = pirate_open_param(param, flags);
+    if (rv < 0) {
+        snprintf(message, sizeof(message), "Unable to open test channel \"%s\"", param_str);
+        if (param->channel_type == UNIX_SOCKET) {
+            snprintf(message, sizeof(message), "%s. Check /proc/sys/net/core/wmem_max", message);
+        }
+        perror(message);
+        return rv;
+    }
+    err = errno;
+    fd = pirate_get_fd(rv);
+    errno = err;
+    switch (param->channel_type) {
+        case PIPE:
+            if (fcntl(fd, F_SETPIPE_SZ, bufsize) < 0) {
+                snprintf(message, sizeof(message),
+                    "Unable to set F_SETPIPE_SZ option on test channel \"%s\". Check /proc/sys/fs/pipe-max-size",
+                    param_str);
+                perror(message);
+                return -1;
+            }
+            break;
+        case TCP_SOCKET: {
+            struct linger socket_reset;
+            socket_reset.l_onoff = 1;
+            socket_reset.l_linger = 0;
+            if (setsockopt(fd, SOL_SOCKET, SO_LINGER, &socket_reset,
+                        sizeof(socket_reset)) < 0) {
+                snprintf(message, sizeof(message),
+                    "Unable to set SO_LINGER option on test channel \"%s\"",
+                    param_str);
+                perror(message);
+                return -1;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return rv;
+}
+
 int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
-    char* endptr;    
+    char* endptr;
+    pirate_channel_param_t param;
+
     if (strstr(argv[2], "tcp_socket,") == NULL) {
         printf("Sync channel %s must be a tcp socket\n", argv[2]);
         return 1;
     }
 
-    test_gd = pirate_open_parse(argv[1], test_flags);
-    if (test_gd < 0) {
-        snprintf(message, sizeof(message), "Unable to open test channel \"%s\"", argv[1]);
-        perror(message);
+    if (pirate_parse_channel_param(argv[1], &param)) {
+        printf("Unable to parse test channel \"%s\"\n", argv[1]);
         return 1;
     }
 
@@ -55,6 +130,11 @@ int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
     if (*endptr != '\0') {
         snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[4]);
         perror(message);
+        return 1;
+    }
+
+    test_gd = bench_thr_open(argv[1], &param, test_flags);
+    if (test_gd < 0) {
         return 1;
     }
 
