@@ -1,10 +1,39 @@
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <pal/pal.h>
 #include <pal/resource_types.h>
 #include <sys/socket.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#define alen(_arr) (sizeof(_arr) / sizeof(*_arr))
+
+static const char *errstrs[] = {
+    "Success",
+    "Bad request",
+    "Empty message",
+    "Message too big",
+    "Too many file descriptors",
+    "Bad control message",
+};
+
+_Static_assert(alen(errstrs) == _PAL_ERR_MAX,
+        "Number of error strings must match number of errors");
+
+const char *pal_strerror(int err)
+{
+    static char unknown_err[64];
+
+    if(err >= alen(errstrs)) {
+        snprintf(unknown_err, sizeof unknown_err, "Unknown %d\n", err);
+        return unknown_err;
+    }
+
+    return errstrs[err];
+}
 
 static void add_to_env(pal_env_t *env, const void *data, size_t data_size)
 {
@@ -35,12 +64,40 @@ int pal_add_to_env(pal_env_t *env, const void *data, pal_env_size_t data_size)
     return 0;
 }
 
+int pal_add_fd_to_env(pal_env_t *env, int fd)
+{
+    if(env->fds_count >= PAL_FDS_MAX)
+        return PAL_ERR_FTOOBIG;
+
+    env->fds[env->fds_count++] = fd;
+
+    return 0;
+}
+
 void pal_free_env(pal_env_t *env)
 {
     free(env->buf);
     env->buf = NULL;
     env->buf_size = 0;
     env->size = 0;
+}
+
+void pal_close_env_fds(pal_env_t *env)
+{
+    int i;
+    for(i = 0; i < env->fds_count; ++i)
+        if(env->fds[i] >= 0)
+            close(env->fds[i]);
+}
+
+static size_t msghdr_size(struct msghdr *msg)
+{
+    size_t i, res = 0;
+
+    for(i = 0; i < msg->msg_iovlen; ++i)
+        res += msg->msg_iov[i].iov_len;
+
+    return res;
 }
 
 #define MSGHDR(_iovs, _iovs_count) { \
@@ -65,64 +122,113 @@ int pal_send_env(int sock, pal_env_t *env, int flags)
             .iov_len = sizeof env->size,
         },
         {
+            .iov_base = &env->fds_count,
+            .iov_len = sizeof env->fds_count,
+        },
+        {
             .iov_base = env->buf,
             .iov_len = env->size,
         },
     };
     struct msghdr msg = MSGHDR(iovs, sizeof(iovs) / sizeof(*iovs));
 
-    size_t total_sent = iovs[0].iov_len + iovs[1].iov_len + iovs[2].iov_len;
+    char buf[CMSG_SPACE(sizeof(int[env->fds_count]))];
+    if(env->fds_count > 0) {
+        msg.msg_control = buf;
+        msg.msg_controllen = sizeof(buf);
+
+        struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+        cmsg->cmsg_level = SOL_SOCKET;
+        cmsg->cmsg_type = SCM_RIGHTS;
+        cmsg->cmsg_len = CMSG_LEN(sizeof(int[env->fds_count]));
+
+        memcpy(CMSG_DATA(cmsg), env->fds, sizeof(int[env->fds_count]));
+    }
+
+    size_t total_sent = msghdr_size(&msg);
     if(sendmsg(sock, &msg, flags) != total_sent)
         return -errno;
 
     return 0;
 }
 
-static size_t msghdr_size(struct msghdr *msg)
+/* Try to read the `type`, `length`, and `fds_count` fields of a `pal_env_t`
+ * from a socket using `MSG_PEEK` and allocate a buffer for the environment
+ * data. The `msg_iov` field is assumed to point to an appropriate number of
+ * `struct iovec`.
+ *
+ * Returns 0 on success. Otherwise returns a suitable return value for
+ * `pal_recv_env`.
+ */
+static int peek_env(int sock, pal_env_t *env, struct msghdr *msg, int flags)
 {
-    size_t i, res = 0;
+    size_t iovs_count = msg->msg_iovlen;
+    struct iovec *iovs = msg->msg_iov;
 
-    for(i = 0; i < msg->msg_iovlen; ++i)
-        res += msg->msg_iov[i].iov_len;
+    assert(iovs_count == 4);
 
-    return res;
+    iovs[0].iov_base = &env->type;
+    iovs[0].iov_len = sizeof env->type;
+
+    iovs[1].iov_base = &env->size;
+    iovs[1].iov_len = sizeof env->size;
+
+    iovs[2].iov_base = &env->fds_count;
+    iovs[2].iov_len = sizeof env->fds_count;
+
+    iovs[3].iov_base = NULL;
+    iovs[3].iov_len = 0;
+
+    ssize_t bytes = recvmsg(sock, msg, MSG_PEEK | flags);
+    if(!bytes)
+        return PAL_ERR_EMPTY;
+    else if(bytes != msghdr_size(msg))
+        return PAL_ERR_BADREQ;
+
+    if(env->size > PAL_MSG_MAX)
+        return PAL_ERR_TOOBIG; // Length field exceeds max
+    if(!(env->buf = malloc(env->size)))
+        return -errno;
+    iovs[3].iov_base = env->buf;
+    iovs[3].iov_len = env->buf_size = env->size;
+
+    if(env->fds_count > PAL_FDS_MAX)
+        return PAL_ERR_FTOOBIG;
+
+    return 0;
 }
 
 int pal_recv_env(int sock, pal_env_t *env, int flags)
 {
-    ssize_t bytes;
+    int res;
     pal_env_t new_env;
-    struct iovec iovs[] = {
-        {
-            .iov_base = &new_env.type,
-            .iov_len = sizeof new_env.type,
-        },
-        {
-            .iov_base = &new_env.size,
-            .iov_len = sizeof new_env.size,
-        },
-        {
-            .iov_base = NULL,
-            .iov_len = 0,
-        },
-    };
-    struct msghdr msg = MSGHDR(iovs, sizeof(iovs) / sizeof(*iovs));
+    struct iovec iovs[4];
+    struct msghdr msg = MSGHDR(iovs, alen(iovs));
 
-    bytes = recvmsg(sock, &msg, MSG_PEEK | flags);
-    if(!bytes)
-        return PAL_ERR_EMPTY;
-    else if(bytes != msghdr_size(&msg))
-        return PAL_ERR_BADREQ;
+    if((res = peek_env(sock, &new_env, &msg, flags))) {
+        char buf[65536];
+        recv(sock, buf, sizeof buf, flags); // Clear out peeked datagram
+        // FIXME: The above may cause problems on resource limited
+        // architectures. Problem: We want to clear out erroneous datagrams,
+        // but only clear out the first such datagram.
+        return res;
+    }
 
-    if(new_env.size > PAL_MSG_MAX)
-        return PAL_ERR_TOOBIG; // Length field exceeds max
-    if(!(new_env.buf = malloc(new_env.size)))
-        return -errno;
-    iovs[2].iov_base = new_env.buf;
-    iovs[2].iov_len = new_env.buf_size = new_env.size;
+    char cbuf[CMSG_SPACE(sizeof(int[new_env.fds_count]))];
+    msg.msg_control = sizeof cbuf > 0 ? cbuf : NULL;
+    msg.msg_controllen = sizeof cbuf;
 
     if(recvmsg(sock, &msg, flags) != msghdr_size(&msg))
         return -errno;
+
+    if(msg.msg_flags & MSG_CTRUNC)
+        return PAL_ERR_BADCTRL;
+
+    struct cmsghdr *cmsg;
+    for(cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
+        if(cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS)
+            memcpy(new_env.fds, CMSG_DATA(cmsg),
+                    sizeof(int[new_env.fds_count]));
 
     *env = new_env;
     return 0;
@@ -224,6 +330,8 @@ int get_boolean_res(int fd, const char *name, bool *outp)
         ;
     else if((res = pal_recv_env(fd, &env, 0)))
         ;
+    else if(env.type != PAL_RESOURCE)
+        res = 1;
     else {
         pal_env_iterator_t it = pal_env_iterator_start(&env);
 
@@ -247,6 +355,8 @@ int get_integer_res(int fd, const char *name, int64_t *outp)
         ;
     else if((res = pal_recv_env(fd, &env, 0)))
         ;
+    else if(env.type != PAL_RESOURCE)
+        res = 1;
     else {
         pal_env_iterator_t it = pal_env_iterator_start(&env);
 
@@ -271,6 +381,8 @@ int get_string_res(int fd, const char *name, char **outp)
         ;
     if((res = pal_recv_env(fd, &env, 0)))
         ;
+    else if(env.type != PAL_RESOURCE)
+        res = 1;
     else {
         pal_env_iterator_t it = pal_env_iterator_start(&env);
 
@@ -282,6 +394,27 @@ int get_string_res(int fd, const char *name, char **outp)
             (*outp)[size] = '\0';
         }
     }
+
+    pal_free_env(&env);
+
+    return res;
+}
+
+int get_file_res(int fd, const char *name, int *outp)
+{
+    int res = 0;
+    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
+
+    if((res = pal_send_resource_request(fd, "file", name, 0)))
+        ;
+    else if((res = pal_recv_env(fd, &env, 0)))
+        ;
+    else if(env.type != PAL_RESOURCE)
+        res = 1;
+    else if(env.fds_count != 1)
+        res = 1;
+    else
+        *outp = env.fds[0];
 
     pal_free_env(&env);
 

@@ -46,6 +46,11 @@ struct rsc_contents {
     char *cc_string_value;
     int64_t *cc_integer_value;
     bool *cc_boolean_value;
+
+    /* File resource
+     */
+    char *cc_file_path;
+    int *cc_file_flags;
 };
 
 struct resource {

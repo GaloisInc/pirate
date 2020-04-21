@@ -51,6 +51,25 @@ static const cyaml_schema_field_t endpoint_field_schema[] = {
     CYAML_FIELD_END,
 };
 
+static const cyaml_strval_t open_flags_strings[] = {
+    {"O_RDONLY",    O_RDONLY},
+    {"O_WRONLY",    O_WRONLY},
+    {"O_RDWR",      O_RDWR},
+
+    {"O_APPEND",    O_APPEND},
+    {"O_ASYNC",     O_ASYNC},
+    {"O_CLOEXEC",   O_CLOEXEC},
+    {"O_CREAT",     O_CREAT},
+    {"O_DIRECTORY", O_DIRECTORY},
+    {"O_DSYNC",     O_DSYNC},
+    {"O_EXCL",      O_EXCL},
+    {"O_NOCTTY",    O_NOCTTY},
+    {"O_NOFOLLOW",  O_NOFOLLOW},
+    {"O_NONBLOCK",  O_NONBLOCK},
+    {"O_SYNC",      O_SYNC},
+    {"O_TRUNC",     O_TRUNC},
+};
+
 // FIXME: Make this pluggable
 static const cyaml_schema_field_t rsc_contents_field_schema[] = {
 
@@ -88,6 +107,16 @@ static const cyaml_schema_field_t rsc_contents_field_schema[] = {
     CYAML_FIELD_BOOL_PTR("boolean_value",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
             struct rsc_contents, cc_boolean_value),
+
+    /* File resource
+     */
+    CYAML_FIELD_STRING_PTR("file_path",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_file_path, 0, CYAML_UNLIMITED),
+    CYAML_FIELD_FLAGS_PTR("file_flags",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_file_flags, open_flags_strings,
+            CYAML_ARRAY_LEN(open_flags_strings)),
 
     CYAML_FIELD_END,
 };
