@@ -30,7 +30,7 @@
 int test_gd1 = -1, test_gd2 = -1, sync_gd = -1;
 uint64_t nbytes;
 size_t message_len;
-char message[80];
+char message[120];
 unsigned char *buffer1, *buffer2;
 
 int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags);

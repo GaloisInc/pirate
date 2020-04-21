@@ -28,7 +28,7 @@
 extern int test_gd, sync_gd;
 uint64_t nbytes;
 size_t message_len;
-extern char message[80];
+extern char message[120];
 extern unsigned char* buffer;
 
 static int bench_thr_open(char *param_str, pirate_channel_param_t *param, int flags) {
