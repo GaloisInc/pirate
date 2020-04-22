@@ -275,6 +275,8 @@ static void *client_thread(void *arg) {
     };
 
     while (gaps_running()) {
+        idx++;
+
         if (client->request_delay_ms != 0) {
             nanosleep(&ts, NULL);
         }
@@ -334,8 +336,6 @@ static void *client_thread(void *arg) {
             gaps_terminate();
             continue;
         }
-
-        idx++;
     }
 
     return 0;
