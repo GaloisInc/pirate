@@ -31,10 +31,16 @@ static struct v4l2_buffer video_buf;
 static void* video_mmap;
 
 static int ioctl_wait(int fd, unsigned long request, void *arg) {
-    int ret;
+    int retry, err, ret;
     do {
+        retry = 0;
+        err = errno;
         ret = ioctl(fd, request, arg);
-    } while ((ret == -1) && (errno == EINTR));
+        if ((ret == -1) && (errno == EINTR)) {
+            retry = 1;
+            errno = err;
+        }
+    } while (retry);
     return ret;
 }
 
@@ -52,7 +58,7 @@ int video_sensor_initialize(const char *video_device, int display) {
     memset(&req, 0, sizeof(struct v4l2_requestbuffers));
     video_fd = open(video_device, O_RDWR);
     if (video_fd < 0) {
-        ts_log(INFO, "Failed to open video device. Using stock images");
+        ts_log(INFO, "Using stock images");
         video_mmap = calloc(IMAGE_HEIGHT * IMAGE_WIDTH, 1);
         return 0;
     }

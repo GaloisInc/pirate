@@ -22,7 +22,6 @@ extern "C" {
 
 void pirate_reset_gd();
 
-int pirate_get_fd(int gd);
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
 
 #ifdef __cplusplus

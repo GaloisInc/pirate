@@ -30,6 +30,8 @@
 #pragma pirate enclave declare(orange)
 #endif
 
+extern const char *program_name;
+
 typedef struct {
     verbosity_t verbosity;
     uint32_t validate;
@@ -40,6 +42,9 @@ typedef struct {
     const char *tsr_dir;
     const char *video_device;
     gaps_app_t app;
+
+    gaps_channel_ctx_t * const client_to_proxy;
+    gaps_channel_ctx_t * const proxy_to_client;
 } client_t;
 
 
@@ -73,11 +78,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
 
     case 1000:
-        strncpy(client->app.ch[0].conf, arg, 64);
+        client->client_to_proxy->conf = arg;
         break;
 
     case 1001:
-        strncpy(client->app.ch[1].conf, arg, 64);
+        client->proxy_to_client->conf = arg;
         break;
 
     case 'C':
@@ -133,9 +138,6 @@ static void parse_args(int argc, char *argv[], client_t *client) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
-
-    strncpy(client->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
-    strncpy(client->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
 
     argp_parse(&argp, argc, argv, 0, 0, client);
 }
@@ -241,9 +243,25 @@ static int save_ts_response(const client_t *client, uint32_t idx, const tsa_resp
     return 0;
 }
 
+int timestamp_response(client_t *client, tsa_response_t *rsp) {
+    /* Get response */
+    ssize_t sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->hdr, sizeof(rsp->hdr));
+    if (sts != sizeof(rsp->hdr)) {
+        return -1;
+    }
+
+    sts = gaps_packet_read(client->proxy_to_client->gd, &rsp->ts, rsp->hdr.len);
+    if (sts != ((int) rsp->hdr.len)) {
+        return -1;
+    }
+
+    log_tsa_rsp(client->verbosity, "Timestamp response received", rsp);
+    return 1;
+}
+
 /* Acquire trusted timestamps */
 static void *client_thread(void *arg) {
-    client_t *client = (client_t *)arg;
+    client_t *client = (client_t *)arg; 
     void* jpeg_buffer;
     unsigned int jpeg_buffer_length;
     int idx = 0;
@@ -257,6 +275,12 @@ static void *client_thread(void *arg) {
     };
 
     while (gaps_running()) {
+        idx++;
+
+        if (client->request_delay_ms != 0) {
+            nanosleep(&ts, NULL);
+        }
+
         /* Read sensor data */
         if (read_sensor(idx)) {
             ts_log(ERROR, "Failed to read sensor data");
@@ -282,34 +306,18 @@ static void *client_thread(void *arg) {
         }
 
         /* Send request */
-        int sts = gaps_packet_write(CLIENT_TO_PROXY, &req, sizeof(req));
+        int sts = gaps_packet_write(client->client_to_proxy->gd, &req, sizeof(req));
         if (sts == -1) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send signing request to proxy");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send signing request to proxy");
             continue;
         }
         log_proxy_req(client->verbosity, "Request sent to proxy", &req);
 
-        /* Get response */
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
-        if (sts != sizeof(rsp.hdr)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response header");
-                gaps_terminate();
-            }
+        sts = timestamp_response(client, &rsp);
+        if (sts <= 0) {
+            ts_log(WARN, BCLR(RED, "FAILED to receive the timestamp"));
             continue;
         }
-        sts = gaps_packet_read(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
-        if (sts != ((int) rsp.hdr.len)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive response body");
-                gaps_terminate();
-            }
-            continue;
-        }
-        log_tsa_rsp(client->verbosity, "Timestamp response received", &rsp);
 
         /* Optionally validate the signature */
         if (client->validate != 0) {
@@ -328,18 +336,14 @@ static void *client_thread(void *arg) {
             gaps_terminate();
             continue;
         }
-
-        if (client->request_delay_ms != 0) {
-            nanosleep(&ts, NULL);
-        }
-
-        idx++;
     }
 
     return 0;
 }
 
 int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
+    program_name = CLR(WHITE, "Sensor Manager");
+
     client_t client = {
         .verbosity = VERBOSITY_NONE,
         .validate = 0,
@@ -358,16 +362,19 @@ int sensor_manager_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("orange") {
             .on_shutdown = sensor_manager_terminate,
 
             .ch = {
-                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_WRONLY, "client->proxy"),
-                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_RDONLY, "client<-proxy"),
+                GAPS_CHANNEL(O_WRONLY, DEFAULT_CLIENT_TO_PROXY_CONF, "client->proxy"),
+                GAPS_CHANNEL(O_RDONLY, DEFAULT_PROXY_TO_CLIENT_CONF, "client<-proxy"),
                 GAPS_CHANNEL_END
             }
-        }
+        },
+
+        .client_to_proxy = &client.app.ch[0],
+        .proxy_to_client = &client.app.ch[1]
     };
 
     parse_args(argc, argv, &client);
 
-    ts_log(INFO, "Starting sensor manager");
+    ts_log(INFO, "Starting");
 
     if (video_sensor_initialize(client.video_device, client.display) != 0) {
         return -1;

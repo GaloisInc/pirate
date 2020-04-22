@@ -41,12 +41,28 @@ typedef struct {
 #define THREAD_ADD(f, a, n) {.func = f, .arg = a, .name = n, .tid = 0 }
 #define THREAD_END          THREAD_ADD(NULL, NULL, NULL)
 
+#define CHANNEL_CONF_MAX_LEN 64
+
 typedef struct {
-    int *num;
+    int gd;
     int flags;
-    char conf[64];
-    const char* desc;
+    const char *conf;
+    const char *desc;
 } gaps_channel_ctx_t;
+
+#define GAPS_CHANNEL(f, c, d)    \
+{                                \
+    .gd    = -1,                 \
+    .flags = f,                  \
+    .conf  = c,                  \
+    .desc  = d                   \
+}
+#define GAPS_CHANNEL_END        GAPS_CHANNEL(0, NULL, NULL)
+
+#define DEFAULT_CLIENT_TO_PROXY_CONF   "pipe,/tmp/client.proxy.gaps"
+#define DEFAULT_PROXY_TO_CLIENT_CONF   "pipe,/tmp/proxy.client.gaps"
+#define DEFAULT_PROXY_TO_SIGNER_CONF   "pipe,/tmp/proxy.signer.gaps"
+#define DEFAULT_SIGNER_TO_PROXY_CONT   "pipe,/tmp/signer.proxy.gaps"
 
 typedef struct {
     gaps_channel_ctx_t ch[MAX_APP_GAPS_CHANNELS];
@@ -54,30 +70,11 @@ typedef struct {
     int signal_fd;
     void (*on_shutdown) (void);
 } gaps_app_t;
-#define GAPS_CHANNEL(n, f, d)    \
-{                                \
-    .num   = n,                  \
-    .flags = f,                  \
-    .desc  = d                   \
-}
-#define GAPS_CHANNEL_END        GAPS_CHANNEL(NULL, 0, NULL)
 
 int gaps_app_run(gaps_app_t *ctx);
 int gaps_app_wait_exit(gaps_app_t *ctx);
 void gaps_terminate();
 int gaps_running();
-
-
-/* GAPS channel assignments */
-extern int CLIENT_TO_PROXY;
-extern int PROXY_TO_CLIENT;
-extern int PROXY_TO_SIGNER;
-extern int SIGNER_TO_PROXY;
-
-#define PROXY_TO_SIGNER_WR "serial,/dev/tty_P_TO_S_WR"
-#define PROXY_TO_SIGNER_RD "serial,/dev/tty_P_TO_S_RD"
-#define SIGNER_TO_PROXY_WR "serial,/dev/tty_S_TO_P_WR"
-#define SIGNER_TO_PROXY_RD "serial,/dev/tty_S_TO_P_RD"
 
 typedef enum {
     OK,
