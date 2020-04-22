@@ -465,12 +465,20 @@ int pirate_get_fd(int gd) {
     }
 
     switch (channel->param.channel_type) {
+    case DEVICE:
+        return channel->ctx.channel.device.fd;
     case PIPE:
         return channel->ctx.channel.pipe.fd;
+    case UNIX_SOCKET:
+        return channel->ctx.channel.unix_socket.sock;
     case TCP_SOCKET:
         return channel->ctx.channel.tcp_socket.sock;
     case UDP_SOCKET:
         return channel->ctx.channel.udp_socket.sock;
+    case SERIAL:
+        return channel->ctx.channel.serial.fd;
+    case MERCURY:
+        return channel->ctx.channel.mercury.fd;
     case GE_ETH:
         return channel->ctx.channel.ge_eth.sock;
     default:

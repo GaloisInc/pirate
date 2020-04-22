@@ -28,6 +28,8 @@
 #pragma pirate enclave declare(yellow)
 #endif
 
+extern const char *program_name;
+
 /* Default values */
 #define DEFAULT_POLL_PERIOD_MS      1000
 #define DEFAULT_REQUEST_QUEUE_LEN   4
@@ -50,6 +52,11 @@ typedef struct {
     verbosity_t verbosity;
 
     gaps_app_t app;
+
+    gaps_channel_ctx_t * const client_to_proxy;
+    gaps_channel_ctx_t * const proxy_to_client;
+    gaps_channel_ctx_t * const proxy_to_signer;
+    gaps_channel_ctx_t * const signer_to_proxy;
 
     struct {
         request_queue_t free;
@@ -77,19 +84,19 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
 
     case 1000:
-        strncpy(proxy->app.ch[0].conf, arg, 64);
+        proxy->client_to_proxy->conf = arg;
         break;
 
     case 1001:
-        strncpy(proxy->app.ch[1].conf, arg, 64);
+        proxy->proxy_to_client->conf = arg;
         break;
 
     case 1002:
-        strncpy(proxy->app.ch[2].conf, arg, 64);
+        proxy->proxy_to_signer->conf = arg;
         break;
 
     case 1003:
-        strncpy(proxy->app.ch[3].conf, arg, 64);
+        proxy->signer_to_proxy->conf = arg;
         break;
 
     case 'p':
@@ -124,16 +131,6 @@ static void parse_args(int argc, char *argv[], proxy_t *proxy) {
         .help_filter = NULL,
         .argp_domain = NULL
     };
-
-    strncpy(proxy->app.ch[0].conf, "pipe,/tmp/client.proxy.gaps", 64);
-    strncpy(proxy->app.ch[1].conf, "pipe,/tmp/proxy.client.gaps", 64);
-#ifdef GAPS_SERIAL
-    strncpy(proxy->app.ch[2].conf, PROXY_TO_SIGNER_WR, 64);
-    strncpy(proxy->app.ch[3].conf, SIGNER_TO_PROXY_RD, 64);
-#else
-    strncpy(proxy->app.ch[2].conf, "pipe,/tmp/proxy.signer.gaps", 64);
-    strncpy(proxy->app.ch[3].conf, "pipe,/tmp/signer.proxy.gaps", 64);
-#endif
 
     argp_parse(&argp, argc, argv, 0, 0, proxy);
 }
@@ -259,11 +256,10 @@ static void *request_receive(void *argp) {
     proxy_request_entry_t *entry = NULL;
 
     while (gaps_running()) {
-        len = gaps_packet_read(CLIENT_TO_PROXY, &req, sizeof(req));
+        len = gaps_packet_read(proxy->client_to_proxy->gd, &req, sizeof(req));
         if (len != sizeof(req)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive request");
-                gaps_terminate();
+            if (len != 0) {
+                ts_log(WARN, "Failed to receive request");
             }
             continue;
         }
@@ -274,11 +270,8 @@ static void *request_receive(void *argp) {
             tsa_response_t rsp = TSA_RESPONSE_INIT;
             rsp.hdr.status = BUSY;
 
-            if (gaps_packet_write(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
-                if (gaps_running()) {
-                    ts_log(ERROR, "Failed to send response header");
-                    gaps_terminate();
-                }
+            if (gaps_packet_write(proxy->proxy_to_client->gd, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
+                ts_log(WARN, "Failed to send response header");
                 continue;
             }
 
@@ -331,29 +324,20 @@ static void *proxy_thread(void *arg) {
         log_tsa_req(proxy->verbosity, "Timestamp request sent", &req);
 
         request_queue_push(&proxy->queue.free, entry);
-        sts = gaps_packet_write(PROXY_TO_SIGNER, &req, sizeof(req));
+        sts = gaps_packet_write(proxy->proxy_to_signer->gd, &req, sizeof(req));
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send timestamp request");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send timestamp request");
             continue;
         }
 
-        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp.hdr, sizeof(rsp.hdr));
+        len = gaps_packet_read(proxy->signer_to_proxy->gd, &rsp.hdr, sizeof(rsp.hdr));
         if (len != sizeof(rsp.hdr)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive timestamp response header");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive timestamp response header");
             continue;
         }
-        len = gaps_packet_read(SIGNER_TO_PROXY, &rsp.ts, rsp.hdr.len);
+        len = gaps_packet_read(proxy->signer_to_proxy->gd, &rsp.ts, rsp.hdr.len);
         if ((len < 0) || (((size_t) len) != rsp.hdr.len)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive timestamp response body");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive timestamp response body");
             continue;
         }
         log_tsa_rsp(proxy->verbosity, "Timestamp response received", &rsp);
@@ -362,21 +346,15 @@ static void *proxy_thread(void *arg) {
             continue;
         }
 
-        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp.hdr, sizeof(rsp.hdr));
+        sts = gaps_packet_write(proxy->proxy_to_client->gd, &rsp.hdr, sizeof(rsp.hdr));
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send response header");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send response header");
             continue;
         }
 
-        sts = gaps_packet_write(PROXY_TO_CLIENT, &rsp.ts, rsp.hdr.len);
+        sts = gaps_packet_write(proxy->proxy_to_client->gd, &rsp.ts, rsp.hdr.len);
         if (sts != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send response body");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to send response body");
             continue;
         }
 
@@ -389,6 +367,8 @@ static void *proxy_thread(void *arg) {
 
 
 int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
+    program_name = CLR(WHITE, "Signing Proxy");
+
     proxy_t proxy = {
         .poll_period_ms = DEFAULT_POLL_PERIOD_MS,
         .queue_len = DEFAULT_REQUEST_QUEUE_LEN,
@@ -402,18 +382,23 @@ int signing_proxy_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("yellow") {
             },
             .on_shutdown = NULL,
             .ch = {
-                GAPS_CHANNEL(&CLIENT_TO_PROXY, O_RDONLY, "client->proxy"),
-                GAPS_CHANNEL(&PROXY_TO_CLIENT, O_WRONLY, "client<-proxy"),
-                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_WRONLY, "proxy->signer"),
-                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_RDONLY, "proxy<-signer")
+                GAPS_CHANNEL(O_RDONLY, DEFAULT_CLIENT_TO_PROXY_CONF, "client->proxy"),
+                GAPS_CHANNEL(O_WRONLY, DEFAULT_PROXY_TO_CLIENT_CONF, "client<-proxy"),
+                GAPS_CHANNEL(O_WRONLY, DEFAULT_PROXY_TO_SIGNER_CONF, "proxy->signer"),
+                GAPS_CHANNEL(O_RDONLY, DEFAULT_SIGNER_TO_PROXY_CONT, "proxy<-signer")
             }
-        }
+        },
+
+        .client_to_proxy = &proxy.app.ch[0],
+        .proxy_to_client = &proxy.app.ch[1],
+        .proxy_to_signer = &proxy.app.ch[2],
+        .signer_to_proxy = &proxy.app.ch[3]
     };
 
     /* Parse command-line options */
     parse_args(argc, argv, &proxy);
 
-    ts_log(INFO, "Starting signing proxy");
+    ts_log(INFO, "Starting");
 
     if (queues_init(&proxy) != 0) {
         ts_log(ERROR, "Failed to initialize proxy queues");

@@ -30,13 +30,9 @@
 #define DEMO_VERSION ""
 #endif
 const char *argp_program_version = DEMO_VERSION;
+const char *program_name = "";
 
 volatile sig_atomic_t terminated = 0;
-
-int CLIENT_TO_PROXY;
-int PROXY_TO_CLIENT;
-int PROXY_TO_SIGNER;
-int SIGNER_TO_PROXY;
 
 // Register an empty signal handler for SIGUSR1.
 // Replaces the default action for SIGUSR1
@@ -85,7 +81,7 @@ int gaps_app_run(gaps_app_t *ctx) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
         pirate_channel_param_t param;
         int rv = -1;
-        if (c->num == NULL) {
+        if (c->conf == NULL) {
             break;
         }
 
@@ -95,8 +91,8 @@ int gaps_app_run(gaps_app_t *ctx) {
             return rv;
         }
 
-        *c->num = pirate_open_param(&param, c->flags);
-        if (*c->num < 0) {
+        c->gd = pirate_open_param(&param, c->flags);
+        if (c->gd < 0) {
             ts_log(ERROR, "Failed to open channel %s", c->desc);
             return -1;
         }
@@ -139,11 +135,12 @@ int gaps_app_wait_exit(gaps_app_t *ctx) {
     // Close GAPS channels
     for (int i = 0; i < MAX_APP_GAPS_CHANNELS; i++) {
         gaps_channel_ctx_t *c = &ctx->ch[i];
-        if (c->num == NULL) {
+        if (c->conf == NULL) {
             break;
         }
 
-        pirate_close(*c->num);
+        pirate_close(c->gd);
+        c->gd = -1;
     }
 
     // Stop worker threads
@@ -220,7 +217,7 @@ void ts_log(log_level_t l, const char *fmt, ...) {
     }
 
 
-    fprintf(stream, "[%s] %s ", ts, evt_str);
+    fprintf(stream, "[%s] %s %s ", ts, program_name, evt_str);
     va_start(args, fmt);
     vfprintf(stream, fmt, args);
     va_end(args);

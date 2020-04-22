@@ -15,6 +15,7 @@
 
 #include "libpirate.h"
 #include "gaps_packet.h"
+#include <poll.h>
 
 
 static int gaps_read_len(int gd, void *buf, size_t len) {
@@ -46,8 +47,30 @@ static int gaps_write_len(int gd, void *buf, ssize_t len) {
     return 0;
 }
 
+int gaps_packet_poll(int gd) {
+    struct pollfd fds[1];
+    int fd = pirate_get_fd(gd);
+    if (fd == -1) {
+        // No file descriptor so skip the polling
+        return 1;
+    }
+    fds[0].fd = fd;
+    fds[0].events = POLLIN;
+    // If the timeout is too short then the fake requests
+    // in the proxy queue will cause this poll to timeout.
+    return poll(fds, 1, 3000);
+}
 
 ssize_t gaps_packet_read(int gd, void *buf, uint32_t buf_len) {
+    int rv = gaps_packet_poll(gd);
+    if (rv < 0) {
+        return -1;
+    }
+
+    if (rv == 0) {
+        return 0;
+    }
+
     /* Read the length */
     uint32_t len = 0;
     if ((gaps_read_len(gd, &len, sizeof(len)) == -1) || (len > buf_len)) {

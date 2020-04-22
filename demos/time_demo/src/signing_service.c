@@ -24,6 +24,8 @@
 #pragma pirate enclave declare(purple)
 #endif
 
+extern const char *program_name;
+
 typedef struct {
     verbosity_t verbosity;
 
@@ -34,6 +36,9 @@ typedef struct {
     } ts;
 
     gaps_app_t app;
+
+    gaps_channel_ctx_t * const proxy_to_signer;
+    gaps_channel_ctx_t * const signer_to_proxy;
 } signer_t;
 
 /* Command-line options */
@@ -54,11 +59,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
 
     case 1000:
-        strncpy(signer->app.ch[0].conf, arg, 64);
+        signer->proxy_to_signer->conf = arg;
         break;
 
     case 1001:
-        strncpy(signer->app.ch[1].conf, arg, 64);
+        signer->signer_to_proxy->conf = arg;
         break;
 
     case 'c':
@@ -94,14 +99,6 @@ static void parse_args(int argc, char *argv[], signer_t *signer) {
         .argp_domain = NULL
     };
 
-#ifdef GAPS_SERIAL
-    strncpy(signer->app.ch[0].conf, PROXY_TO_SIGNER_RD, 64);
-    strncpy(signer->app.ch[1].conf, SIGNER_TO_PROXY_WR, 64);
-#else
-    strncpy(signer->app.ch[0].conf, "pipe,/tmp/proxy.signer.gaps", 64);
-    strncpy(signer->app.ch[1].conf, "pipe,/tmp/signer.proxy.gaps", 64);
-#endif
-
     argp_parse(&argp, argc, argv, 0, 0, signer);
 }
 
@@ -114,12 +111,9 @@ static void *signer_thread(void *arg) {
 
     while (gaps_running()) {
         /* Receive sign request */
-        len = gaps_packet_read(PROXY_TO_SIGNER, &req, sizeof(req));
+        len = gaps_packet_read(signer->proxy_to_signer->gd, &req, sizeof(req));
         if (len != sizeof(req)) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to receive sign request");
-                gaps_terminate();
-            }
+            ts_log(WARN, "Failed to receive sign request");
             continue;
         }
         log_tsa_req(signer->verbosity, "Timestamp request received", &req);
@@ -128,18 +122,12 @@ static void *signer_thread(void *arg) {
         ts_sign(signer->ts.tsa, &req, &rsp);
 
         /* Reply */
-        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send sign response header");
-                gaps_terminate();
-            }
+        if (gaps_packet_write(signer->signer_to_proxy->gd, &rsp.hdr, sizeof(rsp.hdr)) != 0) {
+            ts_log(WARN, "Failed to send sign response header");
             continue;
         }
-        if (gaps_packet_write(SIGNER_TO_PROXY, &rsp.ts, rsp.hdr.len) != 0) {
-            if (gaps_running()) {
-                ts_log(ERROR, "Failed to send sign response body");
-                gaps_terminate();
-            }
+        if (gaps_packet_write(signer->signer_to_proxy->gd, &rsp.ts, rsp.hdr.len) != 0) {
+            ts_log(WARN, "Failed to send sign response body");
             continue;
         }
         log_tsa_rsp(signer->verbosity, "Timestamp response sent", &rsp);
@@ -157,6 +145,8 @@ static void signer_term(signer_t *signer) {
 
 
 int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
+    program_name = CLR(WHITE, "Signing Service");
+
     signer_t signer = {
         .verbosity = VERBOSITY_NONE,
 
@@ -172,16 +162,19 @@ int signing_service_main(int argc, char *argv[]) PIRATE_ENCLAVE_MAIN("purple") {
             },
             .on_shutdown = NULL,
             .ch = {
-                GAPS_CHANNEL(&PROXY_TO_SIGNER, O_RDONLY, "proxy->signer"),
-                GAPS_CHANNEL(&SIGNER_TO_PROXY, O_WRONLY, "proxy<-signer"),
+                GAPS_CHANNEL(O_RDONLY, DEFAULT_PROXY_TO_SIGNER_CONF, "proxy->signer"),
+                GAPS_CHANNEL(O_WRONLY, DEFAULT_SIGNER_TO_PROXY_CONT, "proxy<-signer"),
                 GAPS_CHANNEL_END
             }
-        }
+        },
+
+        .proxy_to_signer = &signer.app.ch[0],
+        .signer_to_proxy = &signer.app.ch[1]
     };
 
     parse_args(argc, argv, &signer);
 
-    ts_log(INFO, "Starting signing service");
+    ts_log(INFO, "Starting");
 
     /* Initialize signer crypto resources */
     signer.ts.tsa = ts_init(signer.ts.conf_file, signer.ts.conf_sect);

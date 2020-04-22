@@ -63,8 +63,6 @@ All demo components are built by following instructions provided
 * The build process generates PKI components, which include creation of two
   private/public key pairs. On a machine with limited resources this step may
   take a noticeable amount of time.
-* To build time demo with serial GAPS channels between the proxy and the signing
-  service, use ```cmake .. -DGAPS_SERIAL=ON```
 * To build time demo with a single executable across enclaves, use ```cmake .. -DSINGLE_BINARY=ON```
 * All build artifacts are located in ```build/time_demo``` directory
 
@@ -75,14 +73,6 @@ $ cd build
 $ cmake -DGAPS_DEMOS=ON -DGAPS_DISABLE=ON ..
 $ make
 ```
-
-#### Additional cmake Options
-Invoke with
-```
-$ cmake -D<OPTION_NAME>=ON ..
-```
- * ```GAPS_SERIAL``` use **UART** GAPS channels for *proxy<->signing service* instead of **PIPE**
-
 
 ## Running
 
