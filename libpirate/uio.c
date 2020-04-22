@@ -45,6 +45,10 @@ static inline uint32_t get_read(uint64_t value) {
     return (value & 0x000000000fffffff);
 }
 
+static inline uint8_t* shmem_get_buffer(shmem_buffer_t *uio_buffer) {
+    return (uint8_t *) uio_buffer + sizeof(shmem_buffer_t);
+}
+
 static inline uint64_t create_position(uint32_t write, uint32_t read,
                                        int writer) {
     uint8_t status = 1;
@@ -98,7 +102,6 @@ static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     }
 
     uio_buffer->size = buffer_size() - sizeof(shmem_buffer_t);
-    uio_buffer->buffer = (uint8_t *) uio_buffer + sizeof(shmem_buffer_t);
     return uio_buffer;
 }
 
@@ -215,10 +218,10 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
     nbytes1 = MIN(buffer_size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buffer, buf->buffer + reader, nbytes1);
+    memcpy(buffer, shmem_get_buffer(buf) + reader, nbytes1);
 
     if (nbytes2 > 0) {
-        memcpy(((char *)buffer) + nbytes1, buf->buffer + nbytes1, nbytes2);
+        memcpy(((char *)buffer) + nbytes1, shmem_get_buffer(buf), nbytes2);
     }
 
     for (;;) {
@@ -274,10 +277,10 @@ ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx,
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buffer_size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
-    memcpy(buf->buffer + writer, buffer, nbytes1);
+    memcpy(shmem_get_buffer(buf) + writer, buffer, nbytes1);
 
     if (nbytes2 > 0) {
-        memcpy(buf->buffer, ((char *)buffer) + nbytes1, nbytes2);
+        memcpy(shmem_get_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
     }
 
     atomic_thread_fence(memory_order_release);

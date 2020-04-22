@@ -39,7 +39,7 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
 
     switch (param->channel_type) {
         case SHMEM:
-            if (param->channel.shmem.buffer_size == 0) {
+            if ((bufsize > DEFAULT_SMEM_BUF_LEN) && (param->channel.shmem.buffer_size == 0)) {
                 param->channel.shmem.buffer_size = bufsize;
             }
             break;
