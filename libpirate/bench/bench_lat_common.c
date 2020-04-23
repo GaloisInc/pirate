@@ -21,6 +21,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@ extern int test_gd1, test_gd2, sync_gd;
 uint64_t nbytes;
 size_t message_len;
 extern char message[80];
-extern unsigned char *buffer1, *buffer2;
+extern unsigned char *read_buffer, *write_buffer;
 
 static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *param, int flags) {
     int err, fd, rv;
@@ -173,27 +174,32 @@ int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags
     // truncate nbytes to be divisible by message_len
     nbytes = message_len * (nbytes / message_len);
 
-    buffer1 = malloc(nbytes);
-    if (buffer1 == NULL) {
-        fprintf(stderr, "Failed to allocate buffer 1 of %zu bytes\n", nbytes);
+    read_buffer = malloc(nbytes);
+    if (read_buffer == NULL) {
+        fprintf(stderr, "Failed to allocate read_buffer of %zu bytes\n", nbytes);
         return 1;
     }
 
-    buffer2 = malloc(nbytes);
-    if (buffer2 == NULL) {
-        fprintf(stderr, "Failed to allocate buffer 2 of %zu bytes\n", nbytes);
+    write_buffer = malloc(nbytes);
+    if (write_buffer == NULL) {
+        fprintf(stderr, "Failed to allocate write_buffer of %zu bytes\n", nbytes);
         return 1;
+    }
+
+    for (uint64_t i = 0; i < nbytes; i++) {
+        read_buffer[i] = 0;
+        write_buffer[i] = (unsigned char) (i % UCHAR_MAX);
     }
 
     return 0;
 }
 
 void bench_lat_close(char *argv[]) {
-    if (buffer1 != NULL) {
-        free(buffer1);
+    if (read_buffer != NULL) {
+        free(read_buffer);
     }
-    if (buffer2 != NULL) {
-        free(buffer2);
+    if (write_buffer != NULL) {
+        free(write_buffer);
     }
     if ((test_gd1 >= 0) && (pirate_close(test_gd1) < 0)) {
         snprintf(message, sizeof(message), "Unable to close test channel 1 %s", argv[1]);

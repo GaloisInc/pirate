@@ -28,7 +28,7 @@ int test_gd1 = -1, test_gd2 = -1, sync_gd = -1;
 uint64_t nbytes;
 size_t message_len;
 char message[80];
-unsigned char *buffer1, *buffer2;
+unsigned char *read_buffer, *write_buffer;
 
 int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags);
 void bench_lat_close(char *argv[]);
@@ -45,11 +45,6 @@ int run(int argc, char *argv[]) {
 
     if (bench_lat_setup(argv, O_WRONLY, O_RDONLY, O_RDONLY)) {
         return 1;
-    }
-
-    for (uint64_t i = 0; i < nbytes; i++) {
-        buffer1[i] = (unsigned char) (i % UCHAR_MAX);
-        buffer2[i] = 0;
     }
 
     rv = pirate_read(sync_gd, &signal, sizeof(signal));
@@ -75,7 +70,7 @@ int run(int argc, char *argv[]) {
 
         count = message_len;
         while (count > 0) {
-            rv = pirate_read(test_gd2, buffer2 + readcount, count);
+            rv = pirate_read(test_gd2, read_buffer + readcount, count);
             if (rv < 0) {
                 perror("Test channel 2 read error");
                 return 1;
@@ -86,7 +81,7 @@ int run(int argc, char *argv[]) {
 
         count = message_len;
         while (count > 0) {
-            rv = pirate_write(test_gd1, buffer1 + writecount, count);
+            rv = pirate_write(test_gd1, write_buffer + writecount, count);
             if (rv < 0) {
                 perror("Test channel 1 write error");
                 return 1;
@@ -107,9 +102,9 @@ int run(int argc, char *argv[]) {
     }
 
     for (size_t i = 0; i < nbytes; i++) {
-        if (buffer2[i] != (unsigned char) (i % UCHAR_MAX)) {
+        if (read_buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
             fprintf(stderr, "At position %zu expected %zu and read character %d\n",
-                i, (i % UCHAR_MAX), (int) buffer2[i]);
+                i, (i % UCHAR_MAX), (int) read_buffer[i]);
             return 1;
         }
     }
