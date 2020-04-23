@@ -15,6 +15,10 @@
 
 #define _GNU_SOURCE
 
+#ifndef MAX
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
@@ -50,7 +54,7 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
             break;
         case UDP_SHMEM:
             if (param->channel.udp_shmem.packet_size == 0) {
-                param->channel.udp_shmem.packet_size = message_len;
+                param->channel.udp_shmem.packet_size = MAX(message_len, 64);
             }
             break;
         default:
