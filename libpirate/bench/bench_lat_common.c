@@ -19,6 +19,10 @@
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 #endif
 
+#ifndef MIN
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -45,7 +49,7 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
     switch (param->channel_type) {
         case SHMEM:
             if ((bufsize > DEFAULT_SMEM_BUF_LEN) && (param->channel.shmem.buffer_size == 0)) {
-                param->channel.shmem.buffer_size = bufsize;
+                param->channel.shmem.buffer_size = MIN(bufsize, 524288);
             }
             break;
         case UNIX_SOCKET:
