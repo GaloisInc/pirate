@@ -345,8 +345,8 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         nbytes = buf->size + writer - reader;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
-
     nbytes1 = MIN(buf->size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
@@ -428,6 +428,7 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         nbytes = buf->size + reader - writer;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buf->size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
