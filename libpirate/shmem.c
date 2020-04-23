@@ -64,7 +64,7 @@ static inline int is_full(uint64_t value) {
     return get_status(value) == 2;
 }
 
-static inline unsigned char* shmem_get_buffer(shmem_buffer_t *shmem_buffer) {
+static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
     return (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
 }
 
@@ -350,9 +350,9 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
     nbytes1 = MIN(buf->size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buffer, shmem_get_buffer(buf) + reader, nbytes1);
+    memcpy(buffer, shared_buffer(buf) + reader, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(((char *)buffer) + nbytes1, shmem_get_buffer(buf), nbytes2);
+        memcpy(((char *)buffer) + nbytes1, shared_buffer(buf), nbytes2);
     }
 
     for (;;) {
@@ -431,9 +431,9 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buf->size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
-    memcpy(shmem_get_buffer(buf) + writer, buffer, nbytes1);
+    memcpy(shared_buffer(buf) + writer, buffer, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(shmem_get_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
+        memcpy(shared_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
     }
     atomic_thread_fence(memory_order_release);
     for (;;) {
