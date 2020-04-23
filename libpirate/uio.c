@@ -30,7 +30,7 @@
 // use status bits to indicate whether empty or full
 
 static inline int buffer_size() {
-    return getpagesize() * 16;
+    return getpagesize() * 256;
 }
 
 static inline uint8_t get_status(uint64_t value) {
@@ -214,6 +214,7 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
         nbytes = buffer_size + writer - reader;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buffer_size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
@@ -274,6 +275,7 @@ ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx,
         nbytes = buffer_size + reader - writer;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buffer_size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
