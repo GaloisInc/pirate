@@ -38,7 +38,7 @@ extern unsigned char *buffer1, *buffer2;
 static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *param, int flags) {
     int err, fd, rv;
     size_t bufsize;
-    
+
     bufsize = 8 * message_len;
 
     switch (param->channel_type) {
@@ -112,7 +112,7 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
         default:
             break;
     }
-    
+
     return rv;
 }
 
@@ -194,7 +194,7 @@ void bench_lat_close(char *argv[]) {
     }
     if (buffer2 != NULL) {
         free(buffer2);
-    }    
+    }
     if ((test_gd1 >= 0) && (pirate_close(test_gd1) < 0)) {
         snprintf(message, sizeof(message), "Unable to close test channel 1 %s", argv[1]);
         perror(message);
@@ -202,7 +202,7 @@ void bench_lat_close(char *argv[]) {
     if ((test_gd2 >= 0) && (pirate_close(test_gd2) < 0)) {
         snprintf(message, sizeof(message), "Unable to close test channel 2 %s", argv[2]);
         perror(message);
-    }    
+    }
     if ((sync_gd >= 0) && (pirate_close(sync_gd) < 0)) {
         snprintf(message, sizeof(message), "Unable to close sync channel %s", argv[3]);
         perror(message);

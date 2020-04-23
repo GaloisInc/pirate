@@ -115,7 +115,7 @@ int run(int argc, char *argv[]) {
     // 1e6 bytes per megabytes
     printf("average throughput: %f MB/s\n",
            ((1e9 / 1e6) * nbytes) / delta);
-    
+
     return 0;
 }
 
