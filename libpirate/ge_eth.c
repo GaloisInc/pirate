@@ -168,11 +168,6 @@ static int ge_message_unpack(const void *buf, void *data,
     hdr->data_len   = be16toh(msg_hdr->data_len);
     hdr->crc16      = be16toh(msg_hdr->crc16);
 
-    if (hdr->crc16 != pirate_ge_eth_crc16(buf, sizeof(ge_header_t) - sizeof(uint16_t))) {
-        errno = EBADMSG;
-        return -1;
-    }
-
     if ((hdr->data_len > data_buf_len) ||
         (hdr->data_len > (param->mtu - sizeof(ge_header_t)))) {
         errno = ENOBUFS;
