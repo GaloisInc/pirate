@@ -30,7 +30,8 @@ set_property(TARGET libcyaml PROPERTY IMPORTED_LOCATION
 ###
 
 add_library(libpal SHARED
-    lib/pal.c include/pal/pal.h include/pal/resource_types.h
+    lib/pal/pal.c include/pal/pal.h
+    lib/pal/envelope.c include/pal/envelope.h
 )
 target_include_directories(libpal PRIVATE include)
 set_property(TARGET libpal PROPERTY PREFIX "")
@@ -46,10 +47,10 @@ add_executable(pal
     src/launch.c src/launch.h
     src/log.c src/log.h
     src/yaml.c src/yaml.h
-    include/pal/pal.h include/pal/resource_types.h
+    lib/pal/envelope.c include/pal/envelope.h
 )
 target_include_directories(pal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(pal libpal libcyaml)
+target_link_libraries(pal libcyaml)

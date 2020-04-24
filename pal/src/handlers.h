@@ -1,7 +1,7 @@
 #ifndef _PIRATE_PAL_HANDLERS_H
 #define _PIRATE_PAL_HANDLERS_H
 
-#include <pal/pal.h>
+#include <pal/envelope.h>
 
 #include "launch.h"
 #include "yaml.h"

@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <errno.h>
-#include <limits.h>
-#include <pal/pal.h>
-#include <pal/resource_types.h>
+#include <pal/envelope.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -300,123 +298,27 @@ int pal_recv_resource_request(int sock, char **typep, char **namep, int flags)
     return res;
 }
 
-/*
- * Application resource getters
- */
-
-int get_pal_fd()
+pal_env_iterator_t pal_env_iterator_start(pal_env_t *env)
 {
-    long res;
-    char *fdstr, *endptr;
-
-    if(!(fdstr = getenv("PAL_FD")))
-        return -1;
-
-    errno = 0;
-    res = strtol(fdstr, &endptr, 10);
-
-    if(errno || *endptr || res > INT_MAX || res < 0)
-        return -1;
-
-    return res;
+    return env->buf;
 }
 
-int get_boolean_res(int fd, const char *name, bool *outp)
+pal_env_iterator_t pal_env_iterator_end(pal_env_t *env)
 {
-    int res = 0;
-    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
-
-    if((res = pal_send_resource_request(fd, "boolean", name, 0)))
-        ;
-    else if((res = pal_recv_env(fd, &env, 0)))
-        ;
-    else if(env.type != PAL_RESOURCE)
-        res = 1;
-    else {
-        pal_env_iterator_t it = pal_env_iterator_start(&env);
-
-        if(pal_env_iterator_size(it) != sizeof(*outp))
-            res = 1;
-        else
-            memcpy(outp, pal_env_iterator_data(it), sizeof(*outp));
-    }
-
-    pal_free_env(&env);
-
-    return res;
+    return &env->buf[env->size];
 }
 
-int get_integer_res(int fd, const char *name, int64_t *outp)
+pal_env_size_t pal_env_iterator_size(pal_env_iterator_t it)
 {
-    int res = 0;
-    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
-
-    if((res = pal_send_resource_request(fd, "integer", name, 0)))
-        ;
-    else if((res = pal_recv_env(fd, &env, 0)))
-        ;
-    else if(env.type != PAL_RESOURCE)
-        res = 1;
-    else {
-        pal_env_iterator_t it = pal_env_iterator_start(&env);
-
-        if(pal_env_iterator_size(it) != sizeof(*outp))
-            res = 1;
-        else
-            memcpy(outp, pal_env_iterator_data(it), sizeof(*outp));
-    }
-
-    pal_free_env(&env);
-
-    return res;
+    return *(pal_env_size_t *)it;
 }
 
-int get_string_res(int fd, const char *name, char **outp)
+void * pal_env_iterator_data(pal_env_iterator_t it)
 {
-    int res = 0;
-    size_t size;
-    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
-
-    if((res = pal_send_resource_request(fd, "string", name, 0)))
-        ;
-    if((res = pal_recv_env(fd, &env, 0)))
-        ;
-    else if(env.type != PAL_RESOURCE)
-        res = 1;
-    else {
-        pal_env_iterator_t it = pal_env_iterator_start(&env);
-
-        size = pal_env_iterator_size(it);
-        if(!(*outp = malloc(size + 1)))
-            res = -errno;
-        else {
-            memcpy(*outp, pal_env_iterator_data(it), size);
-            (*outp)[size] = '\0';
-        }
-    }
-
-    pal_free_env(&env);
-
-    return res;
+    return it + sizeof(pal_env_size_t);
 }
 
-int get_file_res(int fd, const char *name, int *outp)
+pal_env_iterator_t pal_env_iterator_next(pal_env_iterator_t it)
 {
-    int res = 0;
-    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
-
-    if((res = pal_send_resource_request(fd, "file", name, 0)))
-        ;
-    else if((res = pal_recv_env(fd, &env, 0)))
-        ;
-    else if(env.type != PAL_RESOURCE)
-        res = 1;
-    else if(env.fds_count != 1)
-        res = 1;
-    else
-        *outp = env.fds[0];
-
-    pal_free_env(&env);
-
-    return res;
+    return it + sizeof(pal_env_size_t) + pal_env_iterator_size(it);
 }
