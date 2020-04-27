@@ -15,7 +15,7 @@ Basic steps to get config values in an application are as follows:
    return 0 on success. Otherwise, they return either a negative `errno`
    value or a positive `pal` error. `pal_strerror` will return a string
    representation of a `pal` error. Currently supported types are `integer`,
-   `string`, `bool`, and `file`.
+   `string`, `boolean`, and `file`.
 4. Link against `libpal`.
 
 To run the application with `pal`, create a YAML file with the path to the
