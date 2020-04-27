@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef uint8_t pal_env_type_t;
 typedef uint32_t pal_env_size_t;
 
@@ -135,5 +139,9 @@ pal_env_size_t pal_env_iterator_size(pal_env_iterator_t it);
 void * pal_env_iterator_data(pal_env_iterator_t it);
 
 pal_env_iterator_t pal_env_iterator_next(pal_env_iterator_t it);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _PIRATE_PAL_ENVELOPE_H

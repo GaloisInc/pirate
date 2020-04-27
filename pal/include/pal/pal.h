@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
  * descriptor number.
  *
@@ -39,5 +43,9 @@ int get_string_res(int fd, const char *name, char **outp);
  * is incorrect. Otherwise, return a negative errno value.
  */
 int get_file_res(int fd, const char *name, int *outp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _PIRATE_PAL_H
