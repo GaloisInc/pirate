@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.5)
 project(pal)
 
 ###
@@ -22,24 +22,25 @@ add_library(libcyaml SHARED IMPORTED)
 ExternalProject_Get_Property(project_libcyaml install_dir)
 set(CYAML_INSTALL_DIR ${install_dir})
 add_dependencies(libcyaml project_libcyaml)
-set_property(TARGET libcyaml PROPERTY IMPORTED_LOCATION
-    ${CYAML_INSTALL_DIR}/lib/libcyaml.so)
+set_property(TARGET libcyaml PROPERTY IMPORTED_LOCATION ${CYAML_INSTALL_DIR}/lib/libcyaml.so)
 
 ###
 # libpal shared library
 ###
 
-add_library(libpal SHARED
+add_library(libpal_shared SHARED
     lib/pal/pal.c include/pal/pal.h
     lib/pal/envelope.c include/pal/envelope.h
 )
-target_include_directories(libpal PRIVATE include)
-set_property(TARGET libpal PROPERTY PREFIX "")
+set_target_properties(libpal_shared PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
+target_include_directories(libpal_shared PRIVATE include)
+set_property(TARGET libpal_shared PROPERTY PREFIX "")
+
+install(TARGETS libpal_shared DESTINATION lib)
 
 ###
 # pal executable
 ###
-
 add_executable(pal
     src/main.c
     src/handle_apps.c src/handle_apps.h
@@ -54,3 +55,5 @@ target_include_directories(pal PRIVATE
     ${CYAML_INSTALL_DIR}/include
 )
 target_link_libraries(pal libcyaml)
+
+install(TARGETS pal DESTINATION bin)
