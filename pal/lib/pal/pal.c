@@ -1,9 +1,10 @@
-#include <pal/envelope.h>
-#include <pal/pal.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
+#include <pal/envelope.h>
+#include <pal/pal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * Application resource getters
@@ -124,4 +125,86 @@ int get_file_res(int fd, const char *name, int *outp)
     pal_free_env(&env);
 
     return res;
+}
+
+/*
+ * Automatic resource initializers
+ */
+
+// FIXME: What do we include for these? Or do we put them in pal.h or similar?
+struct pirate_resource_param {
+    char *prp_name;
+    char *prp_value;
+};
+
+struct pirate_resource {
+    char *pr_name;
+    void *pr_obj;
+    struct pirate_resource_param *pr_params;
+    unsigned char padding[8];
+} __attribute__((packed));
+
+typedef int (*get_func_t)(int fd, const char *name, void *datap);
+
+static void init_resources_common(const char *type, get_func_t get_func,
+        struct pirate_resource *start, struct pirate_resource *stop)
+{
+    int fd;
+    struct pirate_resource *pr;
+
+    if(start == stop)
+        return; // No resources present
+
+    if((fd = get_pal_fd()) < 0) {
+        fputs("PAL resources declared, but no PAL_FD present in environment. "
+                "Are we running with PAL?\n", stderr);
+        exit(1);
+    }
+
+    for(pr = start; pr < stop; ++pr) {
+        int err;
+
+        if((err = get_func(fd, pr->pr_name, pr->pr_obj))) {
+            fprintf(stderr, "Fatal error getting %s resource %s: %s\n",
+                    type, pr->pr_name,
+                    err > 0 ? pal_strerror(err) : strerror(-err));
+            exit(1);
+        }
+    }
+}
+
+extern struct pirate_resource __start_pirate_res_string[];
+extern struct pirate_resource __stop_pirate_res_string[];
+
+void __attribute__((constructor)) init_string_resources()
+{
+    init_resources_common("string", (get_func_t)&get_string_res,
+            __start_pirate_res_string, __stop_pirate_res_string);
+}
+
+extern struct pirate_resource __start_pirate_res_integer[];
+extern struct pirate_resource __stop_pirate_res_integer[];
+
+void __attribute__((constructor)) init_integer_resources()
+{
+    init_resources_common("integer", (get_func_t)&get_integer_res,
+            __start_pirate_res_integer, __stop_pirate_res_integer);
+}
+
+extern struct pirate_resource __start_pirate_res_boolean[];
+extern struct pirate_resource __stop_pirate_res_boolean[];
+
+void __attribute__((constructor)) init_boolean_resources()
+{
+    init_resources_common("boolean", (get_func_t)&get_boolean_res,
+            __start_pirate_res_boolean, __stop_pirate_res_boolean);
+}
+
+extern struct pirate_resource __start_pirate_res_file[];
+extern struct pirate_resource __stop_pirate_res_file[];
+
+void __attribute__((constructor)) init_file_resources()
+{
+    init_resources_common("file", (get_func_t)&get_file_res,
+            __start_pirate_res_file, __stop_pirate_res_file);
 }

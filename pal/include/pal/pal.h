@@ -8,6 +8,11 @@
 extern "C" {
 #endif
 
+typedef char   *pal_string  __attribute__((pirate_resource_type("string")));
+typedef int64_t pal_integer __attribute__((pirate_resource_type("integer")));
+typedef bool    pal_boolean __attribute__((pirate_resource_type("boolean")));
+typedef int     pal_file    __attribute__((pirate_resource_type("file")));
+
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
  * descriptor number.
  *
