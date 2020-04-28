@@ -7,12 +7,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#pragma pirate enclave declare(my_app)
+
 bool my_boolean;
 int64_t my_integer;
 char *my_string;
 int my_file;
 
-int main(void)
+int __attribute__((pirate_enclave_main("my_app"))) main(void)
 {
     int fd, res;
 

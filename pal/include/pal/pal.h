@@ -8,10 +8,33 @@
 extern "C" {
 #endif
 
+struct pirate_resource_param {
+    char *prp_name;
+    char *prp_value;
+};
+
+struct pirate_resource {
+    char *pr_name;
+    void *pr_obj;
+    struct pirate_resource_param *pr_params;
+    unsigned char padding[8];
+} __attribute__((packed));
+// ^ FIXME: Do we want to include something else for these?
+
 typedef char   *pal_string  __attribute__((pirate_resource_type("string")));
 typedef int64_t pal_integer __attribute__((pirate_resource_type("integer")));
 typedef bool    pal_boolean __attribute__((pirate_resource_type("boolean")));
 typedef int     pal_file    __attribute__((pirate_resource_type("file")));
+
+struct pirate_resource _dummy_pirate_res_string[0]
+    __attribute__((used, section(".pirate.res.string")));
+struct pirate_resource _dummy_pirate_res_integer[0]
+    __attribute__((used, section(".pirate.res.integer")));
+struct pirate_resource _dummy_pirate_res_boolean[0]
+    __attribute__((used, section(".pirate.res.boolean")));
+struct pirate_resource _dummy_pirate_res_file[0]
+    __attribute__((used, section(".pirate.res.file")));
+// ^ FIXME: Remove this once it's taken care of in clang
 
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
  * descriptor number.

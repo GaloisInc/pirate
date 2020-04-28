@@ -131,19 +131,6 @@ int get_file_res(int fd, const char *name, int *outp)
  * Automatic resource initializers
  */
 
-// FIXME: What do we include for these? Or do we put them in pal.h or similar?
-struct pirate_resource_param {
-    char *prp_name;
-    char *prp_value;
-};
-
-struct pirate_resource {
-    char *pr_name;
-    void *pr_obj;
-    struct pirate_resource_param *pr_params;
-    unsigned char padding[8];
-} __attribute__((packed));
-
 typedef int (*get_func_t)(int fd, const char *name, void *datap);
 
 static void init_resources_common(const char *type, get_func_t get_func,
