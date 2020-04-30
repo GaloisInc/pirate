@@ -4,8 +4,6 @@
 #include "launch.h"
 #include "yaml.h"
 
-#include <pal/pal.h>
-
 /* Handle messages from applications in a loop. Return when there are no
  * application fds remaining, or on an unrecoverable error.
  *
