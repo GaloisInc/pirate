@@ -12,6 +12,8 @@ def parse_sizes(arg):
         return [2 ** i for i in range(*params)]
     elif args[0] == 'inc':
         return range(*params)
+    elif args[0] == 'list':
+        return params
     print("Invalid length specifications '{}'".format(arg), file=sys.stderr)
     sys,exit(1)
 
