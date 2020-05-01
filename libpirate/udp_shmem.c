@@ -98,6 +98,9 @@ static inline int is_empty(uint64_t value) {
 
 static inline int is_full(uint64_t value) { return get_status(value) == 2; }
 
+static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
+    return (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
+}
 
 static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
     if (param->buffer_size == 0) {
@@ -200,7 +203,6 @@ static shmem_buffer_t *udp_shmem_buffer_init(int fd, pirate_udp_shmem_param_t *p
     }
 
     shmem_buffer->size = buffer_size;
-    shmem_buffer->buffer = (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
     shmem_buffer->packet_size = param->packet_size;
     shmem_buffer->packet_count = param->packet_count;
 
@@ -407,11 +409,11 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     writer = get_write(position);
 
     atomic_thread_fence(memory_order_acquire);
-    memcpy(&ip_header, buf->buffer + (reader * packet_size),
+    memcpy(&ip_header, shared_buffer(buf) + (reader * packet_size),
             sizeof(struct ip_hdr));
-    memcpy(&udp_header, buf->buffer + (reader * packet_size) + 
+    memcpy(&udp_header, shared_buffer(buf) + (reader * packet_size) +
             sizeof(struct ip_hdr), sizeof(struct udp_hdr));
-    memcpy(buffer, buf->buffer + (reader * packet_size) + 
+    memcpy(buffer, shared_buffer(buf) + (reader * packet_size) +
             UDP_HEADER_SIZE, count);
 
     for (;;) {
@@ -547,11 +549,11 @@ ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_
     reader = get_read(position);
     writer = get_write(position);
 
-    memcpy(buf->buffer + (writer * packet_size), &ip_header,
+    memcpy(shared_buffer(buf) + (writer * packet_size), &ip_header,
             sizeof(struct ip_hdr));
-    memcpy(buf->buffer + (writer * packet_size) + sizeof(struct ip_hdr),
+    memcpy(shared_buffer(buf) + (writer * packet_size) + sizeof(struct ip_hdr),
             &udp_header, sizeof(struct udp_hdr));
-    memcpy(buf->buffer + (writer * packet_size) + UDP_HEADER_SIZE, buffer,
+    memcpy(shared_buffer(buf) + (writer * packet_size) + UDP_HEADER_SIZE, buffer,
             count);
     atomic_thread_fence(memory_order_release);
 

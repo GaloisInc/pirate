@@ -27,7 +27,7 @@ static struct platform_device *uio_pdev;
 static struct uio_info *info;
 static void* mem_addr[4];
 
-#define MEM_ORDER (4)
+#define MEM_ORDER (8)
 #define MEM_SIZE (PAGE_SIZE * (1 << MEM_ORDER))
 
 static int __init uio_dev_init(void)

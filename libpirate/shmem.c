@@ -64,6 +64,10 @@ static inline int is_full(uint64_t value) {
     return get_status(value) == 2;
 }
 
+static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
+    return (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
+}
+
 static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
     int err, rv;
     int success = 0;
@@ -116,7 +120,6 @@ static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
     }
 
     shmem_buffer->size = buffer_size;
-    shmem_buffer->buffer = (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
 
     if ((rv = sem_init(&shmem_buffer->reader_open_wait, 1, 0)) != 0) {
         goto error;
@@ -342,14 +345,14 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         nbytes = buf->size + writer - reader;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
-
     nbytes1 = MIN(buf->size - reader, nbytes);
     nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buffer, buf->buffer + reader, nbytes1);
+    memcpy(buffer, shared_buffer(buf) + reader, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(((char *)buffer) + nbytes1, buf->buffer + nbytes1, nbytes2);
+        memcpy(((char *)buffer) + nbytes1, shared_buffer(buf), nbytes2);
     }
 
     for (;;) {
@@ -425,12 +428,13 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         nbytes = buf->size + reader - writer;
     }
 
+    count = MIN(count, 65536);
     nbytes = MIN(nbytes, count);
     nbytes1 = MIN(buf->size - writer, nbytes);
     nbytes2 = nbytes - nbytes1;
-    memcpy(buf->buffer + writer, buffer, nbytes1);
+    memcpy(shared_buffer(buf) + writer, buffer, nbytes1);
     if (nbytes2 > 0) {
-        memcpy(buf->buffer, ((char *)buffer) + nbytes1, nbytes2);
+        memcpy(shared_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
     }
     atomic_thread_fence(memory_order_release);
     for (;;) {
@@ -439,7 +443,7 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             was_empty = is_empty(position);
-        break;
+            break;
         }
         reader = get_read(position);
     }

@@ -46,7 +46,6 @@ typedef struct {
     int                     size;
     size_t                  packet_size;
     size_t                  packet_count;
-    unsigned char           *buffer;
 } shmem_buffer_t;
 
 #endif /* __PIRATE_SHMEM_BUFFER_H */

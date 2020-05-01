@@ -90,10 +90,15 @@ jobs:
         cd build/libpirate
         ./gaps_channels_test
         make valgrind valgrind-cxx
+    - name: build benchmarks
+      run: |
+        cd build
+        cmake -DGAPS_BENCH=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
     - name: build demos
       run: |
         cd build
-        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGAPS_DEMOS=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
@@ -149,6 +154,11 @@ jobs:
         mkdir -p build
         cd build
         cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        make
+    - name: build benchmarks
+      run: |
+        cd build
+        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DGAPS_BENCH=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: build demos
       run: |
