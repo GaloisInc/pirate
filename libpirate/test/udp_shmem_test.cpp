@@ -28,7 +28,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
 
-    char opt[128];
+    char opt[256];
     const char *name = "udp_shmem";
     const char *path = "/tmp/test_udp_shmem";
     const unsigned buffer_size = 42 * 42;
@@ -102,7 +102,7 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
+        char opt[256];
         pirate_udp_shmem_param_t *param = &Reader.param.channel.udp_shmem;
 
         const char *testPath = "/gaps.shmem_test";
