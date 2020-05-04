@@ -233,44 +233,53 @@ static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
 }
 
 int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param) {
-    char *ptr = NULL;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
         (strcmp(ptr, "mercury") != 0)) {
         return -1;
     }
 
-    // Non-parsed and default parameters
-    param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
-
-    // Level
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
     param->session.level = strtol(ptr, NULL, 10);
 
-    // Source ID
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
     param->session.source_id = strtol(ptr, NULL, 10);
 
-    // Destination ID
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
     param->session.destination_id = strtol(ptr, NULL, 10);
 
-    // Messages
-    while (((ptr = strtok(NULL, OPT_DELIM)) != NULL) &&
-           (param->session.message_count < PIRATE_MERCURY_MESSAGE_TABLE_LEN)) {
-        param->session.messages[param->session.message_count++] = 
-            strtol(ptr, NULL, 10);
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        key = strtok_r(ptr, KV_DELIM, &saveptr2);
+        if (key == NULL) {
+            errno = EINVAL;
+            return -1;
+        }
+        val = strtok_r(NULL, KV_DELIM, &saveptr2);
+        if (val == NULL) {
+            if (param->session.message_count < PIRATE_MERCURY_MESSAGE_TABLE_LEN) {
+                param->session.messages[param->session.message_count++] =
+                    strtol(ptr, NULL, 10);
+            }
+        } else if (pirate_parse_is_common_key(key)) {
+            continue;
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
-
     return 0;
 }
 
