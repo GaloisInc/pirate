@@ -104,16 +104,27 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
-static void pirate_parse_common_kv(const char *key, const char *value, pirate_channel_param_t *param) {
+static const char* pirate_common_keys[] = {"yield", "control", NULL};
+
+int pirate_parse_is_common_key(const char *key) {
+    for (int i = 0; pirate_common_keys[i] != NULL; i++) {
+        if (strncmp(pirate_common_keys[i], key, strlen(pirate_common_keys[i])) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
     if (strncmp("yield", key, strlen("yield")) == 0) {
-        param->yield = atoi(value);
+        param->yield = atoi(val);
     } else if (strncmp("control", key, strlen("control")) == 0) {
-        param->control = atoi(value);
+        param->control = atoi(val);
     }
 }
 
-static void pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
-    char *token, *key, *value;
+static int pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
+    char *token, *key, *val;
     char *saveptr1, *saveptr2;
 
     while ((token = strtok_r(str, OPT_DELIM, &saveptr1)) != NULL) {
@@ -122,12 +133,16 @@ static void pirate_parse_common_param(char *str, pirate_channel_param_t *param) 
         if (key == NULL) {
             continue;
         }
-        value = strtok_r(NULL, KV_DELIM, &saveptr2);
-        if (value == NULL) {
+        val = strtok_r(NULL, KV_DELIM, &saveptr2);
+        if (val == NULL) {
             continue;
         }
-        pirate_parse_common_kv(key, value, param);
+        if (!pirate_parse_is_common_key(key)) {
+            continue;
+        }
+        pirate_parse_common_kv(key, val, param);
     }
+    return 0;
 }
 
 int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
@@ -135,11 +150,15 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     // Channel configuration function is allowed to modify the string
     // while braking it into delimiter-separated tokens
     char opt[256];
+    int rv;
     strncpy(opt, str, sizeof(opt) - 1);
 
     pirate_init_channel_param(INVALID, param);
 
-    pirate_parse_common_param(opt, param);
+    rv = pirate_parse_common_param(opt, param);
+    if (rv < 0) {
+        return rv;
+    }
 
     strncpy(opt, str, sizeof(opt) - 1);
 

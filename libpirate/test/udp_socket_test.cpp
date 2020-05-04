@@ -58,7 +58,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(0u, udp_socket_param->iov_len);
     ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, addr, port, iov_len);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,iov_len=%u", name, addr, port, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -68,7 +68,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(iov_len, udp_socket_param->iov_len);
     ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, addr, port, iov_len,
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,iov_len=%u,buffer_size=%u", name, addr, port, iov_len,
             buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
@@ -96,7 +96,7 @@ public:
         param->buffer_size = std::get<1>(test_param);
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "udp_socket,%s,%u,%u,%u",
+        snprintf(opt, sizeof(opt) - 1, "udp_socket,%s,%u,iov_len=%u,buffer_size=%u",
                     DEFAULT_TCP_IP_ADDR, param->port,
                     param->iov_len, param->buffer_size);
         Reader.desc.assign(opt);

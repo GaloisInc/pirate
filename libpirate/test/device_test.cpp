@@ -48,7 +48,7 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     ASSERT_STREQ(path, device_param->path);
     ASSERT_EQ(0u, device_param->iov_len);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, iov_len);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,iov_len=%u", name, path, iov_len);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -70,7 +70,7 @@ public:
         param->iov_len = GetParam();
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "device,%s,%u", param->path, 
+        snprintf(opt, sizeof(opt) - 1, "device,%s,iov_len=%u", param->path,
                     param->iov_len);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);

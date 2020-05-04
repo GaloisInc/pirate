@@ -36,14 +36,14 @@ TEST(ChannelUioTest, ConfigurationParser) {
     ASSERT_EQ(UIO_DEVICE, param.channel_type);
     ASSERT_STREQ("", uio_param->path);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
+    snprintf(opt, sizeof(opt) - 1, "%s,path=%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UIO_DEVICE, param.channel_type);
     ASSERT_STREQ(path, uio_param->path);
 #else
-    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
+    snprintf(opt, sizeof(opt) - 1, "%s,path=%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
     ASSERT_EQ(-1, rv);
@@ -62,7 +62,7 @@ public:
         pirate_init_channel_param(UIO_DEVICE, &Reader.param);
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "uio,%s", DEFAULT_UIO_DEVICE);
+        snprintf(opt, sizeof(opt) - 1, "uio,path=%s", DEFAULT_UIO_DEVICE);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }
