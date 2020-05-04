@@ -289,19 +289,19 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                     \
-    "Supported channels:\n"                                                      \
-    "  DEVICE        device,path[,iov_len]\n"                                    \
-    "  PIPE          pipe,path[,iov_len]\n"                                      \
-    "  UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]\n" \
-    "  SHMEM         shmem,path[,buffer_size]\n"                                 \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]\n"    \
-    "  UIO           uio[,path]\n"                                               \
-    "  SERIAL        serial,path[,baud,mtu]\n"                                   \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"               \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]\n"
+#define GAPS_CHANNEL_OPTIONS                                                         \
+    "Supported channels:\n"                                                          \
+    "  DEVICE        device,path[,iov_len=N]\n"                                      \
+    "  PIPE          pipe,path[,iov_len=N]\n"                                        \
+    "  UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
+    "  SHMEM         shmem,path[,buffer_size=N]\n"                                   \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"  \
+    "  UIO           uio[,path=N]\n"                                                 \
+    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                   \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"                   \
+    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
