@@ -70,7 +70,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         }
         break;
 
-   case 'v':
+    case 'v':
         bench->validate = 1;
         break;
 
