@@ -13,6 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+
 #include <time.h>
 #include <limits.h>
 #include <stdio.h>
@@ -20,15 +22,51 @@
 #include <string.h>
 #include "bench_thr.h"
 
+#define tscmp(a, b, CMP)                             \
+  (((a)->tv_sec == (b)->tv_sec) ?                    \
+   ((a)->tv_nsec CMP (b)->tv_nsec) :                 \
+   ((a)->tv_sec CMP (b)->tv_sec))
+
+#define tsadd(a, b, result)                          \
+  do {                                               \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;    \
+    (result)->tv_nsec = (a)->tv_nsec + (b)->tv_nsec; \
+    if ((result)->tv_nsec >= 1000000000) {           \
+      ++(result)->tv_sec;                            \
+      (result)->tv_nsec -= 1000000000;               \
+    }                                                \
+  } while (0)
+
+int busysleep(uint32_t nanoseconds)
+{
+    struct timespec now;
+    struct timespec then;
+    struct timespec start;
+    struct timespec sleep;
+
+    if (nanoseconds >= 1000000000) {
+        return -1;
+    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    now = start;
+    sleep.tv_sec = 0;
+    sleep.tv_nsec = nanoseconds;
+    tsadd(&start, &sleep, &then);
+    while (tscmp(&now, &then, <)) {
+        clock_gettime( CLOCK_MONOTONIC_RAW, &now);
+    }
+    return 0;
+}
+
 int run(bench_thr_t *bench) {
     ssize_t rv;
-    const uint64_t iter = bench->nbytes / bench->message_len;
+    const uint32_t iter = bench->nbytes / bench->message_len;
     uint64_t write_off = 0;
     uint8_t signal = 1;
 
     const struct timespec ts = {
-        .tv_sec = bench->tx_delay_us / 1000000,
-        .tv_nsec = (bench->tx_delay_us % 1000000) * 1000
+        .tv_sec = bench->tx_delay_ns / 1000000000,
+        .tv_nsec = (bench->tx_delay_ns % 1000000000)
     };
 
     /* Open and configure synchronization and test channels */
@@ -37,10 +75,21 @@ int run(bench_thr_t *bench) {
     }
 
     /* Initialize the write buffer */
-    for (uint64_t i = 0; i < iter; i++) {
-        for (uint64_t j = 0; j < bench->message_len; j++) {
-            uint64_t pos = i * bench->message_len + j;
-            bench->buffer[pos] = (unsigned char)(j & 0xFF);
+    for (uint32_t i = 0; i < iter; i++) {
+        uint64_t offset = i * bench->message_len;
+        if (bench->message_len < 4) {
+            for (uint64_t j = 0; j < bench->message_len; j++) {
+                bench->buffer[offset + j] = (unsigned char)(j & 0xFF);
+            }
+        } else {
+            uint32_t sequence = i + 1;
+            bench->buffer[offset] = sequence & 0xFF;
+            bench->buffer[offset + 1] = (sequence >> 8) & 0xFF;
+            bench->buffer[offset + 2] = (sequence >> 16) & 0xFF;
+            bench->buffer[offset + 3] = (sequence >> 24) & 0xFF;
+            for (uint64_t j = 4; j < bench->message_len; j++) {
+                bench->buffer[offset + j] = (unsigned char)(j & 0xFF);
+            }
         }
     }
 
@@ -56,7 +105,7 @@ int run(bench_thr_t *bench) {
         return -1;
     }
 
-    for (uint64_t i = 0; i < iter; i++) {
+    for (uint32_t i = 0; i < iter; i++) {
         size_t count = bench->message_len;
         while (count > 0) {
             rv = pirate_write(bench->test_ch.gd, bench->buffer + write_off, count);
@@ -66,8 +115,10 @@ int run(bench_thr_t *bench) {
             }
             write_off += rv;
             count -= rv;
-            if (bench->tx_delay_us != 0) {
+            if (bench->tx_delay_ns >= 1000000000) {
                 nanosleep(&ts, NULL);
+            } else if (bench->tx_delay_ns > 0) {
+                busysleep(bench->tx_delay_ns);
             }
         }
     }

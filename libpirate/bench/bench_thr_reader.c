@@ -24,7 +24,7 @@
 
 int run(bench_thr_t *bench) {
     ssize_t rv;
-    const uint64_t iter = bench->nbytes / bench->message_len;
+    const uint32_t iter = bench->nbytes / bench->message_len;
     uint64_t read_off = 0;
     struct timespec start, stop;
     uint64_t delta;
@@ -53,7 +53,7 @@ int run(bench_thr_t *bench) {
         return -1;
     }
 
-    for (uint64_t i = 0; i < iter && !timeout; i++) {
+    for (uint32_t i = 0; i < iter && !timeout; i++) {
         size_t count = bench->message_len;
         while (count > 0) {
             rv = pirate_read(bench->test_ch.gd, bench->buffer + read_off, count);
@@ -83,12 +83,45 @@ int run(bench_thr_t *bench) {
         return -1;
     }
 
+    /* Validate the sequence numbers */
+    if (bench->validate && (bench->message_len >= 4) && (read_off > 0)) {
+        for (uint32_t i = 0; i < iter; i++) {
+            uint64_t offset = i * bench->message_len;
+            uint32_t sequence = 0;
+            sequence += bench->buffer[offset];
+            sequence += bench->buffer[offset + 1] << 8;
+            sequence += bench->buffer[offset + 2] << 16;
+            sequence += bench->buffer[offset + 3] << 24;
+            if (sequence > iter) {
+                fprintf(stderr, "Invalid sequence number at packet number %d\n", i);
+            } else {
+                bench->bitvector[sequence / 8] |= 1 << (sequence % 8);
+            }
+        }
+        int first = 1;
+        // sequence number starts at 1
+        for (uint32_t i = 1; i <= iter; i++) {
+            if (!(bench->bitvector[i / 8] & (1 << (i % 8)))) {
+                if (first) {
+                    fprintf(stderr, "Missing sequence number(s) ");
+                    first = 0;
+                }
+                fprintf(stderr, "%d ", i);
+            }
+        }
+        if (!first) {
+            fprintf(stderr, "\n");
+        }
+    }
+
     /* Validate the data */
-    for (uint64_t i = 0; i < iter; i++) {
-        for (uint64_t j = 0; (j < bench->message_len) && ((i * bench->message_len + j) < read_off); j++) {
-            uint64_t pos = i * bench->message_len + j;
+    for (uint32_t i = 0; bench->validate && (i < iter); i++) {
+        uint64_t offset = i * bench->message_len;
+        uint64_t start = (bench->message_len < 4) ? 0 : 4;
+        for (uint64_t j = start; (j < bench->message_len) && ((offset + j) < read_off); j++) {
+            uint64_t pos = offset + j;
             if (bench->buffer[pos] != (unsigned char) (j & 0xFF)) {
-                fprintf(stderr, "At position %zu of packet %zu expected %zu and read character %d\n",
+                fprintf(stderr, "At position %zu of packet %d expected %zu and read character %d\n",
                 j, i, (j & 0xFF), (int) bench->buffer[pos]);
             }
         }

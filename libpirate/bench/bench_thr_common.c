@@ -31,6 +31,7 @@ static struct argp_option options[] = {
     { "sync2",       'S', "CONFIG", 0, "Sync channel 2 configuration",  0 },
     { "nbytes",      'n', "BYTES",  0, "Number of bytes to receive",    0 },
     { "message_len", 'm', "BYTES",  0, "Transfer message size",         0 },
+    { "validate",    'v', NULL,     0, "Validate received data",        0 },
     { "tx_delay",    'd', "US",     0, "Inter-message delay",           0 },
     { "rx_timeout",  'w', "S",      0, "Message receive timeout",       0 },
     { NULL,           0,  NULL,     0, GAPS_CHANNEL_OPTIONS,            2 },
@@ -69,8 +70,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         }
         break;
 
+   case 'v':
+        bench->validate = 1;
+        break;
+
     case 'd':
-        bench->tx_delay_us = strtol(arg, &endptr, 10);
+        bench->tx_delay_ns = (uint64_t) (strtod(arg, &endptr) * 1000.0);
         if (*endptr != '\0') {
             argp_error(state, "Unable to parse numeric value from \"%s\"\n", arg);
         }
@@ -124,7 +129,8 @@ void parse_args(int argc, char *argv[], bench_thr_t *bench) {
     bench->sync_ch2.gd     = -1;
     bench->nbytes          = 1024;
     bench->message_len     = 128;
-    bench->tx_delay_us     = 0;
+    bench->validate        = 0;
+    bench->tx_delay_ns     = 0;
     bench->rx_timeout_s    = 2;
 
     struct argp argp = {
@@ -259,11 +265,19 @@ int bench_thr_setup(bench_thr_t *bench, int test_flags, int sync_flags1, int syn
 
     /* Truncate nbytes to be divisible by message_len */
     bench->nbytes = bench->message_len * (bench->nbytes / bench->message_len);
+    const uint32_t iter = bench->nbytes / bench->message_len;
 
     bench->buffer = calloc(bench->nbytes, 1);
     if (bench->buffer == NULL) {
         fprintf(stderr, "Failed to allocate buffer of %zu bytes\n",
                     bench->nbytes);
+        return -1;
+    }
+
+    bench->bitvector = calloc(iter / 8 + 1, 1);
+    if (bench->buffer == NULL) {
+        fprintf(stderr, "Failed to allocate bitvector of %d bytes\n",
+                    iter / 8 + 1);
         return -1;
     }
 
@@ -273,6 +287,11 @@ int bench_thr_setup(bench_thr_t *bench, int test_flags, int sync_flags1, int syn
 void bench_thr_close(bench_thr_t *bench) {
     if (bench->buffer != NULL) {
         free(bench->buffer);
+        bench->buffer = NULL;
+    }
+
+    if (bench->bitvector != NULL) {
+        free(bench->bitvector);
         bench->buffer = NULL;
     }
 

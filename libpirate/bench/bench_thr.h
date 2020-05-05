@@ -40,9 +40,10 @@ typedef struct {
     uint64_t nbytes;
     size_t message_len;
     int validate;
-    uint32_t tx_delay_us;
+    uint64_t tx_delay_ns;
     uint32_t rx_timeout_s;
     uint8_t *buffer;
+    uint8_t *bitvector;
     char err_msg[256];
 } bench_thr_t;
 
