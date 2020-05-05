@@ -24,49 +24,48 @@
 
 #include "libpirate.h"
 
-int test_gd = -1, sync_gd = -1;
+int test_gd = -1, sync_gd1 = -1, sync_gd2 = -1;
 uint64_t nbytes;
-size_t message_len, signal_len = 64;
+size_t message_len;
 char message[80];
 unsigned char* buffer;
 
-int bench_thr_setup(char *argv[], int test_flags, int sync_flags);
+int bench_thr_setup(char *argv[], int test_flags, int sync_flag1, int sync_flag2);
 void bench_thr_close(char *argv[]);
 
 int run(int argc, char *argv[]) {
     ssize_t rv;
     uint64_t writecount = 0, iter;
+    uint8_t signal = 0;
 
-    if (argc != 5) {
-        printf("./bench_thr_writer [test channel] [sync channel] [message length] [nbytes]\n\n");
+    if (argc != 6) {
+        printf("./bench_thr_writer [test channel] [sync channel 1] [sync channel 2] [message length] [nbytes]\n\n");
         return 1;
     }
 
-    if (bench_thr_setup(argv, O_WRONLY, O_RDONLY)) {
-        return 1;
-    }
-
-    if (signal_len > nbytes) {
-        signal_len = nbytes;
-    }
-
-    rv = pirate_read(sync_gd, buffer, signal_len);
-    if (rv < 0) {
-        perror("Sync channel initial read error");
-        return 1;
-    }
-
-    for (uint64_t i = 0; i < nbytes; i++) {
-        buffer[i] = (unsigned char) (i % UCHAR_MAX);
-    }
-
-    rv = pirate_write(test_gd, buffer, signal_len);
-    if (rv < 0) {
-        perror("Test channel initial write error");
+    if (bench_thr_setup(argv, O_WRONLY, O_WRONLY, O_RDONLY)) {
         return 1;
     }
 
     iter = nbytes / message_len;
+
+    for (uint64_t i = 0; i < iter; i++) {
+        for (uint64_t j = 0; j < message_len; j++) {
+            buffer[i * message_len + j] = (unsigned char)(j & 0xFF);
+        }
+    }
+
+    rv = pirate_read(sync_gd2, &signal, sizeof(signal));
+    if (rv < 0) {
+        perror("Sync channel 2 initial read error");
+        return 1;
+    }
+
+    rv = pirate_write(sync_gd1, &signal, sizeof(signal));
+    if (rv < 0) {
+        perror("Sync channel 1 initial write error");
+        return 1;
+    }
 
     for (uint64_t i = 0; i < iter; i++) {
         size_t count;
@@ -83,7 +82,7 @@ int run(int argc, char *argv[]) {
         }
     }
 
-    rv = pirate_read(sync_gd, buffer, signal_len);
+    rv = pirate_read(sync_gd2, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel terminating read error");
         return 1;

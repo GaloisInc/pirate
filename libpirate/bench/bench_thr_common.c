@@ -33,9 +33,9 @@
 
 #include "libpirate.h"
 
-extern int test_gd, sync_gd;
-uint64_t nbytes;
-size_t message_len;
+extern int test_gd, sync_gd1, sync_gd2;
+extern uint64_t nbytes;
+extern size_t message_len;
 extern char message[80];
 extern unsigned char* buffer;
 
@@ -88,6 +88,21 @@ static int bench_thr_open(char *param_str, pirate_channel_param_t *param, int fl
                 return -1;
             }
             break;
+        case UDP_SOCKET:
+        case GE_ETH: {
+            struct timeval tv;
+            tv.tv_sec = 2;
+            tv.tv_usec = 0;
+            if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv,
+                        sizeof(tv)) < 0) {
+                snprintf(message, sizeof(message),
+                    "Unable to set SO_RCVTIMEO option on test channel \"%s\"",
+                    param_str);
+                perror(message);
+                return -1;
+            }
+            break;
+        }
         case TCP_SOCKET: {
             struct linger socket_reset;
             socket_reset.l_onoff = 1;
@@ -109,12 +124,17 @@ static int bench_thr_open(char *param_str, pirate_channel_param_t *param, int fl
     return rv;
 }
 
-int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
+int bench_thr_setup(char *argv[], int test_flags, int sync_flag1, int sync_flag2) {
     char* endptr;
     pirate_channel_param_t param;
 
     if (strstr(argv[2], "tcp_socket,") == NULL) {
-        fprintf(stderr, "Sync channel %s must be a tcp socket\n", argv[2]);
+        fprintf(stderr, "Sync channel 1 %s must be a tcp socket\n", argv[2]);
+        return 1;
+    }
+
+    if (strstr(argv[3], "tcp_socket,") == NULL) {
+        fprintf(stderr, "Sync channel 2 %s must be a tcp socket\n", argv[3]);
         return 1;
     }
 
@@ -123,22 +143,29 @@ int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
         return 1;
     }
 
-    sync_gd = pirate_open_parse(argv[2], sync_flags);
-    if (sync_gd < 0) {
-        snprintf(message, sizeof(message), "Unable to open sync channel \"%s\"", argv[2]);
+    sync_gd1 = pirate_open_parse(argv[2], sync_flag1);
+    if (sync_gd1 < 0) {
+        snprintf(message, sizeof(message), "Unable to open sync channel 1 \"%s\"", argv[2]);
         perror(message);
         return 1;
     }
 
-    message_len = strtol(argv[3], &endptr, 10);
-    if (*endptr != '\0') {
-        fprintf(stderr, "Unable to parse message length \"%s\"\n", argv[3]);
+    sync_gd2 = pirate_open_parse(argv[3], sync_flag2);
+    if (sync_gd2 < 0) {
+        snprintf(message, sizeof(message), "Unable to open sync channel 2 \"%s\"", argv[3]);
+        perror(message);
         return 1;
     }
 
-    nbytes = strtol(argv[4], &endptr, 10);
+    message_len = strtol(argv[4], &endptr, 10);
     if (*endptr != '\0') {
-        snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[4]);
+        fprintf(stderr, "Unable to parse message length \"%s\"\n", argv[4]);
+        return 1;
+    }
+
+    nbytes = strtol(argv[5], &endptr, 10);
+    if (*endptr != '\0') {
+        snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[5]);
         perror(message);
         return 1;
     }
@@ -149,10 +176,6 @@ int bench_thr_setup(char *argv[], int test_flags, int sync_flags) {
     test_gd = bench_thr_open(argv[1], &param, test_flags);
     if (test_gd < 0) {
         return 1;
-    }
-
-    if ((param.channel_type == UDP_SOCKET) && (test_flags == O_WRONLY)) {
-        nbytes *= 1.5;
     }
 
     buffer = malloc(nbytes);
@@ -172,8 +195,12 @@ void bench_thr_close(char *argv[]) {
         snprintf(message, sizeof(message), "Unable to close test channel %s", argv[1]);
         perror(message);
     }
-    if ((sync_gd >= 0) && (pirate_close(sync_gd) < 0)) {
-        snprintf(message, sizeof(message), "Unable to close sync channel %s", argv[2]);
+    if ((sync_gd1 >= 0) && (pirate_close(sync_gd1) < 0)) {
+        snprintf(message, sizeof(message), "Unable to close sync channel 1 %s", argv[2]);
+        perror(message);
+    }
+    if ((sync_gd2 >= 0) && (pirate_close(sync_gd2) < 0)) {
+        snprintf(message, sizeof(message), "Unable to close sync channel 2 %s", argv[3]);
         perror(message);
     }
 }
