@@ -15,69 +15,48 @@
 
 #define _GNU_SOURCE
 
-#ifndef MIN
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-#endif
-
-#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "bench_thr.h"
 
-#include "libpirate.h"
-
-int test_gd = -1, sync_gd1 = -1, sync_gd2 = -1;
-uint64_t nbytes;
-size_t message_len;
-char message[80];
-unsigned char* buffer;
-
-int bench_thr_setup(char *argv[], int test_flags, int sync_flag1, int sync_flag2);
-void bench_thr_close(char *argv[]);
-
-int run(int argc, char *argv[]) {
+int run(bench_thr_t *bench) {
     ssize_t rv;
-    uint64_t readcount = 0, iter, delta;
+    const uint64_t iter = bench->nbytes / bench->message_len;
+    uint64_t read_off = 0;
     struct timespec start, stop;
+    uint64_t delta;
     int timeout = 0;
     uint8_t signal = 1;
 
-    if (argc != 6) {
-        printf("./bench_thr_reader [test channel] [sync channel 1] [sync channel 2] [message length] [nbytes]\n\n");
-        return 1;
+    /* Open and configure synchronization and test channels */
+    if (bench_thr_setup(bench, O_RDONLY, O_RDONLY, O_WRONLY)) {
+        return -1;
     }
 
-    if (bench_thr_setup(argv, O_RDONLY, O_RDONLY, O_WRONLY)) {
-        return 1;
-    }
-
-    memset(buffer, 0, nbytes);
-
-    rv = pirate_write(sync_gd2, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 initial write error");
-        return 1;
+        return -1;
     }
 
-    rv = pirate_read(sync_gd1, &signal, sizeof(signal));
+    rv = pirate_read(bench->sync_ch1.gd, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 1 initial read error");
-        return 1;
+        return -1;
     }
 
-    iter = nbytes / message_len;
     if (clock_gettime(CLOCK_MONOTONIC, &start) < 0) {
-      perror("clock_gettime start");
-      return 1;
+        perror("clock_gettime start");
+        return -1;
     }
-    for (uint64_t i = 0; i < iter && !timeout; i++) {
-        size_t count;
 
-        count = message_len;
+    for (uint64_t i = 0; i < iter && !timeout; i++) {
+        size_t count = bench->message_len;
         while (count > 0) {
-            rv = pirate_read(test_gd, buffer + readcount, count);
+            rv = pirate_read(bench->test_ch.gd, bench->buffer + read_off, count);
             if (rv < 0) {
                 if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
                     errno = 0;
@@ -85,28 +64,32 @@ int run(int argc, char *argv[]) {
                     break;
                 }
                 perror("Test channel read error");
-                return 1;
+                return -1;
             }
-            readcount += rv;
+            read_off += rv;
             count -= rv;
         }
     }
+
     if (clock_gettime(CLOCK_MONOTONIC, &stop) < 0) {
-      perror("clock_gettime stop");
-      return 1;
+        perror("clock_gettime stop");
+        return -1;
     }
 
-    rv = pirate_write(sync_gd2, &signal, sizeof(signal));
+    /* Tell the writer that we are done */
+    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 terminating write error");
-        return 1;
+        return -1;
     }
 
+    /* Validate the data */
     for (uint64_t i = 0; i < iter; i++) {
-        for (uint64_t j = 0; j < message_len && (i * message_len + j) < readcount; j++) {
-            if (buffer[i * message_len + j] != (unsigned char) (j & 0xFF)) {
+        for (uint64_t j = 0; (j < bench->message_len) && ((i * bench->message_len + j) < read_off); j++) {
+            uint64_t pos = i * bench->message_len + j;
+            if (bench->buffer[pos] != (unsigned char) (j & 0xFF)) {
                 fprintf(stderr, "At position %zu of packet %zu expected %zu and read character %d\n",
-                j, i, (j & 0xFF), (int) buffer[i * message_len + j]);
+                j, i, (j & 0xFF), (int) bench->buffer[pos]);
             }
         }
     }
@@ -115,20 +98,23 @@ int run(int argc, char *argv[]) {
              (stop.tv_nsec - start.tv_nsec));
     if (timeout) {
         // subtract timeout wait
-        delta -= 2 * 1000000000ll;
+        delta -= bench->rx_timeout_s * 1000000000ll;
     }
     // 1e9 nanoseconds per second
     // 1e6 bytes per megabytes
     printf("average throughput: %f MB/s\n",
-           ((1e9 / 1e6) * readcount) / delta);
+           ((1e9 / 1e6) * read_off) / delta);
     printf("drop rate: %f %%\n",
-        ((nbytes - readcount) / (nbytes * 1.0)) * 100.0);
+        ((bench->nbytes - read_off) / ((float) (bench->nbytes))) * 100.0);
 
     return 0;
 }
 
 int main(int argc, char *argv[]) {
-    int rv = run(argc, argv);
-    bench_thr_close(argv);
+    bench_thr_t bench;
+    memset(&bench, 0, sizeof(bench));
+    parse_args(argc, argv, &bench);
+    int rv = run(&bench);
+    bench_thr_close(&bench);
     return rv;
 }
