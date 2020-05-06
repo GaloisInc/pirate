@@ -61,7 +61,7 @@ optional arguments:
 
 ## Throughput
 
-`bench_thr_reader` and `bench_thr_writer` are the 
+`bench_thr_reader` and `bench_thr_writer` are the
 executable programs. The reader opens the test channel
 in O_RDONLY mode, sync channel 1 in O_RDONLY mode, and
 sync channel 2 in O_WRONLY mode. The writer opens the

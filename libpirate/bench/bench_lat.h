@@ -35,7 +35,7 @@ typedef struct {
 
 typedef struct {
     bench_channel_t test_ch1;
-    bench_channel_t test_ch2;    
+    bench_channel_t test_ch2;
     bench_channel_t sync_ch1;
     bench_channel_t sync_ch2;
     uint64_t nbytes;
@@ -43,7 +43,7 @@ typedef struct {
     uint64_t tx_delay_ns;
     uint32_t rx_timeout_s;
     uint8_t *read_buffer;
-    uint8_t *write_buffer;    
+    uint8_t *write_buffer;
     char err_msg[256];
 } bench_lat_t;
 
