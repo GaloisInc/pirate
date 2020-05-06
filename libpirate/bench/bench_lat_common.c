@@ -34,9 +34,9 @@
 
 #include "libpirate.h"
 
-extern int test_gd1, test_gd2, sync_gd;
-uint64_t nbytes;
-size_t message_len;
+extern int test_gd1, test_gd2, sync_gd1, sync_gd2;
+extern uint64_t nbytes;
+extern size_t message_len;
 extern char message[80];
 extern unsigned char *read_buffer, *write_buffer;
 
@@ -121,12 +121,17 @@ static int bench_lat_open(int num, char *param_str, pirate_channel_param_t *para
     return rv;
 }
 
-int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags) {
+int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flag1, int sync_flag2) {
     char *endptr;
     pirate_channel_param_t param1, param2;
 
     if (strstr(argv[3], "tcp_socket,") == NULL) {
-        fprintf(stderr, "Sync channel \"%s\" must be a tcp socket\n", argv[2]);
+        fprintf(stderr, "Sync channel 1 \"%s\" must be a tcp socket\n", argv[3]);
+        return 1;
+    }
+
+    if (strstr(argv[4], "tcp_socket,") == NULL) {
+        fprintf(stderr, "Sync channel 2 \"%s\" must be a tcp socket\n", argv[4]);
         return 1;
     }
 
@@ -145,15 +150,15 @@ int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags
         return 1;
     }
 
-    message_len = strtol(argv[4], &endptr, 10);
+    message_len = strtol(argv[5], &endptr, 10);
     if (*endptr != '\0') {
-        fprintf(stderr, "Unable to parse message length \"%s\"\n", argv[4]);
+        fprintf(stderr, "Unable to parse message length \"%s\"\n", argv[5]);
         return 1;
     }
 
-    nbytes = strtol(argv[5], &endptr, 10);
+    nbytes = strtol(argv[6], &endptr, 10);
     if (*endptr != '\0') {
-        snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[5]);
+        snprintf(message, sizeof(message), "Unable to parse number of bytes \"%s\"", argv[6]);
         perror(message);
         return 1;
     }
@@ -168,9 +173,16 @@ int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flags
         return 1;
     }
 
-    sync_gd = pirate_open_parse(argv[3], sync_flags);
-    if (sync_gd < 0) {
-        snprintf(message, sizeof(message), "Unable to open sync channel \"%s\"", argv[3]);
+    sync_gd1 = pirate_open_parse(argv[3], sync_flag1);
+    if (sync_gd1 < 0) {
+        snprintf(message, sizeof(message), "Unable to open sync channel 1 \"%s\"", argv[3]);
+        perror(message);
+        return 1;
+    }
+
+    sync_gd2 = pirate_open_parse(argv[4], sync_flag2);
+    if (sync_gd2 < 0) {
+        snprintf(message, sizeof(message), "Unable to open sync channel 2 \"%s\"", argv[4]);
         perror(message);
         return 1;
     }
@@ -213,8 +225,12 @@ void bench_lat_close(char *argv[]) {
         snprintf(message, sizeof(message), "Unable to close test channel 2 %s", argv[2]);
         perror(message);
     }
-    if ((sync_gd >= 0) && (pirate_close(sync_gd) < 0)) {
-        snprintf(message, sizeof(message), "Unable to close sync channel %s", argv[3]);
+    if ((sync_gd1 >= 0) && (pirate_close(sync_gd1) < 0)) {
+        snprintf(message, sizeof(message), "Unable to close sync channel 1 %s", argv[3]);
+        perror(message);
+    }
+    if ((sync_gd2 >= 0) && (pirate_close(sync_gd2) < 0)) {
+        snprintf(message, sizeof(message), "Unable to close sync channel 2 %s", argv[4]);
         perror(message);
     }
 }
