@@ -5,8 +5,8 @@ int pirate_listen() {
     return -1;
 }
 
-int pirate_yield(int enclave_id) {
-    (void) enclave_id;
+int pirate_yield(const char *enclave) {
+    (void) enclave;
     errno = ENOSYS;
     return -1;
 }

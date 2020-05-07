@@ -97,6 +97,7 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
 
   int gpsTargetGd[2];
 
+  pirate_declare_enclaves(2, "orange", "green");
   open_pipe(gpsTargetGd, gpsToTargetPath, O_RDWR);
   int gpsUavGd = open_channel(gpsToUAVPath, O_WRONLY);
   int uavGd = open_channel(uavToTargetPath, O_RDONLY);
@@ -125,7 +126,7 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       usleep(sleep_msec * 500);
 #endif
       // send control to the orange enclave
-      pirate_yield(-1);
+      pirate_yield("orange");
       // wait for control from the orange enclave
       pirate_listen();
   }
@@ -172,6 +173,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
     }
   }
 
+  pirate_declare_enclaves(2, "orange", "green");
   int gpsGd = open_channel(gpsToUAVPath, O_RDONLY);
   int uavGd = open_channel(uavToTargetPath, O_WRONLY);
   int rfGd = open_channel(rfToTargetPath, O_WRONLY);
@@ -202,7 +204,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
       usleep(sleep_msec * 500);
 #endif
     // send control to the green enclave
-      pirate_yield(-1);
+      pirate_yield("green");
   }
 
   return 0;
