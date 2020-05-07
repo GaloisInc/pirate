@@ -104,7 +104,7 @@ User-provided binary messages are sent as a whole
 
 #### Continuous Mode, Inter-Message Delay, and Message Flood Options
 Use ```-d us``` option to set inter-message delay in microseconds. The default
-is ```1,000,000 us```
+is ```1,000,000 us```. Fractions of a microsecond are accepted.
 
 By default the writer stops sending test messages after the end of the test
 length sequence or after a single user-provided binary message. The ```-c```

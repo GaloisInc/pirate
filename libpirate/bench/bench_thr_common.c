@@ -32,8 +32,8 @@ static struct argp_option options[] = {
     { "nbytes",      'n', "BYTES",  0, "Number of bytes to receive",    0 },
     { "message_len", 'm', "BYTES",  0, "Transfer message size",         0 },
     { "validate",    'v', NULL,     0, "Validate received data",        0 },
-    { "tx_delay",    'd', "US",     0, "Inter-message delay",           0 },
-    { "rx_timeout",  'w', "S",      0, "Message receive timeout",       0 },
+    { "tx_delay",    'd', "USEC",   0, "Inter-message delay",           0 },
+    { "rx_timeout",  'w', "SEC",    0, "Message receive timeout",       0 },
     { NULL,           0,  NULL,     0, GAPS_CHANNEL_OPTIONS,            2 },
     { NULL,           0,  NULL,     0, 0,                               0 }
 };

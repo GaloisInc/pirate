@@ -17,6 +17,14 @@ def parse_sizes(arg):
     print("Invalid length specifications '{}'".format(arg), file=sys.stderr)
     sys,exit(1)
 
+def extract(out, pattern):
+    if pattern is None:
+        return None
+    s = pattern.search(out.decode('utf-8'))
+    if s is None:
+        return None
+    return s.group(1)
+
 def main():
     p = argparse.ArgumentParser(description="GAPS pirate benchmark suite")
     p.add_argument("-t", "--test_type", help="Test suite type", choices=["thr", "lat"], default="thr")
@@ -52,7 +60,7 @@ def main():
     else:
         writer_app = "bench_lat1"
         reader_app = "bench_lat2"
-        channel_args = [args.test_channel_1, args.test_channel_2, args.sync_channel]
+        channel_args = ["-c",  args.test_channel_1, "-C",  args.test_channel_2, "-s", args.sync_channel_1, "-S", args.sync_channel_2]
         pattern1 = re.compile(r'average latency: (\d+) ns')
         pattern2 = None
         if args.iterations is None:
@@ -85,8 +93,12 @@ def main():
 
             if args.role == "both" or args.role == "reader":
                 out, _ = reader_proc.communicate()
-                results1 = pattern1.search(out.decode('utf-8')).group(1)
-                results2 = "" if pattern2 is None else pattern2.search(out.decode('utf-8')).group(1)
+                results1 = extract(out, pattern1)
+                results2 = extract(out, pattern2)
+                if results1 is None:
+                    results1 = "error"
+                if results2 is None:
+                    results2 = ""
                 print(args.scenario_name, message_size, results1, results2, flush=True)
 
 if __name__ == "__main__":
