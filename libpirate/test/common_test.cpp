@@ -90,8 +90,8 @@ TEST(CommonChannel, RegisterEnclave)
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
 
-    ASSERT_EQ(3, param.src_enclave);
-    ASSERT_EQ(1, param.dst_enclave);
+    ASSERT_EQ(3u, param.src_enclave);
+    ASSERT_EQ(1u, param.dst_enclave);
 }
 
 } // namespace
