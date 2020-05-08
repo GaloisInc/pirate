@@ -9,7 +9,6 @@ namespace GAPS {
 TEST(Yield, ControlChannel)
 {
     int rv, gd[2];
-    uint8_t status;
     errno = 0;
 
     rv = pirate_declare_enclaves(1, "foo");
@@ -24,9 +23,9 @@ TEST(Yield, ControlChannel)
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
-    rv = pirate_read(gd[0], &status, sizeof(status));
+    rv = pirate_listen();
     ASSERT_EQ(errno, 0);
-    ASSERT_EQ((unsigned long) rv, sizeof(status));    
+    ASSERT_EQ(rv, 0);
 }
 
 }
