@@ -15,6 +15,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,11 +76,13 @@ typedef struct {
 
 pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 
+char gaps_enclave_names[PIRATE_NUM_ENCLAVES][PIRATE_LEN_NAME];
+char* gaps_enclave_names_sorted[PIRATE_NUM_ENCLAVES];
+
 int gaps_reader_gds[PIRATE_NUM_CHANNELS];
 int gaps_reader_gds_num;
 
-// TODO YIELD: convert this into an array
-int gaps_writer_control_gd;
+int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
 
 int pirate_close_channel(pirate_channel_t *channel);
 
@@ -99,12 +102,46 @@ static inline pirate_channel_t *pirate_get_channel(int gd) {
     return channel;
 }
 
+int pirate_enclave_cmpfunc(const void *a, const void *b) {
+    char *s1 = *(char**) a;
+    char *s2 = *(char**) b;
+    if ((s1[0] == 0) && (s2[0] == 0)) {
+        return 0;
+    } else if (s1[0] == 0) {
+        return 1;
+    } else if (s2[0] == 0) {
+        return -1;
+    } else {
+        return strncmp(s1, s2, PIRATE_LEN_NAME);
+    }
+}
+
+int pirate_declare_enclaves(int count, ...) {
+    va_list ap;
+
+    if (count > PIRATE_NUM_ENCLAVES) {
+        errno = E2BIG;
+        return -1;
+    }
+    for (int i = 0; i < PIRATE_NUM_ENCLAVES; i++) {
+        gaps_enclave_names_sorted[i] = gaps_enclave_names[i];
+    }
+    va_start(ap, count);
+    for (int i = 0; i < count; i++) {
+        char *name = va_arg(ap, char*);
+        strncpy(gaps_enclave_names[i], name, sizeof(gaps_enclave_names[i]) - 1);
+    }
+    va_end(ap);
+    qsort(gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
+    return 0;
+}
+
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param) {
     memset(param, 0, sizeof(*param));
     param->channel_type = channel_type;
 }
 
-static const char* pirate_common_keys[] = {"yield", "control", NULL};
+static const char* pirate_common_keys[] = {"src", "dst", "listener", "control", NULL};
 
 int pirate_parse_is_common_key(const char *key) {
     for (int i = 0; pirate_common_keys[i] != NULL; i++) {
@@ -115,17 +152,33 @@ int pirate_parse_is_common_key(const char *key) {
     return 0;
 }
 
-static void pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
-    if (strncmp("yield", key, strlen("yield")) == 0) {
+static int pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
+    if (strncmp("listener", key, strlen("listener")) == 0) {
         param->yield = atoi(val);
     } else if (strncmp("control", key, strlen("control")) == 0) {
         param->control = atoi(val);
+    } else if (strncmp("src", key, strlen("src")) == 0) {
+        char **tgt = bsearch(&val, gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
+        if (tgt == NULL) {
+            errno = EINVAL;
+            return -1;
+        }
+        param->src_enclave = (tgt - gaps_enclave_names_sorted) + 1;
+    } else if (strncmp("dst", key, strlen("dst")) == 0) {
+        char **tgt = bsearch(&val, gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
+        if (tgt == NULL) {
+            errno = EINVAL;
+            return -1;
+        }
+        param->dst_enclave = (tgt - gaps_enclave_names_sorted) + 1;
     }
+    return 0;
 }
 
 static int pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
     char *token, *key, *val;
     char *saveptr1, *saveptr2;
+    int rv;
 
     while ((token = strtok_r(str, OPT_DELIM, &saveptr1)) != NULL) {
         str = NULL;
@@ -140,7 +193,10 @@ static int pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
         if (!pirate_parse_is_common_key(key)) {
             continue;
         }
-        pirate_parse_common_kv(key, val, param);
+        rv = pirate_parse_common_kv(key, val, param);
+        if (rv < 0) {
+            return rv;
+        }
     }
     return 0;
 }
@@ -353,7 +409,7 @@ static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access
         gaps_reader_gds[gaps_reader_gds_num++] = gd;
     }
     if ((access == O_WRONLY) && param->control) {
-        gaps_writer_control_gd = gd;
+        gaps_writer_control_gds[param->dst_enclave - 1] = gd;
     }
 }
 
@@ -364,6 +420,13 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
 
     if (next_gd >= PIRATE_NUM_CHANNELS) {
         errno = EMFILE;
+        return -1;
+    }
+
+    if ((param->yield || param->control) &&
+        ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
+         (param->src_enclave == param->dst_enclave))) {
+        errno = EINVAL;
         return -1;
     }
 
@@ -421,12 +484,18 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
+    if ((param->yield || param->control) &&
+        ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
+         (param->src_enclave != param->dst_enclave))) {
+        errno = EINVAL;
+        return -1;
+    }
+
     if (access != O_RDWR) {
         errno = EINVAL;
         return -1;
     }
 
-    param->pipe = 1; // TODO YIELD: remove and rely on src and dst enclave id
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
     read_channel.ctx.flags = behavior | O_RDONLY;

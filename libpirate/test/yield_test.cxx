@@ -6,12 +6,16 @@
 
 namespace GAPS {
 
-TEST(PirateCxx, RegisterListener)
+TEST(YieldCxx, RegisterListener)
 {
     int rv, gd[2];
     errno = 0;
 
-    rv = pirate_pipe_parse(gd, "pipe,/tmp/test_pipe_yield,yield=1", O_RDWR);
+    rv = pirate_declare_enclaves(1, "foo");
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    rv = pirate_pipe_parse(gd, "pipe,/tmp/test_pipe_yield,src=foo,dst=foo,listener=1", O_RDWR);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 

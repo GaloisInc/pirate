@@ -20,7 +20,9 @@ nfds_t gaps_nfds = 0;
 
 extern int gaps_reader_gds[PIRATE_NUM_CHANNELS];
 extern int gaps_reader_gds_num;
-extern int gaps_writer_control_gd;
+
+extern char* gaps_enclave_names_sorted[PIRATE_NUM_ENCLAVES];
+extern int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
 
 int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
     pirate_listener_t listener;
@@ -68,6 +70,16 @@ static int pirate_cooperative_listen_setup() {
         gaps_pollfd[i].events = POLLIN;
     }
     gaps_nfds = gaps_reader_gds_num;
+    return 0;
+}
+
+static int pirate_yield_id(size_t enclave_id) {
+    uint8_t msg = 0;
+    int gd = gaps_writer_control_gds[enclave_id];
+    ssize_t rv = pirate_write(gd, &msg, sizeof(msg));
+    if (rv != sizeof(msg)) {
+        return -1;
+    }
     return 0;
 }
 
@@ -139,22 +151,27 @@ int pirate_listen() {
         if (count > sizeof(stackbuf)) {
             free(buf);
         }
-        // TODO YIELD: if (param->src_enclave == param->dst_enclave)
-        if (param->pipe) {
+        if (param->src_enclave == 0) {
+            errno = ENOTRECOVERABLE;
+            return -1;
+        } else if (param->src_enclave == param->dst_enclave) {
             return 0;
         } else {
-            // TODO YIELD: pirate_yield(param->src_enclave)
-            pirate_yield(-1);
+            int rv = pirate_yield_id(param->src_enclave - 1);
+            if (rv < 0) {
+                return rv;
+            }
         }
     }
 }
 
-int pirate_yield(int enclave_id) {
-    (void) enclave_id;
-    unsigned char msg = 0;
-    ssize_t rv = pirate_write(gaps_writer_control_gd, &msg, sizeof(msg));
-    if (rv != sizeof(msg)) {
+int pirate_yield(const char* enclave) {
+    char **tgt = (char**) bsearch(&enclave, gaps_enclave_names_sorted,
+        PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
+    if (tgt == NULL) {
+        errno = EINVAL;
         return -1;
     }
-    return 0;
+    size_t index = (tgt - gaps_enclave_names_sorted);
+    return pirate_yield_id(index);
 }

@@ -28,6 +28,7 @@ extern "C" {
 #endif
 
 #define PIRATE_LEN_NAME 64
+#define PIRATE_NUM_ENCLAVES 16
 #define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
 
@@ -224,9 +225,8 @@ typedef struct {
     channel_enum_t channel_type;
     uint8_t yield;
     uint8_t control;
-    uint8_t pipe; // TODO YIELD: replace with src and dst enclave id
-    // uint32_t src_enclave;
-    // uint32_t dst_enclave;
+    size_t src_enclave; // 1-based offset into enclaves name array
+    size_t dst_enclave; // 0 is the empty value
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -245,6 +245,22 @@ typedef struct {
 //
 // API
 //
+
+// Registers the names of the enclaves.
+//
+// Enclaves must be declared if the "listen" or "yield" features
+// of librate are used. See pirate_listen() for additional
+// documentation.
+//
+// Parameters
+//  count        - number of enclaves that are declared
+//  ...          - enclave names
+//
+// Return:
+//  0 on success
+// -1 on failure, errno is set to E2BIG if greater than PIRATE_NUM_ENCLAVES are declared
+
+int pirate_declare_enclaves(int count, ...);
 
 // Sets channel properties to the default values.
 // The default value is represented by the zero value.
@@ -444,37 +460,41 @@ int pirate_close(int gd);
 
 // Listen for incoming requests and incoming control messages.
 
-// Listen on all O_RDONLY channels that are yield channels.
-// A yield channel is identified with the configuration parameter
-// "yield=1". For example, "pipe,/tmp/gaps,yield=1" is the
-// configuration string for a Unix pipe yield channel.
+// Listen on all O_RDONLY channels that are listener channels.
+// A listener channel is identified with the configuration parameter
+// "listener=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,listener=1" is the
+// configuration string for a Unix pipe listener channel.
 //
 // Also listen on all O_RDONLY channels that are control channels.
 // A control channel is identified with the configuration parameter
-// "control=1". For example, "pipe,/tmp/gaps,control=1" is the
+// "control=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,control=1" is the
 // configuration string for a Unix pipe control channel.
 //
-// When a yield channel receives data then all registered listeners
-// on the yield channel are called. After the listeners
+// Yield and control channels must specify the source and
+// destination enclaves using the "src=" and "dst=" configuration
+// parameters.
+//
+// When a listener channel receives data then all registered listeners
+// on the listener channel are called. After the listeners
 // have run then a control message is written to the
 // sender of the data. Then continue to listen.
 //
 // When a control channel receives data then consume
 // the control message and resume execution (return 0).
 //
-// If a yield channel has both ends in the same enclave
+// If a listener channel has both ends in the same enclave
 // (opened with pirate_pipe_param() or pirate_pipe_parse())
 // then resume execution after running all the listeners.
 
 int pirate_listen();
 
 // Send a control message to the enclave identified
-// by the enclave_id. A call to pirate_yield()
+// by the enclave name. A call to pirate_yield()
 // should usually be followed by a call to
 // pirate_listen(). The call to pirate_listen() should
 // be omitted when the process is expected to terminate.
 
-int pirate_yield(int enclave_id);
+int pirate_yield(const char *enclave);
 
 #ifdef __cplusplus
 }
