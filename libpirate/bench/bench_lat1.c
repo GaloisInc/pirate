@@ -13,99 +13,91 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef MIN
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-#endif
-
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include "bench_lat.h"
 
-#include "libpirate.h"
-
-int test_gd1 = -1, test_gd2 = -1, sync_gd1 = -1, sync_gd2 = -1;
-uint64_t nbytes;
-size_t message_len;
-char message[80];
-unsigned char *read_buffer, *write_buffer;
-
-int bench_lat_setup(char *argv[], int test_flag1, int test_flag2, int sync_flag1, int sync_flag2);
-void bench_lat_close(char *argv[]);
-
-int run(int argc, char *argv[]) {
+int run(bench_lat_t *bench) {
     ssize_t rv;
-    uint64_t readcount = 0, writecount = 0, iter;
-    uint8_t signal = 0;
+    const uint32_t iter = bench->nbytes / bench->message_len;
+    uint8_t signal = 1;
+    const struct timespec ts = {
+        .tv_sec = bench->tx_delay_ns / 1000000000,
+        .tv_nsec = (bench->tx_delay_ns % 1000000000)
+    };
 
-    if (argc != 7) {
-        printf("./bench_lat1 [test channel 1] [test channel 2] [sync channel 1] [sync channel 2] [message length] [nbytes]\n\n");
-        return 1;
+    /* Open and configure synchronization and test channels */
+    if (bench_lat_setup(bench, O_WRONLY, O_RDONLY, O_WRONLY, O_RDONLY)) {
+        return -1;
     }
 
-    if (bench_lat_setup(argv, O_WRONLY, O_RDONLY, O_WRONLY, O_RDONLY)) {
-        return 1;
-    }
-
-    rv = pirate_read(sync_gd2, &signal, sizeof(signal));
+    rv = pirate_read(bench->sync_ch2.gd, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 initial read error");
-        return 1;
+        return -1;
     }
 
-    rv = pirate_write(sync_gd1, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch1.gd, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 1 initial write error");
-        return 1;
+        return -1;
     }
-
-    iter = nbytes / message_len;
 
     for (uint64_t i = 0; i < iter; i++) {
         size_t count;
 
-        count = message_len;
+        count = bench->message_len;
         while (count > 0) {
-            rv = pirate_read(test_gd2, read_buffer + readcount, count);
+            rv = pirate_read(bench->test_ch2.gd, bench->read_buffer, count);
             if (rv < 0) {
-                perror("Test channel 2 read error");
-                return 1;
+                if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                    perror("Test channel 2 read timeout");
+                } else {
+                    perror("Test channel 2 read error");
+                }
+                return -1;
             }
-            readcount += rv;
             count -= rv;
         }
 
-        count = message_len;
+        count = bench->message_len;
         while (count > 0) {
-            rv = pirate_write(test_gd1, write_buffer + writecount, count);
+            // Sleep must happen before the write
+            // to slow down the write.
+            // If the sleep happens before the read
+            // then we are just replacing some blocking
+            // read time with sleep time.
+            if (bench->tx_delay_ns >= 1000000000) {
+                nanosleep(&ts, NULL);
+            } else if (bench->tx_delay_ns > 0) {
+                bench_lat_busysleep(bench->tx_delay_ns);
+            }
+            rv = pirate_write(bench->test_ch1.gd, bench->write_buffer, count);
             if (rv < 0) {
                 perror("Test channel 1 write error");
-                return 1;
+                return -1;
             }
-            writecount += rv;
             count -= rv;
         }
     }
 
-    rv = pirate_read(sync_gd2, &signal, sizeof(signal));
+    rv = pirate_read(bench->sync_ch2.gd, &signal, sizeof(signal));
     if (rv < 0) {
-        perror("Sync channel 2 terminal read error");
-        return 1;
-    }
-
-    for (size_t i = 0; i < nbytes; i++) {
-        if (read_buffer[i] != (unsigned char) (i % UCHAR_MAX)) {
-            fprintf(stderr, "At position %zu expected %zu and read character %d\n",
-                i, (i % UCHAR_MAX), (int) read_buffer[i]);
-            return 1;
-        }
+        perror("Sync channel 2 terminating read error");
+        return -1;
     }
 
     return 0;
 }
 
 int main(int argc, char *argv[]) {
-    int rv = run(argc, argv);
-    bench_lat_close(argv);
+    bench_lat_t bench;
+    memset(&bench, 0, sizeof(bench));
+    parse_args(argc, argv, &bench);
+    int rv = run(&bench);
+    bench_lat_close(&bench);
     return rv;
 }

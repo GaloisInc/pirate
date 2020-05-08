@@ -13,6 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+
 #include <argp.h>
 #include <time.h>
 #include <stdlib.h>
@@ -20,10 +22,10 @@
 #include "common.h"
 #include "libpirate.h"
 
-#define DEFAULT_PACKET_DELAY_US 1000000
+#define DEFAULT_PACKET_DELAY_NS 1000000000
 
 typedef struct {
-    uint32_t delay_us;
+    uint64_t delay_ns;
     channel_test_t test;
 } writer_t;
 
@@ -35,9 +37,45 @@ static struct argp_option options[] = {
     { NULL, 0, NULL, 0, NULL, 0 }
 };
 
+#define tscmp(a, b, CMP)                             \
+  (((a)->tv_sec == (b)->tv_sec) ?                    \
+   ((a)->tv_nsec CMP (b)->tv_nsec) :                 \
+   ((a)->tv_sec CMP (b)->tv_sec))
+
+#define tsadd(a, b, result)                          \
+  do {                                               \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;    \
+    (result)->tv_nsec = (a)->tv_nsec + (b)->tv_nsec; \
+    if ((result)->tv_nsec >= 1000000000) {           \
+      ++(result)->tv_sec;                            \
+      (result)->tv_nsec -= 1000000000;               \
+    }                                                \
+  } while (0)
+
+int busysleep(uint32_t nanoseconds)
+{
+    struct timespec now;
+    struct timespec then;
+    struct timespec start;
+    struct timespec sleep;
+
+    if (nanoseconds >= 1000000000) {
+        return -1;
+    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    now = start;
+    sleep.tv_sec = 0;
+    sleep.tv_nsec = nanoseconds;
+    tsadd(&start, &sleep, &then);
+    while (tscmp(&now, &then, <)) {
+        clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    }
+    return 0;
+}
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     writer_t *writer = (writer_t*) state->input;
+    char* endptr = NULL;
 
     if (parse_common_options(key, arg, &writer->test, state, O_WRONLY) == 1) {
         return 0;
@@ -46,7 +84,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
 
     case 'd':
-        writer->delay_us = strtol(arg, NULL, 10);
+        writer->delay_ns = (uint64_t) (strtod(arg, &endptr) * 1000.0);
+        if (*endptr != '\0') {
+            argp_failure(state, 1, 0, "Unable to parse delay microseconds '%s'", arg);
+        }
         break;
 
     default:
@@ -91,8 +132,8 @@ static int writer_run(writer_t *writer) {
     const uint8_t *wr_buf = writer->test.data.buf;
 
     const struct timespec ts = {
-        .tv_sec = writer->delay_us / 1000000,
-        .tv_nsec = (writer->delay_us % 1000000) * 1000
+        .tv_sec = writer->delay_ns / 1000000000,
+        .tv_nsec = (writer->delay_ns % 1000000000)
     };
 
     do {
@@ -115,8 +156,12 @@ static int writer_run(writer_t *writer) {
             return -1;
         }
 
-        if ((writer->delay_us != 0) && !done) {
-            nanosleep(&ts, NULL);
+        if (!done) {
+            if (writer->delay_ns >= 1000000000) {
+                nanosleep(&ts, NULL);
+            } else if (writer->delay_ns > 0) {
+                busysleep(writer->delay_ns);
+            }
         }
     } while (done == 0);
 
@@ -126,7 +171,7 @@ static int writer_run(writer_t *writer) {
 int main(int argc, char *argv[]) {
     int rv = -1;
     writer_t writer = {
-        .delay_us  = DEFAULT_PACKET_DELAY_US,
+        .delay_ns  = DEFAULT_PACKET_DELAY_NS,
         .test      = TEST_INIT("wr")
     };
 

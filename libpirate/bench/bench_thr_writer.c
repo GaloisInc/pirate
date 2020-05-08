@@ -53,7 +53,7 @@ int busysleep(uint32_t nanoseconds)
     sleep.tv_nsec = nanoseconds;
     tsadd(&start, &sleep, &then);
     while (tscmp(&now, &then, <)) {
-        clock_gettime( CLOCK_MONOTONIC_RAW, &now);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &now);
     }
     return 0;
 }

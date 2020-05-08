@@ -13,8 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#ifndef _PIRATE_BENCH_THR_H
-#define _PIRATE_BENCH_THR_H
+#ifndef _PIRATE_BENCH_LAT_H
+#define _PIRATE_BENCH_LAT_H
 
 #include <argp.h>
 #include <stdint.h>
@@ -34,21 +34,22 @@ typedef struct {
 } bench_channel_t;
 
 typedef struct {
-    bench_channel_t test_ch;
+    bench_channel_t test_ch1;
+    bench_channel_t test_ch2;
     bench_channel_t sync_ch1;
     bench_channel_t sync_ch2;
     uint64_t nbytes;
     size_t message_len;
-    int validate;
     uint64_t tx_delay_ns;
     uint32_t rx_timeout_s;
-    uint8_t *buffer;
-    uint8_t *bitvector;
+    uint8_t *read_buffer;
+    uint8_t *write_buffer;
     char err_msg[256];
-} bench_thr_t;
+} bench_lat_t;
 
-void parse_args(int argc, char *argv[], bench_thr_t *bench);
-int bench_thr_setup(bench_thr_t *bench, int test_flags, int sync_flags1, int sync_flags2);
-void bench_thr_close(bench_thr_t *bench);
+void parse_args(int argc, char *argv[], bench_lat_t *bench);
+int bench_lat_setup(bench_lat_t *bench, int test_flags1, int test_flags2, int sync_flags1, int sync_flags2);
+void bench_lat_close(bench_lat_t *bench);
+int bench_lat_busysleep(uint32_t nanoseconds);
 
-#endif /* _PIRATE_BENCH_THR_H */
+#endif /* _PIRATE_BENCH_LAT_H */
