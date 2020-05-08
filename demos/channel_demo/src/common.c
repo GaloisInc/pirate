@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <linux/limits.h>
-#include "libpirate.h"
 #include "common.h"
 
 #define TIMESTAMP_STR_LEN 64
@@ -33,8 +32,6 @@
 #define DEMO_VERSION ""
 #endif
 const char *argp_program_version = DEMO_VERSION;
-
-int gaps_channel;
 
 static const char *pattern_str(data_pattern_t p) {
     switch (p) {
@@ -73,8 +70,8 @@ static inline int get_time(char ts[TIMESTAMP_STR_LEN], const char *fmt) {
 
     return 0;
 }
-
-static int parse_channel_opt(char *str, int flags) {
+#if 0
+static int parse_channel_opt(char *str) {
     int rv;
     pirate_channel_param_t param;
     rv = pirate_parse_channel_param(str, &param);
@@ -83,16 +80,9 @@ static int parse_channel_opt(char *str, int flags) {
         return rv;
     }
 
-    gaps_channel = pirate_open_param(&param, flags);
-    if (gaps_channel < 0) {
-        log_msg(ERROR, "Failed to open GAPS channel");
-        return -1;
-    }
-
     return 0;
 }
-
-
+#endif
 static int str_to_data_pattern(const char *str, data_pattern_t *pattern) {
     if (strcmp(str, "zeros") == 0) {
         *pattern = ZEROS;
@@ -136,9 +126,34 @@ int test_data_parse_arg(char *str, test_data_t *td) {
     return 0;
 }
 
+int perf_parse_arg(char *str, test_data_t *td) {
+    char *ptr = NULL;
+
+    /* Message length */
+    if ((ptr = strtok(str, OPT_DELIM)) == NULL) {
+        return -1;
+    }
+    td->perf.len = strtol(ptr, NULL, 10);
+
+    if (td->perf.len < sizeof(msg_index_t)) {
+        fprintf(stderr, "Message length must be at least %zu bytes\n", 
+            sizeof(msg_index_t));
+        return -1;
+    }
+
+    /* Message count */
+    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+        return -1;
+    }
+    td->perf.count = strtol(ptr, NULL, 10);
+
+    td->perf.enabled = 1;
+    return 0;
+}
+
 
 int parse_common_options(int key, char *arg, channel_test_t *test,
-                            struct argp_state *state, int ch_flags) {
+                            struct argp_state *state) {
     int rv = 1;
 
     switch (key) {
@@ -173,10 +188,15 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
         }
         break;
 
-    case 'C':
-        if (parse_channel_opt(arg, ch_flags) != 0) {
-            argp_failure(state, 1, 0, "Failed to initialize channel %s", arg);
+    case 'P':
+        if (perf_parse_arg(arg, &test->data) != 0) {
+            argp_failure(state, 1, 0, 
+                            "Failed to parse perfomance test opt '%s'", arg);
         }
+        break;
+
+    case 'C':
+        test->conf = arg;
         break;
 
     default:            /* Not a common option */
@@ -187,7 +207,26 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
 }
 
 int test_data_init(test_data_t *td, verbosity_t v) {
-    if (td->bin_input != NULL) {
+    if (td->perf.enabled) {
+        const uint32_t data_len = td->perf.len - sizeof(msg_index_t);
+        
+        td->buf = (uint8_t *) calloc(1, td->perf.len);
+        if (td->buf == NULL) {
+            log_msg(ERROR, "Failed to allocate %u bytes", td->perf.len);
+            return -1;
+        }
+
+        /* Incremental pattern follows the packet sequence */
+        for (uint32_t i = 0; i < data_len; ++i) {
+            td->buf[sizeof(msg_index_t) + i] = i & 0xFF;
+        }
+
+        if (v >= VERBOSITY_MIN) {
+            log_msg(INFO, "Performance test:");
+            log_msg(INFO, "Message length %u, Count %u", td->perf.len,
+                    td->perf.count);
+        }
+    } else if (td->bin_input != NULL) {
         /* Use provided binary file as input */
         FILE *f_in = NULL;
         struct stat st;
@@ -198,7 +237,7 @@ int test_data_init(test_data_t *td, verbosity_t v) {
             return -1;
         }
 
-        td->buf = (uint8_t *)malloc(st.st_size);
+        td->buf = (uint8_t *)calloc(1, st.st_size);
         if (td->buf == NULL) {
             log_msg(ERROR, "Failed to allocate %u bytes", st.st_size);
             return -1;
@@ -231,7 +270,7 @@ int test_data_init(test_data_t *td, verbosity_t v) {
     } else {
         const uint32_t buf_len = td->len.stop - 1;
 
-        td->buf = (uint8_t *)malloc(buf_len);
+        td->buf = (uint8_t *)calloc(1, buf_len);
         if (td->buf == NULL) {
             log_msg(ERROR, "Failed to allocate %u bytes", buf_len);
             return -1;
@@ -257,12 +296,12 @@ int test_data_init(test_data_t *td, verbosity_t v) {
                 log_msg(ERROR, "Invalid data pattern");
                 return -1;
         }
-    }
 
-    if (v >= VERBOSITY_MIN) {
-        log_msg(INFO, "Test data pattern: %s", pattern_str(td->pattern));
-        log_msg(INFO, "Start %u, stop %u, step %u", td->len.start, td->len.stop,
-                td->len.step);
+        if (v >= VERBOSITY_MIN) {
+            log_msg(INFO, "Test data pattern: %s", pattern_str(td->pattern));
+            log_msg(INFO, "Start %u, stop %u, step %u", td->len.start, td->len.stop,
+                    td->len.step);
+        }
     }
 
     return 0;

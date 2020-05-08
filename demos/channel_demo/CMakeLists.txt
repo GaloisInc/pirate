@@ -22,3 +22,5 @@ endfunction()
 # Targets
 add_channel_test_target(reader)
 add_channel_test_target(writer)
+
+configure_file(src/perf.py ${PROJECT_BINARY_DIR} COPYONLY)
