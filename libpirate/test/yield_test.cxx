@@ -6,7 +6,7 @@
 
 namespace GAPS {
 
-TEST(PirateCxx, RegisterListener)
+TEST(YieldCxx, RegisterListener)
 {
     int rv, gd[2];
     errno = 0;

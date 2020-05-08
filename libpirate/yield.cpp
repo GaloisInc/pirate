@@ -24,10 +24,6 @@ extern int gaps_reader_gds_num;
 extern char* gaps_enclave_names_sorted[PIRATE_NUM_ENCLAVES];
 extern int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
 
-extern "C" {
-    int pirate_enclave_cmpfunc(const void *a, const void *b);
-}
-
 int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
     pirate_listener_t listener;
     pirate_channel_param_t *param;
