@@ -20,35 +20,18 @@
 #include "common.h"
 #include "libpirate.h"
 
-#define DEFAULT_PACKET_DELAY_US 1000000
-
-typedef struct {
-    uint32_t delay_us;
-    channel_test_t common;
-} writer_t;
+typedef channel_test_t writer_t;
 
 static struct argp_option options[] = {
-    { "delay",   'd', "US",   0, "Inter-packet delay",               0 },
-    COMMON_OPTIONS,
-    { NULL, 0, NULL, 0, NULL, 0 }
+    COMMON_OPTIONS
 };
 
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     writer_t *writer = (writer_t*) state->input;
 
-    if (parse_common_options(key, arg, &writer->common, state) == 1) {
+    if (parse_common_options(key, arg, writer, state) == 1) {
         return 0;
-    }
-
-    switch (key) {
-
-    case 'd':
-        writer->delay_us = strtol(arg, NULL, 10);
-        break;
-
-    default:
-        break;
     }
 
     return 0;
@@ -73,24 +56,24 @@ static int writer_init(writer_t *writer) {
     pirate_channel_param_t param;    
 
     /* Initialize test data */
-    if (test_data_init(&writer->common.data, writer->common.verbosity) != 0) {
+    if (test_data_init(&writer->data, writer->verbosity) != 0) {
         log_msg(ERROR, "Failed to initialize test data");
         return 0;
     }
 
     /* Open GAPS channel for writing */
-    writer->common.gd = pirate_open_parse(writer->common.conf, O_WRONLY);
-    if (writer->common.gd < 0) {
+    writer->gd = pirate_open_parse(writer->conf, O_WRONLY);
+    if (writer->gd < 0) {
         log_msg(ERROR, "Failed to open GAPS channel for writing");
         return -1;
     }
 
-    if(pirate_get_channel_param(writer->common.gd, &param) != 0) {
+    if(pirate_get_channel_param(writer->gd, &param) != 0) {
         log_msg(ERROR, "Failed to get GAPS channel parameters");
         return -1;
     }
 
-    fd = pirate_get_fd(writer->common.gd);
+    fd = pirate_get_fd(writer->gd);
     if (fd <= 0) {
         log_msg(ERROR, "Failed to get channel descriptor");
         return -1;
@@ -119,39 +102,39 @@ static int writer_init(writer_t *writer) {
 
 static int writer_term(writer_t *writer) {
     /* Release test data */
-    test_data_term(&writer->common.data);
+    test_data_term(&writer->data);
 
     /* Close the test cahnnel */
-    return pirate_close(writer->common.gd);
+    return pirate_close(writer->gd);
 }
 
 static int writer_run_perf_test(writer_t *writer) {
-    const uint8_t *wr_buf = writer->common.data.buf;
-    const uint32_t wr_len = writer->common.data.perf.len;
+    const uint8_t *wr_buf = writer->data.buf;
+    const uint32_t wr_len = writer->data.perf.len;
     volatile msg_index_t *idx = (volatile msg_index_t *) wr_buf;
 
     const struct timespec ts = {
-        .tv_sec = writer->delay_us / 1000000,
-        .tv_nsec = (writer->delay_us % 1000000) * 1000
+        .tv_sec = writer->data.delay_us / 1000000,
+        .tv_nsec = (writer->data.delay_us % 1000000) * 1000
     };
 
-    if (writer->common.verbosity >= VERBOSITY_MIN) {
+    if (writer->verbosity >= VERBOSITY_MIN) {
         log_msg(INFO, "Performance test START");
     }
 
-    for (*idx = 0; *idx < writer->common.data.perf.count; (*idx) +=2) {
-        int rv = pirate_write(writer->common.gd, wr_buf, wr_len);
+    for (*idx = 0; *idx < writer->data.perf.count; ++(*idx)) {
+        int rv = pirate_write(writer->gd, wr_buf, wr_len);
         if ((rv < 0) || (((size_t) rv) != wr_len)) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;
         }
 
-        if (writer->delay_us != 0) {
+        if (writer->data.delay_us != 0) {
             nanosleep(&ts, NULL);
         }
     }
     
-    if (writer->common.verbosity >= VERBOSITY_MIN) {
+    if (writer->verbosity >= VERBOSITY_MIN) {
         log_msg(INFO, "Performance test DONE");
     }
 
@@ -162,34 +145,34 @@ static int writer_run_seq_test(writer_t *writer) {
     uint32_t wr_len = 0;
     uint32_t done = 0;
     ssize_t rv;
-    const uint8_t *wr_buf = writer->common.data.buf;
+    const uint8_t *wr_buf = writer->data.buf;
 
     const struct timespec ts = {
-        .tv_sec = writer->delay_us / 1000000,
-        .tv_nsec = (writer->delay_us % 1000000) * 1000
+        .tv_sec = writer->data.delay_us / 1000000,
+        .tv_nsec = (writer->data.delay_us % 1000000) * 1000
     };
 
     do {
-        test_data_get_next_len(&writer->common.data, &wr_len, &done);
-        if (writer->common.verbosity >= VERBOSITY_MIN) {
+        test_data_get_next_len(&writer->data, &wr_len, &done);
+        if (writer->verbosity >= VERBOSITY_MIN) {
             log_msg(INFO, "Writing %u bytes", wr_len);
-            if (writer->common.verbosity >= VERBOSITY_MAX) {
+            if (writer->verbosity >= VERBOSITY_MAX) {
                 print_hex("Test data", wr_buf, wr_len);
             }
         }
 
-        rv = pirate_write(writer->common.gd, wr_buf, wr_len);
+        rv = pirate_write(writer->gd, wr_buf, wr_len);
         if ((rv < 0) || (((size_t) rv) != wr_len)) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;
         }
 
-        if (test_data_save(&writer->common.data, wr_len) != 0) {
+        if (test_data_save(&writer->data, wr_len) != 0) {
             log_msg(ERROR, "Failed to save test data");
             return -1;
         }
 
-        if ((writer->delay_us != 0) && !done) {
+        if ((writer->data.delay_us != 0) && !done) {
             nanosleep(&ts, NULL);
         }
     } while (done == 0);
@@ -198,7 +181,7 @@ static int writer_run_seq_test(writer_t *writer) {
 }
 
 static int writer_run(writer_t *writer) {
-    if (writer->common.data.perf.enabled) {
+    if (writer->data.perf.enabled) {
         return writer_run_perf_test(writer);
     } else {
         return writer_run_seq_test(writer);
@@ -207,10 +190,7 @@ static int writer_run(writer_t *writer) {
 
 int main(int argc, char *argv[]) {
     int rv = -1;
-    writer_t writer = {
-        .delay_us  = DEFAULT_PACKET_DELAY_US,
-        .common      = TEST_INIT("wr")
-    };
+    writer_t writer = TEST_INIT("wr");
 
     log_msg(INFO, "Starting the writer");
     parse_args(argc, argv, &writer);

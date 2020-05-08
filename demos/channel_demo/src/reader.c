@@ -26,8 +26,7 @@ typedef struct {
 } reader_t;
 
 static struct argp_option options[] = {
-    COMMON_OPTIONS,
-    { NULL, 0, NULL, 0, NULL, 0 }
+    COMMON_OPTIONS
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -143,6 +142,7 @@ static int reader_run_perf_test(reader_t *reader) {
     uint8_t *rd_buf = reader->common.data.buf;
     uint8_t buf_len = reader->common.data.perf.len;
     volatile msg_index_t *msg_idx = (volatile msg_index_t *) rd_buf;
+    char prefix[128];
 
     if (reader->common.verbosity >= VERBOSITY_MIN) {
         log_msg(INFO, "Performance test START");
@@ -167,7 +167,12 @@ static int reader_run_perf_test(reader_t *reader) {
         ++reader->counts[*msg_idx];
     }
 
-    if (bin_save("perf", reader->common.data.out_dir, reader->counts, 
+    snprintf(prefix, sizeof(prefix) - 1, "perf_%u_%u_%u", 
+        reader->common.data.perf.len,
+        reader->common.data.perf.count,
+        reader->common.data.delay_us);
+
+    if (bin_save(prefix, reader->common.data.out_dir, reader->counts, 
                     reader->common.data.perf.count) != 0) {
             log_msg(ERROR, "Failed to safe performance counter outputs");
             return -1;

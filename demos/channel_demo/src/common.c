@@ -70,19 +70,7 @@ static inline int get_time(char ts[TIMESTAMP_STR_LEN], const char *fmt) {
 
     return 0;
 }
-#if 0
-static int parse_channel_opt(char *str) {
-    int rv;
-    pirate_channel_param_t param;
-    rv = pirate_parse_channel_param(str, &param);
-    if (rv < 0) {
-        log_msg(ERROR, "failed to parse channel options '%s'", str);
-        return rv;
-    }
 
-    return 0;
-}
-#endif
 static int str_to_data_pattern(const char *str, data_pattern_t *pattern) {
     if (strcmp(str, "zeros") == 0) {
         *pattern = ZEROS;
@@ -193,6 +181,10 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
             argp_failure(state, 1, 0, 
                             "Failed to parse perfomance test opt '%s'", arg);
         }
+        break;
+
+    case 'd':
+        test->data.delay_us = strtol(arg, NULL, 10);
         break;
 
     case 'C':

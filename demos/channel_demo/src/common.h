@@ -40,8 +40,9 @@ typedef enum {
 typedef uint32_t msg_index_t;
 
 /* Test data parameters */
-#define DEFAULT_TEST_PATTERN INCR
-#define DEFAULT_TEST_SIZE    100
+#define DEFAULT_TEST_PATTERN    INCR
+#define DEFAULT_TEST_SIZE       100
+#define DEFAULT_PACKET_DELAY_US 1000000
 
 typedef struct {
     const char *name;               /* Data description */
@@ -52,6 +53,7 @@ typedef struct {
         uint32_t step;              /* Test length increment */
         uint32_t next;              /* Next test length */
     } len;
+    uint32_t delay_us;              /* Inter-packet delay */
     uint32_t continuous;            /* Run in continuous mode */
     uint8_t *buf;                   /* Test buffer */
     const char *bin_input;          /* Path to optional input blob */
@@ -64,19 +66,21 @@ typedef struct {
     } perf;
 } test_data_t;
 
-#define TEST_DATA_INIT(name_str) {         \
-    .name         = name_str,              \
-    .pattern      = DEFAULT_TEST_PATTERN,  \
-    .len.start    = DEFAULT_TEST_SIZE,     \
-    .len.stop     = DEFAULT_TEST_SIZE + 1, \
-    .len.step     = 1,                     \
-    .len.next     = DEFAULT_TEST_SIZE,     \
-    .buf          = NULL,                  \
-    .bin_input    = NULL,                  \
-    .out_dir      = NULL,                  \
-    .perf.enabled = 0,                     \
-    .perf.len     = 0,                     \
-    .perf.count   = 0                      \
+#define TEST_DATA_INIT(name_str) {           \
+    .name         = name_str,                \
+    .pattern      = DEFAULT_TEST_PATTERN,    \
+    .len.start    = DEFAULT_TEST_SIZE,       \
+    .len.stop     = DEFAULT_TEST_SIZE + 1,   \
+    .len.step     = 1,                       \
+    .len.next     = DEFAULT_TEST_SIZE,       \
+    .delay_us     = DEFAULT_PACKET_DELAY_US, \
+    .continuous   = 0,                       \
+    .buf          = NULL,                    \
+    .bin_input    = NULL,                    \
+    .out_dir      = NULL,                    \
+    .perf.enabled = 0,                       \
+    .perf.len     = 0,                       \
+    .perf.count   = 0                        \
 }
 
 /* Common test components */
@@ -95,16 +99,18 @@ typedef struct {
 }
 
 /* Common options */
-#define COMMON_OPTIONS                                                         \
-    { "pattern", 'p', "PAT",  0, "Test pattern (zeros,onces,incr)",   0 },     \
-    { "cont",    'c', NULL,   0, "Operate in a continuous loop",      0 },     \
-    { "length",  'l', "LEN",  0, "Test lengths <START,STOP,STEP>",    0 },     \
-    { "input",   'i', "PATH", 0, "Binary input file path",            0 },     \
-    { "save",    's', "DIR",  0, "Save test packets in a directory",  0 },     \
-    { "verbose", 'v', NULL,   0, "Increase verbosity level",          0 },     \
-    { "perf",    'P', "PERF", 0, "Performance test: <MSG_LEN,COUNT>", 0 },     \
-    { "channel", 'C', "CH",   0, "<channel options>",                 0 },     \
-    { NULL,       0,  NULL,   0, GAPS_CHANNEL_OPTIONS,                0 }
+#define COMMON_OPTIONS                                                      \
+    { "pattern", 'p', "PAT",  0, "Test pattern (zeros,onces,incr)",   0 },  \
+    { "cont",    'c', NULL,   0, "Operate in a continuous loop",      0 },  \
+    { "length",  'l', "LEN",  0, "Test lengths <START,STOP,STEP>",    0 },  \
+    { "input",   'i', "PATH", 0, "Binary input file path",            0 },  \
+    { "save",    's', "DIR",  0, "Save test packets in a directory",  0 },  \
+    { "verbose", 'v', NULL,   0, "Increase verbosity level",          0 },  \
+    { "perf",    'P', "PERF", 0, "Performance test: <MSG_LEN,COUNT>", 0 },  \
+    { "delay",   'd', "US",   0, "Inter-packet delay",                0 },  \
+    { "channel", 'C', "CH",   0, "<channel options>",                 0 },  \
+    { NULL,       0,  NULL,   0, GAPS_CHANNEL_OPTIONS,                0 },  \
+    { NULL,       0,  NULL,   0, NULL,                                0 }
 
 int parse_common_options(int key, char *arg, channel_test_t *test,
                             struct argp_state *state);
