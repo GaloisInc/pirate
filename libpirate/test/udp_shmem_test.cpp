@@ -28,7 +28,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     int rv;
     pirate_channel_param_t param;
 
-    char opt[128];
+    char opt[256];
     const char *name = "udp_shmem";
     const char *path = "/tmp/test_udp_shmem";
     const unsigned buffer_size = 42 * 42;
@@ -54,7 +54,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0u, udp_shmem_param->packet_count);
     ASSERT_EQ(0u, udp_shmem_param->packet_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -64,7 +64,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(0u, udp_shmem_param->packet_count);
     ASSERT_EQ(0u, udp_shmem_param->packet_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u", name, path, buffer_size,
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u,packet_size=%u", name, path, buffer_size,
                 packet_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
@@ -75,7 +75,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(packet_size, udp_shmem_param->packet_size);
     ASSERT_EQ(0u, udp_shmem_param->packet_count);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%u,%u", name, path, buffer_size,
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u,packet_size=%u,packet_count=%u", name, path, buffer_size,
                 packet_size, packet_count);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
@@ -86,7 +86,7 @@ TEST(ChannelUdpShmemTest, ConfigurationParser) {
     ASSERT_EQ(packet_size, udp_shmem_param->packet_size);
     ASSERT_EQ(packet_count, udp_shmem_param->packet_count);
 #else
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
@@ -102,7 +102,7 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
+        char opt[256];
         pirate_udp_shmem_param_t *param = &Reader.param.channel.udp_shmem;
 
         const char *testPath = "/gaps.shmem_test";
@@ -133,7 +133,7 @@ public:
 
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "udp_shmem,%s,%u,%u,%u",
+        snprintf(opt, sizeof(opt) - 1, "udp_shmem,%s,buffer_size=%u,packet_size=%u,packet_count=%u",
                     param->path, buffer_size, packet_size,
                     packet_count);
         Reader.desc.assign(opt);

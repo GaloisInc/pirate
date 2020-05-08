@@ -25,28 +25,39 @@
 #include "pirate_common.h"
 
 int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
-    char *ptr = NULL;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
         (strcmp(ptr, "device") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
     strncpy(param->path, ptr, sizeof(param->path) - 1);
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->iov_len = strtol(ptr, NULL, 10);
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
+        if (rv < 0) {
+            return rv;
+        } else if (rv == 0) {
+            continue;
+        }
+        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
+            param->iov_len = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
-
     return 0;
 }
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "device,%s,%u", param->path, param->iov_len);
+    return snprintf(desc, len - 1, "device,%s,iov_len=%u", param->path, param->iov_len);
 }
 
 int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx) {

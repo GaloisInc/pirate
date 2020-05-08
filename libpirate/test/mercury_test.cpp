@@ -63,7 +63,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.session.level = level;
     expParam.channel.mercury.session.source_id = src_id;
     expParam.channel.mercury.session.destination_id = dst_id;
-    expParam.channel.mercury.mtu = PIRATE_MERCURY_DEFAULT_MTU;
+    expParam.channel.mercury.mtu = 0;
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u", name, level, src_id,

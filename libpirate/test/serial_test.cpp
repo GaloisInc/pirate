@@ -52,7 +52,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ((speed_t)0, serial_param->baud);
     ASSERT_EQ(0u, serial_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%s", name, path, baud_str);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s", name, path, baud_str);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -61,7 +61,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(baud, serial_param->baud);
     ASSERT_EQ(0u, serial_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path, baud_str, mtu);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s,mtu=%u", name, path, baud_str, mtu);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
@@ -70,7 +70,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(baud, serial_param->baud);
     ASSERT_EQ(mtu, serial_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%s,%u", name, path,
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s,mtu=%u", name, path,
                 invalid_baud_str, mtu);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(EINVAL, errno);
@@ -126,10 +126,10 @@ public:
             FAIL() << "Invalid baud rate";
         }
 
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,%s,%u", readerDevice.c_str(),
+        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", readerDevice.c_str(),
                     baud_str, mtu);
         Reader.desc.assign(opt);
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,%s,%u", writerDevice.c_str(),
+        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", writerDevice.c_str(),
                     baud_str, mtu);
         Writer.desc.assign(opt);
     }

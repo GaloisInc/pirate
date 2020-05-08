@@ -37,11 +37,9 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     const pirate_shmem_param_t *shmem_param = &param.channel.shmem;
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(SHMEM, param.channel_type);
-    ASSERT_STREQ("", shmem_param->path);
-    ASSERT_EQ(0u, shmem_param->buffer_size);
+    ASSERT_EQ(EINVAL, errno);
+    ASSERT_EQ(-1, rv);
+    errno = 0;
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, path);
     rv = pirate_parse_channel_param(opt, &param);
@@ -51,7 +49,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_STREQ(path, shmem_param->path);
     ASSERT_EQ(0u, shmem_param->buffer_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
@@ -59,7 +57,7 @@ TEST(ChannelShmemTest, ConfigurationParser) {
     ASSERT_STREQ(path, shmem_param->path);
     ASSERT_EQ(buffer_size, shmem_param->buffer_size);
 #else
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, path, buffer_size);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(ESOCKTNOSUPPORT, errno);
@@ -88,7 +86,7 @@ public:
         }
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "shmem,%s,%u", testPath, buffer_size);
+        snprintf(opt, sizeof(opt) - 1, "shmem,%s,buffer_size=%u", testPath, buffer_size);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }

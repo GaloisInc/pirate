@@ -24,5 +24,7 @@
 
 ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len);
 ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len);
+int pirate_parse_is_common_key(const char *key);
+int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
 
 #endif /* __PIRATE_COMMON_H */
