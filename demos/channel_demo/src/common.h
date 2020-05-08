@@ -42,7 +42,7 @@ typedef uint32_t msg_index_t;
 /* Test data parameters */
 #define DEFAULT_TEST_PATTERN    INCR
 #define DEFAULT_TEST_SIZE       100
-#define DEFAULT_PACKET_DELAY_US 1000000
+#define DEFAULT_PACKET_DELAY_NS 1000000000
 
 typedef struct {
     const char *name;               /* Data description */
@@ -53,7 +53,7 @@ typedef struct {
         uint32_t step;              /* Test length increment */
         uint32_t next;              /* Next test length */
     } len;
-    uint32_t delay_us;              /* Inter-packet delay */
+    uint32_t delay_ns;              /* Inter-packet delay */
     uint32_t continuous;            /* Run in continuous mode */
     uint8_t *buf;                   /* Test buffer */
     const char *bin_input;          /* Path to optional input blob */
@@ -73,7 +73,7 @@ typedef struct {
     .len.stop     = DEFAULT_TEST_SIZE + 1,   \
     .len.step     = 1,                       \
     .len.next     = DEFAULT_TEST_SIZE,       \
-    .delay_us     = DEFAULT_PACKET_DELAY_US, \
+    .delay_ns     = DEFAULT_PACKET_DELAY_NS, \
     .continuous   = 0,                       \
     .buf          = NULL,                    \
     .bin_input    = NULL,                    \
@@ -107,7 +107,7 @@ typedef struct {
     { "save",    's', "DIR",  0, "Save test packets in a directory",  0 },  \
     { "verbose", 'v', NULL,   0, "Increase verbosity level",          0 },  \
     { "perf",    'P', "PERF", 0, "Performance test: <MSG_LEN,COUNT>", 0 },  \
-    { "delay",   'd', "US",   0, "Inter-packet delay",                0 },  \
+    { "delay",   'd', "NS",   0, "Inter-packet delay",                0 },  \
     { "channel", 'C', "CH",   0, "<channel options>",                 0 },  \
     { NULL,       0,  NULL,   0, GAPS_CHANNEL_OPTIONS,                0 },  \
     { NULL,       0,  NULL,   0, NULL,                                0 }

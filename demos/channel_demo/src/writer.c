@@ -13,6 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+
 #include <argp.h>
 #include <time.h>
 #include <stdlib.h>
@@ -22,10 +24,45 @@
 
 typedef channel_test_t writer_t;
 
+
 static struct argp_option options[] = {
     COMMON_OPTIONS
 };
 
+#define tscmp(a, b, CMP)                             \
+  (((a)->tv_sec == (b)->tv_sec) ?                    \
+   ((a)->tv_nsec CMP (b)->tv_nsec) :                 \
+   ((a)->tv_sec CMP (b)->tv_sec))
+
+#define tsadd(a, b, result)                          \
+  do {                                               \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;    \
+    (result)->tv_nsec = (a)->tv_nsec + (b)->tv_nsec; \
+    if ((result)->tv_nsec >= 1000000000) {           \
+      ++(result)->tv_sec;                            \
+      (result)->tv_nsec -= 1000000000;               \
+    }                                                \
+  } while (0)
+
+static int busysleep(uint32_t nanoseconds) {
+    struct timespec now;
+    struct timespec then;
+    struct timespec start;
+    struct timespec sleep;
+
+    if (nanoseconds >= 1000000000) {
+        return -1;
+    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    now = start;
+    sleep.tv_sec = 0;
+    sleep.tv_nsec = nanoseconds;
+    tsadd(&start, &sleep, &then);
+    while (tscmp(&now, &then, <)) {
+        clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    }
+    return 0;
+}
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     writer_t *writer = (writer_t*) state->input;
@@ -114,8 +151,8 @@ static int writer_run_perf_test(writer_t *writer) {
     volatile msg_index_t *idx = (volatile msg_index_t *) wr_buf;
 
     const struct timespec ts = {
-        .tv_sec = writer->data.delay_us / 1000000,
-        .tv_nsec = (writer->data.delay_us % 1000000) * 1000
+        .tv_sec = writer->data.delay_ns / 1000000000,
+        .tv_nsec = (writer->data.delay_ns % 1000000000)
     };
 
     if (writer->verbosity >= VERBOSITY_MIN) {
@@ -129,8 +166,12 @@ static int writer_run_perf_test(writer_t *writer) {
             return -1;
         }
 
-        if (writer->data.delay_us != 0) {
-            nanosleep(&ts, NULL);
+        if (writer->data.delay_ns != 0) {
+            if (writer->data.delay_ns >= 1000000000) {
+                nanosleep(&ts, NULL);
+            } else if (writer->data.delay_ns > 0) {
+                busysleep(writer->data.delay_ns);
+            }
         }
     }
     
@@ -148,8 +189,8 @@ static int writer_run_seq_test(writer_t *writer) {
     const uint8_t *wr_buf = writer->data.buf;
 
     const struct timespec ts = {
-        .tv_sec = writer->data.delay_us / 1000000,
-        .tv_nsec = (writer->data.delay_us % 1000000) * 1000
+        .tv_sec = writer->data.delay_ns / 1000000000,
+        .tv_nsec = (writer->data.delay_ns % 1000000000)
     };
 
     do {
@@ -172,8 +213,13 @@ static int writer_run_seq_test(writer_t *writer) {
             return -1;
         }
 
-        if ((writer->data.delay_us != 0) && !done) {
-            nanosleep(&ts, NULL);
+
+        if ((writer->data.delay_ns != 0) && !done) {
+            if (writer->data.delay_ns >= 1000000000) {
+                nanosleep(&ts, NULL);
+            } else if (writer->data.delay_ns > 0) {
+                busysleep(writer->data.delay_ns);
+            }
         }
     } while (done == 0);
 

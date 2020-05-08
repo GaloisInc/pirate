@@ -115,36 +115,43 @@ static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
 }
 
 int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
-    char *ptr = NULL;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) || 
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
         (strcmp(ptr, "udp_shmem") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->path, ptr, sizeof(param->path));
+    strncpy(param->path, ptr, sizeof(param->path) - 1);
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->buffer_size = strtol(ptr, NULL, 10);
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
+        if (rv < 0) {
+            return rv;
+        } else if (rv == 0) {
+            continue;
+        }
+        if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
+            param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("packet_size", key, strlen("packet_size")) == 0) {
+            param->packet_size = strtol(val, NULL, 10);
+        } else if (strncmp("packet_count", key, strlen("packet_count")) == 0) {
+            param->packet_count = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
-
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->packet_size = strtol(ptr, NULL, 10);
-    }
-
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        param->packet_count = strtol(ptr, NULL, 10);
-    }
-
     return 0;
 }
 
 int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "udp_shmem,%s,%u,%zd,%zd", param->path,
+    return snprintf(desc, len - 1, "udp_shmem,%s,buffer_size=%u,packet_size=%zd,packet_count=%zd", param->path,
                 param->buffer_size, param->packet_size,
                 param->packet_count);
 }

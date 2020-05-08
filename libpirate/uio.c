@@ -75,22 +75,33 @@ static void pirate_uio_init_param(pirate_uio_param_t *param) {
 }
 
 int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
-    char *ptr = NULL;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
         (strcmp(ptr, "uio") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        strncpy(param->path, ptr, sizeof(param->path));
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
+        if (rv < 0) {
+            return rv;
+        } else if (rv == 0) {
+            continue;
+        }
+        if (strncmp("path", key, strlen("path")) == 0) {
+            strncpy(param->path, val, sizeof(param->path) - 1);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
-
     return 0;
 }
 
 int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "uio,%s", param->path);
+    return snprintf(desc, len - 1, "uio,path=%s", param->path);
 }
 
 static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {

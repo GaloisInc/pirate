@@ -74,7 +74,7 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(message_id, ge_eth_param->message_id);
     ASSERT_EQ(0u, ge_eth_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u,%u", name, addr, port, message_id, mtu);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u,mtu=%u", name, addr, port, message_id, mtu);
     rv  = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, errno);
@@ -105,7 +105,7 @@ public:
 
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "ge_eth,%s,%u,%u,%u",
+        snprintf(opt, sizeof(opt) - 1, "ge_eth,%s,%u,%u,mtu=%u",
                     DEFAULT_GE_ETH_IP_ADDR, param->port,
                     param->message_id, mtu);
         Reader.desc.assign(opt);

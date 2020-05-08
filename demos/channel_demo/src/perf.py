@@ -28,7 +28,7 @@ if __name__ == "__main__":
         subplt.plot(counts_interval_mean, linestyle='-', marker='.', color='k')
         subplt.set_xlim([0, intervals])
         subplt.set_ylim([0, 1.05])
-        subplt.set_title('Len {}, Count {}, Delay {} us'.format(*f.split('_')[1:4]))
+        subplt.set_title('Len {}, Count {}, Delay {} ns'.format(*f.split('_')[1:4]))
         subplt.set_ylabel('Average {}'.format(np.mean(counts)))
         subplt.grid(linestyle='--', linewidth='0.5', color='k')
 

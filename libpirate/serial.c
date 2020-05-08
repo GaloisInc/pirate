@@ -37,46 +37,55 @@ static void pirate_serial_init_param(pirate_serial_param_t *param) {
 }
 
 int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
-    char *ptr = NULL;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
 
-    if (((ptr = strtok(str, OPT_DELIM)) == NULL) ||
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
         (strcmp(ptr, "serial") != 0)) {
         return -1;
     }
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
     strncpy(param->path, ptr, sizeof(param->path) - 1);
 
-    if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-        if (strncmp("4800", ptr, strlen("4800")) == 0) {
-            param->baud = B4800;
-        } else if (strncmp("9600", ptr, strlen("9600")) == 0) {
-            param->baud = B9600;
-        } else if (strncmp("19200", ptr, strlen("19200")) == 0) {
-            param->baud = B19200;
-        } else if (strncmp("38400", ptr, strlen("38400")) == 0) {
-            param->baud = B38400;
-        } else if (strncmp("57600", ptr, strlen("57600")) == 0) {
-            param->baud = B57600;
-        } else if (strncmp("115200", ptr, strlen("115200")) == 0) {
-            param->baud = B115200;
-        } else if (strncmp("230400", ptr, strlen("230400")) == 0) {
-            param->baud = B230400;
-        } else if (strncmp("460800", ptr, strlen("460800")) == 0) {
-            param->baud = B460800;
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
+        if (rv < 0) {
+            return rv;
+        } else if (rv == 0) {
+            continue;
+        }
+        if (strncmp("baud", key, strlen("baud")) == 0) {
+            if (strncmp("4800", val, strlen("4800")) == 0) {
+                param->baud = B4800;
+            } else if (strncmp("9600", val, strlen("9600")) == 0) {
+                param->baud = B9600;
+            } else if (strncmp("19200", val, strlen("19200")) == 0) {
+                param->baud = B19200;
+            } else if (strncmp("38400", val, strlen("38400")) == 0) {
+                param->baud = B38400;
+            } else if (strncmp("57600", val, strlen("57600")) == 0) {
+                param->baud = B57600;
+            } else if (strncmp("115200", val, strlen("115200")) == 0) {
+                param->baud = B115200;
+            } else if (strncmp("230400", val, strlen("230400")) == 0) {
+                param->baud = B230400;
+            } else if (strncmp("460800", val, strlen("460800")) == 0) {
+                param->baud = B460800;
+            } else {
+                errno = EINVAL;
+                return -1;
+            }
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
         }
-
-        if ((ptr = strtok(NULL, OPT_DELIM)) != NULL) {
-            param->mtu = strtol(ptr, NULL, 10);
-        }
     }
-
     return 0;
 }
 
@@ -96,7 +105,7 @@ int pirate_serial_get_channel_description(const pirate_serial_param_t *param, ch
         return -1;
     }
 
-    return snprintf(desc, len - 1, "serial,%s,%s,%u", param->path, baud,
+    return snprintf(desc, len - 1, "serial,%s,baud=%s,mtu=%u", param->path, baud,
                     param->mtu);
 }
 

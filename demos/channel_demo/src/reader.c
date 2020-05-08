@@ -140,7 +140,7 @@ static int reader_term(reader_t *reader) {
 
 static int reader_run_perf_test(reader_t *reader) {
     uint8_t *rd_buf = reader->common.data.buf;
-    uint8_t buf_len = reader->common.data.perf.len;
+    uint32_t buf_len = reader->common.data.perf.len;
     volatile msg_index_t *msg_idx = (volatile msg_index_t *) rd_buf;
     char prefix[128];
 
@@ -170,7 +170,7 @@ static int reader_run_perf_test(reader_t *reader) {
     snprintf(prefix, sizeof(prefix) - 1, "perf_%u_%u_%u", 
         reader->common.data.perf.len,
         reader->common.data.perf.count,
-        reader->common.data.delay_us);
+        reader->common.data.delay_ns);
 
     if (bin_save(prefix, reader->common.data.out_dir, reader->counts, 
                     reader->common.data.perf.count) != 0) {

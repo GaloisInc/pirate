@@ -104,7 +104,7 @@ User-provided binary messages are sent as a whole
 
 #### Continuous Mode, Inter-Message Delay, and Message Flood Options
 Use ```-d us``` option to set inter-message delay in microseconds. The default
-is ```1,000,000 us```
+is ```1,000,000 us```. Fractions of a microsecond are accepted.
 
 By default the writer stops sending test messages after the end of the test
 length sequence or after a single user-provided binary message. The ```-c```
@@ -146,17 +146,17 @@ Test utility for writing deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len]
-   PIPE          pipe,path[,iov_len]
-   UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]
-   SHMEM         shmem,path[,buffer_size]
-   UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
-   UIO           uio[,path]
-   SERIAL        serial,path[,baud,mtu]
+   DEVICE        device,path[,iov_len=N]
+   PIPE          pipe,path[,iov_len=N]
+   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   SHMEM         shmem,path[,buffer_size=N]
+   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
+   UIO           uio[,path=N]
+   SERIAL        serial,path[,baud=N,mtu=N]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
-   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]
+   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
 
 
   -?, --help                 Give this help list
@@ -178,17 +178,17 @@ Test utility for reading deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len]
-   PIPE          pipe,path[,iov_len]
-   UNIX SOCKET   unix_socket,path[,iov_len,buffer_size]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len,buffer_size]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len,buffer_size]
-   SHMEM         shmem,path[,buffer_size]
-   UDP_SHMEM     udp_shmem,path[,buffer_size,packet_size,packet_count]
-   UIO           uio[,path]
-   SERIAL        serial,path[,baud,mtu]
+   DEVICE        device,path[,iov_len=N]
+   PIPE          pipe,path[,iov_len=N]
+   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   SHMEM         shmem,path[,buffer_size=N]
+   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
+   UIO           uio[,path=N]
+   SERIAL        serial,path[,baud=N,mtu=N]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
-   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu]
+   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
 
 
   -?, --help                 Give this help list

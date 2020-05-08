@@ -184,7 +184,7 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
         break;
 
     case 'd':
-        test->data.delay_us = strtol(arg, NULL, 10);
+        test->data.delay_ns = strtol(arg, NULL, 10);
         break;
 
     case 'C':
