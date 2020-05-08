@@ -33,7 +33,7 @@ namespace pirate {
 // Register a listener on the gaps channel.
 //
 // The gaps channel must be opened with access mode
-// O_RDONLY. The gaps channel must be a yield channel.
+// O_RDONLY. The gaps channel must be a listener channel.
 // The gaps channel must not be a control channel.
 // The listeners registered on the same gaps channel
 // must accept a T with equal size (sizeof(T)).

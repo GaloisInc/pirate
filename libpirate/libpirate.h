@@ -460,10 +460,10 @@ int pirate_close(int gd);
 
 // Listen for incoming requests and incoming control messages.
 
-// Listen on all O_RDONLY channels that are yield channels.
-// A yield channel is identified with the configuration parameter
-// "yield=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,yield=1" is the
-// configuration string for a Unix pipe yield channel.
+// Listen on all O_RDONLY channels that are listener channels.
+// A listener channel is identified with the configuration parameter
+// "listener=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,listener=1" is the
+// configuration string for a Unix pipe listener channel.
 //
 // Also listen on all O_RDONLY channels that are control channels.
 // A control channel is identified with the configuration parameter
@@ -474,15 +474,15 @@ int pirate_close(int gd);
 // destination enclaves using the "src=" and "dst=" configuration
 // parameters.
 //
-// When a yield channel receives data then all registered listeners
-// on the yield channel are called. After the listeners
+// When a listener channel receives data then all registered listeners
+// on the listener channel are called. After the listeners
 // have run then a control message is written to the
 // sender of the data. Then continue to listen.
 //
 // When a control channel receives data then consume
 // the control message and resume execution (return 0).
 //
-// If a yield channel has both ends in the same enclave
+// If a listener channel has both ends in the same enclave
 // (opened with pirate_pipe_param() or pirate_pipe_parse())
 // then resume execution after running all the listeners.
 

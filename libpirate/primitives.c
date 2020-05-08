@@ -141,7 +141,7 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
-static const char* pirate_common_keys[] = {"src", "dst", "yield", "control", NULL};
+static const char* pirate_common_keys[] = {"src", "dst", "listener", "control", NULL};
 
 int pirate_parse_is_common_key(const char *key) {
     for (int i = 0; pirate_common_keys[i] != NULL; i++) {
@@ -153,7 +153,7 @@ int pirate_parse_is_common_key(const char *key) {
 }
 
 static int pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
-    if (strncmp("yield", key, strlen("yield")) == 0) {
+    if (strncmp("listener", key, strlen("listener")) == 0) {
         param->yield = atoi(val);
     } else if (strncmp("control", key, strlen("control")) == 0) {
         param->control = atoi(val);
