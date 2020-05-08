@@ -26,7 +26,7 @@ TEST(Yield, ControlChannel)
 
     rv = pirate_read(gd[0], &status, sizeof(status));
     ASSERT_EQ(errno, 0);
-    ASSERT_EQ(rv, sizeof(status));    
+    ASSERT_EQ((unsigned long) rv, sizeof(status));    
 }
 
 }
