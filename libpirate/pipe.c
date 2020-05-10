@@ -60,7 +60,7 @@ int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *
     return snprintf(desc, len - 1, "pipe,%s,iov_len=%u", param->path, param->iov_len);
 }
 
-int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx) {
+int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {
     int err;
 
     if (strnlen(param->path, 1) == 0) {
@@ -76,15 +76,14 @@ int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx) {
         }
     }
 
-    if ((ctx->fd = open(param->path, flags)) < 0) {
+    if ((ctx->fd = open(param->path, ctx->flags)) < 0) {
         return -1;
     }
 
     return 0;
 }
 
-int pirate_pipe_pipe(int flags, pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
-    (void) flags;
+int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
     (void) param;
     int rv, fd[2];
 

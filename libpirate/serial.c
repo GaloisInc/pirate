@@ -109,7 +109,7 @@ int pirate_serial_get_channel_description(const pirate_serial_param_t *param, ch
                     param->mtu);
 }
 
-int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
+int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx) {
     struct termios attr;
 
     pirate_serial_init_param(param);
@@ -117,7 +117,7 @@ int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx)
         errno = EINVAL;
         return -1;
     }
-    ctx->fd = open(param->path, flags | O_NOCTTY);
+    ctx->fd = open(param->path, ctx->flags | O_NOCTTY);
     if (ctx->fd < 0) {
         return -1;
     }

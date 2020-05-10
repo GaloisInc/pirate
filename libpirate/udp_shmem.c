@@ -268,11 +268,11 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int udp_shmem_buffer_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     udp_shmem_buffer_init_param(param);
     if (strnlen(param->path, 1) == 0) {
@@ -335,7 +335,6 @@ int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_
         }
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;

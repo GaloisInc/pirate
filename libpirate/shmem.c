@@ -220,11 +220,11 @@ int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char
                     param->buffer_size);
 }
 
-int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int shmem_buffer_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     shmem_buffer_init_param(param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
@@ -283,7 +283,6 @@ int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
         }
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;

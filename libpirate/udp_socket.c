@@ -162,9 +162,9 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
     return 0;
 }
 
-int pirate_udp_socket_open(int flags, pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
+int pirate_udp_socket_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int rv = -1;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_udp_socket_init_param(param);
     if (param->port <= 0) {

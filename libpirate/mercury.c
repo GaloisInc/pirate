@@ -304,12 +304,11 @@ int pirate_mercury_get_channel_description(const pirate_mercury_param_t *param, 
     return ret_sz;
 }
 
-int pirate_mercury_open(int flags, pirate_mercury_param_t *param, mercury_ctx *ctx) {
+int pirate_mercury_open(pirate_mercury_param_t *param, mercury_ctx *ctx) {
     const uint32_t cfg_len = sizeof(uint32_t);
     ssize_t sz;
     int fd_root = -1;
     unsigned wait_counter = 0;
-    ctx->flags = flags;
     int access = ctx->flags & O_ACCMODE;
     const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
 

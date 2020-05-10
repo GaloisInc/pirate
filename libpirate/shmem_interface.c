@@ -38,11 +38,11 @@ int pirate_shmem_get_channel_description(const pirate_shmem_param_t *param, char
 #endif
 }
 
-int pirate_shmem_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int pirate_shmem_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_open(flags, param, ctx);
+    return shmem_buffer_open(param, ctx);
 #else
-    (void) flags, (void) param, (void) ctx;
+    (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

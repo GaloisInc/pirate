@@ -116,11 +116,11 @@ static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     return uio_buffer;
 }
 
-int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_internal_uio_open(pirate_uio_param_t *param, uio_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_uio_init_param(param);
     ctx->fd = open(param->path, O_RDWR | O_SYNC);
@@ -157,7 +157,6 @@ int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx)
         } while (!init_pid);
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;

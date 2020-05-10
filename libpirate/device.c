@@ -60,12 +60,12 @@ int pirate_device_get_channel_description(const pirate_device_param_t *param, ch
     return snprintf(desc, len - 1, "device,%s,iov_len=%u", param->path, param->iov_len);
 }
 
-int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx) {
+int pirate_device_open(pirate_device_param_t *param, device_ctx *ctx) {
     if (strnlen(param->path, 1) == 0) {
         errno = EINVAL;
         return -1;
     }
-    if ((ctx->fd = open(param->path, flags)) < 0) {
+    if ((ctx->fd = open(param->path, ctx->flags)) < 0) {
         return -1;
     }
     

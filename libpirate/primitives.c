@@ -54,7 +54,13 @@ typedef int pirate_atomic_int;
 
 typedef struct {
     int flags;
+    int fd;
+    // TODO uint8_t *buf;
+} common_ctx;
+
+typedef struct {
     union {
+        common_ctx         common;
         device_ctx         device;
         pipe_ctx           pipe;
         unix_socket_ctx    unix_socket;
@@ -273,7 +279,7 @@ int pirate_get_channel_flags(int gd) {
     if ((channel = pirate_get_channel(gd)) == NULL) {
         return -1;
     }
-    return channel->ctx.flags;
+    return channel->ctx.channel.common.flags;
 }
 
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
@@ -353,10 +359,10 @@ void pirate_reset_gd() {
     next_gd = 0;
 }
 
-static int pirate_open(pirate_channel_t *channel, int flags) {
+static int pirate_open(pirate_channel_t *channel) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
-    int access = flags & O_ACCMODE;
+    int access = channel->ctx.channel.common.flags & O_ACCMODE;
 
     if ((access != O_RDONLY) && (access != O_WRONLY)) {
         errno = EINVAL;
@@ -365,37 +371,37 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
 
     switch (param->channel_type) {
     case DEVICE:
-        return pirate_device_open(flags, &param->channel.device, &ctx->channel.device);
+        return pirate_device_open(&param->channel.device, &ctx->channel.device);
 
     case PIPE:
-        return pirate_pipe_open(flags, &param->channel.pipe, &ctx->channel.pipe);
+        return pirate_pipe_open(&param->channel.pipe, &ctx->channel.pipe);
 
     case UNIX_SOCKET:
-        return pirate_unix_socket_open(flags, &param->channel.unix_socket, &ctx->channel.unix_socket);
+        return pirate_unix_socket_open(&param->channel.unix_socket, &ctx->channel.unix_socket);
 
     case TCP_SOCKET:
-        return pirate_tcp_socket_open(flags, &param->channel.tcp_socket, &ctx->channel.tcp_socket);
+        return pirate_tcp_socket_open(&param->channel.tcp_socket, &ctx->channel.tcp_socket);
 
     case UDP_SOCKET:
-        return pirate_udp_socket_open(flags, &param->channel.udp_socket, &ctx->channel.udp_socket);
+        return pirate_udp_socket_open(&param->channel.udp_socket, &ctx->channel.udp_socket);
 
     case SHMEM:
-        return pirate_shmem_open(flags, &param->channel.shmem, &ctx->channel.shmem);
+        return pirate_shmem_open(&param->channel.shmem, &ctx->channel.shmem);
 
     case UDP_SHMEM:
-        return pirate_udp_shmem_open(flags, &param->channel.udp_shmem, &ctx->channel.udp_shmem);
+        return pirate_udp_shmem_open(&param->channel.udp_shmem, &ctx->channel.udp_shmem);
 
     case UIO_DEVICE:
-        return pirate_uio_open(flags, &param->channel.uio, &ctx->channel.uio);
+        return pirate_uio_open(&param->channel.uio, &ctx->channel.uio);
 
     case SERIAL:
-        return pirate_serial_open(flags, &param->channel.serial, &ctx->channel.serial);
+        return pirate_serial_open(&param->channel.serial, &ctx->channel.serial);
 
     case MERCURY:
-        return pirate_mercury_open(flags, &param->channel.mercury, &ctx->channel.mercury);
+        return pirate_mercury_open(&param->channel.mercury, &ctx->channel.mercury);
 
     case GE_ETH:
-        return pirate_ge_eth_open(flags, &param->channel.ge_eth, &ctx->channel.ge_eth);
+        return pirate_ge_eth_open(&param->channel.ge_eth, &ctx->channel.ge_eth);
 
     case INVALID:
     default:
@@ -431,9 +437,9 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     }
 
     memcpy(&channel.param, param, sizeof(pirate_channel_param_t));
-    channel.ctx.flags = flags;
+    channel.ctx.channel.common.flags = flags;
 
-    if (pirate_open(&channel, flags) < 0) {
+    if (pirate_open(&channel) < 0) {
         return -1;
     }
 
@@ -498,12 +504,12 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
 
     memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
     memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
-    read_channel.ctx.flags = behavior | O_RDONLY;
-    write_channel.ctx.flags = behavior | O_WRONLY;
+    read_channel.ctx.channel.common.flags = behavior | O_RDONLY;
+    write_channel.ctx.channel.common.flags = behavior | O_WRONLY;
 
     switch (param->channel_type) {
     case PIPE:
-        rv = pirate_pipe_pipe(flags, &param->channel.pipe,
+        rv = pirate_pipe_pipe(&param->channel.pipe,
             &read_channel.ctx.channel.pipe,
             &write_channel.ctx.channel.pipe);
         break;
@@ -554,21 +560,14 @@ int pirate_get_fd(int gd) {
 
     switch (channel->param.channel_type) {
     case DEVICE:
-        return channel->ctx.channel.device.fd;
     case PIPE:
-        return channel->ctx.channel.pipe.fd;
     case UNIX_SOCKET:
-        return channel->ctx.channel.unix_socket.sock;
     case TCP_SOCKET:
-        return channel->ctx.channel.tcp_socket.sock;
     case UDP_SOCKET:
-        return channel->ctx.channel.udp_socket.sock;
     case SERIAL:
-        return channel->ctx.channel.serial.fd;
     case MERCURY:
-        return channel->ctx.channel.mercury.fd;
     case GE_ETH:
-        return channel->ctx.channel.ge_eth.sock;
+        return channel->ctx.channel.common.fd;
     default:
         errno = ENODEV;
         return -1;
@@ -643,7 +642,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
         return -1;
     }
 
-    if ((channel->ctx.flags & O_ACCMODE) != O_RDONLY) {
+    if ((channel->ctx.channel.common.flags & O_ACCMODE) != O_RDONLY) {
         errno = EBADF;
         return -1;
     }
@@ -701,7 +700,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         return -1;
     }
 
-    if ((channel->ctx.flags & O_ACCMODE) != O_WRONLY) {
+    if ((channel->ctx.channel.common.flags & O_ACCMODE) != O_WRONLY) {
         errno = EBADF;
         return -1;
     }

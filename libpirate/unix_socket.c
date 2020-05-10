@@ -171,9 +171,9 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     return -1;
 }
 
-int pirate_unix_socket_open(int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
+int pirate_unix_socket_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     int rv = -1;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     if (strnlen(param->path, 1) == 0) {
         errno = EINVAL;

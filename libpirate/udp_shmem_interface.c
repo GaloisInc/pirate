@@ -38,11 +38,11 @@ int pirate_udp_shmem_get_channel_description(const pirate_udp_shmem_param_t *par
 #endif
 }
 
-int pirate_udp_shmem_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int pirate_udp_shmem_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_open(flags, param, ctx);
+    return udp_shmem_buffer_open(param, ctx);
 #else
-    (void) flags, (void) param, (void) ctx;
+    (void) param, (void) ctx;
     return -1;
 #endif
 }

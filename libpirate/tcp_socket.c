@@ -193,9 +193,9 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     return -1;
 }
 
-int pirate_tcp_socket_open(int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
+int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv = -1;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_tcp_socket_init_param(param);
     if (param->port <= 0) {

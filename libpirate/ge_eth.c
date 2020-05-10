@@ -248,9 +248,9 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     return 0;
 }
 
-int pirate_ge_eth_open(int flags, pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
+int pirate_ge_eth_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int rv = -1;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_ge_eth_init_param(param);
     if (param->port <= 0) {
