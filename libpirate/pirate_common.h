@@ -30,8 +30,8 @@ extern "C" {
 
 typedef struct {
     int flags;
-    // TODO uint8_t *buf;
-    int fd; // fd does not exist on all channel types
+    // fd does not exist on all channel types
+    int fd;
 } common_ctx;
 
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd);

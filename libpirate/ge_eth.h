@@ -20,7 +20,6 @@
 
 typedef struct {
     int flags;
-    // TODO move buf before sock
     int sock;
     uint8_t *buf;
 } ge_eth_ctx;
