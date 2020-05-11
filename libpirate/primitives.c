@@ -54,8 +54,8 @@ typedef int pirate_atomic_int;
 
 typedef struct {
     int flags;
-    int fd;
     // TODO uint8_t *buf;
+    int fd; // fd does not exist on all channel types
 } common_ctx;
 
 typedef struct {

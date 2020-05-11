@@ -20,6 +20,7 @@
 
 typedef struct {
     int flags;
+    // TODO move buf before fd
     int fd;
     uint8_t *buf;
     char path[PIRATE_LEN_NAME];
