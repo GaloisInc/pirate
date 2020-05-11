@@ -16,15 +16,36 @@
 #ifndef __PIRATE_COMMON_H
 #define __PIRATE_COMMON_H
 
+#include "libpirate.h"
+
 #include <sys/types.h>
 
 #ifndef MIN
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    int flags;
+    // TODO uint8_t *buf;
+    int fd; // fd does not exist on all channel types
+} common_ctx;
+
+pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
+common_ctx *pirate_get_common_ctx_ref(int gd);
+
+int pirate_enclave_cmpfunc(const void *a, const void *b);
+
 ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len);
 ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len);
 int pirate_parse_is_common_key(const char *key);
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PIRATE_COMMON_H */

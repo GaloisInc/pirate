@@ -53,12 +53,6 @@ typedef int pirate_atomic_int;
 #include "pirate_common.h"
 
 typedef struct {
-    int flags;
-    // TODO uint8_t *buf;
-    int fd; // fd does not exist on all channel types
-} common_ctx;
-
-typedef struct {
     union {
         common_ctx         common;
         device_ctx         device;
@@ -273,15 +267,6 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
-int pirate_get_channel_flags(int gd) {
-    pirate_channel_t *channel = NULL;
-
-    if ((channel = pirate_get_channel(gd)) == NULL) {
-        return -1;
-    }
-    return channel->ctx.channel.common.flags;
-}
-
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
     pirate_channel_t *channel = NULL;
 
@@ -290,6 +275,16 @@ pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
     }
 
     return &channel->param;
+}
+
+common_ctx *pirate_get_common_ctx_ref(int gd) {
+    pirate_channel_t *channel = NULL;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return NULL;
+    }
+
+    return &channel->ctx.channel.common;
 }
 
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {

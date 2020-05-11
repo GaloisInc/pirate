@@ -331,17 +331,6 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
-// Returns the open() flags associated with the gaps channel
-//
-// Parameters
-//  gd           - GAPS channel number
-//
-// Return:
-//  non-negative value on success
-// -1 on failure, errno is set
-
-int pirate_get_channel_flags(int gd);
-
 // Get channel parameters as a string
 //
 // Parameters

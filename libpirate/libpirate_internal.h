@@ -22,10 +22,6 @@ extern "C" {
 
 void pirate_reset_gd();
 
-pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
-
-int pirate_enclave_cmpfunc(const void *a, const void *b);
-
 #ifdef __cplusplus
 }
 #endif

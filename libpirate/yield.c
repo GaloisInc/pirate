@@ -1,5 +1,5 @@
 #include "libpirate.h"
-#include "libpirate_internal.h"
+#include "pirate_common.h"
 
 #include <errno.h>
 #include <poll.h>
