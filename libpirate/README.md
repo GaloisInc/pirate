@@ -59,8 +59,7 @@ Linux named pipes. Path to named pipe must be specified.
 "device,path[,iov_len=N]"
 ```
 
-The pathname to the character device must be specified
-prior to opening the channel.
+The pathname to the character device must be specified.
 
 ### UNIX_SOCKET type
 
