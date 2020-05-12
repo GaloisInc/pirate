@@ -47,26 +47,50 @@ Writer:
 
 ### PIPE type
 
+```
+"pipe,path[,iov_len=N]"
+```
+
 Linux named pipes. Path to named pipe must be specified.
 
 ### DEVICE type
+
+```
+"device,path[,iov_len=N]"
+```
 
 The pathname to the character device must be specified
 prior to opening the channel.
 
 ### UNIX_SOCKET type
 
+```
+"unix_socket,path[,iov_len=N,buffer_size=N]"
+```
+
 Unix domain socket communication. Path to Unix socket must be specified.
 
 ### TCP_SOCKET type
 
-TCP socket communication. Host and port must be specified.
+```
+"tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]"
+```
+
+TCP socket communication. Host and port of the reader process must be specified.
 
 ### UDP_SOCKET type
 
-UDP socket communication. Host and port must be specified.
+```
+"udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]" 
+```
+
+UDP socket communication. Host and port of the reader process must be specified.
 
 ### SHMEM type
+
+```
+"shmem,path[,buffer_size=N]"
+```
 
 Uses a POSIX shared memory region to communicate. Support
 for the SHMEM type requires the librt.so POSIX real-time extensions
@@ -80,31 +104,13 @@ The size of the shared memory buffer can be specified using
 
 ### UIO_DEVICE type
 
+```
+"uio[,path=N]"
+```
+
 Uses shared memory provided by the kernel from a Userspace IO
 device driver. The [uio-device](/devices/uio-device/README.md) kernel module
 must be loaded.
-
-## Benchmarks
-
-`primitives_bench_thr` and `primitives_bench_lat` are throughput
-and latency benchmarks for the library. `bench.py` is a wrapper
-script that can be used to run the benchmarks across a range
-of message sizes. Benchmarks are compiled using the command
-`make bench`.
-
-Example usage:
-
-```
-# throughput benchmarks
-./bench.py thr unix-pipe >> throughput.results
-./bench.py thr device /dev/foobar >> throughput.results
-./bench.py thr shmem shmem >> throughput.results
-
-# latency benchmarks
-./bench.py lat unix-pipe >> latency.results
-./bench.py lat device /dev/foo /dev/bar >> latency.results
-./bench.py lat shmem shmem shmem >> latency.results
-```
 
 ## Tests
 
