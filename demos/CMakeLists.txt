@@ -54,6 +54,7 @@ if (GAPS_DEMOS)
     add_subdirectory(pnt_demo/5.yield)
     if (NOT GAPS_DISABLE)
         add_subdirectory(enclave_demo)
+        add_subdirectory(word_filter)
     endif(NOT GAPS_DISABLE)
 endif(GAPS_DEMOS)
 
@@ -65,3 +66,4 @@ if (PNT_DEMO)
     add_subdirectory(pnt_demo/4.pirate)
     add_subdirectory(pnt_demo/5.yield)
 endif(PNT_DEMO)
+
