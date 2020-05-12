@@ -36,13 +36,14 @@ __attribute__((pirate_capability("sensitive_words")))
     char const* word = word_list[i];
     char *found;
     while ((found = strstr(cursor, word))) {
-      memset(found, '*', strlen(word));
-      cursor = found+1;
+      int len = strlen(word);
+      memset(found, '*', len);
+      cursor = found+len;
     }
   }
 }
 
-void transmit(int channel, char const* msg, size_t n) {
+int transmit(int channel, char const* msg, size_t n) {
   if ((ssize_t)sizeof n != pirate_write(channel, &n, sizeof n)) { return 1; }
   if ((ssize_t)n        != pirate_write(channel, msg, n      )) { return 1; }
   return 0;
