@@ -224,10 +224,15 @@ int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, gaps_tag_t *tag, tcp_socket_ctx *ctx, void *buf, size_t count) {
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
+
     return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
 }
 
-ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, gaps_tag_t tag, tcp_socket_ctx *ctx, const void *buf, size_t count) {
+    (void) tag;
     return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
 }

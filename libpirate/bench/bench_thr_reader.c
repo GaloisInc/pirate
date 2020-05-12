@@ -36,13 +36,13 @@ int run(bench_thr_t *bench) {
         return -1;
     }
 
-    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch2.gd, GAPS_TAG_NONE, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 initial write error");
         return -1;
     }
 
-    rv = pirate_read(bench->sync_ch1.gd, &signal, sizeof(signal));
+    rv = pirate_read(bench->sync_ch1.gd, NULL, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 1 initial read error");
         return -1;
@@ -56,7 +56,7 @@ int run(bench_thr_t *bench) {
     for (uint32_t i = 0; i < iter && !timeout; i++) {
         size_t count = bench->message_len;
         while (count > 0) {
-            rv = pirate_read(bench->test_ch.gd, bench->buffer + read_off, count);
+            rv = pirate_read(bench->test_ch.gd, NULL, bench->buffer + read_off, count);
             if (rv < 0) {
                 if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
                     errno = 0;
@@ -77,7 +77,7 @@ int run(bench_thr_t *bench) {
     }
 
     /* Tell the writer that we are done */
-    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch2.gd, GAPS_TAG_NONE, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 terminating write error");
         return -1;

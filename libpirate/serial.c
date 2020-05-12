@@ -154,12 +154,18 @@ int pirate_serial_close(serial_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_serial_read(const pirate_serial_param_t *param, gaps_tag_t *tag, serial_ctx *ctx, void *buf, size_t count) {
     (void) param;
+
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
+
     return read(ctx->fd, buf, count);
 }
 
-ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_serial_write(const pirate_serial_param_t *param, gaps_tag_t tag, serial_ctx *ctx, const void *buf, size_t count) {
+    (void) tag;
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {

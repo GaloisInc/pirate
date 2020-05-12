@@ -38,13 +38,13 @@ int run(bench_lat_t *bench) {
         return -1;
     }
 
-    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch2.gd, GAPS_TAG_NONE, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 initial write error");
         return -1;
     }
 
-    rv = pirate_read(bench->sync_ch1.gd, &signal, sizeof(signal));
+    rv = pirate_read(bench->sync_ch1.gd, NULL, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 1 initial read error");
         return -1;
@@ -70,7 +70,7 @@ int run(bench_lat_t *bench) {
             } else if (bench->tx_delay_ns > 0) {
                 bench_lat_busysleep(bench->tx_delay_ns);
             }
-            rv = pirate_write(bench->test_ch2.gd, bench->write_buffer, count);
+            rv = pirate_write(bench->test_ch2.gd, GAPS_TAG_NONE, bench->write_buffer, count);
             if (rv < 0) {
                 perror("Test channel 2 write error");
                 return -1;
@@ -80,7 +80,7 @@ int run(bench_lat_t *bench) {
 
         count = bench->message_len;
         while (count > 0) {
-            rv = pirate_read(bench->test_ch1.gd, bench->read_buffer, count);
+            rv = pirate_read(bench->test_ch1.gd, NULL, bench->read_buffer, count);
             if (rv < 0) {
                 if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
                     perror("Test channel 1 read timeout");
@@ -98,7 +98,7 @@ int run(bench_lat_t *bench) {
         return -1;
     }
 
-    rv = pirate_write(bench->sync_ch2.gd, &signal, sizeof(signal));
+    rv = pirate_write(bench->sync_ch2.gd, GAPS_TAG_NONE, &signal, sizeof(signal));
     if (rv < 0) {
         perror("Sync channel 2 terminating write error");
         return -1;

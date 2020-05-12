@@ -58,22 +58,22 @@ int pirate_uio_close(uio_ctx *ctx) {
 #endif
 }
 
-ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_uio_read(const pirate_uio_param_t *param, gaps_tag_t *tag, uio_ctx *ctx, void *buf, size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return pirate_internal_uio_read(param, ctx, buf, count);
+    return pirate_internal_uio_read(param, tag, ctx, buf, count);
 #else
-    (void) param, (void) ctx, (void) buf, (void) count;
+    (void) param, (void) tag, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
 
-ssize_t pirate_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf,
+ssize_t pirate_uio_write(const pirate_uio_param_t *param, gaps_tag_t tag, uio_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return pirate_internal_uio_write(param, ctx, buf, count);
+    return pirate_internal_uio_write(param, tag, ctx, buf, count);
 #else
-    (void) param, (void) ctx, (void) buf, (void) count;
+    (void) param, (void) tag, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

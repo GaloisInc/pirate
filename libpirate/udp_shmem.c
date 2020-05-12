@@ -365,8 +365,8 @@ int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
-ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buffer,
-                                size_t count) {
+ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, gaps_tag_t *tag,
+                                udp_shmem_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     int was_full;
@@ -375,6 +375,10 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     struct udp_hdr udp_header;
     uint16_t exp_csum, obs_csum;
     struct pseudo_ip_hdr pseudo_header;
+
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -470,9 +474,9 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
   return count;
 }
 
-ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
-                            size_t count) {
-    (void) param;
+ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, gaps_tag_t tag, 
+                                udp_shmem_ctx *ctx, const void *buffer, size_t count) {
+    (void) param, (void) tag;
     int was_empty;
     uint32_t reader, writer;
     uint64_t position;

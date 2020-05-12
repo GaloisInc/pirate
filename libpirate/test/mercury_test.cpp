@@ -132,11 +132,11 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(session_id, param.channel.mercury.session.id);
 
-    io_size = pirate_write(wchannel, wr_data, data_len);
+    io_size = pirate_write(wchannel, GAPS_TAG_NONE, wr_data, data_len);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(io_size, data_len);
 
-    io_size = pirate_read(rchannel, rd_data, data_len);
+    io_size = pirate_read(rchannel, NULL, rd_data, data_len);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(io_size, data_len);
 
@@ -186,6 +186,7 @@ typedef struct {
     uint32_t    level;
     uint32_t    source_id;
     uint32_t    destination_id;
+    gaps_tag_t  gaps_tag;
     uint32_t    message_count;
     uint32_t    messages[5];
     uint32_t    session_id;   // Expected session ID
@@ -225,6 +226,8 @@ public:
 
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
+
+        gapsTag = mMercuryParam.gaps_tag;
     }
 
     void WriterChannelPostOpen() override
@@ -299,17 +302,27 @@ TEST_P(MercuryTest, Run)
 
 static MercuryTestParam MercuryParams [] = 
 {
-    // LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
-    {  1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
-    {  2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
-    {  1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
-    {  2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
-    {  1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
-    {  2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
-    {  1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
-    {  2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
-    {  1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
-    {  2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
+    // LVL,SRC,DST,TAG,           MSG_CNT, [5 MSGS],        EXP SESSION_ID
+    {  1,  1,  0,  GAPS_TAG_NONE, 0,       {0, 0, 0, 0, 0}, 0x00000001 },
+    {  1,  1,  0,  3,             0,       {0, 0, 0, 0, 0}, 0x00000001 },
+    {  2,  2,  0,  GAPS_TAG_NONE, 0,       {0, 0, 0, 0, 0}, 0x00000002 },
+    {  2,  2,  0,  3,             0,       {0, 0, 0, 0, 0}, 0x00000002 },
+    {  1,  1,  2,  GAPS_TAG_NONE, 5,       {1, 3, 0, 0, 0}, 0xECA51756 },
+    {  1,  1,  2,  1,             5,       {1, 3, 0, 0, 0}, 0xECA51756 },
+    {  2,  2,  1,  GAPS_TAG_NONE, 5,       {1, 3, 0, 0, 0}, 0x67FF90F4 },
+    {  2,  2,  1,  2,             5,       {1, 3, 0, 0, 0}, 0x67FF90F4 },
+    {  1,  1,  2,  GAPS_TAG_NONE, 5,       {1, 6, 5, 0, 0}, 0x6BB83E13 },
+    {  1,  1,  2,  6,             5,       {1, 6, 5, 0, 0}, 0x6BB83E13 },
+    {  2,  2,  1,  GAPS_TAG_NONE, 5,       {2, 3, 4, 0, 0}, 0x8127AA5B },
+    {  2,  2,  1,  4,             5,       {2, 3, 4, 0, 0}, 0x8127AA5B },
+    {  1,  1,  2,  GAPS_TAG_NONE, 5,       {1, 1, 3, 4, 0}, 0x2C2B8E86 },
+    {  1,  1,  2,  1,             5,       {1, 1, 3, 4, 0}, 0x2C2B8E86 },
+    {  2,  2,  1,  GAPS_TAG_NONE, 5,       {2, 1, 1, 2, 0}, 0x442D2490 },
+    {  2,  2,  1,  2,             5,       {2, 1, 1, 2, 0}, 0x442D2490 },
+    {  1,  1,  2,  GAPS_TAG_NONE, 5,       {1, 2, 5, 0, 0}, 0xBC5A32FB },
+    {  1,  1,  2,  1,             5,       {1, 2, 5, 0, 0}, 0xBC5A32FB },
+    {  2,  2,  1,  GAPS_TAG_NONE, 5,       {2, 1, 3, 4, 0}, 0x574C9A21 },
+    {  2,  2,  1,  2,             5,       {2, 1, 3, 4, 0}, 0x574C9A21 },
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,

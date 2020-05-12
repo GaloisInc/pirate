@@ -76,7 +76,7 @@ static int pirate_cooperative_listen_setup() {
 static int pirate_yield_id(size_t enclave_id) {
     uint8_t msg = 0;
     int gd = gaps_writer_control_gds[enclave_id];
-    ssize_t rv = pirate_write(gd, &msg, sizeof(msg));
+    ssize_t rv = pirate_write(gd, GAPS_TAG_NONE, &msg, sizeof(msg));
     if (rv != sizeof(msg)) {
         return -1;
     }
@@ -123,7 +123,7 @@ int pirate_listen() {
         if (param->control) {
             unsigned char ctrl = 0;
             // consume the control message and resume execution
-            pirate_read(gd, &ctrl, sizeof(ctrl));
+            pirate_read(gd, NULL, &ctrl, sizeof(ctrl));
             return 0;
         }
         pirate_listeners_t listeners = gaps_listeners[gd];
@@ -132,7 +132,7 @@ int pirate_listen() {
         if (count > sizeof(stackbuf)) {
             buf = (unsigned char*) malloc(count);
         }
-        ssize_t len = pirate_read(gd, buf, count);
+        ssize_t len = pirate_read(gd, NULL, buf, count);
         if (len < 0) {
             return len;
         }

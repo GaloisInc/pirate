@@ -110,6 +110,8 @@ public:
                     param->message_id, mtu);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
+
+        gapsTag = 42;
     }
 
     static const unsigned TEST_MTU_LEN = DEFAULT_GE_ETH_MTU / 2;

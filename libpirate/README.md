@@ -15,12 +15,13 @@ Reader:
 
 ```
   int gd, data;
+  gaps_tag_t tag;
   gd = pirate_open_parse("pipe,/tmp/gaps", O_RDONLY);
   if (gd < 0) {
     perror("reader open error");
     exit(1);
   }
-  if (pirate_read(gd, &data, sizeof(data)) != sizeof(data)) {
+  if (pirate_read(gd, &tag, &data, sizeof(data)) != sizeof(data)) {
     perror("read error");
     exit(2);
   }
@@ -31,12 +32,13 @@ Writer:
 
 ```
   int gd, data = 1234;
+  gaps_tag_t tag = 42;
   gd = pirate_open_parse("pipe,/tmp/gaps", O_WRONLY);
   if (gd < 0) {
     perror("writer open error");
     exit(1);
   }
-  if (pirate_write(gd, &data, sizeof(data)) != sizeof(data)) {
+  if (pirate_write(gd, tag, &data, sizeof(data)) != sizeof(data)) {
     perror("write error");
     exit(2);
   }

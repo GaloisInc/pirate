@@ -88,11 +88,13 @@ protected:
         uint32_t bytes;
         uint32_t packets;
     } statsWr, statsRd;
+
+    // GAPS message tag, used in test if set not to GAPS_TAG_NONE 
+    gaps_tag_t gapsTag;
 public:
     ChannelTest();
     static void *WriterThreadS(void *param);
     static void *ReaderThreadS(void *param);
-    //static const int TEST_CHANNEL = 2;
     static const int TEST_IOV_LEN = 16;
 };
 

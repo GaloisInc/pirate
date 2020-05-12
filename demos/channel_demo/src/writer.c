@@ -145,7 +145,7 @@ static int writer_run(writer_t *writer) {
             }
         }
 
-        rv = pirate_write(gaps_channel, wr_buf, wr_len);
+        rv = pirate_write(gaps_channel, GAPS_TAG_NONE, wr_buf, wr_len);
         if ((rv < 0) || (((size_t) rv) != wr_len)) {
             log_msg(ERROR, "Failed to write on GAPS channel");
             return -1;

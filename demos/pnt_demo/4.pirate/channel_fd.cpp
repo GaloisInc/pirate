@@ -7,7 +7,7 @@
 #include <fcntl.h>
 
 void gdCheckedWrite(int gd, const void* buf, size_t n) {
-  ssize_t cnt = pirate_write(gd, buf, n);
+  ssize_t cnt = pirate_write(gd, GAPS_TAG_NONE, buf, n);
   if (cnt == -1) {
     char config[128];
     pirate_get_channel_description(gd, config, sizeof(config));

@@ -13,6 +13,7 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include <stddef.h>
 #include "libpirate.h"
 #include "gaps_packet.h"
 #include <poll.h>
@@ -20,7 +21,7 @@
 
 static int gaps_read_len(int gd, void *buf, size_t len) {
     do {
-        ssize_t rd_len = pirate_read(gd, buf, len);
+        ssize_t rd_len = pirate_read(gd, NULL, buf, len);
         if (rd_len == -1) {
             return -1;
         }
@@ -35,7 +36,7 @@ static int gaps_read_len(int gd, void *buf, size_t len) {
 
 static int gaps_write_len(int gd, void *buf, ssize_t len) {
     do {
-        ssize_t wr_len = pirate_write(gd, buf, len);
+        ssize_t wr_len = pirate_write(gd, GAPS_TAG_NONE, buf, len);
         if (wr_len == -1) {
             return -1;
         }

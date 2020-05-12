@@ -43,7 +43,7 @@ void gdDatagramReadMessages(int gd, std::function<void(const T&)> f)
 {
   while (true) {
     T x;
-    ssize_t cnt = pirate_read(gd, &x, sizeof(T));
+    ssize_t cnt = pirate_read(gd, NULL, &x, sizeof(T));
     if (cnt == -1) {
       char config[128];
       pirate_get_channel_description(gd, config, sizeof(config));

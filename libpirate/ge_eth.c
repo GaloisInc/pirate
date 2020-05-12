@@ -86,8 +86,8 @@ uint16_t pirate_ge_eth_crc16(const uint8_t *data, uint16_t len) {
         ^ crc16_ccitt_xorout;
 }
 
-static ssize_t ge_message_pack(void *buf, const void *data, uint32_t count,
-    const pirate_ge_eth_param_t *param) {
+static ssize_t ge_message_pack(void *buf, gaps_tag_t tag, 
+    const void *data, uint32_t count, const pirate_ge_eth_param_t *param) {
     ge_header_t *msg_hdr = (ge_header_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(ge_header_t);
 
@@ -96,7 +96,12 @@ static ssize_t ge_message_pack(void *buf, const void *data, uint32_t count,
         return -1;
     }
 
-    msg_hdr->message_id = htobe32(param->message_id);
+    if (tag == GAPS_TAG_NONE) {
+        msg_hdr->message_id = htobe32(param->message_id);
+    } else {
+        msg_hdr->message_id = htobe32(tag);
+    }
+
     msg_hdr->data_len = htobe16(count);
     msg_hdr->crc16 = htobe16(pirate_ge_eth_crc16(buf, sizeof(ge_header_t)-sizeof(uint16_t)));
 
@@ -117,11 +122,6 @@ static int ge_message_unpack(const void *buf, void *data,
     if ((hdr->data_len > data_buf_len) ||
         (hdr->data_len > (param->mtu - sizeof(ge_header_t)))) {
         errno = ENOBUFS;
-        return -1;
-    }
-
-    if (hdr->message_id != param->message_id) {
-        errno = ENOMSG;
         return -1;
     }
 
@@ -294,8 +294,8 @@ int pirate_ge_eth_close(ge_eth_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
-                            void *buf, size_t count) {
+ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, gaps_tag_t *tag,
+                            ge_eth_ctx *ctx, void *buf, size_t count) {
     ssize_t rd_size;
     ge_header_t hdr = { 0, 0, 0 };
 
@@ -313,15 +313,19 @@ ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
         return -1;
     }
 
+    if (tag != NULL) {
+        *tag = hdr.message_id;
+    }
+
     return hdr.data_len;
 }
 
-ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
-                            const void *buf, size_t count) {
+ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, gaps_tag_t tag,
+                            ge_eth_ctx *ctx, const void *buf, size_t count) {
     ssize_t rv, wr_len;
     int err;
 
-    if ((wr_len = ge_message_pack(ctx->buf, buf, count, param)) < 0) {
+    if ((wr_len = ge_message_pack(ctx->buf, tag, buf, count, param)) < 0) {
         errno = ENOMSG;
         return -1;
     }

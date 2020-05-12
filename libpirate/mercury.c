@@ -62,8 +62,9 @@ typedef struct ilip_message {
 } ilip_message_t;
 #pragma pack()
 
-static ssize_t mercury_message_pack(void *buf, const void *data,
-        uint32_t data_len, const pirate_mercury_param_t *param) {
+static ssize_t mercury_message_pack(void *buf, gaps_tag_t tag,
+        const void *data, uint32_t data_len,
+        const pirate_mercury_param_t *param) {
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
     uint8_t *msg_data = (uint8_t *)buf + sizeof(ilip_message_t);
     const size_t msg_len = data_len + sizeof(ilip_message_t);
@@ -92,7 +93,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         case 0xECA51756:
         {
             const uint32_t msg[] = {1, 2, 3};
-            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            const uint32_t msg_tag = tag != GAPS_TAG_NONE ? tag : msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
                 case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
@@ -107,7 +108,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         case 0x67FF90F4:
         {
             const uint32_t msg[] = {2, 2, 3};
-            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            const uint32_t msg_tag = tag != GAPS_TAG_NONE ? tag : msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
                 case 2:   msg_hdr->header.data_tag = htobe32(2u);   break;
@@ -120,7 +121,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         case 0x6BB83E13:
         {
             const uint32_t msg[] = {1, 5, 6};
-            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            const uint32_t msg_tag = tag != GAPS_TAG_NONE ? tag : msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
                 case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
@@ -134,7 +135,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         case 0x8127AA5B:
         {
             const uint32_t msg[] = {2, 3, 4};
-            const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
+            const uint32_t msg_tag = tag != GAPS_TAG_NONE ? tag : msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
                 case 2:   msg_hdr->header.data_tag = htobe32(1u);   break;
@@ -147,7 +148,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
         case 0x2C2B8E86:
         {
-            msg_hdr->header.message = htobe32(1u);
+            msg_hdr->header.message = tag != GAPS_TAG_NONE ? htobe32(tag) : htobe32(1u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
             msg_hdr->header.data_tag = htobe32(data_tag);
@@ -156,7 +157,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
         case 0x442D2490:
         {
-            msg_hdr->header.message = htobe32(2u);
+            msg_hdr->header.message = tag != GAPS_TAG_NONE ? htobe32(tag) : htobe32(2u);
             const uint32_t data[] = {1, 2};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
             msg_hdr->header.data_tag = htobe32(data_tag);
@@ -165,7 +166,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
         case 0xBC5A32FB:
         {
-            msg_hdr->header.message = htobe32(1u);
+            msg_hdr->header.message = tag != GAPS_TAG_NONE ? htobe32(tag) : htobe32(1u);
             const uint32_t data[] = {2, 5};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
             msg_hdr->header.data_tag = htobe32(data_tag);
@@ -174,7 +175,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
         case 0x574C9A21:
         {
-            msg_hdr->header.message = htobe32(2u);
+            msg_hdr->header.message = tag != GAPS_TAG_NONE ? htobe32(tag) : htobe32(2u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
             msg_hdr->header.data_tag = htobe32(data_tag);
@@ -195,7 +196,8 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
 
 static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
-                                        void *data, ssize_t count,
+                                        gaps_tag_t *tag, void *data,
+                                        ssize_t count,
                                         const pirate_mercury_param_t *param) {
     const ilip_message_t *msg_hdr = (const ilip_message_t *)buf;
     const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
@@ -215,6 +217,10 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     if ((payload_len + sizeof(ilip_message_t)) > param->mtu) {
         errno = EIO;
         return -1;
+    }
+
+    if (tag != NULL) {
+        *tag = be32toh(msg_hdr->header.message);
     }
 
     count = MIN(payload_len, count);
@@ -448,7 +454,8 @@ int pirate_mercury_close(mercury_ctx *ctx) {
 }
 
 ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
-                            mercury_ctx *ctx, void *buf, size_t count) {
+                            gaps_tag_t *tag, mercury_ctx *ctx, 
+                            void *buf, size_t count) {
     ssize_t rd_len;
 
     if (ctx->fd <= 0) {
@@ -461,11 +468,12 @@ ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
         return -1;
     }
 
-    return mercury_message_unpack(ctx->buf, rd_len, buf, count, param);
+    return mercury_message_unpack(ctx->buf, rd_len, tag, buf, count, param);
 }
 
-ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
-                             mercury_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_mercury_write(const pirate_mercury_param_t *param, 
+                             gaps_tag_t tag, mercury_ctx *ctx, 
+                             const void *buf, size_t count) {
     ssize_t wr_len, rv;
 
     if (ctx->fd <= 0) {
@@ -473,7 +481,7 @@ ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,
         return -1;
     }
 
-    if ((wr_len = mercury_message_pack(ctx->buf, buf, count, param)) < 0) {
+    if ((wr_len = mercury_message_pack(ctx->buf, tag, buf, count, param)) < 0) {
         return -1;
     }
 

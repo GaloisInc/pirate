@@ -58,22 +58,22 @@ int pirate_shmem_close(shmem_ctx *ctx) {
 #endif
 }
 
-ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, gaps_tag_t *tag, shmem_ctx *ctx, void *buf, size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_read(param, ctx, buf, count);
+    return shmem_buffer_read(param, tag, ctx, buf, count);
 #else
-    (void) param, (void) ctx, (void) buf, (void) count;
+    (void) param, (void) tag, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
 
-ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
+ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, gaps_tag_t tag, shmem_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_write(param, ctx, buf, count);
+    return shmem_buffer_write(param, tag, ctx, buf, count);
 #else
-    (void) param, (void) ctx, (void) buf, (void) count;
+    (void) param, (void) tag, (void) ctx, (void) buf, (void) count;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

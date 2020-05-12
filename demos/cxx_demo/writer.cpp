@@ -41,12 +41,12 @@ int main(int argc, char* argv[]) {
     while(std::cin.getline(buffer, BUF_SIZE)) {
         // send the terminating null byte
         len = strlen(buffer) + 1;
-        rv = pirate_write(gd, &len, sizeof(len));
+        rv = pirate_write(gd, GAPS_TAG_NONE, &len, sizeof(len));
         if (rv != sizeof(len)) {
             std::cerr << "write error" << "\n";
             return 1;
         }
-        rv = pirate_write(gd, buffer, len);
+        rv = pirate_write(gd, GAPS_TAG_NONE, buffer, len);
         if (rv != len) {
             std::cerr << "write error" << "\n";
             return 1;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     }
 
     len = 0;
-    rv = pirate_write(gd, &len, sizeof(len));
+    rv = pirate_write(gd, GAPS_TAG_NONE, &len, sizeof(len));
     if (rv != sizeof(len)) {
         std::cerr << "write error" << "\n";
         return 1;

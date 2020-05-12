@@ -26,7 +26,7 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param, char *desc, int len);
 int pirate_unix_socket_open(int flags, pirate_unix_socket_param_t *param, unix_socket_ctx *ctx);
 int pirate_unix_socket_close(unix_socket_ctx *ctx);
-ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, gaps_tag_t *tag, unix_socket_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, gaps_tag_t tag, unix_socket_ctx *ctx, const void *buf, size_t count);
 
 #endif /* __PIRATE_CHANNEL_UNIX_SOCKET_H */

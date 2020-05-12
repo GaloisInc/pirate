@@ -28,7 +28,7 @@ int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *
 int pirate_pipe_pipe(int flags, pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx);
 int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx);
 int pirate_pipe_close(pipe_ctx *ctx);
-ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, gaps_tag_t *tag, pipe_ctx *ctx, void *buf, size_t count);
+ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, gaps_tag_t tag, pipe_ctx *ctx, const void *buf, size_t count);
 
 #endif /*__PIRATE_CHANNEL_PIPE_H */

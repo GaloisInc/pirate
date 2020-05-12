@@ -191,12 +191,16 @@ int pirate_internal_uio_close(uio_ctx *ctx) {
     return munmap(buf, buffer_size());
 }
 
-ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
+ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, gaps_tag_t *tag, uio_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     uint32_t reader, writer;
     size_t nbytes, nbytes1, nbytes2;
     int buffer_size;
+
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -249,8 +253,8 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
     return nbytes;
 }
 
-ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
-    (void) param;
+ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, gaps_tag_t tag, uio_ctx *ctx, const void *buffer, size_t count) {
+    (void) param, (void) tag;
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;
     uint64_t position;

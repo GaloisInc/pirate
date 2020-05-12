@@ -44,7 +44,7 @@ void gdDatagramReadMessages(const std::string& config, int gd, std::function<voi
 {
   while (true) {
     T x;
-    ssize_t cnt = pirate_read(gd, &x, sizeof(T));
+    ssize_t cnt = pirate_read(gd, NULL, &x, sizeof(T));
     if (cnt == -1) {
       channel_errlog([config](FILE* f) { fprintf(f, "Read %s failed (error = %d)", config.c_str(), errno); });
       exit(-1);

@@ -223,10 +223,14 @@ static int pirate_make_msgvec(void *buf, size_t count, size_t iov_len,
     return vlen;
 }
 
-ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, gaps_tag_t *tag, udp_socket_ctx *ctx, void *buf, size_t count) {
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
+    }
+
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
     }
 
     if (param->iov_len > 0) {
@@ -250,7 +254,8 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
     return recv(ctx->sock, buf, count, 0);
 }
 
-ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, gaps_tag_t tag, udp_socket_ctx *ctx, const void *buf, size_t count) {
+    (void) tag;
     int err;
     ssize_t rv;
 

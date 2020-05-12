@@ -14,7 +14,7 @@ public:
   SendChannel& operator=(SendChannel&) = delete;
   void send(const T& data) {
     for (int gd : _gds) {
-      pirate_write(gd, &data, sizeof(data));
+      pirate_write(gd, GAPS_TAG_NONE, &data, sizeof(data));
     }
   }
 };

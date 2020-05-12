@@ -65,13 +65,13 @@ TEST(CommonChannel, InvalidReadWrite)
     uint8_t buf[16] = { 0 };
 
     // Read unopened channel
-    rv = pirate_read(0, buf, sizeof(buf));
+    rv = pirate_read(0, NULL, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
     errno = 0;
 
     // Write unopened channel
-    rv = pirate_write(0, buf, sizeof(buf));
+    rv = pirate_write(0, GAPS_TAG_NONE, buf, sizeof(buf));
     ASSERT_EQ(-1, rv);
     ASSERT_EQ(EBADF, errno);
     errno = 0;

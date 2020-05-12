@@ -22,7 +22,8 @@ namespace GAPS
 {
 
 ChannelTest::ChannelTest() : testing::Test() ,
-    len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN})
+    len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN}),
+    gapsTag(GAPS_TAG_NONE)
 {
 }
 
@@ -204,7 +205,7 @@ void ChannelTest::WriterTest()
 
         WriteDataInit(l);
 
-        rv = pirate_write(Writer.gd, Writer.buf, l);
+        rv = pirate_write(Writer.gd, gapsTag, Writer.buf, l);
         ASSERT_EQ(l, rv);
         ASSERT_EQ(0, errno);
 
@@ -220,6 +221,9 @@ void ChannelTest::WriterTest()
 
 void ChannelTest::ReaderTest()
 {
+    gaps_tag_t rdTag = GAPS_TAG_NONE;
+    gaps_tag_t *rdTagPtr = gapsTag == GAPS_TAG_NONE ? NULL : &rdTag;
+
     if (childOpen)
     {
         ReaderChannelOpen();
@@ -237,13 +241,17 @@ void ChannelTest::ReaderTest()
         ssize_t remain = l;
         uint8_t *buf = Reader.buf;
         do {
-            rv = pirate_read(Reader.gd, buf, remain);
+            rv = pirate_read(Reader.gd, rdTagPtr, buf, remain);
             ASSERT_EQ(0, errno);
             ASSERT_GT(rv, 0);
             remain -= rv;
             buf += rv;
 
         } while (remain > 0);
+
+        if (rdTagPtr != NULL) {
+            ASSERT_EQ(rdTag, gapsTag);
+        }
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, l));
 
         statsRd.packets++;

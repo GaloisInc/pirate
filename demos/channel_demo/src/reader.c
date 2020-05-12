@@ -89,7 +89,7 @@ static int reader_run(reader_t *reader) {
             }
         }
 
-        ssize_t rd_len = pirate_read(gaps_channel, rd_buf, buf_len);
+        ssize_t rd_len = pirate_read(gaps_channel, NULL, rd_buf, buf_len);
         if (rd_len < 0) {
             log_msg(ERROR, "Failed to read GAPS data");
             rv = -1;

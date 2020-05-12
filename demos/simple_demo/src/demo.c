@@ -113,13 +113,13 @@ static int load_web_content_low(data_t* data, char *path) {
     ssize_t num;
 
     len = strnlen(path, PATHSIZE);
-    num = pirate_write(low_to_high, &len, sizeof(int));
+    num = pirate_write(low_to_high, GAPS_TAG_NONE, &len, sizeof(int));
     if (num != sizeof(int)) {
         fprintf(stderr, "Failed to send request length\n");
         return 500;
     }
 
-    num = pirate_write(low_to_high, path, len);
+    num = pirate_write(low_to_high, GAPS_TAG_NONE, path, len);
     if (num != len) {
         fprintf(stderr, "Failed to send request path\n");
         return 500;
@@ -127,7 +127,7 @@ static int load_web_content_low(data_t* data, char *path) {
 
     fputs("Sent read request to the HIGH_NAME side\n", stdout);
 
-    num = pirate_read(high_to_low, &rv, sizeof(rv));
+    num = pirate_read(high_to_low, NULL, &rv, sizeof(rv));
     if (num != sizeof(rv)) {
         fprintf(stderr, "Failed to receive status code\n");
         return 500;
@@ -137,7 +137,7 @@ static int load_web_content_low(data_t* data, char *path) {
     }
 
     /* Read and validate response length */
-    num = pirate_read(high_to_low, &len, sizeof(len));
+    num = pirate_read(high_to_low, NULL, &len, sizeof(len));
     if (num != sizeof(len)) {
         fprintf(stderr, "Failed to receive response length\n");
         return 500;
@@ -149,7 +149,7 @@ static int load_web_content_low(data_t* data, char *path) {
     }
 
     /* Read back the response */
-    num = pirate_read(high_to_low, data->buf, len);
+    num = pirate_read(high_to_low, NULL, data->buf, len);
     if (num != len) {
         fprintf(stderr, "Failed to read back the response\n");
         return 500;
@@ -191,7 +191,7 @@ static void* gaps_thread(void *arg) {
         int rv, len = 0;
         char path[PATHSIZE];
 
-        ssize_t num = pirate_read(low_to_high, &len, sizeof(len));
+        ssize_t num = pirate_read(low_to_high, NULL, &len, sizeof(len));
         if (num != sizeof(len)) {
             if (!terminated) {
                 fprintf(stderr, "Failed to read request from the low side\n");
@@ -207,7 +207,7 @@ static void* gaps_thread(void *arg) {
         }
 
         memset(path, 0, sizeof(path));
-        num = pirate_read(low_to_high, &path, len);
+        num = pirate_read(low_to_high, NULL, &path, len);
         if (num != len) {
             fprintf(stderr, "Invalid request path from the low side %d\n", len);
             terminate();
@@ -218,7 +218,7 @@ static void* gaps_thread(void *arg) {
 
         /* Read in high data */
         rv = load_web_content_high(&data, path);
-        num = pirate_write(high_to_low, &rv, sizeof(rv));
+        num = pirate_write(high_to_low, GAPS_TAG_NONE, &rv, sizeof(rv));
         if (num != sizeof(rv)) {
             fprintf(stderr, "Failed to send status code\n");
             terminate();
@@ -246,14 +246,14 @@ static void* gaps_thread(void *arg) {
         }
 
         /* Reply back. Data length is sent first */
-        num = pirate_write(high_to_low, &data.len, sizeof(data.len));
+        num = pirate_write(high_to_low, GAPS_TAG_NONE, &data.len, sizeof(data.len));
         if (num != sizeof(data.len)) {
             fprintf(stderr, "Failed to send response length\n");
             terminate();
             continue;
         }
 
-        num = pirate_write(high_to_low, &data.buf, data.len);
+        num = pirate_write(high_to_low, GAPS_TAG_NONE, &data.buf, data.len);
         if (num != data.len) {
             fprintf(stderr, "Failed to send response content\n");
             terminate();

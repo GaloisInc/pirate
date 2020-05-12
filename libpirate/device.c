@@ -86,10 +86,15 @@ int pirate_device_close(device_ctx *ctx) {
 }
 
 
-ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count) {
+ssize_t pirate_device_read(const pirate_device_param_t *param, gaps_tag_t *tag, device_ctx *ctx, void *buf, size_t count) {
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
+
     return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
 }
 
-ssize_t pirate_device_write(const pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_device_write(const pirate_device_param_t *param, gaps_tag_t tag, device_ctx *ctx, const void *buf, size_t count) {
+    (void) tag;
     return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
 }

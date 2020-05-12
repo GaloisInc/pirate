@@ -313,12 +313,16 @@ int shmem_buffer_close(shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
-ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
+ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, gaps_tag_t *tag, shmem_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     int was_full;
     size_t nbytes, nbytes1, nbytes2;
     uint32_t reader, writer;
+
+    if (tag != NULL) {
+        *tag = GAPS_TAG_NONE;
+    }
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -388,9 +392,9 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
     return nbytes;
 }
 
-ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
-                            size_t count) {
-    (void) param;
+ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, gaps_tag_t tag,
+                            shmem_ctx *ctx, const void *buffer, size_t count) {
+    (void) param, (void) tag;
     uint64_t position;
     int was_empty;
     size_t nbytes, nbytes1, nbytes2;

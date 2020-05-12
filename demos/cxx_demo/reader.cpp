@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     for (;;) {
-        rv = pirate_read(gd, &len, sizeof(len));
+        rv = pirate_read(gd, NULL, &len, sizeof(len));
         if (rv != sizeof(len)) {
             std::cerr << "write error" << "\n";
             return 1;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         if (len == 0) {
             break;
         }
-        rv = pirate_read(gd, buffer, len);
+        rv = pirate_read(gd, NULL, buffer, len);
         if (rv != len) {
             std::cerr << "write error" << "\n";
             return 1;

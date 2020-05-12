@@ -124,6 +124,9 @@ typedef enum {
     GE_ETH
 } channel_enum_t;
 
+typedef uint32_t gaps_tag_t;
+#define GAPS_TAG_NONE       (~0u)
+
 // DEVICE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
@@ -440,7 +443,8 @@ int pirate_get_fd(int gd);
 //
 // On success, the number of bytes read is returned.
 // On error, -1 is returned, and errno is set appropriately.
-ssize_t pirate_read(int gd, void *buf, size_t count);
+ssize_t pirate_read(int gd, gaps_tag_t *tag, void *buf,
+                    size_t count);
 
 // pirate_write() writes up to count bytes from the buffer
 // starting at buf to the gaps descriptor gd.
@@ -449,7 +453,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 // (zero indicates nothing was written). On error,
 // -1 is returned, and errno is set appropriately.
 
-ssize_t pirate_write(int gd, const void *buf, size_t count);
+ssize_t pirate_write(int gd, gaps_tag_t tag, const void *buf, size_t count);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //

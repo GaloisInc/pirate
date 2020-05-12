@@ -7,7 +7,7 @@
 #include <fcntl.h>
 
 void gdCheckedWrite(const std::string& config, int gd, const void* buf, size_t n) {
-  ssize_t cnt = pirate_write(gd, buf, n);
+  ssize_t cnt = pirate_write(gd, GAPS_TAG_NONE, buf, n);
   if (cnt == -1) {
     channel_errlog([config](FILE* f) { fprintf(f, "%s write failed (error = %d).", config.c_str(), errno); });
     exit(-1);
