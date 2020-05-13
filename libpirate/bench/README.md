@@ -53,7 +53,7 @@ optional arguments:
   -i ITERATIONS, --iterations ITERATIONS
                         Number of iterations for each test size (default 64)
   -d PACKET_DELAY, --packet_delay PACKET_DELAY
-                        Inter-packet delay in microseconds (default 0)
+                        Inter-packet delay in nanoseconds (default 0)
   -w RECEIVE_TIMEOUT, --receive_timeout RECEIVE_TIMEOUT
                         Receive timeout in seconds (default 2)
   -v, --validate        Validate received packets (default false)

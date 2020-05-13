@@ -36,7 +36,7 @@ def main():
     p.add_argument("-s2", "--sync_channel_2", help="Synchronization channel 2 specification", default="tcp_socket,127.0.0.1,10001")
     p.add_argument("-l", "--message_sizes", help="Test sizes <pow,start,stop|inc,start,stop,step>", type=parse_sizes)
     p.add_argument("-i", "--iterations", help="Number of iterations for each test size", type=int)
-    p.add_argument("-d", "--packet_delay", help="Inter-packet delay in microseconds", type=float, default=0)
+    p.add_argument("-d", "--packet_delay", help="Inter-packet delay in nanoseconds", type=float, default=0)
     p.add_argument("-w", "--receive_timeout", help="Receive timeout in seconds", type=int, default=2)
     p.add_argument("-v", "--validate", help="Validate received packets", action="store_true")
     args = p.parse_args()
