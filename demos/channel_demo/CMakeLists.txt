@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 
 project(channel_demo)
-set(VERSION 0.0.1)
+set(VERSION 0.0.2)
 
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
@@ -22,3 +22,5 @@ endfunction()
 # Targets
 add_channel_test_target(reader)
 add_channel_test_target(writer)
+
+configure_file(src/perf.py ${PROJECT_BINARY_DIR} COPYONLY)
