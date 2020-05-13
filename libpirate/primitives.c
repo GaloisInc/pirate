@@ -245,17 +245,12 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
     } else if (strncmp("serial", opt, strlen("serial")) == 0) {
         param->channel_type = SERIAL;
         return pirate_serial_parse_param(opt, &param->channel.serial);
-#ifdef PIRATE_MERCURY
     } else if (strncmp("mercury", opt, strlen("mercury")) == 0) {
         param->channel_type = MERCURY;
         return pirate_mercury_parse_param(opt, &param->channel.mercury);
-#endif
-
-#ifdef PIRATE_GE
     } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
         param->channel_type = GE_ETH;
         return pirate_ge_eth_parse_param(opt, &param->channel.ge_eth);
-#endif
     }
 
     errno = EINVAL;
@@ -320,15 +315,11 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc
     case SERIAL:
         return pirate_serial_get_channel_description(&param->channel.serial, desc, len);
 
-#ifdef PIRATE_MERCURY
     case MERCURY:
         return pirate_mercury_get_channel_description(&param->channel.mercury, desc, len);
-#endif
 
-#ifdef PIRATE_GE
     case GE_ETH:
         return pirate_ge_eth_get_channel_description(&param->channel.ge_eth, desc, len);
-#endif
 
     case INVALID:
     default:
@@ -400,15 +391,11 @@ static int pirate_open(pirate_channel_t *channel, int flags) {
     case SERIAL:
         return pirate_serial_open(flags, &param->channel.serial, &ctx->channel.serial);
 
-#ifdef PIRATE_MERCURY
     case MERCURY:
         return pirate_mercury_open(flags, &param->channel.mercury, &ctx->channel.mercury);
-#endif
 
-#ifdef PIRATE_GE
     case GE_ETH:
         return pirate_ge_eth_open(flags, &param->channel.ge_eth, &ctx->channel.ge_eth);
-#endif
 
     case INVALID:
     default:
@@ -578,15 +565,10 @@ int pirate_get_fd(int gd) {
         return channel->ctx.channel.udp_socket.sock;
     case SERIAL:
         return channel->ctx.channel.serial.fd;
-#ifdef PIRATE_MERCURY
     case MERCURY:
         return channel->ctx.channel.mercury.fd;
-#endif
-
-#ifdef PIRATE_GE
     case GE_ETH:
         return channel->ctx.channel.ge_eth.sock;
-#endif
     default:
         errno = ENODEV;
         return -1;
@@ -635,19 +617,12 @@ int pirate_close_channel(pirate_channel_t *channel) {
     case SERIAL:
         rv = pirate_serial_close(&ctx->channel.serial);
         break;
-
-#ifdef PIRATE_MERCURY
     case MERCURY:
         rv = pirate_mercury_close(&ctx->channel.mercury);
         break;
-#endif
-
-#ifdef PIRATE_GE
     case GE_ETH:
         rv = pirate_ge_eth_close(&ctx->channel.ge_eth);
         break;
-#endif
-
     case INVALID:
     default:
         errno = ENODEV;
@@ -705,15 +680,11 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     case SERIAL:
         return pirate_serial_read(&param->channel.serial, &ctx->channel.serial, buf, count);
 
-#ifdef PIRATE_MERCURY
     case MERCURY:
         return pirate_mercury_read(&param->channel.mercury, &ctx->channel.mercury, buf, count);
-#endif
 
-#ifdef PIRATE_GE
     case GE_ETH:
         return pirate_ge_eth_read(&param->channel.ge_eth, &ctx->channel.ge_eth, buf, count);
-#endif
 
     case INVALID:
     default:
@@ -776,17 +747,13 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         rv = pirate_serial_write(&param->channel.serial, &ctx->channel.serial, buf, count);
         break;
 
-#ifdef PIRATE_MERCURY
     case MERCURY:
         rv = pirate_mercury_write(&param->channel.mercury, &ctx->channel.mercury, buf, count);
         break;
-#endif
 
-#ifdef PIRATE_GE
     case GE_ETH:
         rv = pirate_ge_eth_write(&param->channel.ge_eth, &ctx->channel.ge_eth, buf, count);
         break;
-#endif
 
     case INVALID:
     default:

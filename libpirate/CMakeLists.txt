@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(libpirate)
 
-
-option(PIRATE_MERCURY "Build support for Mercury hardware" ON)
-option(PIRATE_GE      "Build sujpport for GE hardware" ON)
-
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
 SET(PIRATE_SOURCES
@@ -12,6 +8,9 @@ SET(PIRATE_SOURCES
     "pirate_common.c"
     "device.c"
     "pipe.c"
+    "ge_eth.c"
+    "mercury.c"
+    "mercury_cntl.c"
     "serial.c"
     "shmem_interface.c"
     "udp_shmem_interface.c"
@@ -20,14 +19,6 @@ SET(PIRATE_SOURCES
     "unix_socket.c"
     "uio_interface.c"
 )
-
-if (PIRATE_MERCURY)
-SET(PIRATE_SOURCES ${PIRATE_SOURCES} "mercury.c" "mercury_cntl.c")
-endif (PIRATE_MERCURY)
-
-if (PIRATE_GE)
-SET(PIRATE_SOURCES ${PIRATE_SOURCES} "ge_eth.c")
-endif (PIRATE_GE)
 
 if(PIRATE_SHMEM_FEATURE)
     add_definitions(-DPIRATE_SHMEM_FEATURE=1)
