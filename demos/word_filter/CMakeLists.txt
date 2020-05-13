@@ -15,7 +15,7 @@ file(MAKE_DIRECTORY ${HIGH_DIR} ${LOW_DIR})
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-O0")
 set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-set(BUILD_FLAGS ${BUILD_FLAGS} "SHELL:-Xclang -load" "SHELL:-Xclang PropagateEnclaves.so")
+#set(BUILD_FLAGS ${BUILD_FLAGS} "SHELL:-Xclang -load" "SHELL:-Xclang PropagateEnclaves.so")
 
 # Source files
 SET(SRCS "filter.c")

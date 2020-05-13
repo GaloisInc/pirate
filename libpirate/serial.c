@@ -73,8 +73,10 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
                 param->baud = B115200;
             } else if (strncmp("230400", val, strlen("230400")) == 0) {
                 param->baud = B230400;
+#ifdef B460800
             } else if (strncmp("460800", val, strlen("460800")) == 0) {
                 param->baud = B460800;
+#endif
             } else {
                 errno = EINVAL;
                 return -1;
@@ -100,7 +102,9 @@ int pirate_serial_get_channel_description(const pirate_serial_param_t *param, ch
     case B57600:  baud = "57600";  break;
     case B115200: baud = "115200"; break;
     case B230400: baud = "230400"; break;
+#ifdef B460800
     case B460800: baud = "460800"; break;
+#endif
     default:
         return -1;
     }
