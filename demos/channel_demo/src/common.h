@@ -53,7 +53,7 @@ typedef struct {
         uint32_t step;              /* Test length increment */
         uint32_t next;              /* Next test length */
     } len;
-    uint32_t delay_ns;              /* Inter-packet delay */
+    uint64_t delay_ns;              /* Inter-packet delay */
     uint32_t continuous;            /* Run in continuous mode */
     uint8_t *buf;                   /* Test buffer */
     const char *bin_input;          /* Path to optional input blob */

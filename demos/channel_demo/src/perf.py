@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description='Run performance analysis on the captured data counters')
     p.add_argument('-n', '--intervals', help='Number of averaged intervals', type=int)
-    p.add_argument('inputs', type=str, nargs='+', help='Input counts binary file')
+    p.add_argument('inputs', type=str, nargs='+', help='Input counts binary files')
     args = p.parse_args()
 
     cols = min(int(np.sqrt(len(args.inputs))), 4)

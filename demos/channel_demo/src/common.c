@@ -89,12 +89,16 @@ static int str_to_data_pattern(const char *str, data_pattern_t *pattern) {
 
 int test_data_parse_arg(char *str, test_data_t *td) {
     char *ptr = NULL;
+    char *endptr = NULL;
 
     /* Start */
     if ((ptr = strtok(str, OPT_DELIM)) == NULL) {
         return -1;
     }
-    td->len.next = td->len.start = strtol(ptr, NULL, 10);
+    td->len.next = td->len.start = strtol(ptr, &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Unable to parse numeric value from '%s'\n", ptr);
+    }
 
     /* End */
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
@@ -102,26 +106,36 @@ int test_data_parse_arg(char *str, test_data_t *td) {
         td->len.stop = td->len.start + td->len.step;
         return 0;
     }
-    td->len.stop = strtol(ptr, NULL, 10);
+    td->len.stop = strtol(ptr, &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Unable to parse numeric value from '%s'\n", ptr);
+    }
 
     /* Step */
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
         td->len.step = 1;
         return 0;
     }
-    td->len.step = strtol(ptr, NULL, 10);
+    td->len.step = strtol(ptr, &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Unable to parse numeric value from '%s'\n", ptr);
+    }
 
     return 0;
 }
 
 int perf_parse_arg(char *str, test_data_t *td) {
     char *ptr = NULL;
+    char *endptr = NULL;
 
     /* Message length */
     if ((ptr = strtok(str, OPT_DELIM)) == NULL) {
         return -1;
     }
-    td->perf.len = strtol(ptr, NULL, 10);
+    td->perf.len = strtol(ptr, &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Unable to parse numeric value from '%s'\n", ptr);
+    }
 
     if (td->perf.len < sizeof(msg_index_t)) {
         fprintf(stderr, "Message length must be at least %zu bytes\n", 
@@ -133,7 +147,10 @@ int perf_parse_arg(char *str, test_data_t *td) {
     if ((ptr = strtok(NULL, OPT_DELIM)) == NULL) {
         return -1;
     }
-    td->perf.count = strtol(ptr, NULL, 10);
+    td->perf.count = strtol(ptr, &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Unable to parse numeric value from '%s'\n", ptr);
+    }
 
     td->perf.enabled = 1;
     return 0;
@@ -143,6 +160,7 @@ int perf_parse_arg(char *str, test_data_t *td) {
 int parse_common_options(int key, char *arg, channel_test_t *test,
                             struct argp_state *state) {
     int rv = 1;
+    char* endptr = NULL;
 
     switch (key) {
 
@@ -184,7 +202,10 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
         break;
 
     case 'd':
-        test->data.delay_ns = strtol(arg, NULL, 10);
+        test->data.delay_ns = strtoull(arg, &endptr, 10);
+        if (*endptr != '\0') {
+            argp_error(state, "Unable to parse numeric value from '%s'\n", arg);
+        }
         break;
 
     case 'C':
