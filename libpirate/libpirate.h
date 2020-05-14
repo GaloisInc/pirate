@@ -213,7 +213,7 @@ typedef struct {
 
 // GE_ETH parameters
 #define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
-#define DEFAULT_GE_ETH_MTU      1454u
+#define DEFAULT_GE_ETH_MTU      1464u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
