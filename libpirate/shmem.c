@@ -179,7 +179,7 @@ error:
 
 static void shmem_buffer_init_param(pirate_shmem_param_t *param) {
     if (param->buffer_size == 0) {
-        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+        param->buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
     }
 }
 

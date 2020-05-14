@@ -70,7 +70,7 @@ static inline int is_full(uint64_t value) {
 
 static void pirate_uio_init_param(pirate_uio_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_DEFAULT_UIO_DEVICE);
     }
 }
 

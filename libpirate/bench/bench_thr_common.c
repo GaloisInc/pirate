@@ -159,7 +159,7 @@ static int bench_thr_open(bench_thr_t *bench, int flags) {
 
     switch (param.channel_type) {
         case SHMEM:
-            if ((bufsize > DEFAULT_SMEM_BUF_LEN) && (param.channel.shmem.buffer_size == 0)) {
+            if ((bufsize > PIRATE_DEFAULT_SMEM_BUF_LEN) && (param.channel.shmem.buffer_size == 0)) {
                 param.channel.shmem.buffer_size = MIN(bufsize, 524288);
             }
             break;

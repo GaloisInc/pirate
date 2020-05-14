@@ -81,7 +81,7 @@ public:
         Writer.param = Reader.param;
 
         snprintf(opt, sizeof(opt) - 1, "udp_socket,%s,%u,buffer_size=%u",
-                    DEFAULT_TCP_IP_ADDR, param->port,
+                    PIRATE_DEFAULT_TCP_IP_ADDR, param->port,
                     param->buffer_size);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);

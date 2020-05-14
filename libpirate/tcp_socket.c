@@ -28,7 +28,7 @@
 
 static void pirate_tcp_socket_init_param(pirate_tcp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
     }
     if (param->min_tx == 0) {
         param->min_tx = PIRATE_DEFAULT_MIN_TX;
@@ -65,6 +65,8 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
         }
         if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
+            param->min_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -74,8 +76,8 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 }
 
 int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "tcp_socket,%s,%u,buffer_size=%u", param->addr,
-                    param->port, param->buffer_size);
+    return snprintf(desc, len - 1, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u", param->addr,
+                    param->port, param->buffer_size, param->min_tx);
 }
 
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {

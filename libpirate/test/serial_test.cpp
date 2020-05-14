@@ -101,13 +101,13 @@ public:
         if (baud) {
             param->baud = baud;
         } else {
-            baud = SERIAL_DEFAULT_BAUD;
+            baud = PIRATE_SERIAL_DEFAULT_BAUD;
         }
 
         if (mtu) {
             param->mtu = mtu;
         } else {
-            mtu = SERIAL_DEFAULT_MTU;
+            mtu = PIRATE_SERIAL_DEFAULT_MTU;
         }
 
         Writer.param = Reader.param;
@@ -135,7 +135,7 @@ public:
     }
 
     static const speed_t TEST_BAUD = B115200;
-    static const unsigned TEST_MTU = SERIAL_DEFAULT_MTU / 2;
+    static const unsigned TEST_MTU = PIRATE_SERIAL_DEFAULT_MTU / 2;
     const std::string readerDevice;
     const std::string writerDevice;
 };

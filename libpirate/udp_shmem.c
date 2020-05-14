@@ -104,13 +104,13 @@ static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
 
 static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
     if (param->buffer_size == 0) {
-        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+        param->buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
     }
     if (param->packet_size == 0) {
-        param->packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
+        param->packet_size = PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE;
     }
     if (param->packet_count == 0) {
-        param->packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
+        param->packet_count = PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT;
     }
 }
 

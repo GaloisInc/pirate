@@ -66,7 +66,7 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
 }
 
 class TcpSocketTest : public ChannelTest,
-    public WithParamInterface<int>
+    public WithParamInterface<std::tuple<int, int>>
 {
 public:
     void ChannelInit()
@@ -76,16 +76,19 @@ public:
 
         pirate_init_channel_param(TCP_SOCKET, &Reader.param);
         param->port = 26427;
-        param->buffer_size = GetParam();
+        auto test_param = GetParam();
+        param->buffer_size = std::get<0>(test_param);
+        param->min_tx = std::get<1>(test_param);
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,buffer_size=%u",
-                    DEFAULT_TCP_IP_ADDR, param->port, param->buffer_size);
+        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
+                    PIRATE_DEFAULT_TCP_IP_ADDR, param->port, param->buffer_size, param->min_tx);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }
 
     static const unsigned TEST_BUF_LEN = 4096;
+    static const unsigned TEST_MIN_TX_LEN = 16;
 };
 
 TEST_P(TcpSocketTest, Run)
@@ -95,6 +98,6 @@ TEST_P(TcpSocketTest, Run)
 
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
-    Values(0, TcpSocketTest::TEST_BUF_LEN));
+    Values(std::make_tuple(0, PIRATE_DEFAULT_MIN_TX), std::make_tuple(TcpSocketTest::TEST_BUF_LEN, TcpSocketTest::TEST_MIN_TX_LEN)));
 
 } // namespace

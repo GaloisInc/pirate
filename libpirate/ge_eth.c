@@ -131,10 +131,10 @@ static int ge_message_unpack(const void *buf, void *data,
 
 static void pirate_ge_eth_init_param(pirate_ge_eth_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_GE_ETH_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_GE_ETH_IP_ADDR);
     }
     if (param->mtu == 0) {
-        param->mtu = DEFAULT_GE_ETH_MTU;
+        param->mtu = PIRATE_DEFAULT_GE_ETH_MTU;
     }
 }
 

@@ -116,19 +116,19 @@ public:
         if (buffer_size) {
             param->buffer_size = buffer_size;
         } else {
-            buffer_size = DEFAULT_SMEM_BUF_LEN;
+            buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
         }
 
         if (packet_count) {
             param->packet_count = packet_count;
         } else {
-            packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
+            packet_count = PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT;
         }
 
         if (packet_size) {
             param->packet_size = packet_size;
         } else {
-            packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
+            packet_size = PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE;
         }
 
         Writer.param = Reader.param;
@@ -140,9 +140,9 @@ public:
         Writer.desc.assign(opt);
     }
 
-    static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;
-    static const int TEST_PKT_CNT = DEFAULT_UDP_SHMEM_PACKET_COUNT / 2;
-    static const int TEST_PKT_SIZE = DEFAULT_UDP_SHMEM_PACKET_SIZE / 2;
+    static const int TEST_BUF_LEN = PIRATE_DEFAULT_SMEM_BUF_LEN / 2;
+    static const int TEST_PKT_CNT = PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT / 2;
+    static const int TEST_PKT_SIZE = PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE / 2;
 };
 
 TEST_P(UdpShmemTest, Run)

@@ -26,7 +26,7 @@
 
 static void pirate_udp_socket_init_param(pirate_udp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_UDP_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
     }
 }
 

@@ -29,10 +29,10 @@
 
 static void pirate_serial_init_param(pirate_serial_param_t *param) {
     if (param->baud == 0) {
-        param->baud = SERIAL_DEFAULT_BAUD;
+        param->baud = PIRATE_SERIAL_DEFAULT_BAUD;
     }
     if (param->mtu == 0) {
-        param->mtu = SERIAL_DEFAULT_MTU;
+        param->mtu = PIRATE_SERIAL_DEFAULT_MTU;
     }
 }
 

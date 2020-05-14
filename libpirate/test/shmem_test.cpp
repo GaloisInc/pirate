@@ -82,7 +82,7 @@ public:
         if (buffer_size) {
             param->buffer_size = buffer_size;
         } else {
-            buffer_size = DEFAULT_SMEM_BUF_LEN;
+            buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
         }
         Writer.param = Reader.param;
 
@@ -91,7 +91,7 @@ public:
         Writer.desc.assign(opt);
     }
 
-    static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;
+    static const int TEST_BUF_LEN = PIRATE_DEFAULT_SMEM_BUF_LEN / 2;
 };
 
 TEST_P(ShmemTest, Run)

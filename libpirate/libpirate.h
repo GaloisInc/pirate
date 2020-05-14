@@ -138,7 +138,7 @@ typedef struct {
 } pirate_unix_socket_param_t;
 
 // TCP_SOCKET parameters
-#define DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -147,7 +147,7 @@ typedef struct {
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
-#define DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -155,15 +155,15 @@ typedef struct {
 } pirate_udp_socket_param_t;
 
 // SHMEM parameters
-#define DEFAULT_SMEM_BUF_LEN                (128u << 10)
+#define PIRATE_DEFAULT_SMEM_BUF_LEN                (128u << 10)
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
 } pirate_shmem_param_t;
 
 // UDP_SHMEM parameters
-#define DEFAULT_UDP_SHMEM_PACKET_COUNT      1000
-#define DEFAULT_UDP_SHMEM_PACKET_SIZE       1024
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT      1000
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE       1024
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
@@ -172,15 +172,15 @@ typedef struct {
 } pirate_udp_shmem_param_t;
 
 // UIO parameters
-#define DEFAULT_UIO_DEVICE  "/dev/uio0"
+#define PIRATE_DEFAULT_UIO_DEVICE  "/dev/uio0"
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned short region;
 } pirate_uio_param_t;
 
 // SERIAL parameters
-#define SERIAL_DEFAULT_BAUD     B230400
-#define SERIAL_DEFAULT_MTU      1024u
+#define PIRATE_SERIAL_DEFAULT_BAUD     B230400
+#define PIRATE_SERIAL_DEFAULT_MTU      1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     speed_t baud;
@@ -205,8 +205,8 @@ typedef struct {
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
-#define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
-#define DEFAULT_GE_ETH_MTU      1454u
+#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
+#define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
