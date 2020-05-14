@@ -33,7 +33,7 @@ static struct argp_option options[] = {
     { "sync2",       'S', "CONFIG", 0, "Sync channel 2 configuration",  0 },
     { "nbytes",      'n', "BYTES",  0, "Number of bytes to receive",    0 },
     { "message_len", 'm', "BYTES",  0, "Transfer message size",         0 },
-    { "tx_delay",    'd', "USEC",   0, "Inter-message delay",           0 },
+    { "tx_delay",    'd', "NSEC",   0, "Inter-message delay",           0 },
     { "rx_timeout",  'w', "SEC",    0, "Message receive timeout",       0 },
     { NULL,           0,  NULL,     0, GAPS_CHANNEL_OPTIONS,            2 },
     { NULL,           0,  NULL,     0, 0,                               0 }
@@ -76,7 +76,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
 
     case 'd':
-        bench->tx_delay_ns = (uint64_t) (strtod(arg, &endptr) * 1000.0);
+        bench->tx_delay_ns = strtoull(arg, &endptr, 10);
         if (*endptr != '\0') {
             argp_error(state, "Unable to parse numeric value from \"%s\"\n", arg);
         }

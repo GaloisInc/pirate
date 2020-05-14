@@ -175,16 +175,14 @@ respectively.
                     char *pr_name;
                     void *pr_obj;
                     struct pirate_resource_param *pr_params;
-                    unsigned char padding[8];
+                    uint64_t pr_params_len;
                 } __attribute__((packed));
                 
                 typedef struct {
                     Elf64_Addr pr_name;
                     Elf64_Addr pr_obj;
                     Elf64_Addr pr_params;
-                    Elf64_Word pr_size;
-                    Elf64_Half pr_align;
-                    Elf64_Half pr_sym;
+                    Elf64_XWord pr_params_len;
                 } Elf64_Pirate_res;
 
 ``pr_name``
@@ -197,18 +195,9 @@ respectively.
     An array of ``struct pirate_resource_param`` storing
     key-value pairs representing static resource configuration.
     
-``pr_size``
-    The size of the annotated symbol.
-    
-``pr_alignment``
-    The alignment of the annotated symbol.
-    
-``pr_sym``
-    An index into the executable's symbol table corresponding to
-    the variable that was annotated to create this resource. This
-    should be the index of an undefined symbol in the relocatable
-    ELF. The linker will create a corresponding defined symbol in
-    the ``.bss`` section of the executable ELF.
+``pr_params_len``
+    The number of ``struct pirate_resource_param`` pointed to
+    by ``pr_params_len``.
 
 ``struct pirate_resource_param``
 ==============================
