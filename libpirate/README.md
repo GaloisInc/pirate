@@ -48,7 +48,7 @@ Writer:
 ### PIPE type
 
 ```
-"pipe,path[,iov_len=N]"
+"pipe,path"
 ```
 
 Linux named pipes. Path to named pipe must be specified.
@@ -56,7 +56,7 @@ Linux named pipes. Path to named pipe must be specified.
 ### DEVICE type
 
 ```
-"device,path[,iov_len=N]"
+"device,path"
 ```
 
 The pathname to the character device must be specified.
@@ -64,7 +64,7 @@ The pathname to the character device must be specified.
 ### UNIX_SOCKET type
 
 ```
-"unix_socket,path[,iov_len=N,buffer_size=N]"
+"unix_socket,path[,buffer_size=N]"
 ```
 
 Unix domain socket communication. Path to Unix socket must be specified.
@@ -72,7 +72,7 @@ Unix domain socket communication. Path to Unix socket must be specified.
 ### TCP_SOCKET type
 
 ```
-"tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]"
+"tcp_socket,reader addr,reader port[,buffer_size=N]"
 ```
 
 TCP socket communication. Host and port of the reader process must be specified.
@@ -80,7 +80,7 @@ TCP socket communication. Host and port of the reader process must be specified.
 ### UDP_SOCKET type
 
 ```
-"udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]" 
+"udp_socket,reader addr,reader port[,buffer_size=N]" 
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.

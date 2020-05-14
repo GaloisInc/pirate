@@ -41,19 +41,16 @@ typedef enum {
     // channel type.
     // Configuration parameters -#include <termios.h> pirate_device_param_t
     //  - path    - device path
-    //  - iov_len - I/O vector chunk length
     DEVICE,
 
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe).
     // Configuration parameters - pirate_pipe_param_t
     //  - path    - file path to named pipe
-    //  - iov_len - I/O vector chunk length
     PIPE,
 
     // The gaps channel is implemented using a Unix domain socket.
     //  - path        - file path to unix socket
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - unix socket buffer size
     UNIX_SOCKET,
 
@@ -61,7 +58,6 @@ typedef enum {
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
     //  - port        - IP port
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - TCP socket buffer size
     TCP_SOCKET,
 
@@ -69,7 +65,6 @@ typedef enum {
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
     //  - port        - IP port
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
@@ -127,19 +122,16 @@ typedef enum {
 // DEVICE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
 } pirate_device_param_t;
 
 // PIPE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
 } pirate_pipe_param_t;
 
 // UNIX_SOCKET parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
     unsigned buffer_size;
 } pirate_unix_socket_param_t;
 
@@ -148,7 +140,6 @@ typedef struct {
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
-    unsigned iov_len;
     unsigned buffer_size;
 } pirate_tcp_socket_param_t;
 
@@ -157,7 +148,6 @@ typedef struct {
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
-    unsigned iov_len;
     unsigned buffer_size;
 } pirate_udp_socket_param_t;
 
@@ -307,11 +297,11 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 #define KV_DELIM "="
 #define GAPS_CHANNEL_OPTIONS                                                         \
     "Supported channels:\n"                                                          \
-    "  DEVICE        device,path[,iov_len=N]\n"                                      \
-    "  PIPE          pipe,path[,iov_len=N]\n"                                        \
-    "  UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
+    "  DEVICE        device,path\n"                                                  \
+    "  PIPE          pipe,path\n"                                                    \
+    "  UNIX SOCKET   unix_socket,path[,buffer_size=N]\n"                             \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N]\n"           \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]\n"           \
     "  SHMEM         shmem,path[,buffer_size=N]\n"                                   \
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"  \
     "  UIO           uio[,path=N]\n"                                                 \

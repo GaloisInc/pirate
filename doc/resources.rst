@@ -367,9 +367,6 @@ To promote interoperability, resources of type ``gaps_channel`` and
     The size of a packet for channels of type ``shmem``. It is an error to
     include this field for any other type of device.
 
-``iov_length``
-    The length of an iovector for libpirate channels.
-
 ``rate``
     The baud rate for serial channels. This may be omitted, in which case
     a default rate of 9600 will be used.

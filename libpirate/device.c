@@ -46,18 +46,14 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
-            param->iov_len = strtol(val, NULL, 10);
-        } else {
-            errno = EINVAL;
-            return -1;
-        }
+        errno = EINVAL;
+        return -1;
     }
     return 0;
 }
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "device,%s,iov_len=%u", param->path, param->iov_len);
+    return snprintf(desc, len - 1, "device,%s", param->path);
 }
 
 int pirate_device_open(pirate_device_param_t *param, device_ctx *ctx) {
@@ -87,9 +83,11 @@ int pirate_device_close(device_ctx *ctx) {
 
 
 ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_read(ctx->fd, buf, count);
 }
 
 ssize_t pirate_device_write(const pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count) {
-    return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_write(ctx->fd, buf, count);
 }

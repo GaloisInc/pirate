@@ -32,7 +32,6 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     char opt[128];
     const char *name = "device";
     const char *path = "/tmp/test_device";
-    const unsigned iov_len = 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
@@ -46,19 +45,9 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(DEVICE, param.channel_type);
     ASSERT_STREQ(path, device_param->path);
-    ASSERT_EQ(0u, device_param->iov_len);
-
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,iov_len=%u", name, path, iov_len);
-    rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(DEVICE, param.channel_type);
-    ASSERT_STREQ(path, device_param->path);
-    ASSERT_EQ(iov_len, device_param->iov_len);
 }
 
-class DeviceTest : public ChannelTest, public WithParamInterface<int>
-{
+class DeviceTest : public ChannelTest{
 public:
     void ChannelInit()
     {
@@ -67,11 +56,9 @@ public:
         
         pirate_init_channel_param(DEVICE, &Reader.param);
         snprintf(param->path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
-        param->iov_len = GetParam();
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "device,%s,iov_len=%u", param->path,
-                    param->iov_len);
+        snprintf(opt, sizeof(opt) - 1, "device,%s", param->path);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
 
@@ -82,13 +69,9 @@ public:
     }
 };
 
-TEST_P(DeviceTest, Run)
+TEST_F(DeviceTest, Run)
 {
     Run();
 }
-
-// Test with IO vector sizes 0 and 16, passed as parameters
-INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest,
-    Values(0, ChannelTest::TEST_IOV_LEN));
 
 } // namespace

@@ -91,8 +91,6 @@ static const cyaml_schema_field_t rsc_contents_field_schema[] = {
             struct rsc_contents, cc_buffer),
     CYAML_FIELD_UINT("packet_size", CYAML_FLAG_OPTIONAL,
             struct rsc_contents, cc_packet_size),
-    CYAML_FIELD_UINT("iov_length", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_iov_length),
     CYAML_FIELD_UINT("rate", CYAML_FLAG_OPTIONAL,
             struct rsc_contents, cc_rate),
 

@@ -20,51 +20,19 @@
 #include "libpirate.h"
 #include "pirate_common.h"
 
-static int create_iov(void *buf, size_t count, size_t iov_len,
-    struct iovec *iov) {
-    int iov_count = count / iov_len;
-    unsigned char *iov_base = buf;
-    if (count > iov_len * iov_count) {
-        ++iov_count;
-    }
-
-    iov_count = MIN(iov_count, PIRATE_IOV_MAX);
-
-    for (int i = 0; i < iov_count; i++) {
-        iov[i].iov_base = iov_base;
-        iov[i].iov_len = MIN(count, iov_len);
-        iov_base += iov[i].iov_len;
-        count -= iov[i].iov_len;
-    }
-
-    return iov_count;
-}
-
-ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len) {
+ssize_t pirate_fd_read(int fd, void *buf, size_t count) {
     if (fd < 0) {
         errno = EBADF;
         return -1;
-    }
-
-    if ((iov_len > 0) && (count > iov_len)) {
-        struct iovec iov[PIRATE_IOV_MAX];
-        int iov_count = create_iov(buf, count, iov_len, iov);
-        return readv(fd, iov, iov_count);
     }
 
     return read(fd, buf, count);
 }
 
-ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len) {
+ssize_t pirate_fd_write(int fd, const void *buf, size_t count) {
     if (fd < 0) {
         errno = EBADF;
         return -1;
-    }
-
-    if ((iov_len > 0) && (count > iov_len)) {
-        struct iovec iov[PIRATE_IOV_MAX];
-        int iov_count = create_iov((void *)buf, count, iov_len, iov);
-        return writev(fd, iov, iov_count);
     }
 
     return write(fd, buf, count);

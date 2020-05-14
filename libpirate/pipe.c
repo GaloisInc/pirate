@@ -46,18 +46,14 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
-            param->iov_len = strtol(val, NULL, 10);
-        } else {
-            errno = EINVAL;
-            return -1;
-        }
+        errno = EINVAL;
+        return -1;
     }
     return 0;
 }
 
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "pipe,%s,iov_len=%u", param->path, param->iov_len);
+    return snprintf(desc, len - 1, "pipe,%s", param->path);
 }
 
 int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {
@@ -111,9 +107,11 @@ int pirate_pipe_close(pipe_ctx *ctx) {
 }
 
 ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->fd, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_read(ctx->fd, buf, count);
 }
 
 ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
-    return pirate_fd_write(ctx->fd, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_write(ctx->fd, buf, count);
 }

@@ -32,7 +32,6 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     const char *name = "tcp_socket";
     const char *addr = "1.2.3.4";
     const short port = 0x4242;
-    const unsigned iov_len = 42;
     const unsigned buffer_size = 42 * 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -54,33 +53,20 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_EQ(TCP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
-    ASSERT_EQ(0u, tcp_socket_param->iov_len);
     ASSERT_EQ(0u, tcp_socket_param->buffer_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,iov_len=%u", name, addr, port, iov_len);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,buffer_size=%u", name, addr, port, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(TCP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
-    ASSERT_EQ(iov_len, tcp_socket_param->iov_len);
-    ASSERT_EQ(0u, tcp_socket_param->buffer_size);
-
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,iov_len=%u,buffer_size=%u", name, addr, port, iov_len,
-            buffer_size);
-    rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(TCP_SOCKET, param.channel_type);
-    ASSERT_STREQ(addr, tcp_socket_param->addr);
-    ASSERT_EQ(port, tcp_socket_param->port);
-    ASSERT_EQ(iov_len, tcp_socket_param->iov_len);
     ASSERT_EQ(buffer_size, tcp_socket_param->buffer_size);
 }
 
 class TcpSocketTest : public ChannelTest,
-    public WithParamInterface<std::tuple<int, int>>
+    public WithParamInterface<int>
 {
 public:
     void ChannelInit()
@@ -90,14 +76,11 @@ public:
 
         pirate_init_channel_param(TCP_SOCKET, &Reader.param);
         param->port = 26427;
-        auto test_param = GetParam();
-        param->iov_len = std::get<0>(test_param);
-        param->buffer_size = std::get<1>(test_param);
+        param->buffer_size = GetParam();
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,iov_len=%u,buffer_size=%u",
-                    DEFAULT_TCP_IP_ADDR, param->port, param->iov_len,
-                    param->buffer_size);
+        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,buffer_size=%u",
+                    DEFAULT_TCP_IP_ADDR, param->port, param->buffer_size);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }
@@ -112,7 +95,6 @@ TEST_P(TcpSocketTest, Run)
 
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
-    Combine(Values(0, ChannelTest::TEST_IOV_LEN),
-            Values(0, TcpSocketTest::TEST_BUF_LEN)));
+    Values(0, TcpSocketTest::TEST_BUF_LEN));
 
 } // namespace

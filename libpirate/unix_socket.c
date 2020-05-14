@@ -47,9 +47,7 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
         } else if (rv == 0) {
             continue;
         }
-        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
-            param->iov_len = strtol(val, NULL, 10);
-        } else if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
+        if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
@@ -60,8 +58,8 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 }
 
 int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
-    return snprintf(desc, len - 1, "unix_socket,%s,iov_len=%u,buffer_size=%u", param->path,
-                    param->iov_len, param->buffer_size);
+    return snprintf(desc, len - 1, "unix_socket,%s,buffer_size=%u", param->path,
+                    param->buffer_size);
 }
 
 static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
@@ -203,9 +201,11 @@ int pirate_unix_socket_close(unix_socket_ctx *ctx) {
 }
 
 ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_read(ctx->sock, buf, count);
 }
 
 ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
-    return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
+    (void) param;
+    return pirate_fd_write(ctx->sock, buf, count);
 }

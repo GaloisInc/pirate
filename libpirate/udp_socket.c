@@ -58,9 +58,7 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
-            param->iov_len = strtol(val, NULL, 10);
-        } else if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
+        if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
@@ -71,8 +69,8 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
 }
 
 int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "udp_socket,%s,%u,iov_len=%u,buffer_size=%u", param->addr,
-                    param->port, param->iov_len, param->buffer_size);
+    return snprintf(desc, len - 1, "udp_socket,%s,%u,buffer_size=%u", param->addr,
+                    param->port, param->buffer_size);
 }
 
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
@@ -197,85 +195,24 @@ int pirate_udp_socket_close(udp_socket_ctx *ctx) {
     return rv;
 }
 
-
-static int pirate_make_msgvec(void *buf, size_t count, size_t iov_len,
-                             struct mmsghdr *msgvec, struct iovec *iov) {
-    unsigned char *iov_base = buf;
-    int vlen = count / iov_len;
-    if (count > iov_len * vlen) {
-        ++vlen;
-    }
-
-    vlen = MIN(vlen, PIRATE_IOV_MAX);
-    memset(msgvec, 0, sizeof(struct mmsghdr) * PIRATE_IOV_MAX);
-
-    for (int i = 0; i < vlen; i++) {
-        iov[i].iov_base = iov_base;
-        iov[i].iov_len = MIN(count, iov_len);
-        msgvec[i].msg_hdr.msg_name = NULL;
-        msgvec[i].msg_hdr.msg_namelen = 0;
-        msgvec[i].msg_hdr.msg_iov = &iov[i];
-        msgvec[i].msg_hdr.msg_iovlen = 1;
-        iov_base += iov[i].iov_len;
-        count -= iov[i].iov_len;
-    }
-
-    return vlen;
-}
-
 ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count) {
+    (void) param;
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
-    }
-
-    if (param->iov_len > 0) {
-        struct mmsghdr msgvec[PIRATE_IOV_MAX];
-        struct iovec iov[PIRATE_IOV_MAX];
-        int vlen = pirate_make_msgvec(buf, count, param->iov_len,
-            msgvec, iov);
-        int rd_bytes = 0;
-
-        int rv = recvmmsg(ctx->sock, msgvec, vlen, 0, NULL);
-        if (rv < 0) {
-            return rv;
-        }
-        
-        for (int i = 0; i < rv; i++) {
-            rd_bytes += iov[i].iov_len;
-        }
-        return rd_bytes;
     }
 
     return recv(ctx->sock, buf, count, 0);
 }
 
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
+    (void) param;
     int err;
     ssize_t rv;
 
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
-    }
-
-    if (param->iov_len > 0) {
-        struct mmsghdr msgvec[PIRATE_IOV_MAX];
-        struct iovec iov[PIRATE_IOV_MAX];
-        int vlen = pirate_make_msgvec((void *)buf, count, param->iov_len,
-            msgvec, iov);
-        int wr_bytes = 0;
-
-        int mmsgrv = sendmmsg(ctx->sock, msgvec, vlen, 0);
-        if (mmsgrv < 0) {
-            return mmsgrv;
-        }
-
-        for (int i = 0; i < mmsgrv; i++) {
-            wr_bytes += iov[i].iov_len;
-        }
-        
-        return wr_bytes;
     }
 
     err = errno;

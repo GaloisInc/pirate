@@ -204,11 +204,11 @@ Test utility for writing deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len=N]
-   PIPE          pipe,path[,iov_len=N]
-   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_lenSingle Plot With Averaged Intervals=N,buffer_size=N]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   DEVICE        device,path
+   PIPE          pipe,path
+   UNIX SOCKET   unix_socket,path[,buffer_size=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]
    SHMEM         shmem,path[,buffer_size=N]
    UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
    UIO           uio[,path=N]
@@ -238,11 +238,11 @@ Test utility for reading deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len=N]
-   PIPE          pipe,path[,iov_len=N]
-   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
+   DEVICE        device,path
+   PIPE          pipe,path
+   UNIX SOCKET   unix_socket,path[,buffer_size=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]
    SHMEM         shmem,path[,buffer_size=N]
    UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
    UIO           uio[,path=N]
