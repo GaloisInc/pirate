@@ -30,6 +30,9 @@ static void pirate_tcp_socket_init_param(pirate_tcp_socket_param_t *param) {
     if (strnlen(param->addr, 1) == 0) {
         snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
     }
+    if (param->min_tx == 0) {
+        param->min_tx = PIRATE_DEFAULT_MIN_TX;
+    }
 }
 
 int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
@@ -200,6 +203,9 @@ int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx
         errno = EINVAL;
         return -1;
     }
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
     if (access == O_RDONLY) {
         rv = tcp_socket_reader_open(param, ctx);
     } else {
@@ -212,6 +218,10 @@ int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx
 int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
     int rv = -1;
 
+    if (ctx->min_tx_buf != NULL) {
+        free(ctx->min_tx_buf);
+        ctx->min_tx_buf = NULL;
+    }
     if (ctx->sock <= 0) {
         errno = ENODEV;
         return -1;
@@ -223,11 +233,9 @@ int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
 }
 
 ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_read(ctx->sock, buf, count);
+    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
 }
 
 ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_write(ctx->sock, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
 }

@@ -21,6 +21,7 @@
 typedef struct {
     int flags;
     int sock;
+    uint8_t *min_tx_buf;
 } tcp_socket_ctx;
 
 int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param);

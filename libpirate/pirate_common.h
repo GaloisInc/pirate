@@ -29,9 +29,15 @@ extern "C" {
 #endif
 
 typedef struct {
+    uint32_t count;
+} pirate_header_t;
+
+typedef struct {
     int flags;
-    // fd does not exist on all channel types
+    // exists for file descriptor channel types
     int fd;
+    // exists for stream-based file descriptor channel types
+    uint8_t *min_tx_buf;
 } common_ctx;
 
 pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
@@ -39,6 +45,8 @@ common_ctx *pirate_get_common_ctx_ref(int gd);
 
 int pirate_enclave_cmpfunc(const void *a, const void *b);
 
+ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count);
+ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, const void *buf, size_t count);
 ssize_t pirate_fd_read(int fd, void *buf, size_t count);
 ssize_t pirate_fd_write(int fd, const void *buf, size_t count);
 int pirate_parse_is_common_key(const char *key);

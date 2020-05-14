@@ -32,6 +32,8 @@ extern "C" {
 #define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
 
+#define PIRATE_DEFAULT_MIN_TX 512
+
 typedef enum {
     // The gaps channel is unavailable for operations
     INVALID = 0,
@@ -141,6 +143,7 @@ typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
     unsigned buffer_size;
+    unsigned min_tx;
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
