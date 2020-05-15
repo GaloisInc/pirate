@@ -24,6 +24,10 @@
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
+#ifndef MAX
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,8 +51,6 @@ int pirate_enclave_cmpfunc(const void *a, const void *b);
 
 ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count);
 ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, const void *buf, size_t count);
-ssize_t pirate_fd_read(int fd, void *buf, size_t count);
-ssize_t pirate_fd_write(int fd, const void *buf, size_t count);
 int pirate_parse_is_common_key(const char *key);
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
 

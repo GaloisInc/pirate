@@ -56,6 +56,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
         }
         rx += rv;
     }
+    rx = MAX(count, min_tx - sizeof(pirate_header_t));
     if (rx < packet_count) {
         // slow path
         uint8_t *temp = malloc(packet_count - count);
@@ -104,25 +105,6 @@ ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, const void *buf, siz
         tx += rv;
     }
     return count;
-}
-
-
-ssize_t pirate_fd_read(int fd, void *buf, size_t count) {
-    if (fd < 0) {
-        errno = EBADF;
-        return -1;
-    }
-
-    return read(fd, buf, count);
-}
-
-ssize_t pirate_fd_write(int fd, const void *buf, size_t count) {
-    if (fd < 0) {
-        errno = EBADF;
-        return -1;
-    }
-
-    return write(fd, buf, count);
 }
 
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr) {

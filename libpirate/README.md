@@ -80,7 +80,7 @@ TCP socket communication. Host and port of the reader process must be specified.
 ### UDP_SOCKET type
 
 ```
-"udp_socket,reader addr,reader port[,buffer_size=N]" 
+"udp_socket,reader addr,reader port[,buffer_size=N]"
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.

@@ -22,6 +22,7 @@
 typedef struct {
     int flags;
     int fd;
+    uint8_t *min_tx_buf;
 } device_ctx;
 
 int pirate_device_parse_param(char *str, pirate_device_param_t *param);

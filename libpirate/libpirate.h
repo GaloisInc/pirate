@@ -124,17 +124,20 @@ typedef enum {
 // DEVICE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
+    unsigned min_tx;
 } pirate_device_param_t;
 
 // PIPE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
+    unsigned min_tx;
 } pirate_pipe_param_t;
 
 // UNIX_SOCKET parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
+    unsigned min_tx;
 } pirate_unix_socket_param_t;
 
 // TCP_SOCKET parameters

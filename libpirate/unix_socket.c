@@ -25,6 +25,12 @@
 #include "pirate_common.h"
 #include "unix_socket.h"
 
+static void pirate_unix_socket_init_param(pirate_unix_socket_param_t *param) {
+    if (param->min_tx == 0) {
+        param->min_tx = PIRATE_DEFAULT_MIN_TX;
+    }
+}
+
 int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param) {
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -49,6 +55,8 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
         }
         if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
+            param->min_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -58,8 +66,8 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 }
 
 int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
-    return snprintf(desc, len - 1, "unix_socket,%s,buffer_size=%u", param->path,
-                    param->buffer_size);
+    return snprintf(desc, len - 1, "unix_socket,%s,buffer_size=%u,min_tx_size=%u", param->path,
+                    param->buffer_size, param->min_tx);
 }
 
 static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
@@ -173,6 +181,8 @@ int pirate_unix_socket_open(pirate_unix_socket_param_t *param, unix_socket_ctx *
     int rv = -1;
     int access = ctx->flags & O_ACCMODE;
 
+    pirate_unix_socket_init_param(param);
+
     if (strnlen(param->path, 1) == 0) {
         errno = EINVAL;
         return -1;
@@ -183,12 +193,21 @@ int pirate_unix_socket_open(pirate_unix_socket_param_t *param, unix_socket_ctx *
         rv = unix_socket_writer_open(param, ctx);
     }
 
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
+
     return rv;
 }
 
 
 int pirate_unix_socket_close(unix_socket_ctx *ctx) {
     int rv = -1;
+
+    if (ctx->min_tx_buf != NULL) {
+        free(ctx->min_tx_buf);
+        ctx->min_tx_buf = NULL;
+    }
 
     if (ctx->sock <= 0) {
         errno = ENODEV;
@@ -201,11 +220,9 @@ int pirate_unix_socket_close(unix_socket_ctx *ctx) {
 }
 
 ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_read(ctx->sock, buf, count);
+    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
 }
 
 ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_write(ctx->sock, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
 }

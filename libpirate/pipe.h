@@ -22,6 +22,7 @@
 typedef struct {
     int flags;
     int fd;
+    uint8_t *min_tx_buf;
  } pipe_ctx;
 
 int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param);

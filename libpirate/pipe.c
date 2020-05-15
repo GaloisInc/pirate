@@ -24,6 +24,12 @@
 #include "pirate_common.h"
 #include "pipe.h"
 
+static void pirate_pipe_init_param(pirate_pipe_param_t *param) {
+    if (param->min_tx == 0) {
+        param->min_tx = PIRATE_DEFAULT_MIN_TX;
+    }
+}
+
 int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -46,19 +52,24 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        errno = EINVAL;
-        return -1;
+        if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
+            param->min_tx = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
     return 0;
 }
 
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "pipe,%s", param->path);
+    return snprintf(desc, len - 1, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
 }
 
 int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {
     int err;
 
+    pirate_pipe_init_param(param);
     if (strnlen(param->path, 1) == 0) {
         errno = EINVAL;
         return -1;
@@ -76,6 +87,10 @@ int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {
         return -1;
     }
 
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -83,9 +98,18 @@ int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *w
     (void) param;
     int rv, fd[2];
 
+    pirate_pipe_init_param(param);
     rv = pipe(fd);
     if (rv < 0) {
         return rv;
+    }
+
+    if ((read_ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
+    if ((write_ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        free(read_ctx->min_tx_buf);
+        return -1;
     }
 
     read_ctx->fd = fd[0];
@@ -95,6 +119,11 @@ int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *w
 
 int pirate_pipe_close(pipe_ctx *ctx) {
     int rv = -1;
+
+    if (ctx->min_tx_buf != NULL) {
+        free(ctx->min_tx_buf);
+        ctx->min_tx_buf = NULL;
+    }
 
     if (ctx->fd <= 0) {
         errno = ENODEV;
@@ -107,11 +136,9 @@ int pirate_pipe_close(pipe_ctx *ctx) {
 }
 
 ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_read(ctx->fd, buf, count);
+    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
 }
 
 ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_write(ctx->fd, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
 }

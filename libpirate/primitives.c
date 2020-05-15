@@ -495,8 +495,6 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
-    memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
     read_channel.ctx.common.flags = behavior | O_RDONLY;
     write_channel.ctx.common.flags = behavior | O_WRONLY;
 
@@ -510,6 +508,9 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         errno = ENOSYS;
         rv = -1;
     }
+
+    memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
+    memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
 
     if (rv < 0) {
         return rv;

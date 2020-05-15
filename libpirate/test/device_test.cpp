@@ -32,6 +32,7 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     char opt[128];
     const char *name = "device";
     const char *path = "/tmp/test_device";
+    const unsigned min_tx = 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
@@ -45,9 +46,18 @@ TEST(ChannelDeviceTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(DEVICE, param.channel_type);
     ASSERT_STREQ(path, device_param->path);
+    ASSERT_EQ(0u, device_param->min_tx);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,min_tx_size=%u", name, path, min_tx);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(DEVICE, param.channel_type);
+    ASSERT_STREQ(path, device_param->path);
+    ASSERT_EQ(min_tx, device_param->min_tx);
 }
 
-class DeviceTest : public ChannelTest{
+class DeviceTest : public ChannelTest, public WithParamInterface<int> {
 public:
     void ChannelInit()
     {
@@ -56,9 +66,10 @@ public:
         
         pirate_init_channel_param(DEVICE, &Reader.param);
         snprintf(param->path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
+        param->min_tx = GetParam();
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "device,%s", param->path);
+        snprintf(opt, sizeof(opt) - 1, "device,%s,min_tx_size=%u", param->path, param->min_tx);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
 
@@ -69,9 +80,12 @@ public:
     }
 };
 
-TEST_F(DeviceTest, Run)
+TEST_P(DeviceTest, Run)
 {
     Run();
 }
+
+INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest,
+    Values(PIRATE_DEFAULT_MIN_TX, TEST_MIN_TX_LEN));
 
 } // namespace

@@ -24,6 +24,12 @@
 #include "device.h"
 #include "pirate_common.h"
 
+static void pirate_device_init_param(pirate_device_param_t *param) {
+    if (param->min_tx == 0) {
+        param->min_tx = PIRATE_DEFAULT_MIN_TX;
+    }
+}
+
 int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -46,17 +52,22 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        errno = EINVAL;
-        return -1;
+        if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
+            param->min_tx = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
     }
     return 0;
 }
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "device,%s", param->path);
+    return snprintf(desc, len - 1, "device,%s,min_tx_size=%u", param->path, param->min_tx);
 }
 
 int pirate_device_open(pirate_device_param_t *param, device_ctx *ctx) {
+    pirate_device_init_param(param);
     if (strnlen(param->path, 1) == 0) {
         errno = EINVAL;
         return -1;
@@ -64,12 +75,21 @@ int pirate_device_open(pirate_device_param_t *param, device_ctx *ctx) {
     if ((ctx->fd = open(param->path, ctx->flags)) < 0) {
         return -1;
     }
-    
+
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
 int pirate_device_close(device_ctx *ctx) {
     int rv = -1;
+
+    if (ctx->min_tx_buf != NULL) {
+        free(ctx->min_tx_buf);
+        ctx->min_tx_buf = NULL;
+    }
 
     if (ctx->fd <= 0) {
         errno = ENODEV;
@@ -83,11 +103,9 @@ int pirate_device_close(device_ctx *ctx) {
 
 
 ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_read(ctx->fd, buf, count);
+    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
 }
 
 ssize_t pirate_device_write(const pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count) {
-    (void) param;
-    return pirate_fd_write(ctx->fd, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
 }

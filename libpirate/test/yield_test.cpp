@@ -26,6 +26,14 @@ TEST(Yield, ControlChannel)
     rv = pirate_listen();
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
+
+    rv = pirate_close(gd[0]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    rv = pirate_close(gd[1]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
 }
 
 }

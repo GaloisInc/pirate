@@ -33,6 +33,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     char opt[128];
     const char *name = "pipe";
     const char *path = "/tmp/test_pipe";
+    const unsigned min_tx = 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
@@ -46,9 +47,18 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
+    ASSERT_EQ(0u, pipe_param->min_tx);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,min_tx_size=%u", name, path, min_tx);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(PIPE, param.channel_type);
+    ASSERT_STREQ(path, pipe_param->path);
+    ASSERT_EQ(min_tx, pipe_param->min_tx);
 }
 
-class PipeTest : public ChannelTest
+class PipeTest : public ChannelTest, public WithParamInterface<int>
 {
 public:
     void ChannelInit()
@@ -58,17 +68,21 @@ public:
 
         pirate_init_channel_param(PIPE, &Reader.param);
         strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
+        param->min_tx = GetParam();
         Writer.param = Reader.param;
 
-        snprintf(opt, sizeof(opt) - 1, "pipe,%s", param->path);
+        snprintf(opt, sizeof(opt) - 1, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }
 };
 
-TEST_F(PipeTest, Run)
+TEST_P(PipeTest, Run)
 {
     Run();
 }
+
+INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
+    Values(PIRATE_DEFAULT_MIN_TX, TEST_MIN_TX_LEN));
 
 } // namespace

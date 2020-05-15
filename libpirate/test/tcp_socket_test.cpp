@@ -32,6 +32,7 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     const char *name = "tcp_socket";
     const char *addr = "1.2.3.4";
     const short port = 0x4242;
+    const unsigned min_tx = 42;
     const unsigned buffer_size = 42 * 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -54,6 +55,7 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
     ASSERT_EQ(0u, tcp_socket_param->buffer_size);
+    ASSERT_EQ(0u, tcp_socket_param->min_tx);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,buffer_size=%u", name, addr, port, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
@@ -63,6 +65,17 @@ TEST(ChannelTcpSocketTest, ConfigurationParser) {
     ASSERT_STREQ(addr, tcp_socket_param->addr);
     ASSERT_EQ(port, tcp_socket_param->port);
     ASSERT_EQ(buffer_size, tcp_socket_param->buffer_size);
+    ASSERT_EQ(0u, tcp_socket_param->min_tx);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,buffer_size=%u,min_tx_size=%u", name, addr, port, buffer_size, min_tx);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(TCP_SOCKET, param.channel_type);
+    ASSERT_STREQ(addr, tcp_socket_param->addr);
+    ASSERT_EQ(port, tcp_socket_param->port);
+    ASSERT_EQ(buffer_size, tcp_socket_param->buffer_size);
+    ASSERT_EQ(min_tx, tcp_socket_param->min_tx);
 }
 
 class TcpSocketTest : public ChannelTest,
@@ -86,18 +99,17 @@ public:
         Reader.desc.assign(opt);
         Writer.desc.assign(opt);
     }
-
-    static const unsigned TEST_BUF_LEN = 4096;
-    static const unsigned TEST_MIN_TX_LEN = 16;
 };
+
+static const unsigned TEST_BUF_LEN = 4096;
 
 TEST_P(TcpSocketTest, Run)
 {
     Run();
 }
 
-// Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
-    Values(std::make_tuple(0, PIRATE_DEFAULT_MIN_TX), std::make_tuple(TcpSocketTest::TEST_BUF_LEN, TcpSocketTest::TEST_MIN_TX_LEN)));
+    Values(std::make_tuple(0, PIRATE_DEFAULT_MIN_TX),
+        std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
 } // namespace

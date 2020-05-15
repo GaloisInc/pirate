@@ -205,15 +205,14 @@ int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx
         errno = EINVAL;
         return -1;
     }
-    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
-        return -1;
-    }
     if (access == O_RDONLY) {
         rv = tcp_socket_reader_open(param, ctx);
     } else {
         rv = tcp_socket_writer_open(param, ctx);
     }
-
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
     return rv;
 }
 
