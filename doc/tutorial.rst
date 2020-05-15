@@ -1,12 +1,18 @@
-PIRATE Enclave Tutorial
+Word Filter Tutorial
 =======================
 
-This tutorial demonstrates a simple use of the Pirate LLVM tools to generate a two-enclave application. We'll develop a sentence censoring application where the complete list of sensitive words is held by a separate host enclave. The UI enclave will only be able to ask the host enclave to censor a sentence but it will not be able to enumerate the list directly.
+The Pirate tools allow the programmer to define a multiple-enclave program using a single source project. Using source-level annotations we can identify named *capabilities* available on specific enclaves and we can restrict portions of the source file to only be available on enclaves that are marked as having those capabilities. We can use *libpirate* to make communication between these enclaves easy.
+
+In this tutorial we'll define a two-enclave project that will provide a simple word-filtering UI. One enclave will process user I/O and the other enclave will hold a word list that will be unavailable to the UI enclave. The capability system will assure that the built-in word list is inaccessible from the UI enclave.
+
+While a real project would use more complete error handling and resouce management, this tutorial will simplify these concerns to stay focused on the pirate tooling.
 
 The source code is available in whole form at https://github.com/GaloisInc/pirate/blob/master/demos/word_filter/filter.c
 
 Imports and helper prototypes
 -----------------------------
+
+We'll include libpirate and other standard headers.
 
 .. code-block:: c
 
@@ -19,7 +25,15 @@ Imports and helper prototypes
 
     #define ARRAY_LEN(arr) (sizeof arr / sizeof *arr)
 
-    static void expand_buffer(size_t n, char ** msg_ptr, size_t * n_ptr);
+    /* Ensure the given buffer is large enough to hold n bytes */
+    static void expand_buffer(size_t n, char ** msg_ptr, size_t * n_ptr)
+    {
+        if (n > *n_ptr) {
+            *msg_ptr = realloc(*msg_ptr, n);
+            if (NULL == *msg_ptr) { exit(EXIT_FAILURE); }
+            *n_ptr = n;
+        }
+    }
 
 Enclave and Capability Declarations
 -----------------------------------
@@ -27,8 +41,6 @@ Enclave and Capability Declarations
 A Pirate source file can declare both enclave and capabilities used in a program. It can also declare which capabilities each enclave can support.
 
 Each enclave will eventually be realized as a separate executable. Each enclave can have its own main function.
-
-We can mark aspects of a source file with capability restrictions. These restrictions will ensure the marked elements will only be available on enclaves declared to have that capability.
 
 In this tutorial we will associate a capability with a sensitive list of words. This capability will only be available to the word list host enclave. The UI will not have this capability, which will guarantee that the word list will not be accessible in the UI executable.
 
@@ -46,7 +58,7 @@ Next we'll define the list of sensitive words and annotate the list to only be a
 
 This annotation :code:`pirate_capability` can be assigned to various language structures including global variables as seen here.
 
-Because :code:`censor` refers to :code:`word_list` it will also inherit that restriction.
+Because :code:`censor` refers to :code:`word_list` it will automatically inherit that restriction.
 
 .. code-block:: c
 
@@ -74,7 +86,7 @@ Communication with libpirate channels
 
 We'll use libpirates channels to communicate between these two enclaves. This library provides an API that is quite comparable to the standard POSIX file I/O API.
 
-libpirate can operate in both stream and datagram modes. For this demonstration we're using streams.
+libpirate can operate in both stream and datagram modes. For this demonstration we're using streams. Just like the standard :code:`read` and :code:`write` API, operations might not use the whole buffer given. We wrap those calls here to call them until the given buffer is exhausted.
 
 .. code-block:: c
 
@@ -107,7 +119,7 @@ libpirate can operate in both stream and datagram modes. For this demonstration 
 Message Framing
 ---------------
 
-For this simple demonstration we'll use a trivial framing protocol where the size of a message is sent first as a fixed-length integer and then the variable length message will follow.
+For this simple demonstration we'll use a trivial framing protocol where the size of a message is sent first as a fixed-length integer and then the variable-length message will follow.
 
 .. code-block:: c
 
@@ -117,18 +129,19 @@ For this simple demonstration we'll use a trivial framing protocol where the siz
         write_all(c, msg, n);
     }
 
-    static void receive(int c, char **msg_ptr, size_t *n_ptr)
+    static size_t receive(int c, char **msg_ptr, size_t *n_ptr)
     {
         size_t n;
         read_all(c, (char *)&n, sizeof n);
         expand_buffer(n, msg_ptr, n_ptr);
         read_all(c, *msg_ptr, n);
+        return n;
     }
 
 Enclave Entry-points
 --------------------
 
-Each enclave will need a main function defined. These functions are designated using the :code:`pirate_enclave_main` attribute.
+Each enclave will need a main function. These functions are designated using the :code:`pirate_enclave_main` attribute.
 
 Both enclaves start their communication channels using libpirate's :code:`pirate_open_parse`. This variation of opening a channel takes a connection string to pick the channel type and parameters.
 
@@ -154,12 +167,13 @@ Both enclaves start their communication channels using libpirate's :code:`pirate
             printf("Input> ");
             fflush(stdout);
 
-            if (-1 == getline(&line, &line_sz, stdin)) {
+            ssize_t len = getline(&line, &line_sz, stdin);
+            if (len < 0) {
             puts("\n");
             break;
             }
 
-            transmit(writechan, line, line_sz);
+            transmit(writechan, line, len + /*null-term*/1);
             receive(readchan, &line, &line_sz);
 
             printf("Response> %s", line);
@@ -183,28 +197,14 @@ Both enclaves start their communication channels using libpirate's :code:`pirate
 
         char *line = NULL;
         size_t line_sz = 0;
+
         for (;;) {
-            receive(readchan, &line, &line_sz);
+            size_t len = receive(readchan, &line, &line_sz);
             printf("Got> %s", line);
             censor(line);
-            transmit(writechan, line, line_sz);
+            transmit(writechan, line, len);
             printf("Sent> %s", line);
         }
 
         return 0;
-    }
-
-Helper function implementations
--------------------------------
-
-.. code-block:: c
-
-    static void expand_buffer(size_t n, char ** msg_ptr, size_t * n_ptr)
-    {
-        if (n > *n_ptr) {
-            char *msg = realloc(*msg_ptr, n);
-            if (NULL == msg) { exit(EXIT_FAILURE); }
-            *msg_ptr = msg;
-            *n_ptr = n;
-        }
     }
