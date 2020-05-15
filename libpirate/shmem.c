@@ -47,11 +47,17 @@ static inline uint32_t get_read(uint64_t value) {
 }
   
 static inline uint64_t create_position(uint32_t write, uint32_t read,
-                                       int writer) {
+                                       int bufsize, int writer) {
     uint8_t status = 1;
 
-    if (read == write) {
-        status = writer ? 2 : 0;
+    if (writer) {
+        if (((write - read + bufsize) % bufsize) <= sizeof(pirate_header_t)) {
+            status = 2;
+        }
+    } else {
+        if (read == write) {
+            status = 0;
+        }
     }
     return (((uint64_t)status) << 56) | (((uint64_t)write) << 28) | read;
 }
@@ -65,7 +71,7 @@ static inline int is_full(uint64_t value) {
 }
 
 static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
-    return (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
+    return (unsigned char*)(shmem_buffer + 1);
 }
 
 static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
@@ -312,17 +318,37 @@ int shmem_buffer_close(shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
+static uint32_t shmem_buffer_do_read(shmem_buffer_t* buf, void *dst, size_t len, uint32_t reader, size_t nbytes) {
+    size_t nbytes1, nbytes2;
+
+    nbytes = MIN(nbytes, len);
+    nbytes1 = MIN(buf->size - reader, nbytes);
+    nbytes2 = nbytes - nbytes1;
+    memcpy(dst, shared_buffer(buf) + reader, nbytes1);
+    if (nbytes2 > 0) {
+        memcpy(((char *)dst) + nbytes1, shared_buffer(buf), nbytes2);
+    }
+    return (reader + nbytes) % buf->size;
+}
+
 ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     int was_full;
-    size_t nbytes, nbytes1, nbytes2;
+    size_t nbytes;
     uint32_t reader, writer;
+    pirate_header_t header;
+    uint32_t packet_count;
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
         errno = EBADF;
         return -1;
+    }
+
+    // memcpy performance optimization
+    if (count > 65536) {
+        count = 65536;
     }
 
     position = atomic_load(&buf->position);
@@ -357,19 +383,17 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         nbytes = buf->size + writer - reader;
     }
 
-    count = MIN(count, 65536);
-    nbytes = MIN(nbytes, count);
-    nbytes1 = MIN(buf->size - reader, nbytes);
-    nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buffer, shared_buffer(buf) + reader, nbytes1);
-    if (nbytes2 > 0) {
-        memcpy(((char *)buffer) + nbytes1, shared_buffer(buf), nbytes2);
+    reader = shmem_buffer_do_read(buf, &header, sizeof(header), reader, nbytes);
+    nbytes -= sizeof(header);
+    packet_count = ntohl(header.count);
+    reader = shmem_buffer_do_read(buf, buffer, MIN(count, packet_count), reader, nbytes);
+    if (count < packet_count) {
+        reader = (reader + packet_count - count) % buf->size;
     }
 
     for (;;) {
-        uint64_t update = create_position(writer,
-            (reader + nbytes) % buf->size, 0);
+        uint64_t update = create_position(writer, reader, buf->size, 0);
         if (atomic_compare_exchange_weak(&buf->position, &position,
                 update)) {
             was_full = is_full(position);
@@ -384,7 +408,20 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         pthread_mutex_unlock(&buf->mutex);
     }
 
-    return nbytes;
+    return MIN(count, packet_count);
+}
+
+static uint32_t shmem_buffer_do_write(shmem_buffer_t* buf, const void *src, size_t len, uint32_t writer, size_t nbytes) {
+    size_t nbytes1, nbytes2;
+
+    nbytes = MIN(nbytes, len);
+    nbytes1 = MIN(buf->size - writer, nbytes);
+    nbytes2 = nbytes - nbytes1;
+    memcpy(shared_buffer(buf) + writer, src, nbytes1);
+    if (nbytes2 > 0) {
+        memcpy(shared_buffer(buf), ((char *)src) + nbytes1, nbytes2);
+    }
+    return (writer + nbytes) % buf->size;
 }
 
 ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
@@ -392,13 +429,19 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
     (void) param;
     uint64_t position;
     int was_empty;
-    size_t nbytes, nbytes1, nbytes2;
+    size_t nbytes;
     uint32_t reader, writer;
+    pirate_header_t header;
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
         errno = EBADF;
         return -1;
+    }
+
+    // memcpy performance optimization
+    if (count > 65536) {
+        count = 65536;
     }
 
     position = atomic_load(&buf->position);
@@ -440,18 +483,17 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         nbytes = buf->size + reader - writer;
     }
 
-    count = MIN(count, 65536);
-    nbytes = MIN(nbytes, count);
-    nbytes1 = MIN(buf->size - writer, nbytes);
-    nbytes2 = nbytes - nbytes1;
-    memcpy(shared_buffer(buf) + writer, buffer, nbytes1);
-    if (nbytes2 > 0) {
-        memcpy(shared_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
-    }
+    // shmem will truncate a write if the buffer
+    // does not have avialable space for the entire packet
+    count = MIN(count, nbytes - sizeof(header));
+    header.count = htonl(count);
+    writer = shmem_buffer_do_write(buf, &header, sizeof(header), writer, nbytes);
+    nbytes -= sizeof(header);
+    writer = shmem_buffer_do_write(buf, buffer, count, writer, nbytes);
+
     atomic_thread_fence(memory_order_release);
     for (;;) {
-        uint64_t update = create_position((writer + nbytes) % buf->size,
-                                            reader, 1);
+        uint64_t update = create_position(writer, reader, buf->size, 1);
         if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             was_empty = is_empty(position);
@@ -466,5 +508,5 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         pthread_mutex_unlock(&buf->mutex);
     }
 
-    return nbytes;
+    return count;
 }
