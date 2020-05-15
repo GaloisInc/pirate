@@ -200,7 +200,7 @@ void ChannelTest::WriterTest()
     {
         int sts;
         ssize_t rv;
-        size_t wl = len_arr[i].writer;
+        ssize_t wl = len_arr[i].writer;
 
         WriteDataInit(wl);
 
@@ -231,8 +231,8 @@ void ChannelTest::ReaderTest()
     {
         int sts;
         ssize_t rv;
-        size_t rl = len_arr[i].reader;
-        size_t exp = MIN(len_arr[i].reader, len_arr[i].writer);
+        ssize_t rl = len_arr[i].reader;
+        ssize_t exp = MIN(len_arr[i].reader, len_arr[i].writer);
 
         memset(Reader.buf, 0xFA, rl);
 
