@@ -1,3 +1,5 @@
+#! /usr/bin/env pal
+
 enclaves:
     - name: my_app
       path: app
