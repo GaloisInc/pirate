@@ -21,12 +21,24 @@
 #include "libpirate.h"
 #include "pirate_common.h"
 
+static ssize_t pirate_stream_do_read(int fd, uint8_t *buf, size_t count) {
+    size_t rx = 0;
+    ssize_t rv;
+    while (rx < count) {
+        rv = read(fd, buf + rx, count - rx);
+        if (rv < 0) {
+            return rv;
+        }
+        rx += rv;
+    }
+    return rx;
+}
 
 ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count) {
     pirate_header_t *header = (pirate_header_t*) ctx->min_tx_buf;
     int fd = ctx->fd;
     uint32_t packet_count;
-    size_t rx = 0;
+    size_t rx;
     ssize_t rv;
 
     if (fd < 0) {
@@ -37,38 +49,29 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
         count = UINT32_MAX;
     }
 
-    while (rx < min_tx) {
-        rv = read(fd, ctx->min_tx_buf + rx, min_tx - rx);
-        if (rv < 0) {
-            return rv;
-        }
-        rx += rv;
+    rv = pirate_stream_do_read(fd, ctx->min_tx_buf, min_tx);
+    if (rv < 0) {
+        return rv;
     }
     packet_count = ntohl(header->count);
     count = MIN(count, packet_count);
     size_t min_tx_data = MIN(count, min_tx - sizeof(pirate_header_t));
     memcpy(buf, ctx->min_tx_buf + sizeof(pirate_header_t), min_tx_data);
-    rx = min_tx_data;
-    while (rx < count) {
-        rv = read(fd, ((uint8_t*) buf) + rx, count - rx);
+    if (min_tx_data < count) {
+        rv = pirate_stream_do_read(fd, ((uint8_t*) buf) + min_tx_data, count - min_tx_data);
         if (rv < 0) {
             return rv;
         }
-        rx += rv;
     }
     rx = MAX(count, min_tx - sizeof(pirate_header_t));
     if (rx < packet_count) {
         // slow path
-        uint8_t *temp = malloc(packet_count - count);
-        while (rx < packet_count) {
-            rv = read(fd, temp + rx - count, packet_count - rx);
-            if (rv < 0) {
-                free(temp);
-                return rv;
-            }
-            rx += rv;
-        }
+        uint8_t *temp = malloc(packet_count - rx);
+        rv = pirate_stream_do_read(fd, temp, packet_count - rx);
         free(temp);
+        if (rv < 0) {
+            return rv;
+        }
     }
     return count;
 }

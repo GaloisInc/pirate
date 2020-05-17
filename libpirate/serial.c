@@ -154,12 +154,22 @@ int pirate_serial_close(serial_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return read(ctx->fd, buf, count);
+ssize_t serial_do_read(serial_ctx *ctx, uint8_t *buf, size_t count) {
+    size_t rx = 0;
+    ssize_t rv;
+    int fd = ctx->fd;
+
+    while (rx < count) {
+        rv = read(fd, buf + rx, count - rx);
+        if (rv < 0) {
+            return rv;
+        }
+        rx += rv;
+    }
+    return rx;
 }
 
-ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+static ssize_t serial_do_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
@@ -190,5 +200,49 @@ ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx,
         wr_buf += rv;
     } while(remain > 0);
 
+    return count;
+}
+
+ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
+    (void) param;
+    pirate_header_t header;
+    ssize_t rv;
+    size_t packet_count;
+
+    rv = serial_do_read(ctx, (uint8_t*) &header, sizeof(header));
+    if (rv < 0) {
+        return rv;
+    }
+    packet_count = ntohl(header.count);
+    count = MIN(count, packet_count);
+    rv = serial_do_read(ctx, buf, count);
+    if (rv < 0) {
+        return rv;
+    }
+    if (count < packet_count) {
+        // slow path
+        uint8_t *temp = malloc(packet_count - count);
+        rv = serial_do_read(ctx, temp, packet_count - count);
+        free(temp);
+        if (rv < 0) {
+            return rv;
+        }
+    }
+    return count;
+}
+
+ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+    pirate_header_t header;
+    header.count = htonl(count);
+    ssize_t rv;
+
+    rv = serial_do_write(param, ctx, &header, sizeof(header));
+    if (rv < 0) {
+        return rv;
+    }
+    rv = serial_do_write(param, ctx, buf, count);
+    if (rv < 0) {
+        return rv;
+    }
     return count;
 }
