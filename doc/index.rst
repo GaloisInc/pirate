@@ -61,4 +61,5 @@ Additional information about Pirate is in the sections below:
    building_applications
    elf_extensions
    unidirectional_channels
+   tutorial
    timestamp_demo
