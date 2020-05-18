@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <libpirate.h>
 #include <limits.h>
 #include <pal/envelope.h>
 #include <pal/pal.h>
@@ -25,6 +26,18 @@ int get_pal_fd()
         return -1;
 
     return res;
+}
+
+// FIXME: Do we want to sort these in clang so we can search smarter here?
+char *lookup_pirate_resource_param(struct pirate_resource *pr, char *name)
+{
+    size_t i;
+
+    for(i = 0; i < pr->pr_params_len; ++i)
+        if(!strcmp(pr->pr_params[i].prp_name, name))
+            return pr->pr_params[i].prp_value;
+
+    return NULL;
 }
 
 int get_boolean_res(int fd, const char *name, bool *outp)
@@ -127,6 +140,36 @@ int get_file_res(int fd, const char *name, int *outp)
     return res;
 }
 
+int get_pirate_channel_cfg(int fd, const char *name, char **outp)
+{
+    int res = 0;
+    size_t size;
+    pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
+
+    if((res = pal_send_resource_request(fd, "pirate_channel", name, 0)))
+        ;
+    if((res = pal_recv_env(fd, &env, 0)))
+        ;
+    else if(env.type != PAL_RESOURCE)
+        res = 1;
+    else {
+        pal_env_iterator_t it = pal_env_iterator_start(&env);
+
+        char *cfg;
+        size = pal_env_iterator_size(it);
+        if(!(cfg = malloc(size + 1)))
+            res = -errno;
+        else {
+            memcpy(*outp, pal_env_iterator_data(it), size);
+            (*outp)[size] = '\0';
+        }
+    }
+
+    pal_free_env(&env);
+
+    return res;
+}
+
 /*
  * Automatic resource initializers
  */
@@ -194,4 +237,54 @@ void __attribute__((constructor)) init_file_resources()
 {
     init_resources_common("file", (get_func_t)&get_file_res,
             __start_pirate_res_file, __stop_pirate_res_file);
+}
+
+extern struct pirate_resource __start_pirate_res_pirate_channel[];
+extern struct pirate_resource __stop_pirate_res_pirate_channel[];
+
+void __attribute__((constructor)) init_pirate_channel_resources()
+{
+    int fd;
+    struct pirate_resource *pr;
+    struct pirate_resource *start = __start_pirate_res_pirate_channel;
+    struct pirate_resource *stop = __stop_pirate_res_pirate_channel;
+
+    if(start == stop)
+        return; // No resources present
+
+    if((fd = get_pal_fd()) < 0) {
+        fputs("PAL resources declared, but no PAL_FD present in environment. "
+                "Are we running with PAL?\n", stderr);
+        exit(1);
+    }
+
+    for(pr = start; pr < stop; ++pr) {
+        int err, perms;
+        char *cfg, *permstr;
+
+        if((err = get_pirate_channel_cfg(fd, pr->pr_name, &cfg))) {
+            fprintf(stderr, "Fatal error getting pirate_channel %s: %s\n",
+                    pr->pr_name,
+                    err > 0 ? pal_strerror(err) : strerror(-err));
+            exit(1);
+        }
+
+        permstr = lookup_pirate_resource_param(pr, "permisions");
+        if(permstr) {
+            if(!strcmp(permstr, "readonly"))
+                perms = O_RDONLY;
+            else if(!strcmp(permstr, "writeonly"))
+                perms = O_WRONLY;
+            else
+                perms = O_RDWR;
+        }
+
+        if((err = pirate_open_parse(cfg, perms))) {
+            fprintf(stderr, "Fatal error opening pirate_channel %s: %s\n",
+                    pr->pr_name, strerror(errno));
+            exit(1);
+        }
+
+        free(cfg);
+    }
 }

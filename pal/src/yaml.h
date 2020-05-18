@@ -28,18 +28,32 @@ struct endpoint {
     uint16_t ep_dst_port;
 };
 
+struct session {
+    uint32_t sess_level;
+    uint32_t sess_src_id;
+    uint32_t sess_dst_id;
+    uint32_t *sess_messages;
+    uint32_t sess_messages_count;
+    uint32_t sess_id;
+};
+
 struct rsc_contents {
 
-    /* gaps_ and fd_channel
+    /* pirate_ and fd_channel
      */
-    channel_enum_t cc_type;
-    struct endpoint *cc_left;
-    struct endpoint *cc_right;
-    char *cc_path;
-    size_t cc_buffer;
-    size_t cc_packet_size;
-    size_t cc_iov_length;
-    uint16_t cc_rate;
+    channel_enum_t cc_channel_type;
+    char *cc_path;              // device, pipe, unix_socket, shmem, udp_shmem, uio_device, serial
+    uint32_t cc_iov_length;     // device, pipe, unix_socket, tcp_socket, udp_socket
+    uint32_t cc_buffer_size;    // unix_socket, tcp_socket, udp_socket, shmem, udp_shmem
+    char *cc_host;              // tcp_socket, udp_socket, ge_eth
+    uint16_t cc_port;           // tcp_socket, udp_socket, ge_eth
+    size_t cc_packet_size;      // udp_shmem
+    size_t cc_packet_count;     // udp_shmem
+    uint16_t cc_region;         // uio_device
+    speed_t cc_baud;            // serial
+    uint32_t cc_mtu;            // mtu, mercury, ge_eth
+    struct session *cc_session; // mercury
+    uint32_t cc_message_id;     // ge_eth
 
     /* Trivial resources
      */

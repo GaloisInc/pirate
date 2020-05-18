@@ -67,3 +67,7 @@ if (PNT_DEMO)
     add_subdirectory(pnt_demo/5.yield)
 endif(PNT_DEMO)
 
+if (RESOURCE_DEMOS)
+    add_subdirectory(resource_demos/1.manual_resources_with_pal)
+    add_subdirectory(resource_demos/2.auto_resources_with_pal)
+endif(RESOURCE_DEMOS)
