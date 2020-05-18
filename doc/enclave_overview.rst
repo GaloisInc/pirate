@@ -70,14 +70,10 @@ Capability Annotations
 Capability annotations are used to define capabilities in code, and to
 annotate enclaves and code with capabilities.
 
-
-Our capability model includes a simple form of inheritance, and one
-may define both new capabilities and extended capabilities.  Extended
-capabilities encompass a parent capability, and annotating an enclave
-with an extended capability implicitly indicates it has the parent
-capability while annotating code with an extended capability
-implicitly indicates that it requires the
-
+Our capability model includes a simple form of inheritance. Capabilities
+can be defined to have a *parent* capability. Annotating an *enclave*
+with a capability that has a parent implicitly indicates the enclave supports
+the parent capability.
 
 .. code-block:: c
 
@@ -120,3 +116,48 @@ capability.  In the absence of such an annotation, the linker will
 report errors if the enclave named ``<enclave>`` depends on any
 information with the given level.  If ``<capability>`` is an extended
 capability, this recursively adds any parent capabilities.
+
+Capability Inheritance Example
+------------------------------
+
+.. code-block:: c
+
+    /*
+    ┌──────────────┐
+    │    sensor    │
+    │┌─────┐┌─────┐│
+    ││ gps ││radio││
+    │└─────┘└─────┘│
+    └──────────────┘
+    */
+
+    #pragma capability declare(sensor)
+    #pragma capability declare(gps, sensor)
+    #pragma capability declare(radio, sensor)
+
+This function only works on enclaves that have gps.
+
+.. code-block:: c
+
+    void need_gps(void) __attribute__((pirate_capability("gps")));
+
+This function works on enclaves with any of: ``sensor``, ``gps``, ``radio``.
+
+.. code-block:: c
+
+    void need_sensor(void) __attribute__((pirate_capability("gps")));
+
+This defines an enclave ``e`` that can use code requiring ``sensor``
+
+.. code-block:: c
+
+    #pragma enclave declare(e)
+    #pragma enclave capability(e, sensor)
+
+This defines an enclave ``e`` that cna use code requiring either ``sensor`` or ``gps``.
+
+.. code-block:: c
+
+
+    #pragma enclave declare(e)
+    #pragma enclave capability(e, gps)
