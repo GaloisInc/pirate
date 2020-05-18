@@ -1,0 +1,28 @@
+#! /usr/bin/env pal
+enclaves:
+    - name: my_app
+      path: app
+resources:
+    - name: my_integer
+      ids: [ "my_app/my_integer" ]
+      type: integer
+      contents:
+          integer_value: 9999
+    - name: my_string
+      ids: [ "my_app/my_string" ]
+      type: string
+      contents:
+          string_value: blargh
+    - name: my_boolean
+      ids: [ "my_app/my_boolean" ]
+      type: boolean
+      contents:
+          boolean_value: true
+    - name: my_file
+      ids: [ "my_app/my_file" ]
+      type: file
+      contents:
+          file_path: /etc/passwd
+          file_flags: [ "O_RDONLY" ]
+config:
+    log_level: debug
