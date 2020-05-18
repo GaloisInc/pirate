@@ -71,7 +71,7 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
 }
 
 int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "udp_socket,%s,%u,iov_len=%u,buffer_size=%u", param->addr,
+    return snprintf(desc, len, "udp_socket,%s,%u,iov_len=%u,buffer_size=%u", param->addr,
                     param->port, param->iov_len, param->buffer_size);
 }
 

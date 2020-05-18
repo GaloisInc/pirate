@@ -57,7 +57,7 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
 }
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "device,%s,iov_len=%u", param->path, param->iov_len);
+    return snprintf(desc, len, "device,%s,iov_len=%u", param->path, param->iov_len);
 }
 
 int pirate_device_open(int flags, pirate_device_param_t *param, device_ctx *ctx) {

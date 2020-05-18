@@ -183,7 +183,7 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
 }
 
 int pirate_ge_eth_get_channel_description(const pirate_ge_eth_param_t *param, char *desc, int len) {
-    return snprintf(desc, len - 1, "ge_eth,%s,%u,%u,mtu=%u", param->addr,
+    return snprintf(desc, len, "ge_eth,%s,%u,%u,mtu=%u", param->addr,
                     param->port, param->message_id, param->mtu);
 }
 
