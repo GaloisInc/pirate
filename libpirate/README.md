@@ -7,6 +7,10 @@ be supported: configuring GAPS hardware, loading code and data onto the
 appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
+libpirate is a datagram communication library. Reads and writes are
+transmitted in indivisible packets. Reading a partial packet will
+drop the remaining contents of the packet.
+
 ## Usage
 
 See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
@@ -48,7 +52,7 @@ Writer:
 ### PIPE type
 
 ```
-"pipe,path"
+"pipe,path[,min_tx_size=N]"
 ```
 
 Linux named pipes. Path to named pipe must be specified.
@@ -56,7 +60,7 @@ Linux named pipes. Path to named pipe must be specified.
 ### DEVICE type
 
 ```
-"device,path"
+"device,path[,min_tx_size=N]"
 ```
 
 The pathname to the character device must be specified.
@@ -64,7 +68,7 @@ The pathname to the character device must be specified.
 ### UNIX_SOCKET type
 
 ```
-"unix_socket,path[,buffer_size=N]"
+"unix_socket,path[,buffer_size=N,min_tx_size=N]"
 ```
 
 Unix domain socket communication. Path to Unix socket must be specified.
@@ -72,7 +76,7 @@ Unix domain socket communication. Path to Unix socket must be specified.
 ### TCP_SOCKET type
 
 ```
-"tcp_socket,reader addr,reader port[,buffer_size=N]"
+"tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N]"
 ```
 
 TCP socket communication. Host and port of the reader process must be specified.

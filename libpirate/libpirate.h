@@ -42,18 +42,21 @@ typedef enum {
     // This filepath points to a character device, named pipe, or a derived
     // channel type.
     // Configuration parameters -#include <termios.h> pirate_device_param_t
-    //  - path    - device path
+    //  - path        - device path
+    //  - min_tx_size - minimum transmit size (bytes)
     DEVICE,
 
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe).
     // Configuration parameters - pirate_pipe_param_t
-    //  - path    - file path to named pipe
+    //  - path        - file path to named pipe
+    //  - min_tx_size - minimum transmit size (bytes)
     PIPE,
 
     // The gaps channel is implemented using a Unix domain socket.
     //  - path        - file path to unix socket
     //  - buffer_size - unix socket buffer size
+    //  - min_tx_size - minimum transmit size (bytes)
     UNIX_SOCKET,
 
     // The gaps channel is implemented by using TCP sockets.
@@ -61,6 +64,7 @@ typedef enum {
     //  - addr        - IP address, if empty then 127.0.0.1 is used
     //  - port        - IP port
     //  - buffer_size - TCP socket buffer size
+    //  - min_tx_size - minimum transmit size (bytes)
     TCP_SOCKET,
 
     // The gaps channel is implemented by using TCP sockets.
@@ -301,18 +305,18 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                         \
-    "Supported channels:\n"                                                          \
-    "  DEVICE        device,path\n"                                                  \
-    "  PIPE          pipe,path\n"                                                    \
-    "  UNIX SOCKET   unix_socket,path[,buffer_size=N]\n"                             \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N]\n"           \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]\n"           \
-    "  SHMEM         shmem,path[,buffer_size=N]\n"                                   \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"  \
-    "  UIO           uio[,path=N]\n"                                                 \
-    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                   \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"                   \
+#define GAPS_CHANNEL_OPTIONS                                                             \
+    "Supported channels:\n"                                                              \
+    "  DEVICE        device,path[,min_tx_size=N]\n"                                      \
+    "  PIPE          pipe,path[,min_tx_size=N]\n"                                        \
+    "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]\n"               \
+    "  SHMEM         shmem,path[,buffer_size=N]\n"                                       \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"      \
+    "  UIO           uio[,path=N]\n"                                                     \
+    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                       \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"                       \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
@@ -420,15 +424,22 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 int pirate_get_fd(int gd);
 
-// pirate_read() attempts to read up to count bytes from
-// gaps descriptor gd into the buffer starting at buf.
+// pirate_read() attempts to read the next packet of up
+// to count bytes from gaps descriptor gd to the buffer
+// starting at buf.
+//
+// If the packet is longer than count bytes, then you get the
+// first size bytes of the packet and the rest of the packet
+// is lost.
 //
 // On success, the number of bytes read is returned.
 // On error, -1 is returned, and errno is set appropriately.
+
 ssize_t pirate_read(int gd, void *buf, size_t count);
 
-// pirate_write() writes up to count bytes from the buffer
-// starting at buf to the gaps descriptor gd.
+// pirate_write() writes the next packet of count bytes
+// from the buffer starting at buf to the gaps descriptor
+// gd.
 //
 // On success, the number of bytes written is returned
 // (zero indicates nothing was written). On error,
