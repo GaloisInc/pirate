@@ -94,4 +94,30 @@ TEST(CommonChannel, RegisterEnclave)
     ASSERT_EQ(1u, param.dst_enclave);
 }
 
+TEST(CommonChannel, UnparseChannelParam)
+{
+    char output[80];
+    int rv;
+    pirate_channel_param_t param;
+
+    rv = pirate_parse_channel_param("device,/dev/null,iov_len=0", &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = pirate_unparse_channel_param(&param, output, 80);
+    ASSERT_EQ(26, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("device,/dev/null,iov_len=0", output);
+
+    rv = pirate_unparse_channel_param(&param, output, 26);
+    ASSERT_EQ(26, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("device,/dev/null,iov_len=", output);
+
+    rv = pirate_unparse_channel_param(&param, output, 25);
+    ASSERT_EQ(26, rv);
+    ASSERT_EQ(0, errno);    
+    ASSERT_STREQ("device,/dev/null,iov_len", output);
+}
+
 } // namespace
