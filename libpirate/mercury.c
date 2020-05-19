@@ -208,7 +208,7 @@ static ssize_t mercury_message_unpack(const void *buf, size_t buf_len,
 
     payload_len = be32toh(msg_hdr->data_length);
     if ((payload_len + sizeof(ilip_message_t)) > buf_len) {
-        errno = ENOBUFS;
+        errno = EIO;
         return -1;
     }
 
