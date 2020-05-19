@@ -76,7 +76,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
     return count;
 }
 
-ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, const void *buf, size_t count) {
+ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, unsigned mtu, const void *buf, size_t count) {
     pirate_header_t *header = (pirate_header_t*) ctx->min_tx_buf;
     int fd = ctx->fd;
     size_t tx = 0;
@@ -84,6 +84,10 @@ ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, const void *buf, siz
 
     if (fd < 0) {
         errno = EBADF;
+        return -1;
+    }
+    if ((mtu > 0) && (count > (mtu - sizeof(pirate_header_t)))) {
+        errno = EMSGSIZE;
         return -1;
     }
     if (count > UINT32_MAX) {

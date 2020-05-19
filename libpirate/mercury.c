@@ -71,7 +71,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     uint64_t linux_time;
 
     if (msg_len > param->mtu) {
-        errno = ENOBUFS;
+        errno = EMSGSIZE;
         return -1;
     }
 
@@ -194,17 +194,12 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 }
 
 
-static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
+static ssize_t mercury_message_unpack(const void *buf, size_t buf_len,
                                         void *data, ssize_t count,
                                         const pirate_mercury_param_t *param) {
     const ilip_message_t *msg_hdr = (const ilip_message_t *)buf;
     const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
     ssize_t payload_len;
-
-    if (buf_len > (ssize_t)param->mtu) {
-        errno = ENOBUFS;
-        return -1;
-    }
 
     if ((be32toh(msg_hdr->header.session) != param->session.id) ||
         (be32toh(msg_hdr->header.count) != 1u)) {
@@ -212,8 +207,8 @@ static ssize_t mercury_message_unpack(const void *buf, ssize_t buf_len,
     }
 
     payload_len = be32toh(msg_hdr->data_length);
-    if ((payload_len + sizeof(ilip_message_t)) > param->mtu) {
-        errno = EIO;
+    if ((payload_len + sizeof(ilip_message_t)) > buf_len) {
+        errno = ENOBUFS;
         return -1;
     }
 
@@ -460,7 +455,7 @@ ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
         return -1;
     }
 
-    return mercury_message_unpack(ctx->buf, rd_len, buf, count, param);
+    return mercury_message_unpack(ctx->buf, (size_t) rd_len, buf, count, param);
 }
 
 ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,

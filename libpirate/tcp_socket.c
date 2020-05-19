@@ -64,6 +64,8 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
             param->buffer_size = strtol(val, NULL, 10);
         } else if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
             param->min_tx = strtol(val, NULL, 10);
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -75,7 +77,19 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len) {
     int buffer_size = (param->buffer_size != 0);
     int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    if (buffer_size && min_tx) {
+    int mtu = (param->mtu != 0);
+    if (mtu && buffer_size && min_tx) {
+        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
+            param->addr, param->port, param->buffer_size, param->min_tx);
+    } else if (mtu && buffer_size) {
+        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,mtu=%u",
+            param->addr, param->port, param->buffer_size, param->mtu);
+    } else if (mtu && min_tx) {
+        return snprintf(desc, len, "tcp_socket,%s,%u,min_tx_size=%u,mtu=%u",
+            param->addr, param->port, param->min_tx, param->mtu);
+    } else if (mtu) {
+        return snprintf(desc, len, "tcp_socket,%s,%u,mtu=%u", param->addr, param->port, param->mtu);
+    } else if (buffer_size && min_tx) {
         return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
             param->addr, param->port, param->buffer_size, param->min_tx);
     } else if (buffer_size) {
@@ -247,5 +261,5 @@ ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socke
 }
 
 ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, param->mtu, buf, count);
 }

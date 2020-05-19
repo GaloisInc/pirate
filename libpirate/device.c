@@ -54,6 +54,8 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
         }
         if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
             param->min_tx = strtol(val, NULL, 10);
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -64,7 +66,13 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
     int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    if (min_tx) {
+    int mtu = (param->mtu != 0);
+    if (mtu && min_tx) {
+        return snprintf(desc, len, "device,%s,mtu=%u,min_tx_size=%u", param->path,
+            param->mtu, param->min_tx);
+    } else if (mtu) {
+        return snprintf(desc, len, "device,%s,mtu=%u", param->path, param->mtu);
+    } else if (min_tx) {
         return snprintf(desc, len, "device,%s,min_tx_size=%u", param->path, param->min_tx);
     } else {
         return snprintf(desc, len, "device,%s", param->path);
@@ -112,5 +120,5 @@ ssize_t pirate_device_read(const pirate_device_param_t *param, device_ctx *ctx, 
 }
 
 ssize_t pirate_device_write(const pirate_device_param_t *param, device_ctx *ctx, const void *buf, size_t count) {
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, param->mtu, buf, count);
 }

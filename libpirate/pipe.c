@@ -54,6 +54,8 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
         }
         if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
             param->min_tx = strtol(val, NULL, 10);
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -64,7 +66,13 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
 
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
     int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    if (min_tx) {
+    int mtu = (param->mtu != 0);
+    if (mtu && min_tx) {
+        return snprintf(desc, len, "pipe,%s,mtu=%u,min_tx_size=%u", param->path,
+            param->mtu, param->min_tx);
+    } else if (mtu) {
+        return snprintf(desc, len, "pipe,%s,mtu=%u", param->path, param->mtu);
+    } else if (min_tx) {
         return snprintf(desc, len, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
     } else {
         return snprintf(desc, len, "pipe,%s", param->path);
@@ -145,5 +153,5 @@ ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *
 }
 
 ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, param->mtu, buf, count);
 }

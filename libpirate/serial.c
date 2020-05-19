@@ -179,14 +179,13 @@ ssize_t serial_do_read(serial_ctx *ctx, uint8_t *buf, size_t count) {
     return rx;
 }
 
-static ssize_t serial_do_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+static ssize_t serial_do_write(serial_ctx *ctx, const void *buf, size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
         int rv;
         uint32_t tx_buf_bytes = 0;
-        size_t wr_len = remain > param->mtu ? param->mtu : remain;
-        rv = write(ctx->fd, wr_buf, wr_len);
+        rv = write(ctx->fd, wr_buf, remain);
         if (rv < 0) {
             return -1;
         }
@@ -246,11 +245,16 @@ ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx,
     header.count = htonl(count);
     ssize_t rv;
 
-    rv = serial_do_write(param, ctx, &header, sizeof(header));
+    if ((param->mtu > 0) && (count > param->mtu)) {
+        errno = EMSGSIZE;
+        return -1;
+    }
+
+    rv = serial_do_write(ctx, &header, sizeof(header));
     if (rv < 0) {
         return rv;
     }
-    rv = serial_do_write(param, ctx, buf, count);
+    rv = serial_do_write(ctx, buf, count);
     if (rv < 0) {
         return rv;
     }

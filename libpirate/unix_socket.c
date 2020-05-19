@@ -236,5 +236,5 @@ ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_so
 }
 
 ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, buf, count);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, param->mtu, buf, count);
 }

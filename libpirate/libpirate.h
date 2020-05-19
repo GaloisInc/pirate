@@ -129,12 +129,14 @@ typedef enum {
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned min_tx;
+    unsigned mtu;
 } pirate_device_param_t;
 
 // PIPE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned min_tx;
+    unsigned mtu;
 } pirate_pipe_param_t;
 
 // UNIX_SOCKET parameters
@@ -142,6 +144,7 @@ typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
     unsigned min_tx;
+    unsigned mtu;
 } pirate_unix_socket_param_t;
 
 // TCP_SOCKET parameters
@@ -151,14 +154,17 @@ typedef struct {
     short port;
     unsigned buffer_size;
     unsigned min_tx;
+    unsigned mtu;
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
 #define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65507
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
     unsigned buffer_size;
+    unsigned mtu;
 } pirate_udp_socket_param_t;
 
 // SHMEM parameters
@@ -166,6 +172,7 @@ typedef struct {
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
+    unsigned mtu;
 } pirate_shmem_param_t;
 
 // UDP_SHMEM parameters
@@ -176,6 +183,7 @@ typedef struct {
     unsigned buffer_size;
     size_t packet_size;
     size_t packet_count;
+    unsigned mtu;
 } pirate_udp_shmem_param_t;
 
 // UIO parameters
@@ -183,6 +191,7 @@ typedef struct {
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned short region;
+    unsigned mtu;
 } pirate_uio_param_t;
 
 // SERIAL parameters
@@ -305,18 +314,18 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                             \
-    "Supported channels:\n"                                                              \
-    "  DEVICE        device,path[,min_tx_size=N]\n"                                      \
-    "  PIPE          pipe,path[,min_tx_size=N]\n"                                        \
-    "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N]\n"               \
-    "  SHMEM         shmem,path[,buffer_size=N]\n"                                       \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"      \
-    "  UIO           uio[,path=N]\n"                                                     \
-    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                       \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"                       \
+#define GAPS_CHANNEL_OPTIONS                                                                   \
+    "Supported channels:\n"                                                                    \
+    "  DEVICE        device,path[,min_tx_size=N,mtu=N]\n"                                      \
+    "  PIPE          pipe,path[,min_tx_size=N,mtu=N]\n"                                        \
+    "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
+    "  SHMEM         shmem,path[,buffer_size=N,mtu=N]\n"                                       \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
+    "  UIO           uio[,path=N,mtu=N]\n"                                                     \
+    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                             \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.

@@ -92,7 +92,7 @@ static ssize_t ge_message_pack(void *buf, const void *data, uint32_t count,
     uint8_t *msg_data = (uint8_t *)buf + sizeof(ge_header_t);
 
     if (count > (param->mtu - sizeof(ge_header_t))) {
-        errno = ENOBUFS;
+        errno = EMSGSIZE;
         return -1;
     }
 
@@ -105,8 +105,7 @@ static ssize_t ge_message_pack(void *buf, const void *data, uint32_t count,
 }
 
 static ssize_t ge_message_unpack(const void *buf, void *data,
-                                size_t data_buf_len, ge_header_t *hdr,
-                                const pirate_ge_eth_param_t *param) {
+                                size_t data_buf_len, ge_header_t *hdr) {
     const ge_header_t *msg_hdr = (ge_header_t *)buf;
     const uint8_t *msg_data = (uint8_t *)buf + sizeof(ge_header_t);
     size_t copy_len;
@@ -115,17 +114,7 @@ static ssize_t ge_message_unpack(const void *buf, void *data,
     hdr->data_len   = be16toh(msg_hdr->data_len);
     hdr->crc16      = be16toh(msg_hdr->crc16);
 
-    if (hdr->data_len > (param->mtu - sizeof(ge_header_t))) {
-        errno = ENOBUFS;
-        return -1;
-    }
-
     copy_len = MIN(hdr->data_len, data_buf_len);
-
-    if (hdr->message_id != param->message_id) {
-        errno = ENOMSG;
-        return -1;
-    }
 
     memcpy(data, msg_data, copy_len);
     return copy_len;
@@ -314,7 +303,7 @@ ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
         return rd_size;
     }
 
-    return ge_message_unpack(ctx->buf, buf, count, &hdr, param);
+    return ge_message_unpack(ctx->buf, buf, count, &hdr);
 }
 
 ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,

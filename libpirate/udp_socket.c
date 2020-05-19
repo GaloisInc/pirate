@@ -25,7 +25,9 @@
 #include "udp_socket.h"
 
 static void pirate_udp_socket_init_param(pirate_udp_socket_param_t *param) {
-    (void) param;
+    if (param->mtu == 0) {
+        param->mtu = PIRATE_DEFAULT_UDP_PACKET_SIZE;
+    }
 }
 
 int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
@@ -58,6 +60,8 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
         }
         if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -68,7 +72,14 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
 
 int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len) {
     int buffer_size = (param->buffer_size != 0);
-    if (buffer_size) {
+    int mtu = (param->mtu != 0);
+    if (buffer_size && mtu) {
+        return snprintf(desc, len, "udp_socket,%s,%u,buffer_size=%u,mtu=%u",
+            param->addr, param->port, param->buffer_size, param->mtu);
+    } else if (mtu) {
+        return snprintf(desc, len, "udp_socket,%s,%u,mtu=%u",
+            param->addr, param->port, param->mtu);
+    } else if (buffer_size) {
         return snprintf(desc, len, "udp_socket,%s,%u,buffer_size=%u",
             param->addr, param->port, param->buffer_size);
     } else {
@@ -169,6 +180,10 @@ int pirate_udp_socket_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx
 
     pirate_udp_socket_init_param(param);
     if (param->port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (param->mtu > PIRATE_DEFAULT_UDP_PACKET_SIZE) {
         errno = EINVAL;
         return -1;
     }
