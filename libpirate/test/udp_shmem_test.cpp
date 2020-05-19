@@ -102,7 +102,6 @@ class UdpShmemTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[256];
         pirate_udp_shmem_param_t *param = &Reader.param.channel.udp_shmem;
 
         const char *testPath = "/gaps.shmem_test";
@@ -132,12 +131,6 @@ public:
         }
 
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "udp_shmem,%s,buffer_size=%u,packet_size=%u,packet_count=%u",
-                    param->path, buffer_size, packet_size,
-                    packet_count);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = PIRATE_DEFAULT_SMEM_BUF_LEN / 2;

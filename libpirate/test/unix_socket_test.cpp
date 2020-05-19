@@ -75,7 +75,6 @@ class UnixSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_unix_socket_param_t *param = &Reader.param.channel.unix_socket;
 
         pirate_init_channel_param(UNIX_SOCKET, &Reader.param);
@@ -84,11 +83,6 @@ public:
         param->buffer_size = std::get<0>(test_param);
         param->min_tx = std::get<1>(test_param);
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "unix_socket,%s,buffer_size=%u,min_tx_size=%u",
-                    param->path, param->buffer_size, param->min_tx);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 };
 
@@ -100,7 +94,7 @@ TEST_P(UnixSocketTest, Run)
 }
 
 INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest,
-    Values(std::make_tuple(0, PIRATE_DEFAULT_MIN_TX),
+    Values(std::make_tuple(0, 0),
         std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
 } // namespace

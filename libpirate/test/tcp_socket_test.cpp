@@ -84,20 +84,15 @@ class TcpSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_tcp_socket_param_t *param = &Reader.param.channel.tcp_socket;
 
         pirate_init_channel_param(TCP_SOCKET, &Reader.param);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
         param->port = 26427;
         auto test_param = GetParam();
         param->buffer_size = std::get<0>(test_param);
         param->min_tx = std::get<1>(test_param);
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
-                    PIRATE_DEFAULT_TCP_IP_ADDR, param->port, param->buffer_size, param->min_tx);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 };
 
@@ -109,7 +104,7 @@ TEST_P(TcpSocketTest, Run)
 }
 
 INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
-    Values(std::make_tuple(0, PIRATE_DEFAULT_MIN_TX),
+    Values(std::make_tuple(0, 0),
         std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
 } // namespace

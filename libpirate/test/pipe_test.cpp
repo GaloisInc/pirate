@@ -63,17 +63,12 @@ class PipeTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_pipe_param_t *param = &Reader.param.channel.pipe;
 
         pirate_init_channel_param(PIPE, &Reader.param);
         strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
         param->min_tx = GetParam();
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 };
 
@@ -83,6 +78,6 @@ TEST_P(PipeTest, Run)
 }
 
 INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
-    Values(PIRATE_DEFAULT_MIN_TX, TEST_MIN_TX_LEN));
+    Values(0, TEST_MIN_TX_LEN));
 
 } // namespace

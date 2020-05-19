@@ -52,14 +52,13 @@ protected:
 
     struct TestPoint {
         TestPoint() : 
-            gd(-1), buf(0), status(-1), desc("") {
+            gd(-1), buf(0), status(-1) {
             std::memset(&param, 0, sizeof(param));
         }
 
         int gd;
         uint8_t *buf;
         int status;
-        std::string desc;
         pirate_channel_param_t param;
     } Writer, Reader;
 

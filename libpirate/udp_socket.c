@@ -25,9 +25,7 @@
 #include "udp_socket.h"
 
 static void pirate_udp_socket_init_param(pirate_udp_socket_param_t *param) {
-    if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
-    }
+    (void) param;
 }
 
 int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
@@ -69,8 +67,13 @@ int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param) {
 }
 
 int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "udp_socket,%s,%u,buffer_size=%u", param->addr,
-                    param->port, param->buffer_size);
+    int buffer_size = (param->buffer_size != 0);
+    if (buffer_size) {
+        return snprintf(desc, len, "udp_socket,%s,%u,buffer_size=%u",
+            param->addr, param->port, param->buffer_size);
+    } else {
+        return snprintf(desc, len, "udp_socket,%s,%u", param->addr, param->port);
+    }
 }
 
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {

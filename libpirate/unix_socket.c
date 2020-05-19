@@ -66,8 +66,20 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 }
 
 int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
-    return snprintf(desc, len, "unix_socket,%s,buffer_size=%u,min_tx_size=%u", param->path,
-                    param->buffer_size, param->min_tx);
+    int buffer_size = (param->buffer_size != 0);
+    int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
+    if (buffer_size && min_tx) {
+        return snprintf(desc, len, "unix_socket,%s,buffer_size=%u,min_tx_size=%u",
+            param->path, param->buffer_size, param->min_tx);
+    } else if (buffer_size) {
+        return snprintf(desc, len, "unix_socket,%s,buffer_size=%u",
+            param->path, param->buffer_size);
+    } else if (min_tx) {
+        return snprintf(desc, len, "unix_socket,%s,min_tx_size=%u",
+            param->path, param->min_tx);
+    } else {
+        return snprintf(desc, len, "unix_socket,%s", param->path);
+    }
 }
 
 static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {

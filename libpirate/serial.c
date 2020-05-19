@@ -90,23 +90,33 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
 }
 
 int pirate_serial_get_channel_description(const pirate_serial_param_t *param, char *desc, int len) {
-    const char *baud = NULL;
+    const char *baud_str = NULL;
     
     switch (param->baud) {
-    case B4800:   baud = "4800";   break;
-    case B9600:   baud = "9600";   break;
-    case B19200:  baud = "19200";  break;
-    case B38400:  baud = "38400";  break;
-    case B57600:  baud = "57600";  break;
-    case B115200: baud = "115200"; break;
-    case B230400: baud = "230400"; break;
-    case B460800: baud = "460800"; break;
+    case B4800:   baud_str = "4800";   break;
+    case B9600:   baud_str = "9600";   break;
+    case B19200:  baud_str = "19200";  break;
+    case B38400:  baud_str = "38400";  break;
+    case B57600:  baud_str = "57600";  break;
+    case B115200: baud_str = "115200"; break;
+    case B230400: baud_str = "230400"; break;
+    case B460800: baud_str = "460800"; break;
     default:
         return -1;
     }
 
-    return snprintf(desc, len, "serial,%s,baud=%s,mtu=%u", param->path, baud,
-                    param->mtu);
+    int baud = (param->baud != 0) && (param->baud != PIRATE_SERIAL_DEFAULT_BAUD);
+    int mtu = (param->mtu != 0) && (param->mtu != PIRATE_SERIAL_DEFAULT_MTU);
+    if (baud && mtu) {
+        return snprintf(desc, len, "serial,%s,baud=%s,mtu=%u", param->path, baud_str,
+            param->mtu);
+    } else if (baud) {
+        return snprintf(desc, len, "serial,%s,baud=%s", param->path, baud_str);
+    } else if (mtu) {
+        return snprintf(desc, len, "serial,%s,mtu=%u", param->path, param->mtu);
+    } else {
+        return snprintf(desc, len, "serial,%s", param->path);
+    }
 }
 
 int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx) {

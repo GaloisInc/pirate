@@ -71,7 +71,6 @@ class ShmemTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_shmem_param_t *param = &Reader.param.channel.shmem;
 
         const char *testPath = "/gaps.shmem_test";
@@ -85,10 +84,6 @@ public:
             buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
         }
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "shmem,%s,buffer_size=%u", testPath, buffer_size);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = PIRATE_DEFAULT_SMEM_BUF_LEN / 2;

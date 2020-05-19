@@ -151,9 +151,34 @@ int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
 }
 
 int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u,packet_size=%zd,packet_count=%zd", param->path,
+    int buffer_size = (param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN);
+    int packet_size = (param->packet_size != 0) && (param->packet_size != PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE);
+    int packet_count = (param->packet_count != 0) && (param->packet_count != PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT);
+    if (buffer_size && packet_size && packet_count) {
+        return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u,packet_size=%zd,packet_count=%zd", param->path,
                 param->buffer_size, param->packet_size,
                 param->packet_count);
+    } else if (packet_size && packet_count) {
+        return snprintf(desc, len, "udp_shmem,%s,packet_size=%zd,packet_count=%zd", param->path,
+                param->packet_size, param->packet_count);
+    } else if (buffer_size && packet_size) {
+        return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u,packet_size=%zd", param->path,
+                param->buffer_size, param->packet_size);
+    } else if (buffer_size && packet_count) {
+        return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u,packet_count=%zd", param->path,
+                param->buffer_size, param->packet_count);
+    } else if (packet_size) {
+        return snprintf(desc, len, "udp_shmem,%s,packet_size=%zd", param->path,
+                param->packet_size);
+    } else if (buffer_size) {
+        return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u", param->path,
+                param->buffer_size);
+    } else if (packet_count) {
+        return snprintf(desc, len, "udp_shmem,%s,packet_count=%zd", param->path,
+                param->packet_count);
+    } else {
+        return snprintf(desc, len, "udp_shmem,%s", param->path);
+    }
 }
 
 static shmem_buffer_t *udp_shmem_buffer_init(int fd, pirate_udp_shmem_param_t *param) {

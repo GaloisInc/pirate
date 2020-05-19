@@ -72,15 +72,20 @@ void ChannelTest::WriterChannelOpen()
 {
     int rv;
     char desc[256];
+    pirate_channel_param_t temp_param;
+
+    rv = pirate_unparse_channel_param(&Writer.param, desc, sizeof(desc) - 1);
+    ASSERT_EQ(0, errno);
+    ASSERT_GT(rv, 0);
+
+    rv = pirate_parse_channel_param(desc, &temp_param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, memcmp(&Writer.param, &temp_param, sizeof(pirate_channel_param_t)));
 
     Writer.gd = pirate_open_param(&Writer.param, O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Writer.gd, 0);
-
-    rv = pirate_get_channel_description(Writer.gd, desc, sizeof(desc));
-    ASSERT_EQ((int)Writer.desc.length(), rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(Writer.desc.c_str(), desc);
 
     WriterChannelPostOpen();
 
@@ -92,15 +97,20 @@ void ChannelTest::ReaderChannelOpen()
 {
     int rv;
     char desc[256];
+    pirate_channel_param_t temp_param;
+
+    rv = pirate_unparse_channel_param(&Reader.param, desc, sizeof(desc) - 1);
+    ASSERT_EQ(0, errno);
+    ASSERT_GT(rv, 0);
+
+    rv = pirate_parse_channel_param(desc, &temp_param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, memcmp(&Reader.param, &temp_param, sizeof(pirate_channel_param_t)));
 
     Reader.gd = pirate_open_param(&Reader.param, O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Reader.gd, 0);
-
-    rv = pirate_get_channel_description(Reader.gd, desc, sizeof(desc));
-    ASSERT_EQ((int)Reader.desc.length(), rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(Reader.desc.c_str(), desc);
 
     ReaderChannelPostOpen();
 

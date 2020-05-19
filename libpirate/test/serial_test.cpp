@@ -88,11 +88,9 @@ public:
 
     void ChannelInit()
     {
-        char opt[128];
         pirate_serial_param_t *param = &Reader.param.channel.serial;
 
         auto test_param = GetParam();
-        const char *baud_str = NULL;
         speed_t baud = std::get<0>(test_param);
         unsigned mtu = std::get<0>(test_param);
 
@@ -112,26 +110,6 @@ public:
 
         Writer.param = Reader.param;
         strncpy(Writer.param.channel.serial.path, writerDevice.c_str(), PIRATE_LEN_NAME - 1);
-
-        switch (baud) {
-        case B4800:   baud_str = "4800";   break;
-        case B9600:   baud_str = "9600";   break;
-        case B19200:  baud_str = "19200";  break;
-        case B38400:  baud_str = "38400";  break;
-        case B57600:  baud_str = "57600";  break;
-        case B115200: baud_str = "115200"; break;
-        case B230400: baud_str = "230400"; break;
-        case B460800: baud_str = "460800"; break;
-        default:
-            FAIL() << "Invalid baud rate";
-        }
-
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", readerDevice.c_str(),
-                    baud_str, mtu);
-        Reader.desc.assign(opt);
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", writerDevice.c_str(),
-                    baud_str, mtu);
-        Writer.desc.assign(opt);
     }
 
     static const speed_t TEST_BAUD = B115200;

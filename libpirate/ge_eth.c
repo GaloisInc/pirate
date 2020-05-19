@@ -132,9 +132,6 @@ static ssize_t ge_message_unpack(const void *buf, void *data,
 }
 
 static void pirate_ge_eth_init_param(pirate_ge_eth_param_t *param) {
-    if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_GE_ETH_IP_ADDR);
-    }
     if (param->mtu == 0) {
         param->mtu = PIRATE_DEFAULT_GE_ETH_MTU;
     }
@@ -185,8 +182,14 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
 }
 
 int pirate_ge_eth_get_channel_description(const pirate_ge_eth_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "ge_eth,%s,%u,%u,mtu=%u", param->addr,
+    int mtu = (param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU);
+    if (mtu) {
+        return snprintf(desc, len, "ge_eth,%s,%u,%u,mtu=%u", param->addr,
                     param->port, param->message_id, param->mtu);
+    } else {
+        return snprintf(desc, len, "ge_eth,%s,%u,%u", param->addr,
+                    param->port, param->message_id);
+    }
 }
 
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {

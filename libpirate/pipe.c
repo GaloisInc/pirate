@@ -63,7 +63,12 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
 }
 
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
+    int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
+    if (min_tx) {
+        return snprintf(desc, len, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
+    } else {
+        return snprintf(desc, len, "pipe,%s", param->path);
+    }
 }
 
 int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {

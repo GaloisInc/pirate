@@ -222,8 +222,13 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
 }
 
 int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "shmem,%s,buffer_size=%u", param->path,
+    int buffer_size = (param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN);
+    if (buffer_size) {
+        return snprintf(desc, len, "shmem,%s,buffer_size=%u", param->path,
                     param->buffer_size);
+    } else {
+        return snprintf(desc, len, "shmem,%s", param->path);
+    }
 }
 
 int shmem_buffer_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {

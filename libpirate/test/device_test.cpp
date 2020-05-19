@@ -61,17 +61,12 @@ class DeviceTest : public ChannelTest, public WithParamInterface<int> {
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_device_param_t *param = &Reader.param.channel.device;
         
         pirate_init_channel_param(DEVICE, &Reader.param);
         snprintf(param->path, PIRATE_LEN_NAME - 1, "/tmp/gaps_dev");
         param->min_tx = GetParam();
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "device,%s,min_tx_size=%u", param->path, param->min_tx);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
 
         if (mkfifo(param->path, 0660) == -1) {
             ASSERT_EQ(EEXIST, errno);
@@ -86,6 +81,6 @@ TEST_P(DeviceTest, Run)
 }
 
 INSTANTIATE_TEST_SUITE_P(DeviceFunctionalTest, DeviceTest,
-    Values(PIRATE_DEFAULT_MIN_TX, TEST_MIN_TX_LEN));
+    Values(0, TEST_MIN_TX_LEN));
 
 } // namespace

@@ -196,10 +196,6 @@ class MercuryTest : public ChannelTest, public WithParamInterface<MercuryTestPar
 public:
     void ChannelInit() override
     {
-        char opt[128];
-        char *opt_wr = opt;
-        int len = sizeof(opt);
-        int wr_len = 0;
         mMercuryParam = GetParam();
         pirate_mercury_param_t *param = &Writer.param.channel.mercury;
 
@@ -214,17 +210,6 @@ public:
         }
 
         Reader.param = Writer.param;
-
-        wr_len = snprintf(opt_wr, len - 1, "mercury,%u,%u,%u", param->session.level, 
-                    param->session.source_id, param->session.destination_id);
-        for (unsigned i = 0; i < param->session.message_count; ++i) {
-            opt_wr += wr_len;
-            len -= wr_len;
-            wr_len = snprintf(opt_wr, len - 1, ",%u", param->session.messages[i]);
-        }
-
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
     void WriterChannelPostOpen() override

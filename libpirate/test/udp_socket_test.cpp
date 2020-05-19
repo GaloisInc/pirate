@@ -72,19 +72,13 @@ class UdpSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_udp_socket_param_t *param = &Reader.param.channel.udp_socket;
 
         pirate_init_channel_param(UDP_SOCKET, &Reader.param);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
         param->port = 26427;
         param->buffer_size = GetParam();
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "udp_socket,%s,%u,buffer_size=%u",
-                    PIRATE_DEFAULT_TCP_IP_ADDR, param->port,
-                    param->buffer_size);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
     static const int TEST_BUF_LEN = 4096;
