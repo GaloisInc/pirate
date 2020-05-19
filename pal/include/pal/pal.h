@@ -26,7 +26,7 @@ typedef char   *pal_string     __attribute__((pirate_resource_type("string")));
 typedef int64_t pal_integer    __attribute__((pirate_resource_type("integer")));
 typedef bool    pal_boolean    __attribute__((pirate_resource_type("boolean")));
 typedef int     pal_file       __attribute__((pirate_resource_type("file")));
-typedef int     gaps_channel_t __attribute__((pirate_resource_type("pirate_channel")));
+typedef int     pirate_channel __attribute__((pirate_resource_type("pirate_channel")));
 
 struct pirate_resource _dummy_pirate_res_string[0]
     __attribute__((used, section(".pirate.res.string")));
@@ -53,7 +53,8 @@ int get_pal_fd();
  * Return a pointer to the parameter value if one was found. Otherwise,
  * return NULL.
  */
-char *lookup_pirate_resource_param(struct pirate_resource *pr, char *name);
+char *lookup_pirate_resource_param(struct pirate_resource *pr,
+        const char *name);
 
 /* Get a resource of type "boolean" from the application launcher.
  *

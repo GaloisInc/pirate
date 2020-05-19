@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
-project(app)
+project(manual_res)
 
-add_executable(app app.c ../../include/pal/pal.h)
-target_include_directories(app PRIVATE ../../include)
-target_link_libraries(app pal)
-target_link_options(app PRIVATE SHELL:-Wall SHELL:-Werror SHELL:-g
+add_executable(manual_res_app manual_res_app.c)
+target_link_libraries(manual_res_app libpal_shared)
+target_compile_options(manual_res_app PRIVATE SHELL:-Wall SHELL:-Werror)
+target_link_options(manual_res_app PRIVATE
     SHELL:-fuse-ld=lld LINKER:-enclave,my_app)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/cfg.yaml

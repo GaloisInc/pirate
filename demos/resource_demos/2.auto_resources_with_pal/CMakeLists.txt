@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
-project(resource_demos/2.auto_resources_with_pal)
+project(auto_res)
 
-add_executable(app app.c)
-target_link_libraries(app pal)
-target_link_options(app PRIVATE SHELL:-Wall SHELL:-Werror SHELL:-g
+add_executable(auto_res_app auto_res_app.c)
+target_link_libraries(auto_res_app libpal_shared)
+target_compile_options(auto_res_app PRIVATE SHELL:-Wall SHELL:-Werror)
+target_link_options(auto_res_app PRIVATE
     SHELL:-fuse-ld=lld LINKER:-enclave,my_app)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/cfg.yaml

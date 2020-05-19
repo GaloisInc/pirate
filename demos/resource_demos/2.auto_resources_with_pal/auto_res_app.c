@@ -16,18 +16,19 @@ pal_file    my_file    __attribute__((pirate_resource("my_file",    "my_app")));
 
 int __attribute__((pirate_enclave_main("my_app"))) main(void)
 {
-    printf("my_boolean = %s\n", my_boolean ? "true" : "false");
+    printf("MY_APP:\t\tmy_boolean = %s\n", my_boolean ? "true" : "false");
 
-    printf("my_integer = %ld\n", my_integer);
+    printf("MY_APP:\t\tmy_integer = %ld\n", my_integer);
 
-    printf("my_string = %s\n", my_string);
+    printf("MY_APP:\t\tmy_string = %s\n", my_string);
 
     {
         char buf[16] = {0};
         if(read(my_file, buf, sizeof(buf) - 1) < 0)
-            printf("Failed to read from \"my_file\": %s\n", strerror(errno));
+            printf("MY_APP:\t\tFailed to read from \"my_file\": %s\n",
+                    strerror(errno));
         else
-            printf("my_file = %s\n", buf);
+            printf("MY_APP:\t\tmy_file = %s\n", buf);
         close(my_file);
     }
 

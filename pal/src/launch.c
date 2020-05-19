@@ -95,7 +95,7 @@ static void make_argv(char **new_argv, char *path,
  */
 static int set_cloexec(int fd)
 {
-    int flags, err;
+    int flags;
 
     if((flags = fcntl(fd, F_GETFD)) < 0)
         return -1;
@@ -111,7 +111,7 @@ static int set_cloexec(int fd)
 int launch(struct app *app, char *cfg_path,
         struct enclave *enc, char **envp)
 {
-    int fds[2], res = 0;
+    int fds[2];
     size_t envp_count = count_envp(envp);
     char *enc_path = enc->enc_path ? enc->enc_path : enc->enc_name;
     char *new_argv[1 /*progname*/ + enc->enc_args_count + 1 /*NULL*/];

@@ -2,7 +2,7 @@
 
 enclaves:
     - name: my_app
-      path: app
+      path: auto_res_app
 resources:
     - name: my_integer
       ids: [ "my_app/my_integer" ]

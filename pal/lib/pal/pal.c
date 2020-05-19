@@ -29,7 +29,8 @@ int get_pal_fd()
 }
 
 // FIXME: Do we want to sort these in clang so we can search smarter here?
-char *lookup_pirate_resource_param(struct pirate_resource *pr, char *name)
+char *lookup_pirate_resource_param(struct pirate_resource *pr,
+        const char *name)
 {
     size_t i;
 
@@ -155,9 +156,8 @@ int get_pirate_channel_cfg(int fd, const char *name, char **outp)
     else {
         pal_env_iterator_t it = pal_env_iterator_start(&env);
 
-        char *cfg;
         size = pal_env_iterator_size(it);
-        if(!(cfg = malloc(size + 1)))
+        if(!(*outp = malloc(size + 1)))
             res = -errno;
         else {
             memcpy(*outp, pal_env_iterator_data(it), size);
@@ -259,7 +259,7 @@ void __attribute__((constructor)) init_pirate_channel_resources()
     }
 
     for(pr = start; pr < stop; ++pr) {
-        int err, perms;
+        int err, perms = O_RDWR;
         char *cfg, *permstr;
 
         if((err = get_pirate_channel_cfg(fd, pr->pr_name, &cfg))) {
@@ -269,17 +269,14 @@ void __attribute__((constructor)) init_pirate_channel_resources()
             exit(1);
         }
 
-        permstr = lookup_pirate_resource_param(pr, "permisions");
-        if(permstr) {
+        if((permstr = lookup_pirate_resource_param(pr, "permissions"))) {
             if(!strcmp(permstr, "readonly"))
                 perms = O_RDONLY;
             else if(!strcmp(permstr, "writeonly"))
                 perms = O_WRONLY;
-            else
-                perms = O_RDWR;
         }
 
-        if((err = pirate_open_parse(cfg, perms))) {
+        if((*(int *)pr->pr_obj = pirate_open_parse(cfg, perms)) < 0) {
             fprintf(stderr, "Fatal error opening pirate_channel %s: %s\n",
                     pr->pr_name, strerror(errno));
             exit(1);
