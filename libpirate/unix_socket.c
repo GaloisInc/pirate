@@ -66,7 +66,7 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
 }
 
 int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
-    return snprintf(desc, len - 1, "unix_socket,%s,buffer_size=%u,min_tx_size=%u", param->path,
+    return snprintf(desc, len, "unix_socket,%s,buffer_size=%u,min_tx_size=%u", param->path,
                     param->buffer_size, param->min_tx);
 }
 

@@ -94,4 +94,30 @@ TEST(CommonChannel, RegisterEnclave)
     ASSERT_EQ(1u, param.dst_enclave);
 }
 
+TEST(CommonChannel, UnparseChannelParam)
+{
+    char output[80];
+    int rv;
+    pirate_channel_param_t param;
+
+    rv = pirate_parse_channel_param("device,/dev/null,min_tx_size=512", &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    rv = pirate_unparse_channel_param(&param, output, 33);
+    ASSERT_EQ(32, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("device,/dev/null,min_tx_size=512", output);
+
+    rv = pirate_unparse_channel_param(&param, output, 32);
+    ASSERT_EQ(32, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("device,/dev/null,min_tx_size=51", output);
+
+    rv = pirate_unparse_channel_param(&param, output, 31);
+    ASSERT_EQ(32, rv);
+    ASSERT_EQ(0, errno);    
+    ASSERT_STREQ("device,/dev/null,min_tx_size=5", output);
+}
+
 } // namespace

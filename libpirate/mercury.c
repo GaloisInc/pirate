@@ -288,7 +288,7 @@ int pirate_mercury_get_channel_description(const pirate_mercury_param_t *param, 
     int wr_sz = 0;
     int ret_sz = 0;
 
-    wr_sz = snprintf(wr, len - 1, "mercury,%u,%u,%u", 
+    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u", 
                         param->session.level, 
                         param->session.source_id,
                         param->session.destination_id);
@@ -297,7 +297,7 @@ int pirate_mercury_get_channel_description(const pirate_mercury_param_t *param, 
     for (uint32_t i = 0; i < param->session.message_count; ++i) {
         wr += wr_sz;
         len -= wr_sz;
-        wr_sz = snprintf(wr, len - 1, ",%u", param->session.messages[i]);
+        wr_sz = snprintf(wr, len, ",%u", param->session.messages[i]);
         ret_sz += wr_sz;
     }
 
