@@ -75,32 +75,24 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 }
 
 int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len) {
-    int buffer_size = (param->buffer_size != 0);
-    int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    int mtu = (param->mtu != 0);
-    if (mtu && buffer_size && min_tx) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
-            param->addr, param->port, param->buffer_size, param->min_tx);
-    } else if (mtu && buffer_size) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,mtu=%u",
-            param->addr, param->port, param->buffer_size, param->mtu);
-    } else if (mtu && min_tx) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,min_tx_size=%u,mtu=%u",
-            param->addr, param->port, param->min_tx, param->mtu);
-    } else if (mtu) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,mtu=%u", param->addr, param->port, param->mtu);
-    } else if (buffer_size && min_tx) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u,min_tx_size=%u",
-            param->addr, param->port, param->buffer_size, param->min_tx);
-    } else if (buffer_size) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,buffer_size=%u",
-            param->addr, param->port, param->buffer_size);
-    } else if (min_tx) {
-        return snprintf(desc, len, "tcp_socket,%s,%u,min_tx_size=%u",
-            param->addr, param->port, param->min_tx);
-    } else {
-        return snprintf(desc, len, "tcp_socket,%s,%u", param->addr, param->port);
+    char min_tx_str[32];
+    char buffer_size_str[32];
+    char mtu_str[32];
+
+    min_tx_str[0] = 0;
+    buffer_size_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX)) {
+        snprintf(min_tx_str, 32, ",min_tx_size=%u", param->min_tx);
     }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    if (param->buffer_size != 0) {
+        snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
+    }
+    return snprintf(desc, len, "tcp_socket,%s,%u%s%s%s", param->addr, param->port,
+        buffer_size_str, min_tx_str, mtu_str);
 }
 
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {

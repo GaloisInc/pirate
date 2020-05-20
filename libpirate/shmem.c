@@ -227,20 +227,19 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
 }
 
 int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
-    int buffer_size = (param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN);
-    int max_tx = (param->max_tx != 0) && (param->max_tx != PIRATE_DEFAULT_SMEM_MAX_TX);
-    if (max_tx && buffer_size) {
-        return snprintf(desc, len, "shmem,%s,buffer_size=%u,max_tx_size=%u", param->path,
-                    param->buffer_size, param->max_tx);
-    } else if (buffer_size) {
-        return snprintf(desc, len, "shmem,%s,buffer_size=%u", param->path,
-                    param->buffer_size);
-    } else if (max_tx) {
-        return snprintf(desc, len, "shmem,%s,buffer_size=%u,max_tx_size=%u", param->path,
-                    param->buffer_size, max_tx);
-    } else {
-        return snprintf(desc, len, "shmem,%s", param->path);
+    char max_tx_str[32];
+    char buffer_size_str[32];
+
+    max_tx_str[0] = 0;
+    buffer_size_str[0] = 0;
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_DEFAULT_SMEM_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
     }
+    if ((param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN)) {
+        snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
+    }
+
+    return snprintf(desc, len, "shmem,%s%s%s", param->path, buffer_size_str, max_tx_str);
 }
 
 int shmem_buffer_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {

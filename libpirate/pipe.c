@@ -65,18 +65,18 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
 }
 
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
-    int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    int mtu = (param->mtu != 0);
-    if (mtu && min_tx) {
-        return snprintf(desc, len, "pipe,%s,mtu=%u,min_tx_size=%u", param->path,
-            param->mtu, param->min_tx);
-    } else if (mtu) {
-        return snprintf(desc, len, "pipe,%s,mtu=%u", param->path, param->mtu);
-    } else if (min_tx) {
-        return snprintf(desc, len, "pipe,%s,min_tx_size=%u", param->path, param->min_tx);
-    } else {
-        return snprintf(desc, len, "pipe,%s", param->path);
+    char min_tx_str[32];
+    char mtu_str[32];
+
+    min_tx_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX)) {
+        snprintf(min_tx_str, 32, ",min_tx_size=%u", param->min_tx);
     }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    return snprintf(desc, len, "pipe,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
 int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {

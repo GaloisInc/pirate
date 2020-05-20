@@ -104,12 +104,18 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
 }
 
 int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
-    int max_tx = (param->max_tx != 0) && (param->max_tx != PIRATE_DEFAULT_SMEM_MAX_TX);
-    if (max_tx) {
-        return snprintf(desc, len, "uio,path=%s,max_tx_size=%u", param->path, param->max_tx);
-    } else {
-        return snprintf(desc, len, "uio,path=%s", param->path);
+    char max_tx_str[32];
+    char mtu_str[32];
+
+    max_tx_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_UIO_DEFAULT_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
     }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    return snprintf(desc, len, "uio,path=%s%s%s", param->path, max_tx_str, mtu_str);
 }
 
 static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {

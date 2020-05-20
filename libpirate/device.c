@@ -65,18 +65,18 @@ int pirate_device_parse_param(char *str, pirate_device_param_t *param) {
 }
 
 int pirate_device_get_channel_description(const pirate_device_param_t *param, char *desc, int len) {
-    int min_tx = (param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX);
-    int mtu = (param->mtu != 0);
-    if (mtu && min_tx) {
-        return snprintf(desc, len, "device,%s,mtu=%u,min_tx_size=%u", param->path,
-            param->mtu, param->min_tx);
-    } else if (mtu) {
-        return snprintf(desc, len, "device,%s,mtu=%u", param->path, param->mtu);
-    } else if (min_tx) {
-        return snprintf(desc, len, "device,%s,min_tx_size=%u", param->path, param->min_tx);
-    } else {
-        return snprintf(desc, len, "device,%s", param->path);
+    char min_tx_str[32];
+    char mtu_str[32];
+
+    min_tx_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX)) {
+        snprintf(min_tx_str, 32, ",min_tx_size=%u", param->min_tx);
     }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    return snprintf(desc, len, "device,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
 int pirate_device_open(pirate_device_param_t *param, device_ctx *ctx) {

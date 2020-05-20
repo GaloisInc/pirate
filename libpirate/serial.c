@@ -92,43 +92,37 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
 }
 
 int pirate_serial_get_channel_description(const pirate_serial_param_t *param, char *desc, int len) {
-    const char *baud_str = NULL;
+    char baud_str[32];
+    char mtu_str[32];
+    char max_tx_str[32];
+    const char *baud_val = NULL;
     
     switch (param->baud) {
-    case B4800:   baud_str = "4800";   break;
-    case B9600:   baud_str = "9600";   break;
-    case B19200:  baud_str = "19200";  break;
-    case B38400:  baud_str = "38400";  break;
-    case B57600:  baud_str = "57600";  break;
-    case B115200: baud_str = "115200"; break;
-    case B230400: baud_str = "230400"; break;
-    case B460800: baud_str = "460800"; break;
+    case B4800:   baud_val = "4800";   break;
+    case B9600:   baud_val = "9600";   break;
+    case B19200:  baud_val = "19200";  break;
+    case B38400:  baud_val = "38400";  break;
+    case B57600:  baud_val = "57600";  break;
+    case B115200: baud_val = "115200"; break;
+    case B230400: baud_val = "230400"; break;
+    case B460800: baud_val = "460800"; break;
     default:
         return -1;
     }
 
-    int baud = (param->baud != 0) && (param->baud != PIRATE_SERIAL_DEFAULT_BAUD);
-    int mtu = (param->mtu != 0);
-    int max_tx = (param->max_tx != 0) && (param->max_tx != PIRATE_SERIAL_DEFAULT_MAX_TX);
-    if (baud && mtu && max_tx) {
-        return snprintf(desc, len, "serial,%s,baud=%s,mtu=%u,max_tx_size=%u", param->path, baud_str,
-            param->mtu, param->max_tx);
-    } else if (baud && max_tx) {
-        return snprintf(desc, len, "serial,%s,baud=%s,max_tx_size=%u", param->path, baud_str, param->max_tx);
-    } else if (mtu && max_tx) {
-        return snprintf(desc, len, "serial,%s,mtu=%u,max_tx_size=%u", param->path, param->mtu, param->max_tx);
-    } else if (max_tx) {
-        return snprintf(desc, len, "serial,%s,max_tx_size=%u", param->path, param->max_tx);
-    } else if (baud && mtu) {
-        return snprintf(desc, len, "serial,%s,baud=%s,mtu=%u", param->path, baud_str,
-            param->mtu);
-    } else if (baud) {
-        return snprintf(desc, len, "serial,%s,baud=%s", param->path, baud_str);
-    } else if (mtu) {
-        return snprintf(desc, len, "serial,%s,mtu=%u", param->path, param->mtu);
-    } else {
-        return snprintf(desc, len, "serial,%s", param->path);
+    baud_str[0] = 0;
+    mtu_str[0] = 0;
+    max_tx_str[0] = 0;
+    if ((param->baud != 0) && (param->baud != PIRATE_SERIAL_DEFAULT_BAUD)) {
+        snprintf(baud_str, 32, ",baud=%s", baud_val);
     }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_SERIAL_DEFAULT_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
+    }
+    return snprintf(desc, len, "serial,%s%s%s%s", param->path, baud_str, mtu_str, max_tx_str);
 }
 
 int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx) {

@@ -171,14 +171,14 @@ int pirate_ge_eth_parse_param(char *str, pirate_ge_eth_param_t *param) {
 }
 
 int pirate_ge_eth_get_channel_description(const pirate_ge_eth_param_t *param, char *desc, int len) {
-    int mtu = (param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU);
-    if (mtu) {
-        return snprintf(desc, len, "ge_eth,%s,%u,%u,mtu=%u", param->addr,
-                    param->port, param->message_id, param->mtu);
-    } else {
-        return snprintf(desc, len, "ge_eth,%s,%u,%u", param->addr,
-                    param->port, param->message_id);
+    char mtu_str[32];
+
+    mtu_str[0] = 0;
+    if ((param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU)) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
     }
+    return snprintf(desc, len, "ge_eth,%s,%u,%u%s", param->addr,
+                    param->port, param->message_id, mtu_str);
 }
 
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
