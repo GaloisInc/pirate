@@ -159,7 +159,7 @@ typedef struct {
 
 // UDP_SOCKET parameters
 #define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
-#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65507
+#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -455,6 +455,16 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 // -1 is returned, and errno is set appropriately.
 
 ssize_t pirate_write(int gd, const void *buf, size_t count);
+
+
+// pirate_write_mtu() returns the maximum data length
+// that can be send in a call to pirate_write() for
+// the given channel. A value of 0 indicates no maximum length.
+//
+// On success, the mtu is returned. On error,
+// -1 is returned, and errno is set appropriately.
+
+ssize_t pirate_write_mtu(const pirate_channel_param_t *param);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //

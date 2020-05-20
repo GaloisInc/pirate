@@ -362,6 +362,10 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
+    if (pirate_write_mtu(param) < 0) {
+        return -1;
+    }
+
     switch (param->channel_type) {
     case DEVICE:
         return pirate_device_open(&param->channel.device, &ctx->device);
@@ -487,6 +491,10 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
          (param->src_enclave != param->dst_enclave))) {
         errno = EINVAL;
+        return -1;
+    }
+
+    if (pirate_write_mtu(param) < 0) {
         return -1;
     }
 
@@ -764,4 +772,35 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         }
     }
     return rv;
+}
+
+ssize_t pirate_write_mtu(const pirate_channel_param_t *param) {
+    switch (param->channel_type) {
+    case DEVICE:
+        return pirate_device_write_mtu(&param->channel.device);
+    case PIPE:
+        return pirate_pipe_write_mtu(&param->channel.pipe);
+    case UNIX_SOCKET:
+        return pirate_unix_socket_write_mtu(&param->channel.unix_socket);
+    case TCP_SOCKET:
+        return pirate_tcp_socket_write_mtu(&param->channel.tcp_socket);
+    case UDP_SOCKET:
+        return pirate_udp_socket_write_mtu(&param->channel.udp_socket);
+    case SHMEM:
+        return pirate_shmem_write_mtu(&param->channel.shmem);
+    case UDP_SHMEM:
+        return pirate_udp_shmem_write_mtu(&param->channel.udp_shmem);
+    case UIO_DEVICE:
+        return pirate_uio_write_mtu(&param->channel.uio);
+    case SERIAL:
+        return pirate_serial_write_mtu(&param->channel.serial);
+    case MERCURY:
+        return pirate_mercury_write_mtu(&param->channel.mercury);
+    case GE_ETH:
+        return pirate_ge_eth_write_mtu(&param->channel.ge_eth);
+    case INVALID:
+    default:
+        errno = ENODEV;
+        return -1;
+    }
 }

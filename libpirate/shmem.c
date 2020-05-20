@@ -429,6 +429,18 @@ static uint32_t shmem_buffer_do_write(shmem_buffer_t* buf, const void *src, size
     return (writer + nbytes) % buf->size;
 }
 
+ssize_t shmem_buffer_write_mtu(const pirate_shmem_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
 ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
                             size_t count) {
     (void) param;

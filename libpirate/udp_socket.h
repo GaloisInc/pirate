@@ -29,5 +29,6 @@ int pirate_udp_socket_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx
 int pirate_udp_socket_close(udp_socket_ctx *ctx);
 ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_udp_socket_write_mtu(const pirate_udp_socket_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_UDP_SOCKET_H */

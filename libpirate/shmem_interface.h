@@ -30,5 +30,6 @@ int pirate_shmem_open(pirate_shmem_param_t *param, shmem_ctx *ctx);
 int pirate_shmem_close(shmem_ctx *ctx);
 ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_shmem_write_mtu(const pirate_shmem_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_SHMEM_INTERFACE_H */

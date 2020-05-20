@@ -240,12 +240,25 @@ ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, 
     return count;
 }
 
+ssize_t pirate_serial_write_mtu(const pirate_serial_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
 ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
     pirate_header_t header;
     header.count = htonl(count);
     ssize_t rv;
+    size_t mtu = pirate_serial_write_mtu(param);
 
-    if ((param->mtu > 0) && (count > param->mtu)) {
+    if ((mtu > 0) && (count > mtu)) {
         errno = EMSGSIZE;
         return -1;
     }

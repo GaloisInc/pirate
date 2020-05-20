@@ -32,5 +32,6 @@ int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx);
 int pirate_pipe_close(pipe_ctx *ctx);
 ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_pipe_write_mtu(const pirate_pipe_param_t *param);
 
 #endif /*__PIRATE_CHANNEL_PIPE_H */

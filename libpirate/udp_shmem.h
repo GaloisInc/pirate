@@ -26,5 +26,6 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
                             size_t count);
 ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, 
                             size_t count);
+ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_UDP_SHMEM_H */

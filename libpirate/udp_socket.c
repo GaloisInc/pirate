@@ -223,16 +223,37 @@ ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socke
     return recv(ctx->sock, buf, count, 0);
 }
 
+ssize_t pirate_udp_socket_write_mtu(const pirate_udp_socket_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        mtu = PIRATE_DEFAULT_UDP_PACKET_SIZE;
+    }
+    if (mtu > PIRATE_DEFAULT_UDP_PACKET_SIZE) {
+        errno = EINVAL;
+        return -1;
+    }
+    // 8 byte UDP header and 20 byte IP header
+    if (mtu < 28) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - 28;
+}
+
 ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count) {
     (void) param;
     int err;
     ssize_t rv;
+    size_t write_mtu = pirate_udp_socket_write_mtu(param);
 
     if (ctx->sock <= 0) {
         errno = EBADF;
         return -1;
     }
-
+    if ((write_mtu > 0) && (count > write_mtu)) {
+        errno = EMSGSIZE;
+        return -1;
+    }
     err = errno;
     rv = send(ctx->sock, buf, count, 0);
     if ((rv < 0) && (errno == ECONNREFUSED)) {

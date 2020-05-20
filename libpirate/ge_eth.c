@@ -306,6 +306,18 @@ ssize_t pirate_ge_eth_read(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
     return ge_message_unpack(ctx->buf, buf, count, &hdr);
 }
 
+ssize_t pirate_ge_eth_write_mtu(const pirate_ge_eth_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        mtu = PIRATE_DEFAULT_GE_ETH_MTU;
+    }
+    if (mtu < sizeof(ge_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(ge_header_t);
+}
+
 ssize_t pirate_ge_eth_write(const pirate_ge_eth_param_t *param, ge_eth_ctx *ctx,
                             const void *buf, size_t count) {
     ssize_t rv, wr_len;

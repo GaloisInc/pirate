@@ -31,5 +31,6 @@ int pirate_mercury_open(pirate_mercury_param_t *param, mercury_ctx *ctx);
 int pirate_mercury_close(mercury_ctx *ctx);
 ssize_t pirate_mercury_read(const pirate_mercury_param_t *param, mercury_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_mercury_write(const pirate_mercury_param_t *param, mercury_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_mercury_write_mtu(const pirate_mercury_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_MERCURY_H */

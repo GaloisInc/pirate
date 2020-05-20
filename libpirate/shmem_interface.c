@@ -68,6 +68,16 @@ ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
 #endif
 }
 
+ssize_t pirate_shmem_write_mtu(const pirate_shmem_param_t *param) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return shmem_buffer_write_mtu(param);
+#else
+    (void) param;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
 ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE

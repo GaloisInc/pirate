@@ -29,5 +29,6 @@ int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx);
 int pirate_serial_close(serial_ctx *ctx);
 ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_serial_write_mtu(const pirate_serial_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_SERIAL_H */

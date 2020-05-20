@@ -495,6 +495,18 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     return count;
 }
 
+ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
 ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
                             size_t count) {
     (void) param;

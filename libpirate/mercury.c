@@ -309,7 +309,6 @@ int pirate_mercury_open(pirate_mercury_param_t *param, mercury_ctx *ctx) {
 
     /* Open the root device to configure and establish a session */
     pirate_mercury_init_param(param);
-
     /* Root device enforces single open */
     for(;;) {
         int err = errno;
@@ -456,6 +455,18 @@ ssize_t pirate_mercury_read(const pirate_mercury_param_t *param,
     }
 
     return mercury_message_unpack(ctx->buf, (size_t) rd_len, buf, count, param);
+}
+
+ssize_t pirate_mercury_write_mtu(const pirate_mercury_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        mtu = PIRATE_MERCURY_DEFAULT_MTU;
+    }
+    if (mtu < sizeof(ilip_message_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(ilip_message_t);
 }
 
 ssize_t pirate_mercury_write(const pirate_mercury_param_t *param,

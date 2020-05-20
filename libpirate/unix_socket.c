@@ -235,6 +235,19 @@ ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_so
     return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
 }
 
+ssize_t pirate_unix_socket_write_mtu(const pirate_unix_socket_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
 ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, param->mtu, buf, count);
+    ssize_t mtu = pirate_unix_socket_write_mtu(param);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, mtu, buf, count);
 }

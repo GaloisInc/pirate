@@ -68,6 +68,16 @@ ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf
 #endif
 }
 
+ssize_t pirate_uio_write_mtu(const pirate_uio_param_t *param) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return pirate_internal_uio_write_mtu(param);
+#else
+    (void) param;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
 ssize_t pirate_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf,
                             size_t count) {
 #ifdef PIRATE_SHMEM_FEATURE

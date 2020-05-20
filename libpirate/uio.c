@@ -248,6 +248,18 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
     return nbytes;
 }
 
+ssize_t pirate_internal_uio_write_mtu(const pirate_uio_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
 ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
     (void) param;
     int buffer_size;
