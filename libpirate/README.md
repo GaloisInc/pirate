@@ -49,6 +49,23 @@ Writer:
 
 ## Channel types
 
+### Common parameters
+
+* mtu - specifies the maximum transmisssion unit. The mtu includes
+the length of the packet header. To get the maximum data payload
+transmission length, use `pirate_write_mtu()`. Writes longer than
+an mtu will generate a EMSGSIZE error.
+* min_tx_size - specifies the internal minimum transmission
+length for channels that are based on stream tranport. This
+parameter is for performance optimization and have no impact
+on the semantics of the library. The default value is generally
+the value you want to use.
+* max_tx_size - specifies the internal maximum transmission
+length for channels that are based on stream tranport. This
+parameter is for performance optimization and have no impact
+on the semantics of the library. The default value is generally
+the value you want to use.
+
 ### PIPE type
 
 ```
@@ -92,7 +109,7 @@ UDP socket communication. Host and port of the reader process must be specified.
 ### SHMEM type
 
 ```
-"shmem,path[,buffer_size=N,mtu=N]"
+"shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]"
 ```
 
 Uses a POSIX shared memory region to communicate. Support
@@ -104,7 +121,7 @@ to enable support for shared memory.
 ### UIO_DEVICE type
 
 ```
-"uio[,path=N,mtu=N]"
+"uio[,path=N,max_tx_size=N,mtu=N]"
 ```
 
 Uses shared memory provided by the kernel from a Userspace IO

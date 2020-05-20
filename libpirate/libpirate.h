@@ -159,7 +159,7 @@ typedef struct {
 
 // UDP_SOCKET parameters
 #define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
-#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535
+#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -169,15 +169,17 @@ typedef struct {
 
 // SHMEM parameters
 #define PIRATE_DEFAULT_SMEM_BUF_LEN                (128u << 10)
+#define PIRATE_DEFAULT_SMEM_MAX_TX                 65536u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
     unsigned mtu;
+    unsigned max_tx;
 } pirate_shmem_param_t;
 
 // UDP_SHMEM parameters
-#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT      1000
-#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE       1024
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT      1000u
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE       1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
@@ -187,20 +189,23 @@ typedef struct {
 } pirate_udp_shmem_param_t;
 
 // UIO parameters
-#define PIRATE_DEFAULT_UIO_DEVICE  "/dev/uio0"
+#define PIRATE_UIO_DEFAULT_PATH    "/dev/uio0"
+#define PIRATE_UIO_DEFAULT_MAX_TX  65536u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned short region;
     unsigned mtu;
+    unsigned max_tx;
 } pirate_uio_param_t;
 
 // SERIAL parameters
 #define PIRATE_SERIAL_DEFAULT_BAUD     B230400
-#define PIRATE_SERIAL_DEFAULT_MTU      1024u
+#define PIRATE_SERIAL_DEFAULT_MAX_TX   1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     speed_t baud;
     unsigned mtu;
+    unsigned max_tx;
 } pirate_serial_param_t;
 
 // MERCURY parameters
@@ -321,10 +326,10 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]\n"                   \
     "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
     "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
-    "  SHMEM         shmem,path[,buffer_size=N,mtu=N]\n"                                       \
+    "  SHMEM         shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]\n"                         \
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
-    "  UIO           uio[,path=N,mtu=N]\n"                                                     \
-    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                             \
+    "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
+    "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
     "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 

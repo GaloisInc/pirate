@@ -92,7 +92,7 @@ public:
 
         auto test_param = GetParam();
         speed_t baud = std::get<0>(test_param);
-        unsigned mtu = std::get<0>(test_param);
+        unsigned max_tx = std::get<0>(test_param);
 
         pirate_init_channel_param(SERIAL, &Reader.param);
         strncpy(param->path, readerDevice.c_str(), PIRATE_LEN_NAME - 1);
@@ -102,10 +102,10 @@ public:
             baud = PIRATE_SERIAL_DEFAULT_BAUD;
         }
 
-        if (mtu) {
-            param->mtu = mtu;
+        if (max_tx) {
+            param->max_tx = max_tx;
         } else {
-            mtu = PIRATE_SERIAL_DEFAULT_MTU;
+            max_tx = PIRATE_SERIAL_DEFAULT_MAX_TX;
         }
 
         Writer.param = Reader.param;
@@ -113,7 +113,7 @@ public:
     }
 
     static const speed_t TEST_BAUD = B115200;
-    static const unsigned TEST_MTU = PIRATE_SERIAL_DEFAULT_MTU / 2;
+    static const unsigned TEST_MAX_TX = PIRATE_SERIAL_DEFAULT_MAX_TX / 2;
     const std::string readerDevice;
     const std::string writerDevice;
 };
@@ -133,6 +133,6 @@ TEST_P(SerialTest, Run)
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(SerialFunctionalTest, SerialTest,
     Combine(Values(0, SerialTest::TEST_BAUD),
-            Values(0, SerialTest::TEST_MTU)));
+            Values(0, SerialTest::TEST_MAX_TX)));
 
 } // namespace

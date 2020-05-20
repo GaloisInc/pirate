@@ -70,7 +70,7 @@ static inline int is_full(uint64_t value) {
 
 static void pirate_uio_init_param(pirate_uio_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_DEFAULT_UIO_DEVICE);
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UIO_DEFAULT_PATH);
     }
 }
 
@@ -92,6 +92,8 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
         }
         if (strncmp("path", key, strlen("path")) == 0) {
             strncpy(param->path, val, sizeof(param->path) - 1);
+        } else if (strncmp("max_tx_size", key, strlen("max_tx_size")) == 0) {
+            param->max_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -101,7 +103,12 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
 }
 
 int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "uio,path=%s", param->path);
+    int max_tx = (param->max_tx != 0) && (param->max_tx != PIRATE_DEFAULT_SMEM_MAX_TX);
+    if (max_tx) {
+        return snprintf(desc, len, "uio,path=%s,max_tx_size=%u", param->path, param->max_tx);
+    } else {
+        return snprintf(desc, len, "uio,path=%s", param->path);
+    }
 }
 
 static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
