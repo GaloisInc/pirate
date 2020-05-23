@@ -67,8 +67,6 @@ int file_resource_handler(pal_env_t *env,
 int pirate_channel_resource_handler(pal_env_t *env,
         const struct app *app, const struct resource *rsc)
 {
-    char *pstr;
-    ssize_t pstr_len;
     pirate_channel_param_t params = {0};
 
     params.channel_type = rsc->r_contents.cc_channel_type;
@@ -186,12 +184,12 @@ int pirate_channel_resource_handler(pal_env_t *env,
                     rsc->r_name, params.channel_type);
     }
 
-    // FIXME: Off-by-one in pirate_unparse_channel_param()
-    if((pstr_len = pirate_unparse_channel_param(&params, NULL, 1)) <= 0)
+    size_t pstr_len = pirate_unparse_channel_param(&params, NULL, 0);
+    if(pstr_len <= 0)
         return -1;
-    if(!(pstr = malloc(pstr_len + 1)))
-        return -1;
-    if(pirate_unparse_channel_param(&params, pstr, pstr_len + 2) != pstr_len)
+
+    char pstr[pstr_len + 1];
+    if(pirate_unparse_channel_param(&params, pstr, sizeof pstr) != pstr_len)
         return -1;
 
     if(pal_add_to_env(env, pstr, pstr_len))
