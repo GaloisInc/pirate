@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
+
+if (NOT CMAKE_C_COMPILER)
+    set(CMAKE_C_COMPILER "clang")
+endif(NOT CMAKE_C_COMPILER)
+
 project(pal)
 
 ###
@@ -8,7 +13,7 @@ project(pal)
 find_library(YAML_LIB yaml)
 if(NOT YAML_LIB)
     message(FATAL_ERROR "libyaml not found")
-endif()
+endif(NOT YAML_LIB)
 
 ###
 # Adding libcyaml as an external project, ala

@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <libpirate.h>
 
+#ifndef __GAPS__
+# error "gaps compiler required"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
