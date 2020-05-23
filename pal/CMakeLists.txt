@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.5)
 project(pal)
 
 ###
+# Dependencies
+###
+
+find_library(YAML_LIB yaml)
+if(NOT YAML_LIB)
+    message(FATAL_ERROR "libyaml not found")
+endif()
+
+###
 # Adding libcyaml as an external project, ala
 # https://mirkokiefer.com/cmake-by-example-f95eb47d45b1
 ###
