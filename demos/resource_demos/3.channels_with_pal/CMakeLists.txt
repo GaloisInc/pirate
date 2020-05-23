@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(resource_demos/3.channels_with_pal)
+project(channels_with_pal)
 
 add_executable(channel_app1 channel_app.c)
 target_link_libraries(channel_app1 libpal_shared pirate)
