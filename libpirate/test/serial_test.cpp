@@ -49,7 +49,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
-    ASSERT_EQ((speed_t)0, serial_param->baud);
+    ASSERT_EQ(PIRATE_SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s", name, path, baud_str);
@@ -92,20 +92,20 @@ public:
 
         auto test_param = GetParam();
         speed_t baud = std::get<0>(test_param);
-        unsigned max_tx = std::get<0>(test_param);
+        unsigned max_tx = std::get<1>(test_param);
 
         pirate_init_channel_param(SERIAL, &Reader.param);
         strncpy(param->path, readerDevice.c_str(), PIRATE_LEN_NAME - 1);
         if (baud) {
             param->baud = baud;
         } else {
-            baud = PIRATE_SERIAL_DEFAULT_BAUD;
+            param->baud = PIRATE_SERIAL_DEFAULT_BAUD;
         }
 
         if (max_tx) {
             param->max_tx = max_tx;
         } else {
-            max_tx = PIRATE_SERIAL_DEFAULT_MAX_TX;
+            param->max_tx = PIRATE_SERIAL_DEFAULT_MAX_TX;
         }
 
         Writer.param = Reader.param;

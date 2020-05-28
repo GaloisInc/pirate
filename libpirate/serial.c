@@ -45,6 +45,8 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
         return -1;
     }
 
+    pirate_serial_init_param(param);
+
     if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
