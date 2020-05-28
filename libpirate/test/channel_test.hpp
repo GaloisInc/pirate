@@ -52,27 +52,29 @@ protected:
 
     struct TestPoint {
         TestPoint() : 
-            gd(-1), buf(0), status(-1), desc("") {
+            gd(-1), buf(0), status(-1) {
             std::memset(&param, 0, sizeof(param));
         }
 
         int gd;
         uint8_t *buf;
         int status;
-        std::string desc;
         pirate_channel_param_t param;
     } Writer, Reader;
 
     // Test lengths
-    struct
-    {
-        ssize_t start;
-        ssize_t stop;
-        ssize_t step;
-    } len;
-    static const ssize_t DEFAULT_START_LEN = 1;
-    static const ssize_t DEFAULT_STOP_LEN = 32;
-    static const ssize_t DEFAULT_STEP_LEN = 1;
+    struct len_pair {
+        ssize_t reader;
+        ssize_t writer;
+    };
+
+    static const size_t len_size = 9;
+    static const size_t buf_size = 32;
+
+    struct len_pair len_arr[len_size] = {
+        {1, 1}, {1, 2}, {2, 1},
+        {8, 8}, {8, 16}, {16, 8},
+        {1, 32}, {32, 1}, {32, 32}};
 
     // Reader writer synchronization
     pthread_barrier_t barrier;
@@ -92,8 +94,8 @@ public:
     ChannelTest();
     static void *WriterThreadS(void *param);
     static void *ReaderThreadS(void *param);
-    //static const int TEST_CHANNEL = 2;
-    static const int TEST_IOV_LEN = 16;
 };
+
+static const unsigned TEST_MIN_TX_LEN = 16;
 
 } // namespace GAPS

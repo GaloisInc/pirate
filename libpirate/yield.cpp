@@ -1,5 +1,5 @@
 #include "libpirate.h"
-#include "libpirate_internal.h"
+#include "pirate_common.h"
 #include "libpirate.hpp"
 
 #include <limits.h>
@@ -27,6 +27,7 @@ extern int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
 int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
     pirate_listener_t listener;
     pirate_channel_param_t *param;
+    common_ctx *ctx;
     listener.func = func;
     listener.len = len;
     if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
@@ -45,7 +46,11 @@ int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
         errno = EPERM;
         return -1;
     }
-    if ((pirate_get_channel_flags(gd) & O_ACCMODE) != O_RDONLY) {
+    ctx = pirate_get_common_ctx_ref(gd);
+    if (ctx == NULL) {
+        return -1;
+    }
+    if ((ctx->flags & O_ACCMODE) != O_RDONLY) {
         errno = EPERM;
         return -1;
     }

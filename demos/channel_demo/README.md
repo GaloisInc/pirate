@@ -204,16 +204,16 @@ Test utility for writing deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len=N]
-   PIPE          pipe,path[,iov_len=N]
-   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_lenSingle Plot With Averaged Intervals=N,buffer_size=N]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
-   SHMEM         shmem,path[,buffer_size=N]
-   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
-   UIO           uio[,path=N]
+   DEVICE        device,path[,min_tx_size=N,mtu=N]
+   PIPE          pipe,path[,min_tx_size=N,mtu=N]
+   UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]
+   SHMEM         shmem,path[,buffer_size=N,mtu=N]
+   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]
+   UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
-   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
+   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
    GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
 
 
@@ -238,16 +238,16 @@ Test utility for reading deterministic GAPS packets
   -v, --verbose              Increase verbosity level
 
  Supported channels:
-   DEVICE        device,path[,iov_len=N]
-   PIPE          pipe,path[,iov_len=N]
-   UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]
-   TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
-   UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]
-   SHMEM         shmem,path[,buffer_size=N]
-   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]
-   UIO           uio[,path=N]
+   DEVICE        device,path[,min_tx_size=N,mtu=N]
+   PIPE          pipe,path[,min_tx_size=N,mtu=N]
+   UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]
+   TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]
+   UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]
+   SHMEM         shmem,path[,buffer_size=N,mtu=N]
+   UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]
+   UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
-   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]
+   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
    GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
 
 

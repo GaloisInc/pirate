@@ -66,32 +66,28 @@ TEST(ChannelShmemTest, ConfigurationParser) {
 }
 
 #if PIRATE_SHMEM_FEATURE
-class ShmemTest : public ChannelTest, public WithParamInterface<int>
+class ShmemTest : public ChannelTest, public WithParamInterface<std::tuple<int, int>>
 {
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_shmem_param_t *param = &Reader.param.channel.shmem;
 
         const char *testPath = "/gaps.shmem_test";
         pirate_init_channel_param(SHMEM, &Reader.param);
         strncpy(param->path, testPath, PIRATE_LEN_NAME - 1);
 
-        unsigned buffer_size = GetParam();
+        auto test_param = GetParam();
+        unsigned buffer_size = std::get<0>(test_param);
         if (buffer_size) {
             param->buffer_size = buffer_size;
         } else {
-            buffer_size = DEFAULT_SMEM_BUF_LEN;
+            buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
         }
+        param->max_tx = std::get<1>(test_param);
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "shmem,%s,buffer_size=%u", testPath, buffer_size);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
-    static const int TEST_BUF_LEN = DEFAULT_SMEM_BUF_LEN / 2;
 };
 
 TEST_P(ShmemTest, Run)
@@ -99,9 +95,12 @@ TEST_P(ShmemTest, Run)
     Run();
 }
 
-// Test with IO vector sizes 0 and 16, passed as parameters
+static const int TEST_BUF_LEN = PIRATE_DEFAULT_SMEM_BUF_LEN / 2;
+static const int TEST_MAX_TX_LEN = 16;
+
 INSTANTIATE_TEST_SUITE_P(ShmemFunctionalTest, ShmemTest,
-    Values(0, ShmemTest::TEST_BUF_LEN));
+    Values(std::make_tuple(0, 0),
+        std::make_tuple(TEST_BUF_LEN, TEST_MAX_TX_LEN)));
 #endif
 
 } // namespace

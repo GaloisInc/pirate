@@ -104,13 +104,13 @@ static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
 
 static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
     if (param->buffer_size == 0) {
-        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+        param->buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
     }
     if (param->packet_size == 0) {
-        param->packet_size = DEFAULT_UDP_SHMEM_PACKET_SIZE;
+        param->packet_size = PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE;
     }
     if (param->packet_count == 0) {
-        param->packet_count = DEFAULT_UDP_SHMEM_PACKET_COUNT;
+        param->packet_count = PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT;
     }
 }
 
@@ -151,9 +151,25 @@ int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
 }
 
 int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "udp_shmem,%s,buffer_size=%u,packet_size=%zd,packet_count=%zd", param->path,
-                param->buffer_size, param->packet_size,
-                param->packet_count);
+    char buffer_size_str[32];
+    char packet_size_str[32];
+    char packet_count_str[32];
+
+    buffer_size_str[0] = 0;
+    packet_size_str[0] = 0;
+    packet_count_str[0] = 0;
+
+    if ((param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN)) {
+        snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
+    }
+    if ((param->packet_size != 0) && (param->packet_size != PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE)) {
+        snprintf(packet_size_str, 32, ",packet_size=%zd", param->packet_size);
+    }
+    if ((param->packet_count != 0) && (param->packet_count != PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT)) {
+        snprintf(packet_count_str, 32, ",packet_count=%zd", param->packet_count);
+    }
+    return snprintf(desc, len, "udp_shmem,%s%s%s%s",
+        param->path, buffer_size_str, packet_size_str, packet_count_str);
 }
 
 static shmem_buffer_t *udp_shmem_buffer_init(int fd, pirate_udp_shmem_param_t *param) {
@@ -268,11 +284,11 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int udp_shmem_buffer_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     udp_shmem_buffer_init_param(param);
     if (strnlen(param->path, 1) == 0) {
@@ -335,7 +351,6 @@ int udp_shmem_buffer_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_
         }
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;
@@ -375,6 +390,7 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     struct udp_hdr udp_header;
     uint16_t exp_csum, obs_csum;
     struct pseudo_ip_hdr pseudo_header;
+    unsigned char* data_location;
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -384,10 +400,6 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
 
     const size_t packet_size = buf->packet_size;
     const size_t packet_count = buf->packet_count;
-
-    if (count > (packet_size - UDP_HEADER_SIZE)) {
-        count = packet_size - UDP_HEADER_SIZE;
-    }
 
     position = atomic_load(&buf->position);
     for (int spin = 0; (spin < SPIN_ITERATIONS) && is_empty(position); spin++) {
@@ -420,8 +432,29 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
             sizeof(struct ip_hdr));
     memcpy(&udp_header, shared_buffer(buf) + (reader * packet_size) +
             sizeof(struct ip_hdr), sizeof(struct udp_hdr));
-    memcpy(buffer, shared_buffer(buf) + (reader * packet_size) +
-            UDP_HEADER_SIZE, count);
+    count = MIN(count, udp_header.len - sizeof(struct udp_hdr));
+    data_location = shared_buffer(buf) + (reader * packet_size) + UDP_HEADER_SIZE;
+    memcpy(buffer, data_location, count);
+
+    exp_csum = ip_header.csum;
+    ip_header.csum = 0;
+    obs_csum = cksum_avx2((void*) &ip_header, sizeof(struct ip_hdr), 0);
+
+    pseudo_header.srcaddr = ip_header.srcaddr;
+    pseudo_header.dstaddr = ip_header.dstaddr;
+    pseudo_header.zeros = 0;
+    pseudo_header.proto = 17;
+    pseudo_header.udp_len = udp_header.len;
+    pseudo_header.srcport = udp_header.srcport;
+    pseudo_header.dstport = udp_header.dstport;
+    pseudo_header.len = ip_header.len;
+    pseudo_header.csum = 0;
+
+    exp_csum = udp_header.csum;
+    obs_csum = cksum_avx2((void*) &pseudo_header,
+                            sizeof(struct pseudo_ip_hdr), 0);
+    obs_csum = cksum_avx2((void*) data_location,
+        udp_header.len - sizeof(struct udp_hdr), ~obs_csum);
 
     for (;;) {
         uint64_t update = create_position(writer, (reader + 1) % 
@@ -440,34 +473,29 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
         pthread_mutex_unlock(&buf->mutex);
     }
 
-    exp_csum = ip_header.csum;
-    ip_header.csum = 0;
-    obs_csum = cksum_avx2((void*) &ip_header, sizeof(struct ip_hdr), 0);
     if (exp_csum != obs_csum) {
         errno = EL2HLT;
         return -1;
     }
 
-    pseudo_header.srcaddr = ip_header.srcaddr;
-    pseudo_header.dstaddr = ip_header.dstaddr;
-    pseudo_header.zeros = 0;
-    pseudo_header.proto = 17;
-    pseudo_header.udp_len = udp_header.len;
-    pseudo_header.srcport = udp_header.srcport;
-    pseudo_header.dstport = udp_header.dstport;
-    pseudo_header.len = udp_header.len;
-    pseudo_header.csum = 0;
-
-    exp_csum = udp_header.csum;
-    obs_csum = cksum_avx2((void*) &pseudo_header,
-                            sizeof(struct pseudo_ip_hdr), 0);
-    obs_csum = cksum_avx2((void*) buffer, count, ~obs_csum);
     if (exp_csum != obs_csum) {
         errno = EL3HLT;
         return -1;
     }
 
-  return count;
+    return count;
+}
+
+ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
 }
 
 ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
@@ -517,7 +545,7 @@ ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_
     pseudo_header.udp_len = udp_header.len;
     pseudo_header.srcport = udp_header.srcport;
     pseudo_header.dstport = udp_header.dstport;
-    pseudo_header.len = udp_header.len;
+    pseudo_header.len = ip_header.len;
     pseudo_header.csum = 0;
 
     csum = cksum_avx2((void*) &pseudo_header, sizeof(struct pseudo_ip_hdr), 0);

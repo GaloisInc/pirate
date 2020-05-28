@@ -14,60 +14,102 @@
  */
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/uio.h>
 #include "libpirate.h"
 #include "pirate_common.h"
 
-static int create_iov(void *buf, size_t count, size_t iov_len,
-    struct iovec *iov) {
-    int iov_count = count / iov_len;
-    unsigned char *iov_base = buf;
-    if (count > iov_len * iov_count) {
-        ++iov_count;
+static ssize_t pirate_stream_do_read(int fd, uint8_t *buf, size_t count) {
+    size_t rx = 0;
+    ssize_t rv;
+    while (rx < count) {
+        rv = read(fd, buf + rx, count - rx);
+        if (rv < 0) {
+            return rv;
+        }
+        rx += rv;
     }
-
-    iov_count = MIN(iov_count, PIRATE_IOV_MAX);
-
-    for (int i = 0; i < iov_count; i++) {
-        iov[i].iov_base = iov_base;
-        iov[i].iov_len = MIN(count, iov_len);
-        iov_base += iov[i].iov_len;
-        count -= iov[i].iov_len;
-    }
-
-    return iov_count;
+    return rx;
 }
 
-ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len) {
+ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count) {
+    pirate_header_t *header = (pirate_header_t*) ctx->min_tx_buf;
+    int fd = ctx->fd;
+    uint32_t packet_count;
+    size_t rx;
+    ssize_t rv;
+
     if (fd < 0) {
         errno = EBADF;
         return -1;
     }
 
-    if ((iov_len > 0) && (count > iov_len)) {
-        struct iovec iov[PIRATE_IOV_MAX];
-        int iov_count = create_iov(buf, count, iov_len, iov);
-        return readv(fd, iov, iov_count);
+    rv = pirate_stream_do_read(fd, ctx->min_tx_buf, min_tx);
+    if (rv < 0) {
+        return rv;
     }
-
-    return read(fd, buf, count);
+    packet_count = ntohl(header->count);
+    count = MIN(count, packet_count);
+    size_t min_tx_data = MIN(count, min_tx - sizeof(pirate_header_t));
+    memcpy(buf, ctx->min_tx_buf + sizeof(pirate_header_t), min_tx_data);
+    if (min_tx_data < count) {
+        rv = pirate_stream_do_read(fd, ((uint8_t*) buf) + min_tx_data, count - min_tx_data);
+        if (rv < 0) {
+            return rv;
+        }
+    }
+    rx = MAX(count, min_tx - sizeof(pirate_header_t));
+    if (rx < packet_count) {
+        // slow path
+        uint8_t *temp = malloc(packet_count - rx);
+        rv = pirate_stream_do_read(fd, temp, packet_count - rx);
+        free(temp);
+        if (rv < 0) {
+            return rv;
+        }
+    }
+    return count;
 }
 
-ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len) {
+ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, size_t write_mtu, const void *buf, size_t count) {
+    pirate_header_t *header = (pirate_header_t*) ctx->min_tx_buf;
+    int fd = ctx->fd;
+    size_t tx = 0;
+    ssize_t rv;
+
     if (fd < 0) {
         errno = EBADF;
         return -1;
     }
-
-    if ((iov_len > 0) && (count > iov_len)) {
-        struct iovec iov[PIRATE_IOV_MAX];
-        int iov_count = create_iov((void *)buf, count, iov_len, iov);
-        return writev(fd, iov, iov_count);
+    if ((write_mtu > 0) && (count > write_mtu)) {
+        errno = EMSGSIZE;
+        return -1;
     }
-
-    return write(fd, buf, count);
+    if (count > UINT32_MAX) {
+        errno = EMSGSIZE;
+        return -1;
+    }
+    header->count = htonl(count);
+    size_t min_tx_data = MIN(count, min_tx - sizeof(pirate_header_t));
+    memcpy(ctx->min_tx_buf + sizeof(pirate_header_t), buf, min_tx_data);
+    while (tx < min_tx) {
+        rv = write(fd, ctx->min_tx_buf + tx, min_tx - tx);
+        if (rv < 0) {
+            return rv;
+        }
+        tx += rv;
+    }
+    tx = min_tx_data;
+    while (tx < count) {
+        rv = write(fd, ((uint8_t*) buf) + tx, count - tx);
+        if (rv < 0) {
+            return rv;
+        }
+        tx += rv;
+    }
+    return count;
 }
 
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr) {

@@ -38,7 +38,6 @@ struct rsc_contents {
     char *cc_path;
     size_t cc_buffer;
     size_t cc_packet_size;
-    size_t cc_iov_length;
     uint16_t cc_rate;
 
     /* Trivial resources

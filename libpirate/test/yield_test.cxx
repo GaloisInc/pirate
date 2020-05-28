@@ -30,6 +30,14 @@ TEST(YieldCxx, RegisterListener)
     ASSERT_EQ(rv, (int) sizeof(b));
 
     ASSERT_EQ(a, 42); // meaning of life
+
+    rv = pirate_close(gd[0]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    rv = pirate_close(gd[1]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
 }
 
 }

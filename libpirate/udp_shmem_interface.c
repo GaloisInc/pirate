@@ -38,11 +38,12 @@ int pirate_udp_shmem_get_channel_description(const pirate_udp_shmem_param_t *par
 #endif
 }
 
-int pirate_udp_shmem_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int pirate_udp_shmem_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_open(flags, param, ctx);
+    return udp_shmem_buffer_open(param, ctx);
 #else
-    (void) flags, (void) param, (void) ctx;
+    (void) param, (void) ctx;
+    errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
@@ -52,6 +53,7 @@ int pirate_udp_shmem_close(udp_shmem_ctx *ctx) {
     return udp_shmem_buffer_close(ctx);
 #else
     (void) ctx;
+    errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
@@ -61,6 +63,17 @@ ssize_t pirate_udp_shmem_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     return udp_shmem_buffer_read(param, ctx, buf, count);
 #else
     (void) param, (void) ctx, (void) buf, (void) count;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
+ssize_t pirate_udp_shmem_write_mtu(const pirate_udp_shmem_param_t *param) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return udp_shmem_buffer_write_mtu(param);
+#else
+    (void) param;
+    errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }
@@ -70,6 +83,7 @@ ssize_t pirate_udp_shmem_write(const pirate_udp_shmem_param_t *param, udp_shmem_
     return udp_shmem_buffer_write(param, ctx, buf, count);
 #else
     (void) param, (void) ctx, (void) buf, (void) count;
+    errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
 }

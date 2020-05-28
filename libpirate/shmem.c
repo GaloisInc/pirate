@@ -47,11 +47,17 @@ static inline uint32_t get_read(uint64_t value) {
 }
   
 static inline uint64_t create_position(uint32_t write, uint32_t read,
-                                       int writer) {
+                                       int bufsize, int writer) {
     uint8_t status = 1;
 
-    if (read == write) {
-        status = writer ? 2 : 0;
+    if (writer) {
+        if (((write - read + bufsize) % bufsize) <= sizeof(pirate_header_t)) {
+            status = 2;
+        }
+    } else {
+        if (read == write) {
+            status = 0;
+        }
     }
     return (((uint64_t)status) << 56) | (((uint64_t)write) << 28) | read;
 }
@@ -65,7 +71,7 @@ static inline int is_full(uint64_t value) {
 }
 
 static inline unsigned char* shared_buffer(shmem_buffer_t *shmem_buffer) {
-    return (unsigned char *)shmem_buffer + sizeof(shmem_buffer_t);
+    return (unsigned char*)(shmem_buffer + 1);
 }
 
 static shmem_buffer_t *shmem_buffer_init(int fd, int buffer_size) {
@@ -179,7 +185,10 @@ error:
 
 static void shmem_buffer_init_param(pirate_shmem_param_t *param) {
     if (param->buffer_size == 0) {
-        param->buffer_size = DEFAULT_SMEM_BUF_LEN;
+        param->buffer_size = PIRATE_DEFAULT_SMEM_BUF_LEN;
+    }
+    if (param->max_tx == 0) {
+        param->max_tx = PIRATE_DEFAULT_SMEM_MAX_TX;
     }
 }
 
@@ -207,6 +216,8 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
         }
         if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("max_tx_size", key, strlen("max_tx_size")) == 0) {
+            param->max_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -216,15 +227,26 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
 }
 
 int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "shmem,%s,buffer_size=%u", param->path,
-                    param->buffer_size);
+    char max_tx_str[32];
+    char buffer_size_str[32];
+
+    max_tx_str[0] = 0;
+    buffer_size_str[0] = 0;
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_DEFAULT_SMEM_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
+    }
+    if ((param->buffer_size != 0) && (param->buffer_size != PIRATE_DEFAULT_SMEM_BUF_LEN)) {
+        snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
+    }
+
+    return snprintf(desc, len, "shmem,%s%s%s", param->path, buffer_size_str, max_tx_str);
 }
 
-int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int shmem_buffer_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     shmem_buffer_init_param(param);
     // on successful shm_open (fd > 0) we must shm_unlink before exiting
@@ -283,7 +305,6 @@ int shmem_buffer_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
         }
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;
@@ -313,12 +334,34 @@ int shmem_buffer_close(shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
+static uint32_t shmem_buffer_do_read(const pirate_shmem_param_t *param, shmem_buffer_t* buf, uint8_t *dst, size_t len, uint32_t reader, size_t nbytes) {
+    size_t nbytes1, nbytes2;
+    size_t copy_len = 0;
+    size_t copy_total = MIN(nbytes, len);
+
+    while (copy_len < copy_total) {
+        nbytes = MIN(copy_total - copy_len, param->max_tx);
+        nbytes1 = MIN(buf->size - reader, nbytes);
+        nbytes2 = nbytes - nbytes1;
+        memcpy(dst, shared_buffer(buf) + reader, nbytes1);
+        if (nbytes2 > 0) {
+            memcpy(dst + nbytes1, shared_buffer(buf), nbytes2);
+        }
+        reader = (reader + nbytes) % buf->size;
+        dst += nbytes;
+        copy_len += nbytes;
+    }
+    return reader;
+}
+
 ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
     (void) param;
     uint64_t position;
     int was_full;
-    size_t nbytes, nbytes1, nbytes2;
+    size_t nbytes;
     uint32_t reader, writer;
+    pirate_header_t header;
+    uint32_t packet_count;
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -358,19 +401,17 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         nbytes = buf->size + writer - reader;
     }
 
-    count = MIN(count, 65536);
-    nbytes = MIN(nbytes, count);
-    nbytes1 = MIN(buf->size - reader, nbytes);
-    nbytes2 = nbytes - nbytes1;
     atomic_thread_fence(memory_order_acquire);
-    memcpy(buffer, shared_buffer(buf) + reader, nbytes1);
-    if (nbytes2 > 0) {
-        memcpy(((char *)buffer) + nbytes1, shared_buffer(buf), nbytes2);
+    reader = shmem_buffer_do_read(param, buf, (uint8_t*) &header, sizeof(header), reader, nbytes);
+    nbytes -= sizeof(header);
+    packet_count = ntohl(header.count);
+    reader = shmem_buffer_do_read(param, buf, buffer, MIN(count, packet_count), reader, nbytes);
+    if (count < packet_count) {
+        reader = (reader + packet_count - count) % buf->size;
     }
 
     for (;;) {
-        uint64_t update = create_position(writer,
-            (reader + nbytes) % buf->size, 0);
+        uint64_t update = create_position(writer, reader, buf->size, 0);
         if (atomic_compare_exchange_weak(&buf->position, &position,
                 update)) {
             was_full = is_full(position);
@@ -385,7 +426,39 @@ ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
         pthread_mutex_unlock(&buf->mutex);
     }
 
-    return nbytes;
+    return MIN(count, packet_count);
+}
+
+static uint32_t shmem_buffer_do_write(const pirate_shmem_param_t *param, shmem_buffer_t* buf, const uint8_t *src, size_t len, uint32_t writer, size_t nbytes) {
+    size_t nbytes1, nbytes2;
+    size_t copy_len = 0;
+    size_t copy_total = MIN(nbytes, len);
+
+    while (copy_len < copy_total) {
+        nbytes = MIN(copy_total - copy_len, param->max_tx);
+        nbytes1 = MIN(buf->size - writer, nbytes);
+        nbytes2 = nbytes - nbytes1;
+        memcpy(shared_buffer(buf) + writer, src, nbytes1);
+        if (nbytes2 > 0) {
+            memcpy(shared_buffer(buf), src + nbytes1, nbytes2);
+        }
+        writer = (writer + nbytes) % buf->size;
+        src += nbytes;
+        copy_len += nbytes;
+    }
+    return writer;
+}
+
+ssize_t shmem_buffer_write_mtu(const pirate_shmem_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
 }
 
 ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
@@ -393,8 +466,9 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
     (void) param;
     uint64_t position;
     int was_empty;
-    size_t nbytes, nbytes1, nbytes2;
+    size_t nbytes;
     uint32_t reader, writer;
+    pirate_header_t header;
 
     shmem_buffer_t* buf = ctx->buf;
     if (buf == NULL) {
@@ -441,18 +515,17 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         nbytes = buf->size + reader - writer;
     }
 
-    count = MIN(count, 65536);
-    nbytes = MIN(nbytes, count);
-    nbytes1 = MIN(buf->size - writer, nbytes);
-    nbytes2 = nbytes - nbytes1;
-    memcpy(shared_buffer(buf) + writer, buffer, nbytes1);
-    if (nbytes2 > 0) {
-        memcpy(shared_buffer(buf), ((char *)buffer) + nbytes1, nbytes2);
-    }
+    // shmem will truncate a write if the buffer
+    // does not have avialable space for the entire packet
+    count = MIN(count, nbytes - sizeof(header));
+    header.count = htonl(count);
+    writer = shmem_buffer_do_write(param, buf, (uint8_t*) &header, sizeof(header), writer, nbytes);
+    nbytes -= sizeof(header);
+    writer = shmem_buffer_do_write(param, buf, buffer, count, writer, nbytes);
+
     atomic_thread_fence(memory_order_release);
     for (;;) {
-        uint64_t update = create_position((writer + nbytes) % buf->size,
-                                            reader, 1);
+        uint64_t update = create_position(writer, reader, buf->size, 1);
         if (atomic_compare_exchange_weak(&buf->position, &position,
                                             update)) {
             was_empty = is_empty(position);
@@ -467,5 +540,5 @@ ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, co
         pthread_mutex_unlock(&buf->mutex);
     }
 
-    return nbytes;
+    return count;
 }

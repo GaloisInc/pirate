@@ -26,8 +26,10 @@ typedef struct {
 
 int pirate_udp_shmem_parse_param(char *str, pirate_udp_shmem_param_t *param);
 int pirate_udp_shmem_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len);
-int pirate_udp_shmem_open(int flags, pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx);
+int pirate_udp_shmem_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx);
 int pirate_udp_shmem_close(udp_shmem_ctx *ctx);
 ssize_t pirate_udp_shmem_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_udp_shmem_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_udp_shmem_write_mtu(const pirate_udp_shmem_param_t *param);
+
 #endif /* __PIRATE_CHANNEL_UDP_SHMEM_INTERFACE_H */

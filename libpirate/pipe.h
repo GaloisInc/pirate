@@ -20,15 +20,18 @@
 #include "libpirate.h"
 
 typedef struct {
+    int flags;
     int fd;
+    uint8_t *min_tx_buf;
  } pipe_ctx;
 
 int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param);
 int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len);
-int pirate_pipe_pipe(int flags, pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx);
-int pirate_pipe_open(int flags, pirate_pipe_param_t *param, pipe_ctx *ctx);
+int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx);
+int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx);
 int pirate_pipe_close(pipe_ctx *ctx);
 ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_pipe_write_mtu(const pirate_pipe_param_t *param);
 
 #endif /*__PIRATE_CHANNEL_PIPE_H */

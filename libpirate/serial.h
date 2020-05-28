@@ -19,14 +19,16 @@
 #include "libpirate.h"
 
 typedef struct {
+    int flags;
     int fd;
 } serial_ctx;
 
 int pirate_serial_parse_param(char *str, pirate_serial_param_t *param);
 int pirate_serial_get_channel_description(const pirate_serial_param_t *param, char *desc, int len);
-int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx);
+int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx);
 int pirate_serial_close(serial_ctx *ctx);
 ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_serial_write_mtu(const pirate_serial_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_SERIAL_H */

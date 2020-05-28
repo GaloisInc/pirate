@@ -18,23 +18,22 @@
 #include "libpirate_internal.h"
 #include "channel_test.hpp"
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 namespace GAPS
 {
 
-ChannelTest::ChannelTest() : testing::Test() ,
-    len({DEFAULT_START_LEN, DEFAULT_STOP_LEN, DEFAULT_STEP_LEN})
-{
-}
+ChannelTest::ChannelTest() : testing::Test() { }
 
 void ChannelTest::SetUp()
 {
     int rv;
     errno = 0;
 
-    Writer.buf = (uint8_t *) malloc(len.stop);
+    Writer.buf = (uint8_t *) malloc(buf_size);
     ASSERT_NE(nullptr, Writer.buf);
 
-    Reader.buf = (uint8_t *) malloc(len.stop);
+    Reader.buf = (uint8_t *) malloc(buf_size);
     ASSERT_NE(nullptr, Reader.buf);
 
     rv = pthread_barrier_init(&barrier, NULL, 2);
@@ -73,15 +72,20 @@ void ChannelTest::WriterChannelOpen()
 {
     int rv;
     char desc[256];
+    pirate_channel_param_t temp_param;
+
+    rv = pirate_unparse_channel_param(&Writer.param, desc, sizeof(desc) - 1);
+    ASSERT_EQ(0, errno);
+    ASSERT_GT(rv, 0);
+
+    rv = pirate_parse_channel_param(desc, &temp_param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, memcmp(&Writer.param, &temp_param, sizeof(pirate_channel_param_t)));
 
     Writer.gd = pirate_open_param(&Writer.param, O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Writer.gd, 0);
-
-    rv = pirate_get_channel_description(Writer.gd, desc, sizeof(desc));
-    ASSERT_EQ((int)Writer.desc.length(), rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(Writer.desc.c_str(), desc);
 
     WriterChannelPostOpen();
 
@@ -93,15 +97,20 @@ void ChannelTest::ReaderChannelOpen()
 {
     int rv;
     char desc[256];
+    pirate_channel_param_t temp_param;
+
+    rv = pirate_unparse_channel_param(&Reader.param, desc, sizeof(desc) - 1);
+    ASSERT_EQ(0, errno);
+    ASSERT_GT(rv, 0);
+
+    rv = pirate_parse_channel_param(desc, &temp_param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, memcmp(&Reader.param, &temp_param, sizeof(pirate_channel_param_t)));
 
     Reader.gd = pirate_open_param(&Reader.param, O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Reader.gd, 0);
-
-    rv = pirate_get_channel_description(Reader.gd, desc, sizeof(desc));
-    ASSERT_EQ((int)Reader.desc.length(), rv);
-    ASSERT_EQ(0, errno);
-    ASSERT_STREQ(Reader.desc.c_str(), desc);
 
     ReaderChannelPostOpen();
 
@@ -197,22 +206,23 @@ void ChannelTest::WriterTest()
 
     memset(&statsWr, 0, sizeof(statsWr));
 
-    for (ssize_t l = len.start; l < len.stop; l += len.step)
+    for (size_t i = 0; i < len_size; i++)
     {
         int sts;
         ssize_t rv;
+        ssize_t wl = len_arr[i].writer;
 
-        WriteDataInit(l);
+        WriteDataInit(wl);
 
-        rv = pirate_write(Writer.gd, Writer.buf, l);
-        ASSERT_EQ(l, rv);
-        ASSERT_EQ(0, errno);
+        rv = pirate_write(Writer.gd, Writer.buf, wl);
+        EXPECT_EQ(wl, rv);
+        EXPECT_EQ(0, errno);
 
         statsWr.packets++;
-        statsWr.bytes += l;
+        statsWr.bytes += wl;
 
         sts = pthread_barrier_wait(&barrier);
-        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+        EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     WriterChannelClose();
@@ -227,30 +237,26 @@ void ChannelTest::ReaderTest()
 
     memset(&statsRd, 0, sizeof(statsRd));
 
-    for (ssize_t l = len.start; l < len.stop; l += len.step)
+    for (size_t i = 0; i < len_size; i++)
     {
         int sts;
         ssize_t rv;
+        ssize_t rl = len_arr[i].reader;
+        ssize_t exp = MIN(len_arr[i].reader, len_arr[i].writer);
 
-        memset(Reader.buf, 0xFA, l);
+        memset(Reader.buf, 0xFA, rl);
 
-        ssize_t remain = l;
         uint8_t *buf = Reader.buf;
-        do {
-            rv = pirate_read(Reader.gd, buf, remain);
-            ASSERT_EQ(0, errno);
-            ASSERT_GT(rv, 0);
-            remain -= rv;
-            buf += rv;
-
-        } while (remain > 0);
-        EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, l));
+        rv = pirate_read(Reader.gd, buf, rl);
+        EXPECT_EQ(0, errno);
+        EXPECT_EQ(rv, exp);
+        EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, exp));
 
         statsRd.packets++;
-        statsRd.bytes += l;
+        statsRd.bytes += exp;
 
         sts = pthread_barrier_wait(&barrier);
-        ASSERT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+        EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
     }
 
     ReaderChannelClose();

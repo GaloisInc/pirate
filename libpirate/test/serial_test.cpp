@@ -49,7 +49,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
-    ASSERT_EQ((speed_t)0, serial_param->baud);
+    ASSERT_EQ((speed_t)PIRATE_SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s", name, path, baud_str);
@@ -88,54 +88,32 @@ public:
 
     void ChannelInit()
     {
-        char opt[128];
         pirate_serial_param_t *param = &Reader.param.channel.serial;
 
         auto test_param = GetParam();
-        const char *baud_str = NULL;
         speed_t baud = std::get<0>(test_param);
-        unsigned mtu = std::get<0>(test_param);
+        unsigned max_tx = std::get<1>(test_param);
 
         pirate_init_channel_param(SERIAL, &Reader.param);
         strncpy(param->path, readerDevice.c_str(), PIRATE_LEN_NAME - 1);
         if (baud) {
             param->baud = baud;
         } else {
-            baud = SERIAL_DEFAULT_BAUD;
+            param->baud = PIRATE_SERIAL_DEFAULT_BAUD;
         }
 
-        if (mtu) {
-            param->mtu = mtu;
+        if (max_tx) {
+            param->max_tx = max_tx;
         } else {
-            mtu = SERIAL_DEFAULT_MTU;
+            param->max_tx = PIRATE_SERIAL_DEFAULT_MAX_TX;
         }
 
         Writer.param = Reader.param;
         strncpy(Writer.param.channel.serial.path, writerDevice.c_str(), PIRATE_LEN_NAME - 1);
-
-        switch (baud) {
-        case B4800:   baud_str = "4800";   break;
-        case B9600:   baud_str = "9600";   break;
-        case B19200:  baud_str = "19200";  break;
-        case B38400:  baud_str = "38400";  break;
-        case B57600:  baud_str = "57600";  break;
-        case B115200: baud_str = "115200"; break;
-        case B230400: baud_str = "230400"; break;
-        case B460800: baud_str = "460800"; break;
-        default:
-            FAIL() << "Invalid baud rate";
-        }
-
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", readerDevice.c_str(),
-                    baud_str, mtu);
-        Reader.desc.assign(opt);
-        snprintf(opt, sizeof(opt) - 1, "serial,%s,baud=%s,mtu=%u", writerDevice.c_str(),
-                    baud_str, mtu);
-        Writer.desc.assign(opt);
     }
 
     static const speed_t TEST_BAUD = B115200;
-    static const unsigned TEST_MTU = SERIAL_DEFAULT_MTU / 2;
+    static const unsigned TEST_MAX_TX = PIRATE_SERIAL_DEFAULT_MAX_TX / 2;
     const std::string readerDevice;
     const std::string writerDevice;
 };
@@ -155,6 +133,6 @@ TEST_P(SerialTest, Run)
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(SerialFunctionalTest, SerialTest,
     Combine(Values(0, SerialTest::TEST_BAUD),
-            Values(0, SerialTest::TEST_MTU)));
+            Values(0, SerialTest::TEST_MAX_TX)));
 
 } // namespace
