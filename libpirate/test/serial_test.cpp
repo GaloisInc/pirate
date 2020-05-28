@@ -49,7 +49,7 @@ TEST(ChannelSerialTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(SERIAL, param.channel_type);
     ASSERT_STREQ(path, serial_param->path);
-    ASSERT_EQ(PIRATE_SERIAL_DEFAULT_BAUD, serial_param->baud);
+    ASSERT_EQ((speed_t)PIRATE_SERIAL_DEFAULT_BAUD, serial_param->baud);
     ASSERT_EQ(0u, serial_param->mtu);
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,baud=%s", name, path, baud_str);
