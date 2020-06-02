@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 void pirate_reset_gd();
+void pirate_reset_stats();
 
 #ifdef __cplusplus
 }

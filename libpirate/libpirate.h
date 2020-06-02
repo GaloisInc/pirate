@@ -256,6 +256,12 @@ typedef struct {
     } channel;
 } pirate_channel_param_t;
 
+typedef struct {
+    uint64_t count;
+    uint64_t errs;
+    uint64_t bytes;
+} pirate_stats_t;
+
 //
 // API
 //
@@ -432,11 +438,19 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 // a file descriptor.
 //
 // On success, the file descriptor is returned.
-// On error, -1 is returned, and errno is set appropriately.
+// On error -1 is returned, and errno is set appropriately.
 // errno is ENODEV if the gaps channel is not implemented
 // using a file descriptor.
 
 int pirate_get_fd(int gd);
+
+// Returns a reference to the read and write statistics
+// associated with the gaps descriptor.
+//
+// On success, the file descriptor is returned.
+// On error NULL is returned, and errno is set appropriately.
+
+pirate_stats_t *pirate_get_stats(int gd);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer

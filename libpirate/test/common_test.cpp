@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <gtest/gtest.h>
 #include "libpirate.h"
+#include "libpirate_internal.h"
 #include "channel_test.hpp"
 
 // Channel-type agnostic tests
@@ -118,6 +119,51 @@ TEST(CommonChannel, UnparseChannelParam)
     ASSERT_EQ(16, rv);
     ASSERT_EQ(0, errno);
     ASSERT_STREQ("device,/dev/nu", output);
+}
+
+TEST(CommonChannel, Stats)
+{
+    int rv, gd[2];
+    char temp[80];
+    pirate_stats_t *stats_r, *stats_w;
+    ssize_t nbytes;
+    errno = 0;
+
+    pirate_reset_stats();
+
+    rv = pirate_pipe_parse(gd, "pipe,/tmp/pipe_gaps_stats", O_RDWR);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    nbytes = pirate_write(gd[1], "hello world", 12);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(nbytes, 12);
+
+    nbytes = pirate_read(gd[0], temp, sizeof(temp));
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(nbytes, 12);
+
+    stats_r = pirate_get_stats(gd[0]);
+    stats_w = pirate_get_stats(gd[1]);
+    ASSERT_TRUE(stats_r != NULL);
+    ASSERT_TRUE(stats_w != NULL);
+
+    ASSERT_EQ(1, stats_r->count);
+    ASSERT_EQ(12, stats_r->bytes);
+    ASSERT_EQ(0, stats_r->errs);
+
+    ASSERT_EQ(1, stats_w->count);
+    ASSERT_EQ(12, stats_w->bytes);
+    ASSERT_EQ(0, stats_w->errs);
+
+    rv = pirate_close(gd[0]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    rv = pirate_close(gd[1]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
 }
 
 } // namespace
