@@ -148,12 +148,70 @@ TEST(CommonChannel, Stats)
     ASSERT_TRUE(stats_r != NULL);
     ASSERT_TRUE(stats_w != NULL);
 
-    ASSERT_EQ(1, stats_r->count);
+    ASSERT_EQ(1, stats_r->requests);
     ASSERT_EQ(12, stats_r->bytes);
+    ASSERT_EQ(1, stats_r->success);
+    ASSERT_EQ(0, stats_r->fuzzed);
     ASSERT_EQ(0, stats_r->errs);
 
-    ASSERT_EQ(1, stats_w->count);
+    ASSERT_EQ(1, stats_w->requests);
     ASSERT_EQ(12, stats_w->bytes);
+    ASSERT_EQ(1, stats_r->success);
+    ASSERT_EQ(0, stats_w->fuzzed);
+    ASSERT_EQ(0, stats_w->errs);
+
+    rv = pirate_close(gd[0]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    rv = pirate_close(gd[1]);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+}
+
+TEST(CommonChannel, Drop)
+{
+    int rv, gd[2];
+    char temp[80];
+    pirate_stats_t *stats_r, *stats_w;
+    ssize_t nbytes;
+    errno = 0;
+
+    pirate_reset_stats();
+
+    rv = pirate_pipe_parse(gd, "pipe,/tmp/pipe_gaps_stats,drop=2", O_RDWR);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    nbytes = pirate_write(gd[1], "hello", 6);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(nbytes, 6);
+
+    nbytes = pirate_write(gd[1], "world", 6);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(nbytes, 6);
+
+    nbytes = pirate_read(gd[0], temp, sizeof(temp));
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(nbytes, 6);
+    ASSERT_STREQ("world", temp);
+
+    stats_r = pirate_get_stats(gd[0]);
+    stats_w = pirate_get_stats(gd[1]);
+    ASSERT_TRUE(stats_r != NULL);
+    ASSERT_TRUE(stats_w != NULL);
+
+    ASSERT_EQ(1, stats_r->requests);
+    ASSERT_EQ(6, stats_r->bytes);
+    ASSERT_EQ(1, stats_r->success);
+    ASSERT_EQ(0, stats_r->fuzzed);
+    ASSERT_EQ(0, stats_r->errs);
+
+    ASSERT_EQ(2, stats_w->requests);
+    ASSERT_EQ(6, stats_w->bytes);
+    ASSERT_EQ(1, stats_w->success);
+    ASSERT_EQ(1, stats_w->fuzzed);
     ASSERT_EQ(0, stats_w->errs);
 
     rv = pirate_close(gd[0]);

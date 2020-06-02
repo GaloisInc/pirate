@@ -237,8 +237,9 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
-    uint8_t yield;
+    uint8_t listener;
     uint8_t control;
+    uint8_t drop;
     size_t src_enclave; // 1-based offset into enclaves name array
     size_t dst_enclave; // 0 is the empty value
     union {
@@ -257,9 +258,11 @@ typedef struct {
 } pirate_channel_param_t;
 
 typedef struct {
-    uint64_t count;
-    uint64_t errs;
-    uint64_t bytes;
+    uint64_t requests;
+    uint64_t success;
+    uint64_t errs; // EAGAIN and EWOULDBLOCK are not errors
+    uint64_t fuzzed;
+    uint64_t bytes; // bytes is incremented only on successful requests
 } pirate_stats_t;
 
 //

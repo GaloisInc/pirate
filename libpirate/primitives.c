@@ -140,7 +140,7 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
-static const char* pirate_common_keys[] = {"src", "dst", "listener", "control", NULL};
+static const char* pirate_common_keys[] = {"src", "dst", "listener", "control", "drop", NULL};
 
 int pirate_parse_is_common_key(const char *key) {
     for (int i = 0; pirate_common_keys[i] != NULL; i++) {
@@ -152,10 +152,13 @@ int pirate_parse_is_common_key(const char *key) {
 }
 
 static int pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
+
     if (strncmp("listener", key, strlen("listener")) == 0) {
-        param->yield = atoi(val);
+        param->listener = atoi(val);
     } else if (strncmp("control", key, strlen("control")) == 0) {
         param->control = atoi(val);
+    } else if (strncmp("drop", key, strlen("drop")) == 0) {
+        param->drop = atoi(val);
     } else if (strncmp("src", key, strlen("src")) == 0) {
         char **tgt = bsearch(&val, gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
         if (tgt == NULL) {
@@ -424,7 +427,7 @@ static int pirate_open(pirate_channel_t *channel) {
 }
 
 static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
-    if ((access == O_RDONLY) && (param->yield || param->control)) {
+    if ((access == O_RDONLY) && (param->listener || param->control)) {
         gaps_reader_gds[gaps_reader_gds_num++] = gd;
     }
     if ((access == O_WRONLY) && param->control) {
@@ -442,7 +445,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if ((param->yield || param->control) &&
+    if ((param->listener || param->control) &&
         ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
          (param->src_enclave == param->dst_enclave))) {
         errno = EINVAL;
@@ -503,7 +506,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if ((param->yield || param->control) &&
+    if ((param->listener || param->control) &&
         ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
          (param->src_enclave != param->dst_enclave))) {
         errno = EINVAL;
@@ -670,7 +673,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
 
-    stats->count += 1;
+    stats->requests += 1;
 
     switch (channel->param.channel_type) {
 
@@ -717,6 +720,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
             stats->errs += 1;
         }
     } else {
+        stats->success += 1;
         stats->bytes += rv;
     }
     return rv;
@@ -739,7 +743,13 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
 
-    stats->count += 1;
+    if ((param->drop > 0) && ((stats->requests % param->drop) == 0)) {
+        stats->requests += 1;
+        stats->fuzzed += 1;
+        return count;
+    } else {
+        stats->requests += 1;
+    }
 
     switch (param->channel_type) {
 
@@ -798,8 +808,9 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
             stats->errs += 1;
         }
     } else {
+        stats->success += 1;
         stats->bytes += rv;
-        if (param->yield && !param->control) {
+        if (param->listener && !param->control) {
             int ret = pirate_listen();
             if (ret < 0) {
                 return ret;
