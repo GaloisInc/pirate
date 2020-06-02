@@ -148,17 +148,17 @@ TEST(CommonChannel, Stats)
     ASSERT_TRUE(stats_r != NULL);
     ASSERT_TRUE(stats_w != NULL);
 
-    ASSERT_EQ(1, stats_r->requests);
-    ASSERT_EQ(12, stats_r->bytes);
-    ASSERT_EQ(1, stats_r->success);
-    ASSERT_EQ(0, stats_r->fuzzed);
-    ASSERT_EQ(0, stats_r->errs);
+    ASSERT_EQ(1u, stats_r->requests);
+    ASSERT_EQ(12u, stats_r->bytes);
+    ASSERT_EQ(1u, stats_r->success);
+    ASSERT_EQ(0u, stats_r->fuzzed);
+    ASSERT_EQ(0u, stats_r->errs);
 
-    ASSERT_EQ(1, stats_w->requests);
-    ASSERT_EQ(12, stats_w->bytes);
-    ASSERT_EQ(1, stats_r->success);
-    ASSERT_EQ(0, stats_w->fuzzed);
-    ASSERT_EQ(0, stats_w->errs);
+    ASSERT_EQ(1u, stats_w->requests);
+    ASSERT_EQ(12u, stats_w->bytes);
+    ASSERT_EQ(1u, stats_r->success);
+    ASSERT_EQ(0u, stats_w->fuzzed);
+    ASSERT_EQ(0u, stats_w->errs);
 
     rv = pirate_close(gd[0]);
     ASSERT_EQ(errno, 0);
@@ -202,17 +202,17 @@ TEST(CommonChannel, Drop)
     ASSERT_TRUE(stats_r != NULL);
     ASSERT_TRUE(stats_w != NULL);
 
-    ASSERT_EQ(1, stats_r->requests);
-    ASSERT_EQ(6, stats_r->bytes);
-    ASSERT_EQ(1, stats_r->success);
-    ASSERT_EQ(0, stats_r->fuzzed);
-    ASSERT_EQ(0, stats_r->errs);
+    ASSERT_EQ(1u, stats_r->requests);
+    ASSERT_EQ(6u, stats_r->bytes);
+    ASSERT_EQ(1u, stats_r->success);
+    ASSERT_EQ(0u, stats_r->fuzzed);
+    ASSERT_EQ(0u, stats_r->errs);
 
-    ASSERT_EQ(2, stats_w->requests);
-    ASSERT_EQ(6, stats_w->bytes);
-    ASSERT_EQ(1, stats_w->success);
-    ASSERT_EQ(1, stats_w->fuzzed);
-    ASSERT_EQ(0, stats_w->errs);
+    ASSERT_EQ(2u, stats_w->requests);
+    ASSERT_EQ(6u, stats_w->bytes);
+    ASSERT_EQ(1u, stats_w->success);
+    ASSERT_EQ(1u, stats_w->fuzzed);
+    ASSERT_EQ(0u, stats_w->errs);
 
     rv = pirate_close(gd[0]);
     ASSERT_EQ(errno, 0);
