@@ -32,7 +32,7 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     char opt[128];
     const char *name = "unix_socket";
     const char *path = "/tmp/test_unix_socket";
-    const unsigned iov_len = 42;
+    const unsigned min_tx = 42;
     const unsigned buffer_size = 42 * 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -47,27 +47,26 @@ TEST(ChannelUnixSocketTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
-    ASSERT_EQ(0u, unix_socket_param->iov_len);
     ASSERT_EQ(0u, unix_socket_param->buffer_size);
+    ASSERT_EQ(0u, unix_socket_param->min_tx);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,iov_len=%u", name, path, iov_len);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u", name, path, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UNIX_SOCKET, param.channel_type);
     ASSERT_STREQ(path, unix_socket_param->path);
-    ASSERT_EQ(iov_len, unix_socket_param->iov_len);
-    ASSERT_EQ(0u, unix_socket_param->buffer_size);
-
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,iov_len=%u,buffer_size=%u", name, path, iov_len,
-            buffer_size);
-    rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(UNIX_SOCKET, param.channel_type);
-    ASSERT_STREQ(path, unix_socket_param->path);
-    ASSERT_EQ(iov_len, unix_socket_param->iov_len);
     ASSERT_EQ(buffer_size, unix_socket_param->buffer_size);
+    ASSERT_EQ(0u, unix_socket_param->min_tx);
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,buffer_size=%u,min_tx_size=%u", name, path, buffer_size, min_tx);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(UNIX_SOCKET, param.channel_type);
+    ASSERT_STREQ(path, unix_socket_param->path);
+    ASSERT_EQ(buffer_size, unix_socket_param->buffer_size);
+    ASSERT_EQ(min_tx, unix_socket_param->min_tx);
 }
 
 class UnixSocketTest : public ChannelTest,
@@ -76,34 +75,26 @@ class UnixSocketTest : public ChannelTest,
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_unix_socket_param_t *param = &Reader.param.channel.unix_socket;
 
         pirate_init_channel_param(UNIX_SOCKET, &Reader.param);
         strncpy(param->path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
         auto test_param = GetParam();
-        param->iov_len = std::get<0>(test_param);
-        param->buffer_size = std::get<1>(test_param);
+        param->buffer_size = std::get<0>(test_param);
+        param->min_tx = std::get<1>(test_param);
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "unix_socket,%s,iov_len=%u,buffer_size=%u", param->path,
-                    param->iov_len, param->buffer_size);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
-
-    static const int TEST_BUF_LEN = 32;
 };
 
+static const int TEST_BUF_LEN = 32;
 
 TEST_P(UnixSocketTest, Run)
 {
     Run();
 }
 
-// Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest,
-    Combine(Values(0, ChannelTest::TEST_IOV_LEN),
-            Values(0, UnixSocketTest::TEST_BUF_LEN)));
+    Values(std::make_tuple(0, 0),
+        std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
 } // namespace

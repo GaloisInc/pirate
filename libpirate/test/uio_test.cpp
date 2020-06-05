@@ -57,14 +57,8 @@ class UioTest : public ChannelTest
 public:
     void ChannelInit()
     {
-        char opt[128];
-
         pirate_init_channel_param(UIO_DEVICE, &Reader.param);
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "uio,path=%s", DEFAULT_UIO_DEVICE);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 };
 

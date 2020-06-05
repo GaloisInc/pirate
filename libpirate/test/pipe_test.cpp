@@ -33,7 +33,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     char opt[128];
     const char *name = "pipe";
     const char *path = "/tmp/test_pipe";
-    const uint32_t iov_len = 42;
+    const unsigned min_tx = 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
@@ -47,15 +47,15 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(0, rv);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
-    ASSERT_EQ(0u, pipe_param->iov_len);
+    ASSERT_EQ(0u, pipe_param->min_tx);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,iov_len=%u", name, path, iov_len);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,min_tx_size=%u", name, path, min_tx);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
     ASSERT_EQ(PIPE, param.channel_type);
     ASSERT_STREQ(path, pipe_param->path);
-    ASSERT_EQ(iov_len, pipe_param->iov_len);
+    ASSERT_EQ(min_tx, pipe_param->min_tx);
 }
 
 class PipeTest : public ChannelTest, public WithParamInterface<int>
@@ -63,18 +63,12 @@ class PipeTest : public ChannelTest, public WithParamInterface<int>
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_pipe_param_t *param = &Reader.param.channel.pipe;
 
         pirate_init_channel_param(PIPE, &Reader.param);
         strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
-        param->iov_len = GetParam();
+        param->min_tx = GetParam();
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "pipe,%s,iov_len=%u", param->path,
-                    param->iov_len);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 };
 
@@ -83,8 +77,7 @@ TEST_P(PipeTest, Run)
     Run();
 }
 
-// Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
-    Values(0, ChannelTest::TEST_IOV_LEN));
+    Values(0, TEST_MIN_TX_LEN));
 
 } // namespace

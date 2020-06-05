@@ -7,6 +7,10 @@ be supported: configuring GAPS hardware, loading code and data onto the
 appropriate CPU, implementing channel send and receive calls, and resource
 cleanup / data wipe on termination.
 
+libpirate is a datagram communication library. Reads and writes are
+transmitted in indivisible packets. Reading a partial packet will
+drop the remaining contents of the packet.
+
 ## Usage
 
 See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
@@ -45,10 +49,27 @@ Writer:
 
 ## Channel types
 
+### Common parameters
+
+* mtu - specifies the maximum transmisssion unit. The mtu includes
+the length of the packet header. To get the maximum data payload
+transmission length, use `pirate_write_mtu()`. Writes longer than
+an mtu will generate a EMSGSIZE error.
+* min_tx_size - specifies the internal minimum transmission
+length for channels that are based on stream tranport. This
+parameter is for performance optimization and have no impact
+on the semantics of the library. The default value is generally
+the value you want to use.
+* max_tx_size - specifies the internal maximum transmission
+length for channels that are based on stream tranport. This
+parameter is for performance optimization and have no impact
+on the semantics of the library. The default value is generally
+the value you want to use.
+
 ### PIPE type
 
 ```
-"pipe,path[,iov_len=N]"
+"pipe,path[,min_tx_size=N,mtu=N]"
 ```
 
 Linux named pipes. Path to named pipe must be specified.
@@ -56,7 +77,7 @@ Linux named pipes. Path to named pipe must be specified.
 ### DEVICE type
 
 ```
-"device,path[,iov_len=N]"
+"device,path[,min_tx_size=N,mtu=N]"
 ```
 
 The pathname to the character device must be specified.
@@ -64,7 +85,7 @@ The pathname to the character device must be specified.
 ### UNIX_SOCKET type
 
 ```
-"unix_socket,path[,iov_len=N,buffer_size=N]"
+"unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]"
 ```
 
 Unix domain socket communication. Path to Unix socket must be specified.
@@ -72,7 +93,7 @@ Unix domain socket communication. Path to Unix socket must be specified.
 ### TCP_SOCKET type
 
 ```
-"tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]"
+"tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]"
 ```
 
 TCP socket communication. Host and port of the reader process must be specified.
@@ -80,7 +101,7 @@ TCP socket communication. Host and port of the reader process must be specified.
 ### UDP_SOCKET type
 
 ```
-"udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]" 
+"udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]"
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.
@@ -88,7 +109,7 @@ UDP socket communication. Host and port of the reader process must be specified.
 ### SHMEM type
 
 ```
-"shmem,path[,buffer_size=N]"
+"shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]"
 ```
 
 Uses a POSIX shared memory region to communicate. Support
@@ -97,14 +118,10 @@ library. This support is not included by default. Set
 the PIRATE_SHMEM_FEATURE flag in [CMakeLists.txt](/libpirate/CMakeLists.txt)
 to enable support for shared memory.
 
-The SHMEM type is intended for benchmarking purposes only.
-The size of the shared memory buffer can be specified using
-`pirate_set_shmem_size(int, int)` prior to opening the channel.
-
 ### UIO_DEVICE type
 
 ```
-"uio[,path=N]"
+"uio[,path=N,max_tx_size=N,mtu=N]"
 ```
 
 Uses shared memory provided by the kernel from a Userspace IO

@@ -20,9 +20,10 @@
 
 int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param);
 int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len);
-int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx);
+int pirate_internal_uio_open(pirate_uio_param_t *param, uio_ctx *ctx);
 int pirate_internal_uio_close(uio_ctx *ctx);
 ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf, size_t count);
 ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buf, size_t count);
+ssize_t pirate_internal_uio_write_mtu(const pirate_uio_param_t *param);
 
 #endif /* __PIRATE_CHANNEL_UIO_H */

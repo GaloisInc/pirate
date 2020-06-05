@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -70,7 +71,7 @@ static inline int is_full(uint64_t value) {
 
 static void pirate_uio_init_param(pirate_uio_param_t *param) {
     if (strnlen(param->path, 1) == 0) {
-        snprintf(param->path, PIRATE_LEN_NAME - 1, DEFAULT_UIO_DEVICE);
+        snprintf(param->path, PIRATE_LEN_NAME - 1, PIRATE_UIO_DEFAULT_PATH);
     }
 }
 
@@ -92,6 +93,8 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
         }
         if (strncmp("path", key, strlen("path")) == 0) {
             strncpy(param->path, val, sizeof(param->path) - 1);
+        } else if (strncmp("max_tx_size", key, strlen("max_tx_size")) == 0) {
+            param->max_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -101,7 +104,18 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
 }
 
 int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "uio,path=%s", param->path);
+    char max_tx_str[32];
+    char mtu_str[32];
+
+    max_tx_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_UIO_DEFAULT_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
+    }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    return snprintf(desc, len, "uio,path=%s%s%s", param->path, max_tx_str, mtu_str);
 }
 
 static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
@@ -116,11 +130,11 @@ static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     return uio_buffer;
 }
 
-int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_internal_uio_open(pirate_uio_param_t *param, uio_ctx *ctx) {
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_uio_init_param(param);
     ctx->fd = open(param->path, O_RDWR | O_SYNC);
@@ -157,7 +171,6 @@ int pirate_internal_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx)
         } while (!init_pid);
     }
 
-    ctx->flags = flags;
     return 0;
 error:
     err = errno;
@@ -247,6 +260,18 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
     }
 
     return nbytes;
+}
+
+ssize_t pirate_internal_uio_write_mtu(const pirate_uio_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
 }
 
 ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {

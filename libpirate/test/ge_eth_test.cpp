@@ -90,29 +90,23 @@ class GeEthTest : public ChannelTest, public WithParamInterface<unsigned>
 public:
     void ChannelInit()
     {
-        char opt[128];
         pirate_ge_eth_param_t *param = &Reader.param.channel.ge_eth;
 
         pirate_init_channel_param(GE_ETH, &Reader.param);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
         param->port = 0x4745;
         param->message_id = 0x5F475243;
         unsigned mtu = GetParam();
         if (mtu) {
             param->mtu = mtu;
         } else {
-            mtu = DEFAULT_GE_ETH_MTU;
+            mtu = PIRATE_DEFAULT_GE_ETH_MTU;
         }
 
         Writer.param = Reader.param;
-
-        snprintf(opt, sizeof(opt) - 1, "ge_eth,%s,%u,%u,mtu=%u",
-                    DEFAULT_GE_ETH_IP_ADDR, param->port,
-                    param->message_id, mtu);
-        Reader.desc.assign(opt);
-        Writer.desc.assign(opt);
     }
 
-    static const unsigned TEST_MTU_LEN = DEFAULT_GE_ETH_MTU / 2;
+    static const unsigned TEST_MTU_LEN = PIRATE_DEFAULT_GE_ETH_MTU / 2;
 };
 
 

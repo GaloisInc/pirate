@@ -16,15 +16,46 @@
 #ifndef __PIRATE_COMMON_H
 #define __PIRATE_COMMON_H
 
+#include "libpirate.h"
+
 #include <sys/types.h>
 
 #ifndef MIN
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-ssize_t pirate_fd_read(int fd, void *buf, size_t count, size_t iov_len);
-ssize_t pirate_fd_write(int fd, const void *buf, size_t count, size_t iov_len);
+#ifndef MAX
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    uint32_t count;
+} pirate_header_t;
+
+typedef struct {
+    int flags;
+    // exists for file descriptor channel types
+    int fd;
+    // exists for stream-based file descriptor channel types
+    uint8_t *min_tx_buf;
+} common_ctx;
+
+pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
+common_ctx *pirate_get_common_ctx_ref(int gd);
+
+int pirate_enclave_cmpfunc(const void *a, const void *b);
+
+ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count);
+ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, size_t write_mtu, const void *buf, size_t count);
 int pirate_parse_is_common_key(const char *key);
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PIRATE_COMMON_H */

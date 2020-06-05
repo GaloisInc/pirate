@@ -38,11 +38,11 @@ int pirate_uio_get_channel_description(const pirate_uio_param_t *param, char *de
 #endif
 }
 
-int pirate_uio_open(int flags, pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_uio_open(pirate_uio_param_t *param, uio_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return pirate_internal_uio_open(flags, param, ctx);
+    return pirate_internal_uio_open(param, ctx);
 #else
-    (void) flags, (void) param, (void) ctx;
+    (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
@@ -63,6 +63,16 @@ ssize_t pirate_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buf
     return pirate_internal_uio_read(param, ctx, buf, count);
 #else
     (void) param, (void) ctx, (void) buf, (void) count;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
+ssize_t pirate_uio_write_mtu(const pirate_uio_param_t *param) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return pirate_internal_uio_write_mtu(param);
+#else
+    (void) param;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

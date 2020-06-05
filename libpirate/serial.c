@@ -29,10 +29,10 @@
 
 static void pirate_serial_init_param(pirate_serial_param_t *param) {
     if (param->baud == 0) {
-        param->baud = SERIAL_DEFAULT_BAUD;
+        param->baud = PIRATE_SERIAL_DEFAULT_BAUD;
     }
-    if (param->mtu == 0) {
-        param->mtu = SERIAL_DEFAULT_MTU;
+    if (param->max_tx == 0) {
+        param->max_tx = PIRATE_SERIAL_DEFAULT_MAX_TX;
     }
 }
 
@@ -44,6 +44,8 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
         (strcmp(ptr, "serial") != 0)) {
         return -1;
     }
+
+    pirate_serial_init_param(param);
 
     if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
@@ -81,6 +83,8 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
             }
         } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
             param->mtu = strtol(val, NULL, 10);
+        } else if (strncmp("max_tx_size", key, strlen("max_tx_size")) == 0) {
+            param->max_tx = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -90,26 +94,40 @@ int pirate_serial_parse_param(char *str, pirate_serial_param_t *param) {
 }
 
 int pirate_serial_get_channel_description(const pirate_serial_param_t *param, char *desc, int len) {
-    const char *baud = NULL;
+    char baud_str[32];
+    char mtu_str[32];
+    char max_tx_str[32];
+    const char *baud_val = NULL;
     
     switch (param->baud) {
-    case B4800:   baud = "4800";   break;
-    case B9600:   baud = "9600";   break;
-    case B19200:  baud = "19200";  break;
-    case B38400:  baud = "38400";  break;
-    case B57600:  baud = "57600";  break;
-    case B115200: baud = "115200"; break;
-    case B230400: baud = "230400"; break;
-    case B460800: baud = "460800"; break;
+    case B4800:   baud_val = "4800";   break;
+    case B9600:   baud_val = "9600";   break;
+    case B19200:  baud_val = "19200";  break;
+    case B38400:  baud_val = "38400";  break;
+    case B57600:  baud_val = "57600";  break;
+    case B115200: baud_val = "115200"; break;
+    case B230400: baud_val = "230400"; break;
+    case B460800: baud_val = "460800"; break;
     default:
         return -1;
     }
 
-    return snprintf(desc, len, "serial,%s,baud=%s,mtu=%u", param->path, baud,
-                    param->mtu);
+    baud_str[0] = 0;
+    mtu_str[0] = 0;
+    max_tx_str[0] = 0;
+    if ((param->baud != 0) && (param->baud != PIRATE_SERIAL_DEFAULT_BAUD)) {
+        snprintf(baud_str, 32, ",baud=%s", baud_val);
+    }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    if ((param->max_tx != 0) && (param->max_tx != PIRATE_SERIAL_DEFAULT_MAX_TX)) {
+        snprintf(max_tx_str, 32, ",max_tx_size=%u", param->max_tx);
+    }
+    return snprintf(desc, len, "serial,%s%s%s%s", param->path, baud_str, mtu_str, max_tx_str);
 }
 
-int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx) {
+int pirate_serial_open(pirate_serial_param_t *param, serial_ctx *ctx) {
     struct termios attr;
 
     pirate_serial_init_param(param);
@@ -117,7 +135,7 @@ int pirate_serial_open(int flags, pirate_serial_param_t *param, serial_ctx *ctx)
         errno = EINVAL;
         return -1;
     }
-    ctx->fd = open(param->path, flags | O_NOCTTY);
+    ctx->fd = open(param->path, ctx->flags | O_NOCTTY);
     if (ctx->fd < 0) {
         return -1;
     }
@@ -154,18 +172,28 @@ int pirate_serial_close(serial_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
-    (void) param;
-    return read(ctx->fd, buf, count);
+ssize_t serial_do_read(serial_ctx *ctx, uint8_t *buf, size_t count) {
+    size_t rx = 0;
+    ssize_t rv;
+    int fd = ctx->fd;
+
+    while (rx < count) {
+        rv = read(fd, buf + rx, count - rx);
+        if (rv < 0) {
+            return rv;
+        }
+        rx += rv;
+    }
+    return rx;
 }
 
-ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+static ssize_t serial_do_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
     const uint8_t *wr_buf = (const uint8_t *) buf;
     size_t remain = count;
     do {
         int rv;
         uint32_t tx_buf_bytes = 0;
-        size_t wr_len = remain > param->mtu ? param->mtu : remain;
+        size_t wr_len = MIN(remain, param->max_tx);
         rv = write(ctx->fd, wr_buf, wr_len);
         if (rv < 0) {
             return -1;
@@ -190,5 +218,67 @@ ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx,
         wr_buf += rv;
     } while(remain > 0);
 
+    return count;
+}
+
+ssize_t pirate_serial_read(const pirate_serial_param_t *param, serial_ctx *ctx, void *buf, size_t count) {
+    (void) param;
+    pirate_header_t header;
+    ssize_t rv;
+    size_t packet_count;
+
+    rv = serial_do_read(ctx, (uint8_t*) &header, sizeof(header));
+    if (rv < 0) {
+        return rv;
+    }
+    packet_count = ntohl(header.count);
+    count = MIN(count, packet_count);
+    rv = serial_do_read(ctx, buf, count);
+    if (rv < 0) {
+        return rv;
+    }
+    if (count < packet_count) {
+        // slow path
+        uint8_t *temp = malloc(packet_count - count);
+        rv = serial_do_read(ctx, temp, packet_count - count);
+        free(temp);
+        if (rv < 0) {
+            return rv;
+        }
+    }
+    return count;
+}
+
+ssize_t pirate_serial_write_mtu(const pirate_serial_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
+}
+
+ssize_t pirate_serial_write(const pirate_serial_param_t *param, serial_ctx *ctx, const void *buf, size_t count) {
+    pirate_header_t header;
+    header.count = htonl(count);
+    ssize_t rv;
+    size_t mtu = pirate_serial_write_mtu(param);
+
+    if ((mtu > 0) && (count > mtu)) {
+        errno = EMSGSIZE;
+        return -1;
+    }
+
+    rv = serial_do_write(param, ctx, &header, sizeof(header));
+    if (rv < 0) {
+        return rv;
+    }
+    rv = serial_do_write(param, ctx, buf, count);
+    if (rv < 0) {
+        return rv;
+    }
     return count;
 }

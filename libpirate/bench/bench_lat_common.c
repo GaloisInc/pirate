@@ -165,7 +165,7 @@ static int bench_lat_open(bench_lat_t *bench, const char *config, int flags) {
 
     switch (param.channel_type) {
         case SHMEM:
-            if ((bufsize > DEFAULT_SMEM_BUF_LEN) && (param.channel.shmem.buffer_size == 0)) {
+            if ((bufsize > PIRATE_DEFAULT_SMEM_BUF_LEN) && (param.channel.shmem.buffer_size == 0)) {
                 param.channel.shmem.buffer_size = MIN(bufsize, 524288);
             }
             break;

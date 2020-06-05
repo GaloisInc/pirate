@@ -38,11 +38,11 @@ int pirate_shmem_get_channel_description(const pirate_shmem_param_t *param, char
 #endif
 }
 
-int pirate_shmem_open(int flags, pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int pirate_shmem_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_open(flags, param, ctx);
+    return shmem_buffer_open(param, ctx);
 #else
-    (void) flags, (void) param, (void) ctx;
+    (void) param, (void) ctx;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif
@@ -63,6 +63,16 @@ ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, voi
     return shmem_buffer_read(param, ctx, buf, count);
 #else
     (void) param, (void) ctx, (void) buf, (void) count;
+    errno = ESOCKTNOSUPPORT;
+    return -1;
+#endif
+}
+
+ssize_t pirate_shmem_write_mtu(const pirate_shmem_param_t *param) {
+#ifdef PIRATE_SHMEM_FEATURE
+    return shmem_buffer_write_mtu(param);
+#else
+    (void) param;
     errno = ESOCKTNOSUPPORT;
     return -1;
 #endif

@@ -27,8 +27,8 @@
 #include "tcp_socket.h"
 
 static void pirate_tcp_socket_init_param(pirate_tcp_socket_param_t *param) {
-    if (strnlen(param->addr, 1) == 0) {
-        snprintf(param->addr, sizeof(param->addr) - 1, DEFAULT_TCP_IP_ADDR);
+    if (param->min_tx == 0) {
+        param->min_tx = PIRATE_DEFAULT_MIN_TX;
     }
 }
 
@@ -60,10 +60,12 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
         } else if (rv == 0) {
             continue;
         }
-        if (strncmp("iov_len", key, strlen("iov_len")) == 0) {
-            param->iov_len = strtol(val, NULL, 10);
-        } else if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
+        if (strncmp("buffer_size", key, strlen("buffer_size")) == 0) {
             param->buffer_size = strtol(val, NULL, 10);
+        } else if (strncmp("min_tx_size", key, strlen("min_tx_size")) == 0) {
+            param->min_tx = strtol(val, NULL, 10);
+        } else if (strncmp("mtu", key, strlen("mtu")) == 0) {
+            param->mtu = strtol(val, NULL, 10);
         } else {
             errno = EINVAL;
             return -1;
@@ -73,8 +75,24 @@ int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param) {
 }
 
 int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len) {
-    return snprintf(desc, len, "tcp_socket,%s,%u,iov_len=%u,buffer_size=%u", param->addr,
-                    param->port, param->iov_len, param->buffer_size);
+    char min_tx_str[32];
+    char buffer_size_str[32];
+    char mtu_str[32];
+
+    min_tx_str[0] = 0;
+    buffer_size_str[0] = 0;
+    mtu_str[0] = 0;
+    if ((param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX)) {
+        snprintf(min_tx_str, 32, ",min_tx_size=%u", param->min_tx);
+    }
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+    if (param->buffer_size != 0) {
+        snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
+    }
+    return snprintf(desc, len, "tcp_socket,%s,%u%s%s%s", param->addr, param->port,
+        buffer_size_str, min_tx_str, mtu_str);
 }
 
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
@@ -193,9 +211,9 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     return -1;
 }
 
-int pirate_tcp_socket_open(int flags, pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
+int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int rv = -1;
-    int access = flags & O_ACCMODE;
+    int access = ctx->flags & O_ACCMODE;
 
     pirate_tcp_socket_init_param(param);
     if (param->port <= 0) {
@@ -207,13 +225,19 @@ int pirate_tcp_socket_open(int flags, pirate_tcp_socket_param_t *param, tcp_sock
     } else {
         rv = tcp_socket_writer_open(param, ctx);
     }
-
+    if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
+        return -1;
+    }
     return rv;
 }
 
 int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
     int rv = -1;
 
+    if (ctx->min_tx_buf != NULL) {
+        free(ctx->min_tx_buf);
+        ctx->min_tx_buf = NULL;
+    }
     if (ctx->sock <= 0) {
         errno = ENODEV;
         return -1;
@@ -225,9 +249,22 @@ int pirate_tcp_socket_close(tcp_socket_ctx *ctx) {
 }
 
 ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count) {
-    return pirate_fd_read(ctx->sock, buf, count, param->iov_len);
+    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
+}
+
+ssize_t pirate_tcp_socket_write_mtu(const pirate_tcp_socket_param_t *param) {
+    size_t mtu = param->mtu;
+    if (mtu == 0) {
+        return 0;
+    }
+    if (mtu < sizeof(pirate_header_t)) {
+        errno = EINVAL;
+        return -1;
+    }
+    return mtu - sizeof(pirate_header_t);
 }
 
 ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count) {
-    return pirate_fd_write(ctx->sock, buf, count, param->iov_len);
+    ssize_t mtu = pirate_tcp_socket_write_mtu(param);
+    return pirate_stream_write((common_ctx*) ctx, param->min_tx, mtu, buf, count);
 }

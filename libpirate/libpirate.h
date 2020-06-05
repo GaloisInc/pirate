@@ -32,6 +32,8 @@ extern "C" {
 #define PIRATE_NUM_CHANNELS 16
 #define PIRATE_IOV_MAX 16
 
+#define PIRATE_DEFAULT_MIN_TX 512
+
 typedef enum {
     // The gaps channel is unavailable for operations
     INVALID = 0,
@@ -40,36 +42,35 @@ typedef enum {
     // This filepath points to a character device, named pipe, or a derived
     // channel type.
     // Configuration parameters -#include <termios.h> pirate_device_param_t
-    //  - path    - device path
-    //  - iov_len - I/O vector chunk length
+    //  - path        - device path
+    //  - min_tx_size - minimum transmit size (bytes)
     DEVICE,
 
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe).
     // Configuration parameters - pirate_pipe_param_t
-    //  - path    - file path to named pipe
-    //  - iov_len - I/O vector chunk length
+    //  - path        - file path to named pipe
+    //  - min_tx_size - minimum transmit size (bytes)
     PIPE,
 
     // The gaps channel is implemented using a Unix domain socket.
     //  - path        - file path to unix socket
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - unix socket buffer size
+    //  - min_tx_size - minimum transmit size (bytes)
     UNIX_SOCKET,
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
     //  - port        - IP port
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - TCP socket buffer size
+    //  - min_tx_size - minimum transmit size (bytes)
     TCP_SOCKET,
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
     //  - port        - IP port
-    //  - iov_len     - I/O vector chunk length
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
@@ -127,71 +128,84 @@ typedef enum {
 // DEVICE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
+    unsigned mtu;
+    unsigned min_tx;
 } pirate_device_param_t;
 
 // PIPE parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
+    unsigned mtu;
+    unsigned min_tx;
 } pirate_pipe_param_t;
 
 // UNIX_SOCKET parameters
 typedef struct {
     char path[PIRATE_LEN_NAME];
-    unsigned iov_len;
     unsigned buffer_size;
+    unsigned mtu;
+    unsigned min_tx;
 } pirate_unix_socket_param_t;
 
 // TCP_SOCKET parameters
-#define DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
-    unsigned iov_len;
     unsigned buffer_size;
+    unsigned mtu;
+    unsigned min_tx;
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
-#define DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
+#define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
-    unsigned iov_len;
     unsigned buffer_size;
+    unsigned mtu;
 } pirate_udp_socket_param_t;
 
 // SHMEM parameters
-#define DEFAULT_SMEM_BUF_LEN                (128u << 10)
+#define PIRATE_DEFAULT_SMEM_BUF_LEN                (128u << 10)
+#define PIRATE_DEFAULT_SMEM_MAX_TX                 65536u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
+    unsigned mtu;
+    unsigned max_tx;
 } pirate_shmem_param_t;
 
 // UDP_SHMEM parameters
-#define DEFAULT_UDP_SHMEM_PACKET_COUNT      1000
-#define DEFAULT_UDP_SHMEM_PACKET_SIZE       1024
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_COUNT      1000u
+#define PIRATE_DEFAULT_UDP_SHMEM_PACKET_SIZE       1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned buffer_size;
     size_t packet_size;
     size_t packet_count;
+    unsigned mtu;
 } pirate_udp_shmem_param_t;
 
 // UIO parameters
-#define DEFAULT_UIO_DEVICE  "/dev/uio0"
+#define PIRATE_UIO_DEFAULT_PATH    "/dev/uio0"
+#define PIRATE_UIO_DEFAULT_MAX_TX  65536u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     unsigned short region;
+    unsigned mtu;
+    unsigned max_tx;
 } pirate_uio_param_t;
 
 // SERIAL parameters
-#define SERIAL_DEFAULT_BAUD     B230400
-#define SERIAL_DEFAULT_MTU      1024u
+#define PIRATE_SERIAL_DEFAULT_BAUD     B230400
+#define PIRATE_SERIAL_DEFAULT_MAX_TX   1024u
 typedef struct {
     char path[PIRATE_LEN_NAME];
     speed_t baud;
     unsigned mtu;
+    unsigned max_tx;
 } pirate_serial_param_t;
 
 // MERCURY parameters
@@ -212,8 +226,8 @@ typedef struct {
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
-#define DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
-#define DEFAULT_GE_ETH_MTU      1454u
+#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
+#define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
     char addr[INET_ADDRSTRLEN];
     short port;
@@ -305,18 +319,18 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                         \
-    "Supported channels:\n"                                                          \
-    "  DEVICE        device,path[,iov_len=N]\n"                                      \
-    "  PIPE          pipe,path[,iov_len=N]\n"                                        \
-    "  UNIX SOCKET   unix_socket,path[,iov_len=N,buffer_size=N]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,iov_len=N,buffer_size=N]\n" \
-    "  SHMEM         shmem,path[,buffer_size=N]\n"                                   \
-    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N]\n"  \
-    "  UIO           uio[,path=N]\n"                                                 \
-    "  SERIAL        serial,path[,baud=N,mtu=N]\n"                                   \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...]\n"                   \
+#define GAPS_CHANNEL_OPTIONS                                                                   \
+    "Supported channels:\n"                                                                    \
+    "  DEVICE        device,path[,min_tx_size=N,mtu=N]\n"                                      \
+    "  PIPE          pipe,path[,min_tx_size=N,mtu=N]\n"                                        \
+    "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]\n"                   \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
+    "  SHMEM         shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]\n"                         \
+    "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
+    "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
+    "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
+    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
     "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
@@ -330,17 +344,6 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 // -1 on failure, errno is set
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
-
-// Returns the open() flags associated with the gaps channel
-//
-// Parameters
-//  gd           - GAPS channel number
-//
-// Return:
-//  non-negative value on success
-// -1 on failure, errno is set
-
-int pirate_get_channel_flags(int gd);
 
 // Get channel parameters as a string
 //
@@ -435,21 +438,38 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 int pirate_get_fd(int gd);
 
-// pirate_read() attempts to read up to count bytes from
-// gaps descriptor gd into the buffer starting at buf.
+// pirate_read() attempts to read the next packet of up
+// to count bytes from gaps descriptor gd to the buffer
+// starting at buf.
+//
+// If the packet is longer than count bytes, then you get the
+// first size bytes of the packet and the rest of the packet
+// is lost.
 //
 // On success, the number of bytes read is returned.
 // On error, -1 is returned, and errno is set appropriately.
+
 ssize_t pirate_read(int gd, void *buf, size_t count);
 
-// pirate_write() writes up to count bytes from the buffer
-// starting at buf to the gaps descriptor gd.
+// pirate_write() writes the next packet of count bytes
+// from the buffer starting at buf to the gaps descriptor
+// gd.
 //
 // On success, the number of bytes written is returned
 // (zero indicates nothing was written). On error,
 // -1 is returned, and errno is set appropriately.
 
 ssize_t pirate_write(int gd, const void *buf, size_t count);
+
+
+// pirate_write_mtu() returns the maximum data length
+// that can be send in a call to pirate_write() for
+// the given channel. A value of 0 indicates no maximum length.
+//
+// On success, the mtu is returned. On error,
+// -1 is returned, and errno is set appropriately.
+
+ssize_t pirate_write_mtu(const pirate_channel_param_t *param);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //
