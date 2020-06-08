@@ -56,10 +56,19 @@ if (HAVE_STD_ATOMIC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_STD_ATOMIC")
 endif(HAVE_STD_ATOMIC)
 
-add_subdirectory(pal)
-include_directories(BEFORE pal)
+# Add libpirate to build
 add_subdirectory(libpirate)
-add_subdirectory(libpirategetopt)
+
+# Add libpirate include and link directories for other directories.
 include_directories(BEFORE libpirate)
 link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
+
+# Build pal
+add_subdirectory(pal)
+include_directories(BEFORE pal)
+
+# Build getopt library for working with resources.
+add_subdirectory(libpirategetopt)
+
+# Build demos
 add_subdirectory(demos)
