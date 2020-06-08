@@ -1,7 +1,6 @@
 #include "log.h"
 
-enum log_level log_level = LOGLVL_DEBUG;
-// FIXME: ^ Set this to default and make configurable.
+enum log_level log_level = LOGLVL_DEFAULT;
 
 static void vlog(enum log_level lvl, const char *fmt, va_list ap)
 {

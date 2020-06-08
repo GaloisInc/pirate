@@ -10,10 +10,10 @@ project(pal)
 # Dependencies
 ###
 
-find_library(YAML_LIB yaml)
-if(NOT YAML_LIB)
-    message(FATAL_ERROR "libyaml not found")
-endif(NOT YAML_LIB)
+#find_library(YAML_LIB yaml-0.1)
+#if(NOT YAML_LIB)
+#    message(FATAL_ERROR "libyaml not found")
+#endif(NOT YAML_LIB)
 
 ###
 # Adding libcyaml as an external project, ala

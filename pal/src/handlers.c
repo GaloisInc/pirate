@@ -73,24 +73,30 @@ int pirate_channel_resource_handler(pal_env_t *env,
     switch(params.channel_type) {
         case DEVICE:
             if(rsc->r_contents.cc_path)
-                strncpy(params.channel.pipe.path,
+                strncpy(params.channel.device.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
-            params.channel.pipe.iov_len
-                    = rsc->r_contents.cc_iov_length;
+            params.channel.device.min_tx
+                    = rsc->r_contents.cc_min_tx_size;
+            params.channel.device.mtu
+                    = rsc->r_contents.cc_mtu;
             break;
         case PIPE:
             if(rsc->r_contents.cc_path)
-                strncpy(params.channel.device.path,
+                strncpy(params.channel.pipe.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
-            params.channel.device.iov_len
-                    = rsc->r_contents.cc_iov_length;
+            params.channel.pipe.min_tx
+                    = rsc->r_contents.cc_min_tx_size;
+            params.channel.pipe.mtu
+                    = rsc->r_contents.cc_mtu;
             break;
         case UNIX_SOCKET:
             if(rsc->r_contents.cc_path)
                 strncpy(params.channel.unix_socket.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
-            params.channel.unix_socket.iov_len
-                    = rsc->r_contents.cc_iov_length;
+            params.channel.unix_socket.min_tx
+                    = rsc->r_contents.cc_min_tx_size;
+            params.channel.unix_socket.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.unix_socket.buffer_size
                     = rsc->r_contents.cc_buffer_size;
             break;
@@ -100,8 +106,10 @@ int pirate_channel_resource_handler(pal_env_t *env,
                         rsc->r_contents.cc_host, INET_ADDRSTRLEN);
             params.channel.tcp_socket.port
                     = rsc->r_contents.cc_port;
-            params.channel.tcp_socket.iov_len
-                    = rsc->r_contents.cc_iov_length;
+            params.channel.tcp_socket.min_tx
+                    = rsc->r_contents.cc_min_tx_size;
+            params.channel.tcp_socket.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.tcp_socket.buffer_size
                     = rsc->r_contents.cc_buffer_size;
             break;
@@ -111,14 +119,18 @@ int pirate_channel_resource_handler(pal_env_t *env,
                         rsc->r_contents.cc_host, INET_ADDRSTRLEN);
             params.channel.udp_socket.port
                     = rsc->r_contents.cc_port;
-            params.channel.udp_socket.iov_len
-                    = rsc->r_contents.cc_iov_length;
+            params.channel.udp_socket.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.udp_socket.buffer_size
                     = rsc->r_contents.cc_buffer_size;
             break;
         case SHMEM:
             strncpy(params.channel.shmem.path,
                     rsc->r_contents.cc_path, PIRATE_LEN_NAME);
+            params.channel.shmem.mtu
+                    = rsc->r_contents.cc_mtu;
+            params.channel.shmem.max_tx
+                    = rsc->r_contents.cc_max_tx_size;
             params.channel.shmem.buffer_size
                     = rsc->r_contents.cc_buffer_size;
             break;
@@ -126,6 +138,8 @@ int pirate_channel_resource_handler(pal_env_t *env,
             if(rsc->r_contents.cc_path)
                 strncpy(params.channel.udp_shmem.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
+            params.channel.shmem.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.udp_shmem.buffer_size
                     = rsc->r_contents.cc_buffer_size;
             params.channel.udp_shmem.packet_size
@@ -137,6 +151,10 @@ int pirate_channel_resource_handler(pal_env_t *env,
             if(rsc->r_contents.cc_path)
                 strncpy(params.channel.uio.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
+            params.channel.uio.mtu
+                    = rsc->r_contents.cc_mtu;
+            params.channel.uio.max_tx
+                    = rsc->r_contents.cc_max_tx_size;
             params.channel.uio.region
                     = rsc->r_contents.cc_region;
             break;
@@ -144,12 +162,16 @@ int pirate_channel_resource_handler(pal_env_t *env,
             if(rsc->r_contents.cc_path)
                 strncpy(params.channel.serial.path,
                         rsc->r_contents.cc_path, PIRATE_LEN_NAME);
-            params.channel.serial.baud
-                    = rsc->r_contents.cc_baud;
             params.channel.serial.mtu
                     = rsc->r_contents.cc_mtu;
+            params.channel.serial.max_tx
+                    = rsc->r_contents.cc_max_tx_size;
+            params.channel.serial.baud
+                    = rsc->r_contents.cc_baud;
             break;
         case MERCURY:
+            params.channel.mercury.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.mercury.session.level
                     = rsc->r_contents.cc_session->sess_level;
             params.channel.mercury.session.source_id
@@ -165,19 +187,17 @@ int pirate_channel_resource_handler(pal_env_t *env,
                             * sizeof(uint32_t));
             params.channel.mercury.session.id
                     = rsc->r_contents.cc_session->sess_id;
-            params.channel.mercury.mtu
-                    = rsc->r_contents.cc_mtu;
             break;
         case GE_ETH:
             if(rsc->r_contents.cc_host)
                 strncpy(params.channel.ge_eth.addr,
                         rsc->r_contents.cc_host, INET_ADDRSTRLEN);
+            params.channel.ge_eth.mtu
+                    = rsc->r_contents.cc_mtu;
             params.channel.ge_eth.port
                     = rsc->r_contents.cc_port;
             params.channel.ge_eth.message_id
                     = rsc->r_contents.cc_message_id;
-            params.channel.ge_eth.mtu
-                    = rsc->r_contents.cc_mtu;
             break;
         default:
             fatal("Pirate channel %s has unknown channel type: %d",
