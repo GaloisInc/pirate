@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(manual_res)
 
 add_executable(manual_res_app manual_res_app.c)
-target_link_libraries(manual_res_app libpal_shared)
+target_link_libraries(manual_res_app pal)
 target_compile_options(manual_res_app PRIVATE SHELL:-Wall SHELL:-Werror)
 target_link_options(manual_res_app PRIVATE
     SHELL:-fuse-ld=lld LINKER:-enclave,my_app)

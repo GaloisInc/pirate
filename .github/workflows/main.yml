@@ -218,22 +218,6 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
-    - name: Build pnt
-      run: |
-        mkdir build_pnt_demo
-        cd build_pnt_demo
-        cmake -DPNT_DEMO=ON \
-          -DCMAKE_INSTALL_PREFIX=pnt_demo \
-          -DCMAKE_EXE_LINKER_FLAGS=-static \
-          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-          ..
-        make
-        make install
-    - name: Upload pnt demo artifacts
-      uses: actions/upload-artifact@v1
-      with:
-        name: pnt_demo
-        path: build_pnt_demo/pnt_demo
   # This builds the docker image
   docker-build:
     runs-on: ubuntu-latest

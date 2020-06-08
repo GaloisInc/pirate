@@ -8,6 +8,7 @@ option(GAPS_DEMOS "Enable compilation of all GAPS demo applications" ON)
 option(CHANNEL_DEMO "Enable compilation of GAPS channel application" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PNT_DEMO "Enable compilation of pnt application" OFF)
+option(BUILD_LAUNCHER "Enable the PIRATE launcher" ON)
 option(BUILD_ALL "Enable PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH" OFF)
 
 if(BUILD_ALL)
