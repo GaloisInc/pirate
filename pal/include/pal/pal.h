@@ -5,9 +5,6 @@
 #include <stdint.h>
 #include <libpirate.h>
 
-#ifndef __GAPS__
-# error "gaps compiler required"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +23,8 @@ struct pirate_resource {
 } __attribute__((packed));
 // ^ FIXME: Do we want to include something else for these?
 
+#ifdef __GAPS__
+
 typedef char   *pal_string     __attribute__((pirate_resource_type("string")));
 typedef int64_t pal_integer    __attribute__((pirate_resource_type("integer")));
 typedef bool    pal_boolean    __attribute__((pirate_resource_type("boolean")));
@@ -43,6 +42,8 @@ struct pirate_resource _dummy_pirate_res_file[0]
 struct pirate_resource _dummy_pirate_res_pirate_channel[0]
     __attribute__((used, section(".pirate.res.pirate_channel")));
 // ^ FIXME: Remove this once it's taken care of in clang
+
+#endif
 
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
  * descriptor number.
@@ -90,7 +91,7 @@ int get_string_res(int fd, const char *name, char **outp);
 int get_file_res(int fd, const char *name, int *outp);
 
 /* Get a resource of type "gaps_channel" from the application launcher. After
- * a successful return, `outp` points to an 
+ * a successful return, `outp` points to an
  *
  * Return 0 on success. Return 1 if the format of the received resource
  * is incorrect. Otherwise, return a negative errno value.
