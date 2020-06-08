@@ -141,7 +141,7 @@ jobs:
               -DGAPS_DISABLE=ON \
               -DPIRATE_SHMEM_FEATURE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-              -BUILD_LAUNCHER=OFF \
+              -DBUILD_LAUNCHER=OFF \
               -DBUILD_RESOURCE_LOADER=OFF \
               ..
         make
