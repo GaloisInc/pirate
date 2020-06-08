@@ -159,7 +159,10 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_C_COMPILER="gcc" \
+              -DGAPS_DISABLE=ON \
+              -DBUILD_LAUNCHER=OFF \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: build benchmarks
       run: |
@@ -183,7 +186,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+        apt-get install --no-install-recommends -y git libjpeg-dev libssl-dev libx11-dev
     - name: googletest
       run: |
         mkdir ~/googletest
