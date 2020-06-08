@@ -20,6 +20,8 @@ option(CHANNEL_DEMO "Enable compilation of GAPS channel application" OFF)
 option(PNT_DEMO "Enable compilation of pnt application" OFF)
 option(RESOURCE_DEMOS "Enable compilation of resource and pal demos" OFF)
 option(GAPS_BENCH "Enable compilation of GAPS benchmark applications" OFF)
+option(BUILD_LAUNCHER "Enable the PIRATE launcher" ON)
+option(BUILD_RESOURCE_LOADER "Enable PIRATE resource loader" ON)
 option(BUILD_ALL "Enable PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH" OFF)
 
 if(BUILD_ALL)
@@ -63,12 +65,16 @@ add_subdirectory(libpirate)
 include_directories(BEFORE libpirate)
 link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
-# Build pal
-add_subdirectory(pal)
-include_directories(BEFORE pal)
+# Build application launcher
+if (BUILD_LAUNCHER)
+    add_subdirectory(pal)
+    include_directories(BEFORE pal)
+endif(BUILD_LAUNCHER)
 
 # Build getopt library for working with resources.
-add_subdirectory(libpirategetopt)
+if (BUILD_RESOURCE_LOADER)
+  add_subdirectory(libpirategetopt)
+endif(BUILD_RESOURCE_LOADER)
 
 # Build demos
 add_subdirectory(demos)
