@@ -186,7 +186,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y git libjpeg-dev libssl-dev libx11-dev
+        apt-get install --no-install-recommends -y git libjpeg-dev libssl-dev libx11-dev libyaml-dev
     - name: googletest
       run: |
         mkdir ~/googletest

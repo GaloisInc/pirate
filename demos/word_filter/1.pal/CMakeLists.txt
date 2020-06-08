@@ -17,7 +17,7 @@ SET(SRCS "filter.c")
 
 function(add_gaps_target TGT)
     add_executable(${TGT}_pal ${SRCS})
-    target_link_libraries(${TGT}_pal ${PIRATE_APP_LIBS} libpal_shared)
+    target_link_libraries(${TGT}_pal ${PIRATE_APP_LIBS} pal)
     target_compile_options(${TGT}_pal PRIVATE ${BUILD_FLAGS})
     set_target_properties(${TGT}_pal PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,${TGT} -fuse-ld=lld")
 endfunction()

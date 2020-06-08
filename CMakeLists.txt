@@ -68,7 +68,8 @@ link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 # Build application launcher
 if (BUILD_LAUNCHER)
     add_subdirectory(pal)
-    include_directories(BEFORE pal)
+    include_directories(BEFORE pal/include)
+    link_directories(BEFORE ${CMAKE_BINARY_DIR}/pal)
 endif(BUILD_LAUNCHER)
 
 # Build getopt library for working with resources.

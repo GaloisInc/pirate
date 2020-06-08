@@ -64,7 +64,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/pal DESTINATION include)
 # pal executable
 ###
 
-add_executable(pal
+add_executable(exepal
     src/main.c
     src/handle_apps.c src/handle_apps.h
     src/handlers.c src/handlers.h
@@ -72,12 +72,14 @@ add_executable(pal
     src/log.c src/log.h
     src/yaml.c src/yaml.h
     lib/pal/envelope.c include/pal/envelope.h
-)
-target_include_directories(pal PRIVATE
+    )
+set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
+target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(pal libcyaml pirate)
-target_compile_options(pal PRIVATE SHELL:-Wall SHELL:-Werror)
+target_link_libraries(exepal libcyaml pirate)
+target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror)
 
-install(TARGETS pal DESTINATION bin)
+install(TARGETS exepal DESTINATION bin)
+install(FILES include/pal/pal.h DESTINATION include/pal)
