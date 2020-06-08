@@ -7,7 +7,7 @@ In this tutorial we'll define a two-enclave project that will provide a simple w
 
 While a real project would use more complete error handling and resouce management, this tutorial will simplify these concerns to stay focused on the pirate tooling.
 
-The source code is available in whole form at https://github.com/GaloisInc/pirate/blob/master/demos/word_filter/filter.c
+The source code is available in whole form at https://github.com/GaloisInc/pirate/blob/master/demos/word_filter/0.enclaves/filter.c
 
 Imports and helper prototypes
 -----------------------------
