@@ -18,14 +18,12 @@
 
 #include "udp_shmem_interface.h"
 
-int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param);
-int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len);
-int udp_shmem_buffer_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx);
-int udp_shmem_buffer_close(udp_shmem_ctx *ctx);
-ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf,
-                            size_t count);
-ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, 
-                            size_t count);
-ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param);
+int udp_shmem_buffer_parse_param(char *str, void *_param);
+int udp_shmem_buffer_get_channel_description(const void *_param, char *desc, int len);
+int udp_shmem_buffer_open(void *_param, void *_ctx);
+int udp_shmem_buffer_close(void *_ctx);
+ssize_t udp_shmem_buffer_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t udp_shmem_buffer_write(const void *_param, void *_ctx, const void *buf,  size_t count);
+ssize_t udp_shmem_buffer_write_mtu(const void *_param);
 
 #endif /* __PIRATE_CHANNEL_UDP_SHMEM_H */

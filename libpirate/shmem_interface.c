@@ -13,78 +13,25 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <errno.h>
-#include <string.h>
 #include "shmem_interface.h"
 #include "shmem.h"
 
-int pirate_shmem_parse_param(char *str, pirate_shmem_param_t *param) {
-#if PIRATE_SHMEM_FEATURE
-    return  shmem_buffer_parse_param(str, param);
-#else
-    (void) str, (void) param;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
+void pirate_shmem_init(pirate_channel_funcs_t *funcs) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_get_channel_description(param, desc, len);
+    funcs->parse_param             = shmem_buffer_parse_param;
+    funcs->get_channel_description = shmem_buffer_get_channel_description;
+    funcs->open                    = shmem_buffer_open;
+    funcs->close                   = shmem_buffer_close;
+    funcs->read                    = shmem_buffer_read;
+    funcs->write                   = shmem_buffer_write;
+    funcs->write_mtu               = shmem_buffer_write_mtu;
 #else
-    (void) param, (void) desc, (void) len;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_open(param, ctx);
-#else
-    (void) param, (void) ctx;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_shmem_close(shmem_ctx *ctx) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_close(ctx);
-#else
-    (void) ctx;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_shmem_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buf, size_t count) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_read(param, ctx, buf, count);
-#else
-    (void) param, (void) ctx, (void) buf, (void) count;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_shmem_write_mtu(const pirate_shmem_param_t *param) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_write_mtu(param);
-#else
-    (void) param;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_shmem_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buf,
-                            size_t count) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return shmem_buffer_write(param, ctx, buf, count);
-#else
-    (void) param, (void) ctx, (void) buf, (void) count;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
+    funcs->parse_param             = NULL;
+    funcs->get_channel_description = NULL;
+    funcs->open                    = NULL;
+    funcs->close                   = NULL;
+    funcs->read                    = NULL;
+    funcs->write                   = NULL;
+    funcs->write_mtu               = NULL;
 #endif
 }

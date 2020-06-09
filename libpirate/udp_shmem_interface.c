@@ -13,77 +13,25 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <errno.h>
-#include <string.h>
 #include "udp_shmem_interface.h"
 #include "udp_shmem.h"
 
-int pirate_udp_shmem_parse_param(char *str, pirate_udp_shmem_param_t *param) {
-#if PIRATE_SHMEM_FEATURE
-    return  udp_shmem_buffer_parse_param(str, param);
-#else
-    (void) str, (void) param;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_udp_shmem_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
-#if PIRATE_SHMEM_FEATURE
-    return  udp_shmem_buffer_get_channel_description(param, desc, len);
-#else
-    (void) param, (void) desc, (void) len;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_udp_shmem_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+void pirate_udp_shmem_init(pirate_channel_funcs_t *funcs) {
 #ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_open(param, ctx);
+    funcs->parse_param             = udp_shmem_buffer_parse_param;
+    funcs->get_channel_description = udp_shmem_buffer_get_channel_description;
+    funcs->open                    = udp_shmem_buffer_open;
+    funcs->close                   = udp_shmem_buffer_close;
+    funcs->read                    = udp_shmem_buffer_read;
+    funcs->write                   = udp_shmem_buffer_write;
+    funcs->write_mtu               = udp_shmem_buffer_write_mtu;
 #else
-    (void) param, (void) ctx;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-int pirate_udp_shmem_close(udp_shmem_ctx *ctx) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_close(ctx);
-#else
-    (void) ctx;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_udp_shmem_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buf, size_t count) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_read(param, ctx, buf, count);
-#else
-    (void) param, (void) ctx, (void) buf, (void) count;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_udp_shmem_write_mtu(const pirate_udp_shmem_param_t *param) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_write_mtu(param);
-#else
-    (void) param;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
-#endif
-}
-
-ssize_t pirate_udp_shmem_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buf, size_t count) {
-#ifdef PIRATE_SHMEM_FEATURE
-    return udp_shmem_buffer_write(param, ctx, buf, count);
-#else
-    (void) param, (void) ctx, (void) buf, (void) count;
-    errno = ESOCKTNOSUPPORT;
-    return -1;
+    funcs->parse_param             = NULL;
+    funcs->get_channel_description = NULL;
+    funcs->open                    = NULL;
+    funcs->close                   = NULL;
+    funcs->read                    = NULL;
+    funcs->write                   = NULL;
+    funcs->write_mtu               = NULL;
 #endif
 }
