@@ -117,12 +117,11 @@ static inline pirate_channel_t *pirate_get_channel(int gd) {
 }
 
 static inline int pirate_channel_type_valid(channel_enum_t t) {
-    if ((t > INVALID) && (t < PIRATE_CHANNEL_TYPE_COUNT)) {
-        return 0;
+    if ((t <= INVALID) || (t >= PIRATE_CHANNEL_TYPE_COUNT)) {
+        errno = EINVAL;
+        return -1;
     }
-
-    errno = EINVAL;
-    return -1;
+    return 0;
 }
 
 int pirate_enclave_cmpfunc(const void *a, const void *b) {
