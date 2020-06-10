@@ -23,12 +23,14 @@ typedef struct {
     int sock;
 } udp_socket_ctx;
 
-int pirate_udp_socket_parse_param(char *str, pirate_udp_socket_param_t *param);
-int pirate_udp_socket_get_channel_description(const pirate_udp_socket_param_t *param, char *desc, int len);
-int pirate_udp_socket_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx);
-int pirate_udp_socket_close(udp_socket_ctx *ctx);
-ssize_t pirate_udp_socket_read(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_udp_socket_write(const pirate_udp_socket_param_t *param, udp_socket_ctx *ctx, const void *buf, size_t count);
-ssize_t pirate_udp_socket_write_mtu(const pirate_udp_socket_param_t *param);
+int pirate_udp_socket_parse_param(char *str, void *_param);
+int pirate_udp_socket_get_channel_description(const void *_param, char *desc, int len);
+int pirate_udp_socket_open(void *_param, void *_ctx);
+int pirate_udp_socket_close(void *_ctx);
+ssize_t pirate_udp_socket_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t pirate_udp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count);
+ssize_t pirate_udp_socket_write_mtu(const void *_param);
+
+#define PIRATE_UDP_SOCKET_CHANNEL_FUNCS { pirate_udp_socket_parse_param, pirate_udp_socket_get_channel_description, pirate_udp_socket_open, pirate_udp_socket_close, pirate_udp_socket_read, pirate_udp_socket_write, pirate_udp_socket_write_mtu }
 
 #endif /* __PIRATE_CHANNEL_UDP_SOCKET_H */

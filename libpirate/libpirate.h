@@ -122,7 +122,10 @@ typedef enum {
     //  - port       - IP port
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
-    GE_ETH
+    GE_ETH,
+
+   // Number of GAPS channel types
+    PIRATE_CHANNEL_TYPE_COUNT
 } channel_enum_t;
 
 // DEVICE parameters

@@ -22,7 +22,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include "pirate_common.h"
-#include "uio.h"
+#include "uio_interface.h"
 
 // TODO: replace reader and writer with BipBuffer
 // https://ferrous-systems.com/blog/lock-free-ring-buffer/
@@ -75,7 +75,8 @@ static void pirate_uio_init_param(pirate_uio_param_t *param) {
     }
 }
 
-int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
+int pirate_internal_uio_parse_param(char *str, void *_param) {
+    pirate_uio_param_t *param = (pirate_uio_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
 
@@ -103,7 +104,8 @@ int pirate_internal_uio_parse_param(char *str, pirate_uio_param_t *param) {
     return 0;
 }
 
-int pirate_internal_uio_get_channel_description(const pirate_uio_param_t *param, char *desc, int len) {
+int pirate_internal_uio_get_channel_description(const void *_param, char *desc, int len) {
+    const pirate_uio_param_t *param = (const pirate_uio_param_t *)_param;
     char max_tx_str[32];
     char mtu_str[32];
 
@@ -130,7 +132,9 @@ static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     return uio_buffer;
 }
 
-int pirate_internal_uio_open(pirate_uio_param_t *param, uio_ctx *ctx) {
+int pirate_internal_uio_open(void *_param, void *_ctx) {
+    pirate_uio_param_t *param = (pirate_uio_param_t *)_param;
+    uio_ctx *ctx = (uio_ctx *)_ctx;
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
@@ -184,7 +188,8 @@ error:
     return -1;
 }
 
-int pirate_internal_uio_close(uio_ctx *ctx) {
+int pirate_internal_uio_close(void *_ctx) {
+    uio_ctx *ctx = (uio_ctx *)_ctx;
     shmem_buffer_t* buf = ctx->buf;
     int access = ctx->flags & O_ACCMODE;
 
@@ -204,8 +209,9 @@ int pirate_internal_uio_close(uio_ctx *ctx) {
     return munmap(buf, buffer_size());
 }
 
-ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, void *buffer, size_t count) {
-    (void) param;
+ssize_t pirate_internal_uio_read(const void *_param, void *_ctx, void *buffer, size_t count) {
+    (void)_param;
+    uio_ctx *ctx = (uio_ctx *)_ctx;
     uint64_t position;
     uint32_t reader, writer;
     size_t nbytes, nbytes1, nbytes2;
@@ -262,7 +268,8 @@ ssize_t pirate_internal_uio_read(const pirate_uio_param_t *param, uio_ctx *ctx, 
     return nbytes;
 }
 
-ssize_t pirate_internal_uio_write_mtu(const pirate_uio_param_t *param) {
+ssize_t pirate_internal_uio_write_mtu(const void *_param) {
+    const pirate_uio_param_t *param = (const pirate_uio_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
         return 0;
@@ -274,8 +281,9 @@ ssize_t pirate_internal_uio_write_mtu(const pirate_uio_param_t *param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-ssize_t pirate_internal_uio_write(const pirate_uio_param_t *param, uio_ctx *ctx, const void *buffer, size_t count) {
-    (void) param;
+ssize_t pirate_internal_uio_write(const void *_param, void *_ctx, const void *buffer, size_t count) {
+    (void)_param;
+    uio_ctx *ctx = (uio_ctx *)_ctx;
     int buffer_size;
     size_t nbytes, nbytes1, nbytes2;
     uint64_t position;
