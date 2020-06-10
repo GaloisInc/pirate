@@ -26,7 +26,7 @@
 #include "checksum.h"
 #include "pirate_common.h"
 #include "shmem_buffer.h"
-#include "udp_shmem.h"
+#include "udp_shmem_interface.h"
 
 struct ip_hdr {
     uint8_t  version : 4;
@@ -114,7 +114,8 @@ static void udp_shmem_buffer_init_param(pirate_udp_shmem_param_t *param) {
     }
 }
 
-int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
+int udp_shmem_buffer_parse_param(char *str, void *_param) {
+    pirate_udp_shmem_param_t *param = (pirate_udp_shmem_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
 
@@ -150,7 +151,8 @@ int udp_shmem_buffer_parse_param(char *str, pirate_udp_shmem_param_t *param) {
     return 0;
 }
 
-int udp_shmem_buffer_get_channel_description(const pirate_udp_shmem_param_t *param, char *desc, int len) {
+int udp_shmem_buffer_get_channel_description(const void *_param, char *desc, int len) {
+    const pirate_udp_shmem_param_t *param = (const pirate_udp_shmem_param_t *)_param;
     char buffer_size_str[32];
     char packet_size_str[32];
     char packet_count_str[32];
@@ -284,7 +286,9 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx) {
+int udp_shmem_buffer_open(void *_param, void *_ctx) {
+    pirate_udp_shmem_param_t *param = (pirate_udp_shmem_param_t *)_param;
+    udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
@@ -360,10 +364,11 @@ error:
     return -1;
 }
 
-int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
-  shmem_buffer_t* buf = ctx->buf;
-  int access = ctx->flags & O_ACCMODE;
-  const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
+int udp_shmem_buffer_close(void *_ctx) {
+    udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
+    shmem_buffer_t* buf = ctx->buf;
+    int access = ctx->flags & O_ACCMODE;
+    const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
 
     if (access == O_RDONLY) {
         atomic_store(&buf->reader_pid, 0);
@@ -380,9 +385,9 @@ int udp_shmem_buffer_close(udp_shmem_ctx *ctx) {
     return munmap(buf, alloc_size);
 }
 
-ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, void *buffer,
-                                size_t count) {
-    (void) param;
+ssize_t udp_shmem_buffer_read(const void *_param, void *_ctx, void *buffer, size_t count) {
+    (void) _param;
+    udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
     uint64_t position;
     int was_full;
     uint32_t reader, writer;
@@ -486,7 +491,8 @@ ssize_t udp_shmem_buffer_read(const pirate_udp_shmem_param_t *param, udp_shmem_c
     return count;
 }
 
-ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param) {
+ssize_t udp_shmem_buffer_write_mtu(const void *_param) {
+    const pirate_udp_shmem_param_t *param = (const pirate_udp_shmem_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
         return 0;
@@ -498,9 +504,9 @@ ssize_t udp_shmem_buffer_write_mtu(const pirate_udp_shmem_param_t *param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-ssize_t udp_shmem_buffer_write(const pirate_udp_shmem_param_t *param, udp_shmem_ctx *ctx, const void *buffer,
-                            size_t count) {
-    (void) param;
+ssize_t udp_shmem_buffer_write(const void *_param, void *_ctx, const void *buffer, size_t count) {
+    (void)_param;
+    udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
     int was_empty;
     uint32_t reader, writer;
     uint64_t position;

@@ -25,12 +25,14 @@ typedef struct {
     char path[PIRATE_LEN_NAME];
 } mercury_ctx;
 
-int pirate_mercury_parse_param(char *str, pirate_mercury_param_t *param);
-int pirate_mercury_get_channel_description(const pirate_mercury_param_t *param, char *desc, int len);
-int pirate_mercury_open(pirate_mercury_param_t *param, mercury_ctx *ctx);
-int pirate_mercury_close(mercury_ctx *ctx);
-ssize_t pirate_mercury_read(const pirate_mercury_param_t *param, mercury_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_mercury_write(const pirate_mercury_param_t *param, mercury_ctx *ctx, const void *buf, size_t count);
-ssize_t pirate_mercury_write_mtu(const pirate_mercury_param_t *param);
+int pirate_mercury_parse_param(char *str, void *_param);
+int pirate_mercury_get_channel_description(const void *_param, char *desc, int len);
+int pirate_mercury_open(void *_param, void *_ctx);
+int pirate_mercury_close(void *_ctx);
+ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, size_t count);
+ssize_t pirate_mercury_write_mtu(const void *_param);
+
+#define PIRATE_MERCURY_CHANNEL_FUNCS { pirate_mercury_parse_param, pirate_mercury_get_channel_description, pirate_mercury_open, pirate_mercury_close, pirate_mercury_read, pirate_mercury_write, pirate_mercury_write_mtu }
 
 #endif /* __PIRATE_CHANNEL_MERCURY_H */

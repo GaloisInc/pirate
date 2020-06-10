@@ -22,7 +22,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include "pirate_common.h"
-#include "shmem.h"
+#include "shmem_interface.h"
 
 #include <stdio.h>
 
@@ -192,7 +192,8 @@ static void shmem_buffer_init_param(pirate_shmem_param_t *param) {
     }
 }
 
-int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
+int shmem_buffer_parse_param(char *str, void *_param) {
+    pirate_shmem_param_t *param = (pirate_shmem_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
 
@@ -226,7 +227,8 @@ int shmem_buffer_parse_param(char *str, pirate_shmem_param_t *param) {
     return 0;
 }
 
-int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char *desc, int len) {
+int shmem_buffer_get_channel_description(const void *_param, char *desc, int len) {
+    const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
     char max_tx_str[32];
     char buffer_size_str[32];
 
@@ -242,7 +244,9 @@ int shmem_buffer_get_channel_description(const pirate_shmem_param_t *param, char
     return snprintf(desc, len, "shmem,%s%s%s", param->path, buffer_size_str, max_tx_str);
 }
 
-int shmem_buffer_open(pirate_shmem_param_t *param, shmem_ctx *ctx) {
+int shmem_buffer_open(void *_param, void *_ctx) {
+    pirate_shmem_param_t *param = (pirate_shmem_param_t *)_param;
+    shmem_ctx *ctx = (shmem_ctx *)_ctx;
     int err;
     uint_fast64_t init_pid = 0;
     shmem_buffer_t* buf;
@@ -314,7 +318,8 @@ error:
     return -1;
 }
 
-int shmem_buffer_close(shmem_ctx *ctx) {
+int shmem_buffer_close(void *_ctx) {
+    shmem_ctx *ctx = (shmem_ctx *)_ctx;
     shmem_buffer_t* buf = ctx->buf;
     const size_t alloc_size = sizeof(shmem_buffer_t) + buf->size;
     int access = ctx->flags & O_ACCMODE;
@@ -354,8 +359,10 @@ static uint32_t shmem_buffer_do_read(const pirate_shmem_param_t *param, shmem_bu
     return reader;
 }
 
-ssize_t shmem_buffer_read(const pirate_shmem_param_t *param, shmem_ctx *ctx, void *buffer, size_t count) {
-    (void) param;
+ssize_t shmem_buffer_read(const void *_param, void *_ctx, void *buffer, size_t count) {
+    const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
+    shmem_ctx *ctx = (shmem_ctx *)_ctx;
+
     uint64_t position;
     int was_full;
     size_t nbytes;
@@ -449,7 +456,8 @@ static uint32_t shmem_buffer_do_write(const pirate_shmem_param_t *param, shmem_b
     return writer;
 }
 
-ssize_t shmem_buffer_write_mtu(const pirate_shmem_param_t *param) {
+ssize_t shmem_buffer_write_mtu(const void *_param) {
+    const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
         return 0;
@@ -461,9 +469,10 @@ ssize_t shmem_buffer_write_mtu(const pirate_shmem_param_t *param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-ssize_t shmem_buffer_write(const pirate_shmem_param_t *param, shmem_ctx *ctx, const void *buffer,
+ssize_t shmem_buffer_write(const void *_param, void *_ctx, const void *buffer,
                             size_t count) {
-    (void) param;
+    const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
+    shmem_ctx *ctx = (shmem_ctx *)_ctx;
     uint64_t position;
     int was_empty;
     size_t nbytes;

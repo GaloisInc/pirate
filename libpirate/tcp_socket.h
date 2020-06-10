@@ -24,12 +24,15 @@ typedef struct {
     uint8_t *min_tx_buf;
 } tcp_socket_ctx;
 
-int pirate_tcp_socket_parse_param(char *str, pirate_tcp_socket_param_t *param);
-int pirate_tcp_socket_get_channel_description(const pirate_tcp_socket_param_t *param, char *desc, int len);
-int pirate_tcp_socket_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx);
-int pirate_tcp_socket_close(tcp_socket_ctx *ctx);
-ssize_t pirate_tcp_socket_read(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, void *buf, size_t count);
-ssize_t pirate_tcp_socket_write(const pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, const void *buf, size_t count);
-ssize_t pirate_tcp_socket_write_mtu(const pirate_tcp_socket_param_t *param);
+int pirate_tcp_socket_parse_param(char *str, void *_param);
+int pirate_tcp_socket_get_channel_description(const void *_param, char *desc, int len);
+int pirate_tcp_socket_open(void *_param, void *_ctx);
+int pirate_tcp_socket_close(void *_ctx);
+ssize_t pirate_tcp_socket_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t pirate_tcp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count);
+ssize_t pirate_tcp_socket_write_mtu(const void *_param);
+
+#define PIRATE_TCP_SOCKET_CHANNEL_FUNCS { pirate_tcp_socket_parse_param, pirate_tcp_socket_get_channel_description, pirate_tcp_socket_open, pirate_tcp_socket_close, pirate_tcp_socket_read, pirate_tcp_socket_write, pirate_tcp_socket_write_mtu }
+
 
 #endif /* __PIRATE_CHANNEL_TCP_SOCKET_H */

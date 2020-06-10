@@ -31,7 +31,8 @@ static void pirate_unix_socket_init_param(pirate_unix_socket_param_t *param) {
     }
 }
 
-int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param) {
+int pirate_unix_socket_parse_param(char *str, void *_param) {
+    pirate_unix_socket_param_t *param = (pirate_unix_socket_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
 
@@ -65,7 +66,8 @@ int pirate_unix_socket_parse_param(char *str, pirate_unix_socket_param_t *param)
     return 0;
 }
 
-int pirate_unix_socket_get_channel_description(const pirate_unix_socket_param_t *param,char *desc, int len) {
+int pirate_unix_socket_get_channel_description(const void *_param, char *desc, int len) {
+    const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     char min_tx_str[32];
     char buffer_size_str[32];
     char mtu_str[32];
@@ -193,7 +195,9 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     return -1;
 }
 
-int pirate_unix_socket_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
+int pirate_unix_socket_open(void *_param, void *_ctx) {
+    pirate_unix_socket_param_t *param = (pirate_unix_socket_param_t *)_param;
+    unix_socket_ctx *ctx = (unix_socket_ctx *)_ctx;
     int rv = -1;
     int access = ctx->flags & O_ACCMODE;
 
@@ -217,7 +221,8 @@ int pirate_unix_socket_open(pirate_unix_socket_param_t *param, unix_socket_ctx *
 }
 
 
-int pirate_unix_socket_close(unix_socket_ctx *ctx) {
+int pirate_unix_socket_close(void *_ctx) {
+    unix_socket_ctx *ctx = (unix_socket_ctx *)_ctx;
     int rv = -1;
 
     if (ctx->min_tx_buf != NULL) {
@@ -235,11 +240,13 @@ int pirate_unix_socket_close(unix_socket_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_unix_socket_read(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, void *buf, size_t count) {
-    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
+ssize_t pirate_unix_socket_read(const void *_param, void *_ctx, void *buf, size_t count) {
+    const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
+    return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_unix_socket_write_mtu(const pirate_unix_socket_param_t *param) {
+ssize_t pirate_unix_socket_write_mtu(const void *_param) {
+    const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
         return 0;
@@ -251,7 +258,8 @@ ssize_t pirate_unix_socket_write_mtu(const pirate_unix_socket_param_t *param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-ssize_t pirate_unix_socket_write(const pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_unix_socket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+    const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     ssize_t mtu = pirate_unix_socket_write_mtu(param);
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, mtu, buf, count);
+    return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }
