@@ -24,6 +24,22 @@ typedef struct {
     shmem_buffer_t *buf;
 } shmem_ctx;
 
-void pirate_shmem_init(pirate_channel_funcs_t *funcs);
+#ifdef PIRATE_SHMEM_FEATURE
+
+int shmem_buffer_parse_param(char *str, void *_param);
+int shmem_buffer_get_channel_description(const void *_param, char *desc, int len);
+int shmem_buffer_open(void *_param, void *_ctx);
+int shmem_buffer_close(void *_ctx);
+ssize_t shmem_buffer_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t shmem_buffer_write(const void *_param, void *_ctx, const void *buf, size_t count);
+ssize_t shmem_buffer_write_mtu(const void *_param);
+
+#define PIRATE_SHMEM_CHANNEL_FUNCS { shmem_buffer_parse_param, shmem_buffer_get_channel_description, shmem_buffer_open, shmem_buffer_close, shmem_buffer_read, shmem_buffer_write, shmem_buffer_write_mtu }
+
+#else
+
+#define PIRATE_SHMEM_CHANNEL_FUNCS { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+
+#endif
 
 #endif /* __PIRATE_CHANNEL_SHMEM_INTERFACE_H */

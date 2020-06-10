@@ -35,13 +35,16 @@ extern "C" {
 #define PIRATE_DEFAULT_MIN_TX 512
 
 typedef enum {
+    // The gaps channel is unavailable for operations
+    INVALID = 0,
+
     // The gaps channel is implemented using a filepath.
     // This filepath points to a character device, named pipe, or a derived
     // channel type.
     // Configuration parameters -#include <termios.h> pirate_device_param_t
     //  - path        - device path
     //  - min_tx_size - minimum transmit size (bytes)
-    DEVICE = 0,
+    DEVICE,
 
     // The gaps channel is implemented using a FIFO special file
     // (a named pipe).
@@ -121,11 +124,8 @@ typedef enum {
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
 
-    // Number of GAPS channel types
-    PIRATE_CHANNEL_TYPE_COUNT,
-
-    // The gaps channel is unavailable for operations
-    INVALID = ~0
+   // Number of GAPS channel types
+    PIRATE_CHANNEL_TYPE_COUNT
 } channel_enum_t;
 
 // DEVICE parameters
@@ -518,16 +518,6 @@ int pirate_listen();
 // be omitted when the process is expected to terminate.
 
 int pirate_yield(const char *enclave);
-
-typedef struct {
-    int (*parse_param)(char *str, void *_param);
-    int (*get_channel_description)(const void *_param, char *desc, int len);
-    int (*open)(void *_param, void *ctx);
-    int (*close)(void *_ctx);
-    ssize_t (*read)(const void *_param, void *_ctx, void *buf, size_t count);
-    ssize_t (*write)(const void *_param, void *_ctx, const void *buf, size_t count);
-    ssize_t (*write_mtu)(const void *_param);
-} pirate_channel_funcs_t;
 
 #ifdef __cplusplus
 }

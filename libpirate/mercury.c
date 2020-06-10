@@ -217,7 +217,7 @@ static ssize_t mercury_message_unpack(const void *buf, size_t buf_len,
     return count;
 }
 
-static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
+void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     if (param->session.level == 0) {
         param->session.level = 1;
     }
@@ -227,7 +227,7 @@ static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     }
 }
 
-static int pirate_mercury_parse_param(char *str, void *_param) {
+int pirate_mercury_parse_param(char *str, void *_param) {
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -279,7 +279,7 @@ static int pirate_mercury_parse_param(char *str, void *_param) {
     return 0;
 }
 
-static int pirate_mercury_get_channel_description(const void *_param, char *desc, int len) {
+int pirate_mercury_get_channel_description(const void *_param, char *desc, int len) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     char *wr = desc;
     int wr_sz = 0;
@@ -301,7 +301,7 @@ static int pirate_mercury_get_channel_description(const void *_param, char *desc
     return ret_sz;
 }
 
-static int pirate_mercury_open(void *_param, void *_ctx) {
+int pirate_mercury_open(void *_param, void *_ctx) {
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     const uint32_t cfg_len = sizeof(uint32_t);
@@ -426,7 +426,7 @@ error:
     return -1;
 }
 
-static int pirate_mercury_close(void *_ctx) {
+int pirate_mercury_close(void *_ctx) {
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     int rv = -1;
 
@@ -445,7 +445,7 @@ static int pirate_mercury_close(void *_ctx) {
     return rv;
 }
 
-static ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count) {
+ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     ssize_t rd_len;
@@ -463,7 +463,7 @@ static ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, si
     return mercury_message_unpack(ctx->buf, (size_t) rd_len, buf, count, param);
 }
 
-static ssize_t pirate_mercury_write_mtu(const void *_param) {
+ssize_t pirate_mercury_write_mtu(const void *_param) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -476,7 +476,7 @@ static ssize_t pirate_mercury_write_mtu(const void *_param) {
     return mtu - sizeof(ilip_message_t);
 }
 
-static ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     ssize_t wr_len, rv;
@@ -496,14 +496,4 @@ static ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *
     }
 
     return -1;
-}
-
-void pirate_mercury_init(pirate_channel_funcs_t *funcs) {
-    funcs->parse_param             = pirate_mercury_parse_param;
-    funcs->get_channel_description = pirate_mercury_get_channel_description;
-    funcs->open                    = pirate_mercury_open;
-    funcs->close                   = pirate_mercury_close;
-    funcs->read                    = pirate_mercury_read;
-    funcs->write                   = pirate_mercury_write;
-    funcs->write_mtu               = pirate_mercury_write_mtu;
 }

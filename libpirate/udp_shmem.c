@@ -26,7 +26,7 @@
 #include "checksum.h"
 #include "pirate_common.h"
 #include "shmem_buffer.h"
-#include "udp_shmem.h"
+#include "udp_shmem_interface.h"
 
 struct ip_hdr {
     uint8_t  version : 4;

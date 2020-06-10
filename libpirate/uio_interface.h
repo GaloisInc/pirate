@@ -25,6 +25,22 @@ typedef struct {
     shmem_buffer_t *buf;
 } uio_ctx;
 
-void pirate_uio_init(pirate_channel_funcs_t *funcs);
+#ifdef PIRATE_SHMEM_FEATURE
+
+int pirate_internal_uio_parse_param(char *str, void *_param);
+int pirate_internal_uio_get_channel_description(const void *_param, char *desc, int len);
+int pirate_internal_uio_open(void *_param, void *_ctx);
+int pirate_internal_uio_close(void *_ctx);
+ssize_t pirate_internal_uio_read(const void *_param, void *_ctx, void *buf, size_t count);
+ssize_t pirate_internal_uio_write(const void *_param, void *_ctx, const void *buf, size_t count);
+ssize_t pirate_internal_uio_write_mtu(const void *_param);
+
+#define PIRATE_UIO_CHANNEL_FUNCS { pirate_internal_uio_parse_param, pirate_internal_uio_get_channel_description, pirate_internal_uio_open, pirate_internal_uio_close, pirate_internal_uio_read, pirate_internal_uio_write, pirate_internal_uio_write_mtu }
+
+#else
+
+#define PIRATE_UIO_CHANNEL_FUNCS { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+
+#endif
 
 #endif /* __PIRATE_CHANNEL_UIO_INTERFACE_H */

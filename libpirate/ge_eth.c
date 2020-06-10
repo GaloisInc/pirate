@@ -126,7 +126,7 @@ static void pirate_ge_eth_init_param(pirate_ge_eth_param_t *param) {
     }
 }
 
-static int pirate_ge_eth_parse_param(char *str, void *_param) {
+int pirate_ge_eth_parse_param(char *str, void *_param) {
     pirate_ge_eth_param_t *param = (pirate_ge_eth_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -171,7 +171,7 @@ static int pirate_ge_eth_parse_param(char *str, void *_param) {
     return 0;
 }
 
-static int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int len) {
+int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int len) {
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     char mtu_str[32];
 
@@ -244,7 +244,7 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     return 0;
 }
 
-static int pirate_ge_eth_open(void *_param, void *_ctx) {
+int pirate_ge_eth_open(void *_param, void *_ctx) {
     pirate_ge_eth_param_t *param = (pirate_ge_eth_param_t *)_param;
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     int rv = -1;
@@ -269,7 +269,7 @@ static int pirate_ge_eth_open(void *_param, void *_ctx) {
     return rv;
 }
 
-static int pirate_ge_eth_close(void *_ctx) {
+int pirate_ge_eth_close(void *_ctx) {
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     int err, rv = -1;
 
@@ -293,7 +293,7 @@ static int pirate_ge_eth_close(void *_ctx) {
     return rv;
 }
 
-static ssize_t pirate_ge_eth_read(const void *_param, void *_ctx, void *buf, size_t count) {
+ssize_t pirate_ge_eth_read(const void *_param, void *_ctx, void *buf, size_t count) {
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     ssize_t rd_size;
@@ -312,7 +312,7 @@ static ssize_t pirate_ge_eth_read(const void *_param, void *_ctx, void *buf, siz
     return ge_message_unpack(ctx->buf, buf, count, &hdr);
 }
 
-static ssize_t pirate_ge_eth_write_mtu(const void *_param) {
+ssize_t pirate_ge_eth_write_mtu(const void *_param) {
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -325,7 +325,7 @@ static ssize_t pirate_ge_eth_write_mtu(const void *_param) {
     return mtu - sizeof(ge_header_t);
 }
 
-static ssize_t pirate_ge_eth_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+ssize_t pirate_ge_eth_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     ssize_t rv, wr_len;
@@ -349,14 +349,4 @@ static ssize_t pirate_ge_eth_write(const void *_param, void *_ctx, const void *b
     }
 
     return count;
-}
-
-void pirate_ge_eth_init(pirate_channel_funcs_t *funcs) {
-    funcs->parse_param             = pirate_ge_eth_parse_param;
-    funcs->get_channel_description = pirate_ge_eth_get_channel_description;
-    funcs->open                    = pirate_ge_eth_open;
-    funcs->close                   = pirate_ge_eth_close;
-    funcs->read                    = pirate_ge_eth_read;
-    funcs->write                   = pirate_ge_eth_write;
-    funcs->write_mtu               = pirate_ge_eth_write_mtu;
 }

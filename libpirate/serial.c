@@ -36,7 +36,7 @@ static void pirate_serial_init_param(pirate_serial_param_t *param) {
     }
 }
 
-static int pirate_serial_parse_param(char *str, void *_param) {
+int pirate_serial_parse_param(char *str, void *_param) {
     pirate_serial_param_t *param = (pirate_serial_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -94,7 +94,7 @@ static int pirate_serial_parse_param(char *str, void *_param) {
     return 0;
 }
 
-static int pirate_serial_get_channel_description(const void *_param, char *desc, int len) {
+int pirate_serial_get_channel_description(const void *_param, char *desc, int len) {
     const pirate_serial_param_t *param = (const pirate_serial_param_t *)_param;
     char baud_str[32];
     char mtu_str[32];
@@ -129,7 +129,7 @@ static int pirate_serial_get_channel_description(const void *_param, char *desc,
     return snprintf(desc, len, "serial,%s%s%s%s", param->path, baud_str, mtu_str, max_tx_str);
 }
 
-static int pirate_serial_open(void *_param, void *_ctx) {
+int pirate_serial_open(void *_param, void *_ctx) {
     pirate_serial_param_t *param = (pirate_serial_param_t *)_param;
     serial_ctx *ctx = (serial_ctx *)_ctx;
     struct termios attr;
@@ -162,7 +162,7 @@ static int pirate_serial_open(void *_param, void *_ctx) {
     return 0;
 }
 
-static int pirate_serial_close(void *_ctx) {
+int pirate_serial_close(void *_ctx) {
     serial_ctx *ctx = (serial_ctx *)_ctx;
     int rv = -1;
 
@@ -176,7 +176,7 @@ static int pirate_serial_close(void *_ctx) {
     return rv;
 }
 
-ssize_t serial_do_read(serial_ctx *ctx, uint8_t *buf, size_t count) {
+static ssize_t serial_do_read(serial_ctx *ctx, uint8_t *buf, size_t count) {
     size_t rx = 0;
     ssize_t rv;
     int fd = ctx->fd;
@@ -225,7 +225,7 @@ static ssize_t serial_do_write(const pirate_serial_param_t *param, serial_ctx *c
     return count;
 }
 
-static ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, size_t count) {
+ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, size_t count) {
     serial_ctx *ctx = (serial_ctx *)_ctx;
     (void) _param;
     pirate_header_t header;
@@ -254,7 +254,7 @@ static ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, siz
     return count;
 }
 
-static ssize_t pirate_serial_write_mtu(const void *_param) {
+ssize_t pirate_serial_write_mtu(const void *_param) {
     const pirate_serial_param_t *param = (const pirate_serial_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -267,7 +267,7 @@ static ssize_t pirate_serial_write_mtu(const void *_param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-static ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_serial_param_t *param = (const pirate_serial_param_t *)_param;
     serial_ctx *ctx = (serial_ctx *)_ctx;
     pirate_header_t header;
@@ -289,14 +289,4 @@ static ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *b
         return rv;
     }
     return count;
-}
-
-void pirate_serial_init(pirate_channel_funcs_t *funcs) {
-    funcs->parse_param             = pirate_serial_parse_param;
-    funcs->get_channel_description = pirate_serial_get_channel_description;
-    funcs->open                    = pirate_serial_open;
-    funcs->close                   = pirate_serial_close;
-    funcs->read                    = pirate_serial_read;
-    funcs->write                   = pirate_serial_write;
-    funcs->write_mtu               = pirate_serial_write_mtu;
 }
