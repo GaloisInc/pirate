@@ -217,7 +217,7 @@ static ssize_t mercury_message_unpack(const void *buf, size_t buf_len,
     return count;
 }
 
-void pirate_mercury_init_param(pirate_mercury_param_t *param) {
+static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     if (param->session.level == 0) {
         param->session.level = 1;
     }
