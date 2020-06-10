@@ -31,7 +31,7 @@ static void pirate_unix_socket_init_param(pirate_unix_socket_param_t *param) {
     }
 }
 
-static int pirate_unix_socket_parse_param(char *str, void *_param) {
+int pirate_unix_socket_parse_param(char *str, void *_param) {
     pirate_unix_socket_param_t *param = (pirate_unix_socket_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
@@ -66,7 +66,7 @@ static int pirate_unix_socket_parse_param(char *str, void *_param) {
     return 0;
 }
 
-static int pirate_unix_socket_get_channel_description(const void *_param, char *desc, int len) {
+int pirate_unix_socket_get_channel_description(const void *_param, char *desc, int len) {
     const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     char min_tx_str[32];
     char buffer_size_str[32];
@@ -195,7 +195,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     return -1;
 }
 
-static int pirate_unix_socket_open(void *_param, void *_ctx) {
+int pirate_unix_socket_open(void *_param, void *_ctx) {
     pirate_unix_socket_param_t *param = (pirate_unix_socket_param_t *)_param;
     unix_socket_ctx *ctx = (unix_socket_ctx *)_ctx;
     int rv = -1;
@@ -221,7 +221,7 @@ static int pirate_unix_socket_open(void *_param, void *_ctx) {
 }
 
 
-static int pirate_unix_socket_close(void *_ctx) {
+int pirate_unix_socket_close(void *_ctx) {
     unix_socket_ctx *ctx = (unix_socket_ctx *)_ctx;
     int rv = -1;
 
@@ -240,12 +240,12 @@ static int pirate_unix_socket_close(void *_ctx) {
     return rv;
 }
 
-static ssize_t pirate_unix_socket_read(const void *_param, void *_ctx, void *buf, size_t count) {
+ssize_t pirate_unix_socket_read(const void *_param, void *_ctx, void *buf, size_t count) {
     const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-static ssize_t pirate_unix_socket_write_mtu(const void *_param) {
+ssize_t pirate_unix_socket_write_mtu(const void *_param) {
     const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -258,18 +258,8 @@ static ssize_t pirate_unix_socket_write_mtu(const void *_param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-static ssize_t pirate_unix_socket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+ssize_t pirate_unix_socket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_unix_socket_param_t *param = (const pirate_unix_socket_param_t *)_param;
     ssize_t mtu = pirate_unix_socket_write_mtu(param);
     return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
-}
-
-void pirate_unix_socket_init(pirate_channel_funcs_t *funcs) {
-    funcs->parse_param             = pirate_unix_socket_parse_param;
-    funcs->get_channel_description = pirate_unix_socket_get_channel_description;
-    funcs->open                    = pirate_unix_socket_open;
-    funcs->close                   = pirate_unix_socket_close;
-    funcs->read                    = pirate_unix_socket_read;
-    funcs->write                   = pirate_unix_socket_write;
-    funcs->write_mtu               = pirate_unix_socket_write_mtu;
 }

@@ -46,7 +46,7 @@ typedef int pirate_atomic_int;
 #include "udp_socket.h"
 #include "shmem_interface.h"
 #include "udp_shmem_interface.h"
-#include "uio.h"
+#include "uio_interface.h"
 #include "serial.h"
 #include "mercury.h"
 #include "ge_eth.h"
@@ -82,6 +82,21 @@ int gaps_reader_gds[PIRATE_NUM_CHANNELS];
 int gaps_reader_gds_num;
 
 int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
+
+static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT] = {
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    PIRATE_DEVICE_CHANNEL_FUNCS,
+    PIRATE_PIPE_CHANNEL_FUNCS,
+    PIRATE_UNIX_SOCKET_CHANNEL_FUNCS,
+    PIRATE_TCP_SOCKET_CHANNEL_FUNCS,
+    PIRATE_UDP_SOCKET_CHANNEL_FUNCS,
+    PIRATE_SHMEM_CHANNEL_FUNCS,
+    PIRATE_UDP_SHMEM_CHANNEL_FUNCS,
+    PIRATE_UIO_CHANNEL_FUNCS,
+    PIRATE_SERIAL_CHANNEL_FUNCS,
+    PIRATE_MERCURY_CHANNEL_FUNCS,
+    PIRATE_GE_ETH_CHANNEL_FUNCS
+};
 
 int pirate_close_channel(pirate_channel_t *channel);
 
@@ -254,7 +269,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         return -1;
     }
 
-    parse_func = gaps_channel_funcs()[param->channel_type].parse_param;
+    parse_func = gaps_channel_funcs[param->channel_type].parse_param;
 
     if (parse_func == NULL) {
         errno = ESOCKTNOSUPPORT;
@@ -300,7 +315,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc
         return -1;
     }
 
-    unparse_func = gaps_channel_funcs()[param->channel_type].get_channel_description;
+    unparse_func = gaps_channel_funcs[param->channel_type].get_channel_description;
 
     if (unparse_func == NULL) {
         errno = ESOCKTNOSUPPORT;
@@ -354,7 +369,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    open_func = gaps_channel_funcs()[param->channel_type].open;
+    open_func = gaps_channel_funcs[param->channel_type].open;
     if (open_func == NULL) {
         errno = ESOCKTNOSUPPORT;
         return -1;
@@ -549,7 +564,7 @@ int pirate_close_channel(pirate_channel_t *channel) {
         return -1;
     }
 
-    close_func = gaps_channel_funcs()[channel->param.channel_type].close;
+    close_func = gaps_channel_funcs[channel->param.channel_type].close;
 
     if (close_func == NULL) {
         errno = ESOCKTNOSUPPORT;
@@ -582,7 +597,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
         return -1;
     }
 
-    read_func = gaps_channel_funcs()[param->channel_type].read;
+    read_func = gaps_channel_funcs[param->channel_type].read;
 
     if (read_func == NULL) {
         errno = ESOCKTNOSUPPORT;
@@ -595,7 +610,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
 ssize_t pirate_write(int gd, const void *buf, size_t count) {
     pirate_channel_t *channel = NULL;
     ssize_t rv;
-    pirate_read_t write_func;    
+    pirate_write_t write_func;
 
     if ((channel = pirate_get_channel(gd)) == NULL) {
         return -1;
@@ -611,7 +626,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         return -1;
     }
 
-    write_func = gaps_channel_funcs()[param->channel_type].write;
+    write_func = gaps_channel_funcs[param->channel_type].write;
     if (write_func == NULL) {
         errno = ESOCKTNOSUPPORT;
         return -1;
@@ -637,7 +652,7 @@ ssize_t pirate_write_mtu(const pirate_channel_param_t *param) {
         return -1;
     }
 
-    write_mtu_func = gaps_channel_funcs()[param->channel_type].write_mtu;
+    write_mtu_func = gaps_channel_funcs[param->channel_type].write_mtu;
 
     if (write_mtu_func == NULL) {
         errno = ESOCKTNOSUPPORT;

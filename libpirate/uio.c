@@ -22,7 +22,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include "pirate_common.h"
-#include "uio.h"
+#include "uio_interface.h"
 
 // TODO: replace reader and writer with BipBuffer
 // https://ferrous-systems.com/blog/lock-free-ring-buffer/

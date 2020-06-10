@@ -22,7 +22,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include "pirate_common.h"
-#include "shmem.h"
+#include "shmem_interface.h"
 
 #include <stdio.h>
 

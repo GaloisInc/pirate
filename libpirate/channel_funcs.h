@@ -34,6 +34,4 @@ typedef struct {
     pirate_write_mtu_t write_mtu;
 } pirate_channel_funcs_t;
 
-pirate_channel_funcs_t* gaps_channel_funcs();
-
 #endif // __PIRATE_CHANNEL_FUNCS_H

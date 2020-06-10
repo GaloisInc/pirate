@@ -6,19 +6,15 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 SET(PIRATE_SOURCES
     "primitives.c"
     "pirate_common.c"
-    "channel_funcs.c"
     "device.c"
     "pipe.c"
     "ge_eth.c"
     "mercury.c"
     "mercury_cntl.c"
     "serial.c"
-    "shmem_interface.c"
-    "udp_shmem_interface.c"
     "tcp_socket.c"
     "udp_socket.c"
     "unix_socket.c"
-    "uio_interface.c"
 )
 
 if(PIRATE_SHMEM_FEATURE)
