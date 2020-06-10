@@ -17,6 +17,7 @@
 #define __PIRATE_CHANNEL_GE_ETH_H
 
 #include "libpirate.h"
+#include "channel_funcs.h"
 
 typedef struct {
     int flags;

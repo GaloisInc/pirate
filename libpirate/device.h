@@ -18,6 +18,7 @@
 
 #include <sys/types.h>
 #include "libpirate.h"
+#include "channel_funcs.h"
 
 typedef struct {
     int flags;

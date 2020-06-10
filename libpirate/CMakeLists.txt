@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE RelwithDebInfo)
 SET(PIRATE_SOURCES
     "primitives.c"
     "pirate_common.c"
+    "channel_funcs.c"
     "device.c"
     "pipe.c"
     "ge_eth.c"

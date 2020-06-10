@@ -18,6 +18,7 @@
 
 #include "libpirate.h"
 #include "shmem_buffer.h"
+#include "channel_funcs.h"
 
 typedef struct {
     int flags;
