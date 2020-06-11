@@ -49,7 +49,6 @@ definition
      ( type_decl SEMICOLON
      | const_decl SEMICOLON
      | module SEMICOLON
-     | component SEMICOLON
      | annotation_decl SEMICOLON
      )
    ;
@@ -545,71 +544,11 @@ exception_list
    : LEFT_BRACKET a_scoped_name (COMMA a_scoped_name)* RIGHT_BRACKET
    ;
 
-component
-   : component_decl
-   | component_forward_decl
-   ;
-
-component_forward_decl
-   : KW_COMPONENT ID
-   ;
-
-component_decl
-   : component_header LEFT_BRACE component_body RIGHT_BRACE
-   ;
-
-component_header
-   : KW_COMPONENT identifier (component_inheritance_spec)? (supported_interface_spec)?
-   ;
-
-supported_interface_spec
-   : KW_SUPPORTS a_scoped_name (COMMA a_scoped_name)*
-   ;
-
-component_inheritance_spec
-   : COLON a_scoped_name
-   ;
-
-component_body
-   : component_export*
-   ;
-
-component_export
-   : annapps
-     ( provides_decl SEMICOLON
-     | uses_decl SEMICOLON
-     | emits_decl SEMICOLON
-     | publishes_decl SEMICOLON
-     | consumes_decl SEMICOLON
-     | attr_decl SEMICOLON
-     )
-   ;
-
-provides_decl
-   : KW_PROVIDES interface_type ID
-   ;
-
 interface_type
    : annapps
      ( scoped_name
      | KW_OBJECT
      )
-   ;
-
-uses_decl
-   : KW_USES (KW_MULTIPLE)? interface_type ID
-   ;
-
-emits_decl
-   : KW_EMITS a_scoped_name ID
-   ;
-
-publishes_decl
-   : KW_PUBLISHES a_scoped_name ID
-   ;
-
-consumes_decl
-   : KW_CONSUMES a_scoped_name ID
    ;
 
 annapps
