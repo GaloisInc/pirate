@@ -48,7 +48,6 @@ definition
    : annapps
      ( type_decl SEMICOLON
      | const_decl SEMICOLON
-     | except_decl SEMICOLON
      | module SEMICOLON
      | component SEMICOLON
      | annotation_decl SEMICOLON
@@ -464,10 +463,6 @@ fixed_array_size
 attr_decl
    : readonly_attr_spec
    | attr_spec
-   ;
-
-except_decl
-   : KW_EXCEPTION identifier LEFT_BRACE member* RIGHT_BRACE
    ;
 
 op_decl
