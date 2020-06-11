@@ -50,8 +50,6 @@ definition
      | const_decl SEMICOLON
      | except_decl SEMICOLON
      | module SEMICOLON
-     | type_id_decl SEMICOLON
-     | type_prefix_decl SEMICOLON
      | component SEMICOLON
      | annotation_decl SEMICOLON
      )
@@ -531,10 +529,6 @@ value_base_type
 constr_forward_decl
    : KW_STRUCT ID
    | KW_UNION ID
-   ;
-
-type_prefix_decl
-   : KW_TYPEPREFIX a_scoped_name STRING_LITERAL
    ;
 
 readonly_attr_spec
