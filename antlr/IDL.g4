@@ -544,13 +544,6 @@ exception_list
    : LEFT_BRACKET a_scoped_name (COMMA a_scoped_name)* RIGHT_BRACKET
    ;
 
-interface_type
-   : annapps
-     ( scoped_name
-     | KW_OBJECT
-     )
-   ;
-
 annapps
    : ( annotation_appl )*
    ;
