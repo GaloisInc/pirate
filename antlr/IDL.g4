@@ -533,10 +533,6 @@ constr_forward_decl
    | KW_UNION ID
    ;
 
-type_id_decl
-   : KW_TYPEID a_scoped_name STRING_LITERAL
-   ;
-
 type_prefix_decl
    : KW_TYPEPREFIX a_scoped_name STRING_LITERAL
    ;
