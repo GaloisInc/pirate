@@ -56,7 +56,6 @@ definition
      | type_prefix_decl SEMICOLON
      | event SEMICOLON
      | component SEMICOLON
-     | home_decl SEMICOLON
      | annotation_decl SEMICOLON
      )
    ;
@@ -738,43 +737,6 @@ publishes_decl
 
 consumes_decl
    : KW_CONSUMES a_scoped_name ID
-   ;
-
-home_decl
-   : home_header home_body
-   ;
-
-home_header
-   : KW_HOME identifier (home_inheritance_spec)? (supported_interface_spec)? KW_MANAGES a_scoped_name (primary_key_spec)?
-   ;
-
-home_inheritance_spec
-   : COLON a_scoped_name
-   ;
-
-primary_key_spec
-   : KW_PRIMARYKEY a_scoped_name
-   ;
-
-home_body
-   : LEFT_BRACE home_export* RIGHT_BRACE
-   ;
-
-home_export
-   : export
-   | annapps
-     ( factory_decl
-     | finder_decl
-     )
-     SEMICOLON
-   ;
-
-factory_decl
-   : KW_FACTORY identifier LEFT_BRACKET (init_param_decls)? RIGHT_BRACKET (raises_expr)?
-   ;
-
-finder_decl
-   : KW_FINDER identifier LEFT_BRACKET (init_param_decls)? RIGHT_BRACKET (raises_expr)?
    ;
 
 event
