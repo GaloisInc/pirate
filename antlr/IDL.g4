@@ -49,7 +49,6 @@ definition
      ( type_decl SEMICOLON
      | const_decl SEMICOLON
      | except_decl SEMICOLON
-     | interface_or_forward_decl SEMICOLON
      | module SEMICOLON
      | type_id_decl SEMICOLON
      | type_prefix_decl SEMICOLON
@@ -60,49 +59,6 @@ definition
 
 module
    : KW_MODULE identifier LEFT_BRACE definition + RIGHT_BRACE
-   ;
-
-interface_or_forward_decl
-   : annapps
-     ( interface_decl
-     | forward_decl
-     )
-   ;
-
-interface_decl
-   : interface_header LEFT_BRACE interface_body RIGHT_BRACE
-   ;
-
-forward_decl
-   : (KW_ABSTRACT | KW_LOCAL)? KW_INTERFACE identifier
-   ;
-
-interface_header
-   : (KW_ABSTRACT | KW_LOCAL)? KW_INTERFACE identifier (interface_inheritance_spec)?
-   ;
-
-interface_body
-   : export*
-   ;
-
-export
-   : annapps
-     ( type_decl SEMICOLON
-     | const_decl SEMICOLON
-     | except_decl SEMICOLON
-     | attr_decl SEMICOLON
-     | op_decl SEMICOLON
-     | type_id_decl SEMICOLON
-     | type_prefix_decl SEMICOLON
-     )
-   ;
-
-interface_inheritance_spec
-   : COLON interface_name (COMMA interface_name)*
-   ;
-
-interface_name
-   : a_scoped_name
    ;
 
 // scoped_name with optional prefixed annotations
