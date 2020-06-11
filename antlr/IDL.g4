@@ -67,26 +67,6 @@ scoped_name
    : (DOUBLE_COLON)? ID (DOUBLE_COLON ID)*
    ;
 
-state_member
-   : annapps ( KW_PUBLIC annapps | KW_PRIVATE annapps ) type_spec declarators SEMICOLON
-   ;
-
-init_decl
-   : annapps KW_FACTORY identifier LEFT_BRACKET (init_param_decls)? RIGHT_BRACKET (raises_expr)? SEMICOLON
-   ;
-
-init_param_decls
-   : init_param_decl (COMMA init_param_decl)*
-   ;
-
-init_param_decl
-   : annapps init_param_attribute annapps param_type_spec annapps simple_declarator
-   ;
-
-init_param_attribute
-   : KW_IN
-   ;
-
 const_decl
    : KW_CONST const_type identifier EQUAL const_exp
    ;
