@@ -51,7 +51,6 @@ definition
      | except_decl SEMICOLON
      | interface_or_forward_decl SEMICOLON
      | module SEMICOLON
-     | value SEMICOLON
      | type_id_decl SEMICOLON
      | type_prefix_decl SEMICOLON
      | component SEMICOLON
@@ -113,43 +112,6 @@ a_scoped_name
 
 scoped_name
    : (DOUBLE_COLON)? ID (DOUBLE_COLON ID)*
-   ;
-
-value
-   : annapps
-     (value_decl | value_abs_decl | value_box_decl | value_forward_decl)
-   ;
- 
-value_forward_decl
-   : (KW_ABSTRACT)? KW_VALUETYPE identifier
-   ;
-
-value_box_decl
-   : KW_VALUETYPE identifier type_spec
-   ;
-
-value_abs_decl
-   : KW_ABSTRACT KW_VALUETYPE identifier value_inheritance_spec LEFT_BRACE export* RIGHT_BRACE
-   ;
-
-value_decl
-   : value_header LEFT_BRACE value_element* RIGHT_BRACE
-   ;
-
-value_header
-   : (KW_CUSTOM)? KW_VALUETYPE identifier value_inheritance_spec
-   ;
-
-value_inheritance_spec
-   : (COLON (KW_TRUNCATABLE)? value_name (COMMA value_name)*)? (KW_SUPPORTS interface_name (COMMA interface_name)*)?
-   ;
-
-value_name
-   : a_scoped_name
-   ;
-
-value_element
-   : (export | state_member | init_decl)
    ;
 
 state_member
