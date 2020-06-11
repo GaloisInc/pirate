@@ -54,7 +54,6 @@ definition
      | value SEMICOLON
      | type_id_decl SEMICOLON
      | type_prefix_decl SEMICOLON
-     | event SEMICOLON
      | component SEMICOLON
      | annotation_decl SEMICOLON
      )
@@ -737,26 +736,6 @@ publishes_decl
 
 consumes_decl
    : KW_CONSUMES a_scoped_name ID
-   ;
-
-event
-   : (event_decl | event_abs_decl | event_forward_decl)
-   ;
-
-event_forward_decl
-   : (KW_ABSTRACT)? KW_EVENTTYPE ID
-   ;
-
-event_abs_decl
-   : KW_ABSTRACT KW_EVENTTYPE identifier value_inheritance_spec LEFT_BRACE export* RIGHT_BRACE
-   ;
-
-event_decl
-   : event_header LEFT_BRACE value_element* RIGHT_BRACE
-   ;
-
-event_header
-   : (KW_CUSTOM)? KW_EVENTTYPE identifier value_inheritance_spec
    ;
 
 annapps
