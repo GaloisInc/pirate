@@ -49,7 +49,6 @@ definition
      ( type_decl SEMICOLON
      | const_decl SEMICOLON
      | module SEMICOLON
-     | annotation_decl SEMICOLON
      )
    ;
 
@@ -110,7 +109,7 @@ add_expr
    ;
 
 mult_expr
-   : unary_expr (('*' | SLASH | PERCENT) unary_expr)*
+   : unary_expr ((STAR | SLASH | PERCENT) unary_expr)*
    ;
 
 unary_expr
@@ -303,39 +302,6 @@ any_type
 
 object_type
    : KW_OBJECT
-   ;
-
-annotation_decl
-   : annotation_def
-   | annotation_forward_dcl
-   ;
-
-annotation_def
-   : annotation_header LEFT_BRACE annotation_body RIGHT_BRACE
-   ;
-
-annotation_header
-   : KW_AT_ANNOTATION identifier (annotation_inheritance_spec)?
-   ;
-
-annotation_inheritance_spec
-   : COLON scoped_name
-   ;
-
-annotation_body
-   : ( annotation_member
-     | enum_type SEMICOLON
-     | const_decl SEMICOLON
-     | KW_TYPEDEF type_declarator SEMICOLON
-     )*
-   ;
-
-annotation_member
-   : const_type simple_declarator (KW_DEFAULT const_exp)? SEMICOLON
-   ;
-
-annotation_forward_dcl
-   : KW_AT_ANNOTATION scoped_name
    ;
 
 bitset_type
