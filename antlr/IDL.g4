@@ -47,7 +47,6 @@ specification
 definition
    : annapps
      ( type_decl SEMICOLON
-     | const_decl SEMICOLON
      | module SEMICOLON
      )
    ;
@@ -63,25 +62,6 @@ a_scoped_name
 
 scoped_name
    : (DOUBLE_COLON)? ID (DOUBLE_COLON ID)*
-   ;
-
-const_decl
-   : KW_CONST const_type identifier EQUAL const_exp
-   ;
-
-const_type
-   : annapps
-     ( integer_type
-     | char_type
-     | wide_char_type
-     | boolean_type
-     | floating_pt_type
-     | string_type
-     | wide_string_type
-     | fixed_pt_const_type
-     | scoped_name
-     | octet_type
-     )
    ;
 
 const_exp
@@ -456,10 +436,6 @@ param_type_spec
 
 fixed_pt_type
    : KW_FIXED LEFT_ANG_BRACKET positive_int_const COMMA positive_int_const RIGHT_ANG_BRACKET
-   ;
-
-fixed_pt_const_type
-   : KW_FIXED
    ;
 
 value_base_type
