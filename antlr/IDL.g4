@@ -65,46 +65,7 @@ scoped_name
    ;
 
 const_exp
-   : or_expr
-   ;
-
-or_expr
-   : xor_expr (PIPE xor_expr)*
-   ;
-
-xor_expr
-   : and_expr (CARET and_expr)*
-   ;
-
-and_expr
-   : shift_expr (AMPERSAND shift_expr)*
-   ;
-
-shift_expr
-   : add_expr ((RIGHT_SHIFT | LEFT_SHIFT) add_expr)*
-   ;
-
-add_expr
-   : mult_expr ((PLUS | MINUS) mult_expr)*
-   ;
-
-mult_expr
-   : unary_expr ((STAR | SLASH | PERCENT) unary_expr)*
-   ;
-
-unary_expr
-   : unary_operator primary_expr
-   | primary_expr
-   ;
-
-unary_operator
-   : (MINUS | PLUS | TILDE)
-   ;
-
-primary_expr
-   : scoped_name
-   | literal
-   | LEFT_BRACKET const_exp RIGHT_BRACKET
+   : literal
    ;
 
 literal
