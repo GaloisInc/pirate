@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 grammar IDL;
 
 specification
-   : import_decl* definition +
+   : definition +
    ;
 
 definition
@@ -613,15 +613,6 @@ value_base_type
 constr_forward_decl
    : KW_STRUCT ID
    | KW_UNION ID
-   ;
-
-import_decl
-   : annapps KW_IMPORT annapps imported_scope SEMICOLON
-   ;
-
-imported_scope
-   : scoped_name
-   | STRING_LITERAL
    ;
 
 type_id_decl
