@@ -346,48 +346,6 @@ fixed_array_size
    : LEFT_SQUARE_BRACKET positive_int_const RIGHT_SQUARE_BRACKET
    ;
 
-attr_decl
-   : readonly_attr_spec
-   | attr_spec
-   ;
-
-op_decl
-   : (op_attribute)? op_type_spec identifier parameter_decls (raises_expr)? (context_expr)?
-   ;
-
-op_attribute
-   : KW_ONEWAY
-   ;
-
-op_type_spec
-   : annapps
-     ( param_type_spec
-     | KW_VOID
-     )
-   ;
-
-parameter_decls
-   : LEFT_BRACKET ( param_decl (COMMA param_decl)* )? RIGHT_BRACKET
-   ;
-
-param_decl
-   : annapps param_attribute annapps param_type_spec annapps simple_declarator
-   ;
-
-param_attribute
-   : KW_IN
-   | KW_OUT
-   | KW_INOUT
-   ;
-
-raises_expr
-   : KW_RAISES LEFT_BRACKET a_scoped_name (COMMA a_scoped_name)* RIGHT_BRACKET
-   ;
-
-context_expr
-   : KW_CONTEXT LEFT_BRACKET STRING_LITERAL (COMMA STRING_LITERAL)* RIGHT_BRACKET
-   ;
-
 param_type_spec
    : base_type_spec
    | string_type
@@ -406,45 +364,6 @@ value_base_type
 constr_forward_decl
    : KW_STRUCT ID
    | KW_UNION ID
-   ;
-
-readonly_attr_spec
-   : KW_READONLY KW_ATTRIBUTE annapps param_type_spec readonly_attr_declarator
-   ;
-
-readonly_attr_declarator
-   : annapps simple_declarator
-     ( raises_expr
-     | (COMMA annapps simple_declarator)*
-     )
-   ;
-
-attr_spec
-   : KW_ATTRIBUTE annapps param_type_spec attr_declarator
-   ;
-
-attr_declarator
-   : annapps simple_declarator
-     ( attr_raises_expr
-     | (COMMA annapps simple_declarator)*
-     )
-   ;
-
-attr_raises_expr
-   : get_excep_expr (set_excep_expr)?
-   | set_excep_expr
-   ;
-
-get_excep_expr
-   : KW_GETRAISES exception_list
-   ;
-
-set_excep_expr
-   : KW_SETRAISES exception_list
-   ;
-
-exception_list
-   : LEFT_BRACKET a_scoped_name (COMMA a_scoped_name)* RIGHT_BRACKET
    ;
 
 annapps
