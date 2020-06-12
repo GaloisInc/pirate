@@ -88,6 +88,8 @@ static int handle_event(struct epoll_event *event,
     struct app *app = (struct app *)event->data.ptr;
     resource_handler_t *handle;
 
+    plog(LOGLVL_DEBUG, "Received an epoll event from %s", app->name);
+
     if(event->events & EPOLLHUP) {
         app->hangup = true;
         plog(LOGLVL_INFO, "Received hangup from %s", app->name);
@@ -104,10 +106,19 @@ static int handle_event(struct epoll_event *event,
 
         err = pal_recv_resource_request(app->pipe_fd, &type, &name,
                 MSG_DONTWAIT);
-        if(err == PAL_ERR_EMPTY && app->hangup)
+        if(err == PAL_ERR_EMPTY) {
+            plog(LOGLVL_INFO, "Received connection-terminating empty message "
+                    "from %s", app->name);
             return -1;
+        } else if(err) {
+            plog(LOGLVL_INFO, "Encountered an error parsing resource request "
+                    "from %s: %s", app->name,
+                    err < 0 ? strerror(-err) : pal_strerror(err));
+            return 0;
+        }
 
-        plog(LOGLVL_INFO, "Received a resource request from %s", app->name);
+        plog(LOGLVL_INFO, "Received request for resource %s of type %s "
+                "from %s", name, type, app->name);
 
         if(err)
             error("Encountered an error reading resource request from %s: %s",
@@ -133,6 +144,10 @@ static int handle_event(struct epoll_event *event,
             error("Failed to send resource named %s of type %s to %s: %s",
                     name, type, app->name, strerror(-err));
 
+        else
+            plog(LOGLVL_INFO, "Sent a %lu-byte envelope with %lu fds to %s",
+                    env.size, env.fds_count, app->name);
+
         free(type);
         free(name);
         pal_free_env(&env);
@@ -157,6 +172,8 @@ int handle_apps(struct app *apps, size_t apps_count,
             if(epoll_ctl(epfd, EPOLL_CTL_DEL, app->pipe_fd, NULL))
                 error("Failed to deregister pipe fd for %s: %s",
                         app->name, strerror(errno));
+            else
+                plog(LOGLVL_DEBUG, "Deregistered pipe fd for %s", app->name);
             app->pipe_fd = -1;
             --apps_count;
         }

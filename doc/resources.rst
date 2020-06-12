@@ -87,7 +87,7 @@ or read-write.
   
   string_resource connection_string
     __attribute__((
-      pirate_resource("server_settings", "blue",
+      pirate_resource("server_settings", "blue"),
       pirate_resource_param("encryption", "yes")
     ));
 
@@ -110,60 +110,38 @@ applications to use Pirate, and will already have a preferred API for
 their application to send and receive messages, but those users will
 still like to be able to consider different transport mechanisms.
 
-Channels as a concept correspond to one of two resource types in
-source code:
-
-``fd_channel``
-  This indicates that the channel is represented as a POSIX file
-  descriptor.  For example, the following code declares a file
-  descriptor ``channel_clock``:
+``pirate_channel``
+  This indicates that the channel is represented as a ``libpirate``
+  channel. This library enables communication across a wide variety
+  of channels and perform transforms prior to transmitting
+  messages to an underlying character device. The following
 
 .. code-block:: c
 
-   int clockFD
+   pirate_channel clockFD
    __attribute__((
-     gaps_resource_type("pirate_channel"),
-     gaps_resource("channel_clock", "enclave")
+     pirate_resource("channel_clock", "blue"),
+     pirate_resource_param("permissions", "readonly")
    ));
+   
+   
+Parameters
+^^^^^^^^^^
 
-``fd_channel``
-  This indicates that the channel is represented as a ``libpirate``
-  channel.  This library enables communication across
-  a wide variety of channels and perform transforms prior to transmitting
-  messages to an underlying character device.
-
-
-File Descriptor Channels
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-The ``fd_channel`` resource type is used to denote a file descriptor
-that is used for message passing.  With file-descriptor resources, the
-source level attributes are used to indicate requirements of file
-descriptor message semantics while the runtime configuration file
-specifies the actual mechanism used to establish the channel.
-
-The following attributes may appear in the source file annotations.
+The following resource parameters are supported by channel resources:
 
 ``permissions``
-   This is a required attribute indicates the permissions
-   for sending or receiving on a channel.  Valid options are ``readonly``,
-   ``writeonly``, and ``readwrite``.
-
-``unidirectional``
-   This is an attribute indicating if the POSIX unidirectional
-   semantics in :doc:`unidirectional_channels` are allowed.
-   Valid options are ``true`` and ``false``.
-   If this attribute is omitted, it is assumed ``unidirectional=false``.
-   
-[NOTE: Isn't ``unidirectional`` redundant, since it's implied by
-``readonly`` or ``writeonly``? ; EM: A read- or write-only channel
-might still acknowledge writes or provide blocking reads while a
-unidirectional channel might carefully restrict information flow.]
-
-Pirate Channels
-^^^^^^^^^^^^^
-
-[This section is under development.]
+  The read/write permissions of the specified enclave for this channel
+  descriptor. Currently supported options are ``readonly`` and
+  ``writeonly``. This option is currently mandatory for
+  ``pirate_channel`` resources, since libpirate does not support
+  ``O_RDWR``.
+  
+[BH: Although only ``O_RDONLY`` and ``O_WRONLY`` are supported in
+libpirate, whether a channel is truly unidirectional depends on the
+channel type. We might want to support a ``unidirectional`` parameter
+that causes an error to be thrown if a non-unidirectional channel
+type is chosen in the config.]
 
 
 Pirate Launcher
@@ -179,25 +157,20 @@ Alternatively, the path to the launcher may be added to the top of
 the YAML configuration file in a shebang, e.g.
 ``#!/usr/bin/pirate-launcher``.
 
-Runner Internals
-^^^^^^^^^^^^^^^^
-
-[This section is under development.]
-
 
 Resource Configuration
 ----------------------
 
-This section will describe the YAML configuration file that captures
+This section describes the YAML configuration file that captures
 information needed to startup one or more enclaves and initialize all
 the Pirate managed resources.  A separate application runner will be
 needed for each independent machine running enclaves, and although not
 required, one can use multiple application runners on the same machine
 to, for example, startup processes as different users.
 
-A configuration file has three top-level keys: ``executables``,
-``resources``, and ``config``. The ``executables`` key contains a list
-of ``executable`` objects, each of which defines an executable to run;
+A configuration file has three top-level keys: ``enclaves``,
+``resources``, and ``config``. The ``enclaves`` key contains a list
+of ``enclave`` objects, each of which defines an executable to run;
 the ``resources`` key contains a list of ``resource`` objects,
 describing resources to be initialized by the runner; and the
 ``config`` key contains an object with options for runner
@@ -222,7 +195,10 @@ An ``enclave`` object has the following fields:
 
 ``path``
     The path to the executable. This may be an absolute path, or it may
-    be relative to the location of the config file.
+    be relative to the location of the config file. If this is omitted,
+    the runner will assume that the executable file's name is the same
+    as the ``name`` field, and that it is present in the same directory
+    as the config file.
 
 ``arguments``
     A list of strings to pass to the executable as positional arguments.
@@ -275,10 +251,23 @@ The application initialization will report an error if the YAML file
 contains a resource object with a name that is not in any enclave, or
 if an enclave contains a resource that does not appear in the
 configuration file.  The runner will also fail if a resource with an
-unsupported type is found, or if the same resource name is associated
-with incompatible source types or parameters (e.g., a channel with
-datagram semantics in one enclave and stream semantics in another
-enclave).
+unsupported type is found [TODO: or if the same resource name is
+associated with incompatible source types or parameters (e.g., a
+channel with datagram semantics in one enclave and stream semantics
+in another enclave).]
+
+[BH: Currently the structure of the ``contents`` field is not ideal.
+The YAML parser does not distinguish between types for the purposes
+of parsing the ``contents`` field, so declaring a ``string`` resource
+with an ``integer_value`` will parse just fine. Although this error
+will be caught by the handler when the resource gets configured, it
+would be much better to make the parsing of ``contents`` depend on
+the ``type`` field. This would also allow for a simpler schema, where
+``contents`` was a YAML string for ``string`` resources, a YAML
+boolean for ``boolean`` resources, a YAML object for ``pirate_channel``
+resources, etc. This would also make it much easier to support plugins
+for resource types. This is a limitation of libcyaml, not of YAML
+itself. We could fix it by adding support for (tagged) unions.]
         
 Simple Resources
 ^^^^^^^^^^^^^^^^
@@ -287,89 +276,79 @@ To ease application configuration, the following simple resource types
 are available:
 
 ``boolean``
-    Contents contains the single field ``boolean_value``.
+  ``contents`` contains the single field ``boolean_value``.
 
 ``integer``
-    Contents contains the single field ``integer_value``.
+  ``contents`` contains the single field ``integer_value``.
 
 ``string``
-    Contents contains the single field ``string_value``.
+  ``contents`` contains the single field ``string_value``.
+    
+``file``
+  A file resource to be opened by the launcher and passed to the
+  application on startup. The ``contents`` stanza contains the
+  following fields:
+  
+  ``file_path``
+    Absolute path to the file to open. [TODO: Support paths relative
+    to the location of the config file.]
+    
+  ``file_flags``
+    Flags for the resulting file descriptor. The portable values in
+    ``open(2)`` are supported, with the same meanings.
 
-GAPS Channels and FD Channels
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pirate Channels
+^^^^^^^^^^^^^^^
 
-To promote interoperability, resources of type ``gaps_channel`` and
-``fd_channel`` use the same runtime configuration fields in the YAML
-``contents`` objects:
+The ``pirate_channel`` resource type is an automatically opened
+libpirate descriptor. The only common field is ``channel_type``. Which
+additional fields are present depends on the value of this field. See
+the libpirate documentation for detailed descriptions of each option
+and the semantics of the different types. Unsupported fields for a
+``channel_type`` will be ignored.
 
 ``channel_type``
     The Permissible types are as follows:
+    
+    ``device``
+        An arbitrary device file to send/receive messages on. Fields:
+        ``path``, ``iov_length``.
+        
+    ``pipe``
+        A Unix pipe. Fields: ``path``, ``iov_length``.
+        
+    ``unix_socket``
+        A Unix domain socket. Fields: ``path``, ``iov_length``,
+        ``buffer_size``.
 
     ``tcp_socket``
-        A TCP socket channel. The ``left`` and/or ``right`` fields
-        must be filled out with port and address/hostname information.
+        A TCP socket channel. Fields: ``iov_length``, ``buffer_size``,
+        ``host``, ``port``.
 
     ``udp_socket``
-        A UDP socket channel. The ``left`` and/or ``right`` fields
-        must be filled out with port and address/hostname information.
-
-    ``unix_socket``
-        A Unix socket channel. A filepath may be provided using the
-        ``path`` field.
-
-    ``pipe``
-        A Linux named-pipe channel. A filepath may be provided using the
-        ``path`` field.
-
-    ``device``
-        A character-device channel. A device path must be provided using
-        the ``path`` field.
+        A UDP socket channel. Fields: ``iov_length``, ``buffer_size``,
+        ``host``, ``port``.
 
     ``shmem``
-        A POSIX shared-memory libpirate channel, intended for benchmarking.
-        The size of the shared-memory buffer may be specified using the
-        ``buffer`` field. See the libpirate documentation for more
-        information.
-
-    ``uio_device``
-        A Userspace IO shared-memory channel. See the libpirate
-        documentation for more information.
+        A POSIX shared-memory channel. Fields: ``path``, ``buffer_size``.
         
-``left`` / ``right``
-    These fields are present only for resources with ``channel_type`` equal
-    to ``tcp_socket`` or ``udp_socket``. They represent the two endpoints
-    of such a connection. They contain the following fields:
+    ``udp_shmem``
+        A POSIX shared-memory channel using UDP for transport. Fields:
+        ``path``, ``buffer_size``, ``packet_size``, ``packet_count``.
+
+    ``uio``
+        A Userspace IO shared-memory channel. Fields: ``path``, ``region``.
+        
+    ``serial``
+        A serial device. Fields: ``path``, ``baud``.
     
-    ``id``
-      A string of the form ``<enclave_name>/<resource_name>`` identifying
-      which enclave possesses this endpoint. The string must be present in
-      the ``resource`` object's ``ids`` field, as well.
+    ``mercury``
+        A Mercury TA1 device. Fields: An object ``session``, containing the
+        subfields ``level``, ``src_id``, ``dst_id``, ``messages``, and
+        ``id``.
     
-    ``dst_host`` and ``dst_port``
-      The IP address / hostname and port that this endpoint should connect
-      to. To specify the source hostname or port, use the opposite endpoint.
-
-``path``
-    The contents of this field differs depending on the ``channel_type``
-    field as follows:
-
-    * If ``type`` is ``unix_socket`` or ``path``, this is the path to the
-      file to be created or used. This may be an absolute path, or relative
-      to the location of the configuration file.
-    * If ``type`` is ``device``, this is the path to the device to be used.
-
-``buffer``
-    The size of the shared-memory buffer for channels of type ``shmem`` or
-    the buffer size for channels of type ``unix_socket``. It is an error to
-    include this field for any other type of device.
-
-``packet_size``
-    The size of a packet for channels of type ``shmem``. It is an error to
-    include this field for any other type of device.
-
-``rate``
-    The baud rate for serial channels. This may be omitted, in which case
-    a default rate of 9600 will be used.
+    ``ge_eth``
+        A GE TA1 device. Fields: ``host``, ``port``, ``mtu`` ``message_id``.
 
 Example
 ^^^^^^^
@@ -420,7 +399,7 @@ The configuration file ``os_1.yml`` might look like this:
               port: 9002
     resources:
       - name: app_to_proxy
-        type: gaps_channel
+        type: pirate_channel
         ids:
           - tts_app/to_proxy
           - tts_proxy/to_app
@@ -428,19 +407,15 @@ The configuration file ``os_1.yml`` might look like this:
             channel_type: unix_socket
             path: /var/run/tts/app_to_proxy.sock
       - name: proxy_to_signserv_1
-        type: gaps_channel
+        type: pirate_channel
         ids:
           - tts_proxy/to_signserv_1
         contents:
             channel_type: udp_socket
-            left:
-                id: tts_proxy/to_signserv_1
-                dst_host: example.lan
-                dst_port: 9001
-            right:
-                dst_port: 9002 # The local port on tts_proxy
+            host: example.lan # destination host
+            port: 9001        # destination port
       - name: proxy_to_signserv_2
-        type: gaps_channel
+        type: pirate_channel
         ids:
           - tts_proxy/to_signserv_2
         contents:

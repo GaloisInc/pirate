@@ -74,17 +74,24 @@ $ make
 Invoke with
 
 ```
-$ cmake -D<OPTION_NAME>=ON ..
+$ cmake -D<OPTION_NAME>=<OPTON_VALUE> ..
 ```
 
- * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests (requires googletest v1.10 or greater)
- * ```GAPS_DISABLE``` use the standard compiler installed on the system instead of the GAPS LLVM compiler
- * ```CHANNEL_DEMO``` enable compilation of GAPS channel application
- * ```GAPS_DEMOS``` enable compilation of all GAPS demo applications
- * ```GAPS_BENCH``` enable compilation of GAPS benchmark applications
- * ```PIRATE_SHMEM_FEATURE``` support shared memory channels (requires libpthread and librt)
- * ```BUILD_ALL``` enables PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH
- * ```SINGLE_BINARY``` encrypt and combine application binaries into a single executable
+ * ```BUILD_LAUNCHER``` build the application launcher (default ```ON```)
+ * ```BUILD_RESOURCE_LOADER``` build resource loader library (default ```ON```)
+ * ```GAPS_DISABLE``` use the standard compiler installed on the system
+   instead of the GAPS LLVM compiler (default ```OFF```)
+ * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests
+   (requires googletest v1.10 or greater, default ```OFF```)
+ * ```CHANNEL_DEMO``` enable compilation of GAPS channel application (default ```OFF```)
+ * ```GAPS_DEMOS``` enable compilation of all GAPS demo applications (default ```OFF```)
+ * ```GAPS_BENCH``` enable compilation of GAPS benchmark applications (default ```OFF```)
+ * ```PIRATE_SHMEM_FEATURE``` support shared memory channels
+   (requires libpthread and librt, default ```OFF```)
+ * ```BUILD_ALL``` enables PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS,
+   and GAPS_BENCH (default ```OFF```)
+ * ```SINGLE_BINARY``` encrypt and combine application binaries into a single
+   executable (default ```OFF```)
 
 ### libpirate
 

@@ -46,14 +46,13 @@ int pal_add_to_env(pal_env_t *env, const void *data, pal_env_size_t data_size)
     if(new_size > PAL_MSG_MAX)
         return PAL_ERR_TOOBIG;
 
-    // Allocate buffer in 1k chunks as needed
+    // FIXME: This could be better. Maybe just use a static buffer?
     if(new_size > env->buf_size) {
-        size_t new_buf_size = (new_size + 1023) % 1024;
-        char *new_buf = realloc(env->buf, new_buf_size);
+        char *new_buf = realloc(env->buf, new_size);
         if(!new_buf)
             return -errno;
         env->buf = new_buf;
-        env->buf_size = new_buf_size;
+        env->buf_size = new_size;
     }
 
     add_to_env(env, &data_size, sizeof data_size);
@@ -131,6 +130,7 @@ int pal_send_env(int sock, pal_env_t *env, int flags)
     struct msghdr msg = MSGHDR(iovs, sizeof(iovs) / sizeof(*iovs));
 
     char buf[CMSG_SPACE(sizeof(int[env->fds_count]))];
+    memset(buf, 0, sizeof buf);
     if(env->fds_count > 0) {
         msg.msg_control = buf;
         msg.msg_controllen = sizeof(buf);

@@ -31,6 +31,9 @@ int main(int argc, char **argv, char **envp)
 
     tlp = load_yaml(cfg_path);
 
+    if(tlp->tl_cfg.cfg_loglvl > log_level)
+        log_level = tlp->tl_cfg.cfg_loglvl;
+
     size_t apps_count = tlp->tl_encs_count;
     struct app apps[apps_count];
     for(i = 0; i < apps_count; ++i) {

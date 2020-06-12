@@ -1,0 +1,16 @@
+#! /usr/bin/env pal
+
+enclaves:
+    - name: channel_app1
+      path: channel_app1
+    - name: channel_app2
+      path: channel_app2
+resources:
+    - name: channel
+      ids: [ "channel_app1/write_end", "channel_app2/read_end" ]
+      type: pirate_channel
+      contents:
+          channel_type: unix_socket
+          path: /tmp/app1to2
+config:
+    log_level: debug

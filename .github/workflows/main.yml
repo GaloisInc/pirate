@@ -52,6 +52,8 @@ jobs:
               -DGAPS_DISABLE=ON \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
+              -DBUILD_LAUNCHER=OFF \
+              -DBUILD_RESOURCE_LOADER=OFF \
               ..
         make
         make install
@@ -60,7 +62,7 @@ jobs:
       with:
         name: libpirate
         path: dist/libpirate
-    - name: Build pal
+    - name: Build Launcher
       run: |
         mkdir -p build-pal
         cd build-pal
@@ -68,7 +70,7 @@ jobs:
           LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
           cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal ../pal
         make install
-    - name: Make PAL artifact
+    - name: Make launcher artifact
       uses: actions/upload-artifact@v1
       with:
         name: pal
@@ -120,7 +122,9 @@ jobs:
         mkdir ~/googletest
         cd ~/googletest
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
-        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest \
+              -D CMAKE_BUILD_TYPE=Release \
+              googletest-release-1.10.0
         cmake --build . --target install
     - name: build Mercury loopback
       run: |
@@ -137,6 +141,8 @@ jobs:
               -DGAPS_DISABLE=ON \
               -DPIRATE_SHMEM_FEATURE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              -DBUILD_LAUNCHER=OFF \
+              -DBUILD_RESOURCE_LOADER=OFF \
               ..
         make
     - name: libpirate tests
@@ -153,7 +159,10 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_C_COMPILER="gcc" \
+              -DGAPS_DISABLE=ON \
+              -DBUILD_LAUNCHER=OFF \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: build benchmarks
       run: |
@@ -177,7 +186,7 @@ jobs:
     - name: install dependencies
       run: |
         apt-get update
-        apt-get install --no-install-recommends -y libjpeg-dev libssl-dev libx11-dev
+        apt-get install --no-install-recommends -y git libjpeg-dev libssl-dev libx11-dev libyaml-dev
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -209,22 +218,6 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
-    - name: Build pnt
-      run: |
-        mkdir build_pnt_demo
-        cd build_pnt_demo
-        cmake -DPNT_DEMO=ON \
-          -DCMAKE_INSTALL_PREFIX=pnt_demo \
-          -DCMAKE_EXE_LINKER_FLAGS=-static \
-          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-          ..
-        make
-        make install
-    - name: Upload pnt demo artifacts
-      uses: actions/upload-artifact@v1
-      with:
-        name: pnt_demo
-        path: build_pnt_demo/pnt_demo
   # This builds the docker image
   docker-build:
     runs-on: ubuntu-latest
