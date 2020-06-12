@@ -30,7 +30,8 @@ static void pirate_pipe_init_param(pirate_pipe_param_t *param) {
     }
 }
 
-int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
+int pirate_pipe_parse_param(char *str, void *_param) {
+    pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
     char *ptr = NULL, *key, *val;
     char *saveptr1, *saveptr2;
 
@@ -64,7 +65,8 @@ int pirate_pipe_parse_param(char *str, pirate_pipe_param_t *param) {
     return 0;
 }
 
-int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *desc, int len) {
+int pirate_pipe_get_channel_description(const void *_param, char *desc, int len) {
+    const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
     char min_tx_str[32];
     char mtu_str[32];
 
@@ -79,7 +81,9 @@ int pirate_pipe_get_channel_description(const pirate_pipe_param_t *param, char *
     return snprintf(desc, len, "pipe,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
-int pirate_pipe_open(pirate_pipe_param_t *param, pipe_ctx *ctx) {
+int pirate_pipe_open(void *_param, void *_ctx) {
+    pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
+    pipe_ctx *ctx = (pipe_ctx *)_ctx;
     int err;
 
     pirate_pipe_init_param(param);
@@ -130,7 +134,8 @@ int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *w
     return 0;
 }
 
-int pirate_pipe_close(pipe_ctx *ctx) {
+int pirate_pipe_close(void *_ctx) {
+    pipe_ctx *ctx = (pipe_ctx *)_ctx;
     int rv = -1;
 
     if (ctx->min_tx_buf != NULL) {
@@ -148,11 +153,13 @@ int pirate_pipe_close(pipe_ctx *ctx) {
     return rv;
 }
 
-ssize_t pirate_pipe_read(const pirate_pipe_param_t *param, pipe_ctx *ctx, void *buf, size_t count) {
-    return pirate_stream_read((common_ctx*) ctx, param->min_tx, buf, count);
+ssize_t pirate_pipe_read(const void *_param, void *_ctx, void *buf, size_t count) {
+    const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
+    return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_pipe_write_mtu(const pirate_pipe_param_t *param) {
+ssize_t pirate_pipe_write_mtu(const void *_param) {
+    const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
         return 0;
@@ -164,7 +171,8 @@ ssize_t pirate_pipe_write_mtu(const pirate_pipe_param_t *param) {
     return mtu - sizeof(pirate_header_t);
 }
 
-ssize_t pirate_pipe_write(const pirate_pipe_param_t *param, pipe_ctx *ctx, const void *buf, size_t count) {
+ssize_t pirate_pipe_write(const void *_param, void *_ctx, const void *buf, size_t count) {
+    const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
     ssize_t mtu = pirate_pipe_write_mtu(param);
-    return pirate_stream_write((common_ctx*) ctx, param->min_tx, mtu, buf, count);
+    return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }

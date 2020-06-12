@@ -122,7 +122,10 @@ typedef enum {
     //  - port       - IP port
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
-    GE_ETH
+    GE_ETH,
+
+   // Number of GAPS channel types
+    PIRATE_CHANNEL_TYPE_COUNT
 } channel_enum_t;
 
 // DEVICE parameters
@@ -237,8 +240,9 @@ typedef struct {
 
 typedef struct {
     channel_enum_t channel_type;
-    uint8_t yield;
+    uint8_t listener;
     uint8_t control;
+    uint8_t drop;
     size_t src_enclave; // 1-based offset into enclaves name array
     size_t dst_enclave; // 0 is the empty value
     union {
@@ -255,6 +259,14 @@ typedef struct {
         pirate_ge_eth_param_t           ge_eth;
     } channel;
 } pirate_channel_param_t;
+
+typedef struct {
+    uint64_t requests;
+    uint64_t success;
+    uint64_t errs; // EAGAIN and EWOULDBLOCK are not errors
+    uint64_t fuzzed;
+    uint64_t bytes; // bytes is incremented only on successful requests
+} pirate_stats_t;
 
 //
 // API
@@ -432,11 +444,19 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 // a file descriptor.
 //
 // On success, the file descriptor is returned.
-// On error, -1 is returned, and errno is set appropriately.
+// On error -1 is returned, and errno is set appropriately.
 // errno is ENODEV if the gaps channel is not implemented
 // using a file descriptor.
 
 int pirate_get_fd(int gd);
+
+// Returns a reference to the read and write statistics
+// associated with the gaps descriptor.
+//
+// On success, the file descriptor is returned.
+// On error NULL is returned, and errno is set appropriately.
+
+const pirate_stats_t *pirate_get_stats(int gd);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer

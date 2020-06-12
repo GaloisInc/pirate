@@ -12,12 +12,9 @@ SET(PIRATE_SOURCES
     "mercury.c"
     "mercury_cntl.c"
     "serial.c"
-    "shmem_interface.c"
-    "udp_shmem_interface.c"
     "tcp_socket.c"
     "udp_socket.c"
     "unix_socket.c"
-    "uio_interface.c"
 )
 
 if(PIRATE_SHMEM_FEATURE)

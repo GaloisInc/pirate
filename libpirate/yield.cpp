@@ -38,7 +38,7 @@ int pirate::internal::cooperative_register(int gd, void* func, size_t len) {
     if (param == NULL) {
         return -1;
     }
-    if (!param->yield) {
+    if (!param->listener) {
         errno = EPERM;
         return -1;
     }
