@@ -456,7 +456,7 @@ int pirate_get_fd(int gd);
 // On success, the file descriptor is returned.
 // On error NULL is returned, and errno is set appropriately.
 
-pirate_stats_t *pirate_get_stats(int gd);
+const pirate_stats_t *pirate_get_stats(int gd);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer

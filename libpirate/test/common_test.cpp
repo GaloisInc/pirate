@@ -125,7 +125,7 @@ TEST(CommonChannel, Stats)
 {
     int rv, gd[2];
     char temp[80];
-    pirate_stats_t *stats_r, *stats_w;
+    const pirate_stats_t *stats_r, *stats_w;
     ssize_t nbytes;
     errno = 0;
 
@@ -174,7 +174,7 @@ TEST(CommonChannel, Drop)
 {
     int rv, gd[2];
     char temp[80];
-    pirate_stats_t *stats_r, *stats_w;
+    const pirate_stats_t *stats_r, *stats_w;
     ssize_t nbytes;
     errno = 0;
 

@@ -292,7 +292,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
-pirate_stats_t *pirate_get_stats(int gd) {
+const pirate_stats_t *pirate_get_stats(int gd) {
 
     if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
         errno = EBADF;
