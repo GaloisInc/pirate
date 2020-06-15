@@ -22,6 +22,7 @@ devices/mercury/loopback_ilip/*.ko
 devices/mercury/loopback_ilip/*mod*
 devices/mercury/loopback_ilip/*.o
 devices/mercury/loopback_ilip/modules.order
+.antlr
 .vscode
 .project
 /build/*
