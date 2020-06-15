@@ -91,7 +91,6 @@ type_spec
 
 simple_type_spec
    : base_type_spec
-   | scoped_name
    ;
 
 bitfield_type_spec
@@ -228,7 +227,7 @@ object_type
    ;
 
 bitset_type
-   : KW_BITSET identifier (COLON scoped_name)? LEFT_BRACE bitfield RIGHT_BRACE
+   : KW_BITSET identifier LEFT_BRACE bitfield RIGHT_BRACE
    ;
 
 bitfield
@@ -248,7 +247,7 @@ bit_values
    ;
 
 struct_type
-   : KW_STRUCT identifier (COLON scoped_name)? LEFT_BRACE member_list RIGHT_BRACE
+   : KW_STRUCT identifier LEFT_BRACE member_list RIGHT_BRACE
    ;
 
 member_list
@@ -270,7 +269,6 @@ switch_type_spec
    | octet_type
    | boolean_type
    | enum_type
-   | scoped_name
    ;
 
 switch_body
