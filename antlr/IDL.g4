@@ -77,18 +77,11 @@ positive_int_const
    ;
 
 type_decl
-   : KW_TYPEDEF annapps type_declarator
-   | struct_type
+   : struct_type
    | union_type
    | enum_type
    | bitset_type
    | bitmask_type
-   | KW_NATIVE annapps simple_declarator
-   | constr_forward_decl
-   ;
-
-type_declarator
-   : type_spec declarators
    ;
 
 type_spec
@@ -98,7 +91,6 @@ type_spec
 
 simple_type_spec
    : base_type_spec
-   | template_type_spec
    | scoped_name
    ;
 
@@ -117,16 +109,6 @@ base_type_spec
    | octet_type
    | any_type
    | object_type
-   | value_base_type
-   ;
-
-template_type_spec
-   : sequence_type
-   | set_type
-   | map_type
-   | string_type
-   | wide_string_type
-   | fixed_pt_type
    ;
 
 constr_type_spec
@@ -318,52 +300,12 @@ enumerator
    : identifier
    ;
 
-sequence_type
-   : KW_SEQUENCE LEFT_ANG_BRACKET annapps simple_type_spec (COMMA positive_int_const)? RIGHT_ANG_BRACKET
-   ;
-
-set_type
-   : KW_SET LEFT_ANG_BRACKET simple_type_spec (COMMA positive_int_const)? RIGHT_ANG_BRACKET
-   ;
-
-map_type
-   : KW_MAP LEFT_ANG_BRACKET simple_type_spec COMMA simple_type_spec (COMMA positive_int_const)?  RIGHT_ANG_BRACKET
-   ;
-
-string_type
-   : KW_STRING (LEFT_ANG_BRACKET positive_int_const RIGHT_ANG_BRACKET)?
-   ;
-
-wide_string_type
-   : KW_WSTRING (LEFT_ANG_BRACKET positive_int_const RIGHT_ANG_BRACKET)?
-   ;
-
 array_declarator
    : ID fixed_array_size +
    ;
 
 fixed_array_size
    : LEFT_SQUARE_BRACKET positive_int_const RIGHT_SQUARE_BRACKET
-   ;
-
-param_type_spec
-   : base_type_spec
-   | string_type
-   | wide_string_type
-   | scoped_name
-   ;
-
-fixed_pt_type
-   : KW_FIXED LEFT_ANG_BRACKET positive_int_const COMMA positive_int_const RIGHT_ANG_BRACKET
-   ;
-
-value_base_type
-   : KW_VALUEBASE
-   ;
-
-constr_forward_decl
-   : KW_STRUCT ID
-   | KW_UNION ID
    ;
 
 annapps
