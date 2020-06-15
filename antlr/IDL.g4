@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 grammar IDL;
 
 specification
-   : definition +
+   : definition + EOF
    ;
 
 definition
