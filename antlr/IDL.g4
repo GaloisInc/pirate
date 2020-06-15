@@ -80,8 +80,6 @@ type_decl
    : struct_type
    | union_type
    | enum_type
-   | bitset_type
-   | bitmask_type
    ;
 
 type_spec
@@ -93,33 +91,18 @@ simple_type_spec
    : base_type_spec
    ;
 
-bitfield_type_spec
-   : integer_type
-   | boolean_type
-   | octet_type
-   ;
-
 base_type_spec
    : floating_pt_type
    | integer_type
    | char_type
-   | wide_char_type
    | boolean_type
    | octet_type
-   | any_type
-   | object_type
    ;
 
 constr_type_spec
    : struct_type
    | union_type
    | enum_type
-   | bitset_type
-   | bitmask_type
-   ;
-
-simple_declarators
-   : identifier (COMMA identifier)*
    ;
 
 declarators
@@ -206,44 +189,12 @@ char_type
    : KW_CHAR
    ;
 
-wide_char_type
-   : KW_WCHAR
-   ;
-
 boolean_type
    : KW_BOOLEAN
    ;
 
 octet_type
    : KW_OCTET
-   ;
-
-any_type
-   : KW_ANY
-   ;
-
-object_type
-   : KW_OBJECT
-   ;
-
-bitset_type
-   : KW_BITSET identifier LEFT_BRACE bitfield RIGHT_BRACE
-   ;
-
-bitfield
-   : ( bitfield_spec (simple_declarators)? SEMICOLON )+
-   ;
-
-bitfield_spec
-   : annapps KW_BITFIELD LEFT_ANG_BRACKET positive_int_const (COMMA bitfield_type_spec)? RIGHT_ANG_BRACKET
-   ;
-
-bitmask_type
-   : KW_BITMASK identifier LEFT_BRACE bit_values RIGHT_BRACE
-   ;
-
-bit_values
-   : identifier (COMMA identifier)*
    ;
 
 struct_type
@@ -264,10 +215,6 @@ union_type
 
 switch_type_spec
    : integer_type
-   | char_type
-   | wide_char_type
-   | octet_type
-   | boolean_type
    | enum_type
    ;
 
