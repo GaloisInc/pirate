@@ -3,6 +3,7 @@
 
 
 #include "IDLListener.h"
+#include "IDLVisitor.h"
 
 #include "IDLParser.h"
 
@@ -64,6 +65,14 @@ void IDLParser::SpecificationContext::exitRule(tree::ParseTreeListener *listener
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSpecification(this);
+}
+
+
+antlrcpp::Any IDLParser::SpecificationContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSpecification(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::SpecificationContext* IDLParser::specification() {
@@ -141,6 +150,14 @@ void IDLParser::DefinitionContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitDefinition(this);
+}
+
+
+antlrcpp::Any IDLParser::DefinitionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitDefinition(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::DefinitionContext* IDLParser::definition() {
@@ -236,6 +253,14 @@ void IDLParser::ModuleContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitModule(this);
 }
 
+
+antlrcpp::Any IDLParser::ModuleContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitModule(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::ModuleContext* IDLParser::module() {
   ModuleContext *_localctx = _tracker.createInstance<ModuleContext>(_ctx, getState());
   enterRule(_localctx, 4, IDLParser::RuleModule);
@@ -311,6 +336,14 @@ void IDLParser::A_scoped_nameContext::exitRule(tree::ParseTreeListener *listener
     parserListener->exitA_scoped_name(this);
 }
 
+
+antlrcpp::Any IDLParser::A_scoped_nameContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitA_scoped_name(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::A_scoped_nameContext* IDLParser::a_scoped_name() {
   A_scoped_nameContext *_localctx = _tracker.createInstance<A_scoped_nameContext>(_ctx, getState());
   enterRule(_localctx, 6, IDLParser::RuleA_scoped_name);
@@ -372,6 +405,14 @@ void IDLParser::Scoped_nameContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitScoped_name(this);
+}
+
+
+antlrcpp::Any IDLParser::Scoped_nameContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitScoped_name(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Scoped_nameContext* IDLParser::scoped_name() {
@@ -445,6 +486,14 @@ void IDLParser::Const_expContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitConst_exp(this);
+}
+
+
+antlrcpp::Any IDLParser::Const_expContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitConst_exp(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Const_expContext* IDLParser::const_exp() {
@@ -532,6 +581,14 @@ void IDLParser::LiteralContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitLiteral(this);
 }
 
+
+antlrcpp::Any IDLParser::LiteralContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitLiteral(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::LiteralContext* IDLParser::literal() {
   LiteralContext *_localctx = _tracker.createInstance<LiteralContext>(_ctx, getState());
   enterRule(_localctx, 12, IDLParser::RuleLiteral);
@@ -599,6 +656,14 @@ void IDLParser::Positive_int_constContext::exitRule(tree::ParseTreeListener *lis
     parserListener->exitPositive_int_const(this);
 }
 
+
+antlrcpp::Any IDLParser::Positive_int_constContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitPositive_int_const(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Positive_int_constContext* IDLParser::positive_int_const() {
   Positive_int_constContext *_localctx = _tracker.createInstance<Positive_int_constContext>(_ctx, getState());
   enterRule(_localctx, 14, IDLParser::RulePositive_int_const);
@@ -654,6 +719,14 @@ void IDLParser::Type_declContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitType_decl(this);
+}
+
+
+antlrcpp::Any IDLParser::Type_declContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitType_decl(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Type_declContext* IDLParser::type_decl() {
@@ -731,6 +804,14 @@ void IDLParser::Type_specContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitType_spec(this);
+}
+
+
+antlrcpp::Any IDLParser::Type_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitType_spec(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Type_specContext* IDLParser::type_spec() {
@@ -816,6 +897,14 @@ void IDLParser::Simple_type_specContext::exitRule(tree::ParseTreeListener *liste
     parserListener->exitSimple_type_spec(this);
 }
 
+
+antlrcpp::Any IDLParser::Simple_type_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSimple_type_spec(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Simple_type_specContext* IDLParser::simple_type_spec() {
   Simple_type_specContext *_localctx = _tracker.createInstance<Simple_type_specContext>(_ctx, getState());
   enterRule(_localctx, 20, IDLParser::RuleSimple_type_spec);
@@ -879,6 +968,14 @@ void IDLParser::Base_type_specContext::exitRule(tree::ParseTreeListener *listene
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitBase_type_spec(this);
+}
+
+
+antlrcpp::Any IDLParser::Base_type_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitBase_type_spec(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Base_type_specContext* IDLParser::base_type_spec() {
@@ -974,6 +1071,14 @@ void IDLParser::Constr_type_specContext::exitRule(tree::ParseTreeListener *liste
     parserListener->exitConstr_type_spec(this);
 }
 
+
+antlrcpp::Any IDLParser::Constr_type_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitConstr_type_spec(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Constr_type_specContext* IDLParser::constr_type_spec() {
   Constr_type_specContext *_localctx = _tracker.createInstance<Constr_type_specContext>(_ctx, getState());
   enterRule(_localctx, 24, IDLParser::RuleConstr_type_spec);
@@ -1059,6 +1164,14 @@ void IDLParser::DeclaratorsContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitDeclarators(this);
 }
 
+
+antlrcpp::Any IDLParser::DeclaratorsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitDeclarators(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::DeclaratorsContext* IDLParser::declarators() {
   DeclaratorsContext *_localctx = _tracker.createInstance<DeclaratorsContext>(_ctx, getState());
   enterRule(_localctx, 26, IDLParser::RuleDeclarators);
@@ -1129,6 +1242,14 @@ void IDLParser::DeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitDeclarator(this);
 }
 
+
+antlrcpp::Any IDLParser::DeclaratorContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitDeclarator(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::DeclaratorContext* IDLParser::declarator() {
   DeclaratorContext *_localctx = _tracker.createInstance<DeclaratorContext>(_ctx, getState());
   enterRule(_localctx, 28, IDLParser::RuleDeclarator);
@@ -1194,6 +1315,14 @@ void IDLParser::Simple_declaratorContext::exitRule(tree::ParseTreeListener *list
     parserListener->exitSimple_declarator(this);
 }
 
+
+antlrcpp::Any IDLParser::Simple_declaratorContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSimple_declarator(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Simple_declaratorContext* IDLParser::simple_declarator() {
   Simple_declaratorContext *_localctx = _tracker.createInstance<Simple_declaratorContext>(_ctx, getState());
   enterRule(_localctx, 30, IDLParser::RuleSimple_declarator);
@@ -1241,6 +1370,14 @@ void IDLParser::Complex_declaratorContext::exitRule(tree::ParseTreeListener *lis
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitComplex_declarator(this);
+}
+
+
+antlrcpp::Any IDLParser::Complex_declaratorContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitComplex_declarator(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Complex_declaratorContext* IDLParser::complex_declarator() {
@@ -1298,6 +1435,14 @@ void IDLParser::Floating_pt_typeContext::exitRule(tree::ParseTreeListener *liste
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitFloating_pt_type(this);
+}
+
+
+antlrcpp::Any IDLParser::Floating_pt_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitFloating_pt_type(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Floating_pt_typeContext* IDLParser::floating_pt_type() {
@@ -1375,6 +1520,14 @@ void IDLParser::Integer_typeContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitInteger_type(this);
+}
+
+
+antlrcpp::Any IDLParser::Integer_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitInteger_type(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Integer_typeContext* IDLParser::integer_type() {
@@ -1464,6 +1617,14 @@ void IDLParser::Signed_intContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitSigned_int(this);
 }
 
+
+antlrcpp::Any IDLParser::Signed_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSigned_int(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Signed_intContext* IDLParser::signed_int() {
   Signed_intContext *_localctx = _tracker.createInstance<Signed_intContext>(_ctx, getState());
   enterRule(_localctx, 38, IDLParser::RuleSigned_int);
@@ -1542,6 +1703,14 @@ void IDLParser::Signed_tiny_intContext::exitRule(tree::ParseTreeListener *listen
     parserListener->exitSigned_tiny_int(this);
 }
 
+
+antlrcpp::Any IDLParser::Signed_tiny_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSigned_tiny_int(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Signed_tiny_intContext* IDLParser::signed_tiny_int() {
   Signed_tiny_intContext *_localctx = _tracker.createInstance<Signed_tiny_intContext>(_ctx, getState());
   enterRule(_localctx, 40, IDLParser::RuleSigned_tiny_int);
@@ -1593,6 +1762,14 @@ void IDLParser::Signed_short_intContext::exitRule(tree::ParseTreeListener *liste
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSigned_short_int(this);
+}
+
+
+antlrcpp::Any IDLParser::Signed_short_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSigned_short_int(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Signed_short_intContext* IDLParser::signed_short_int() {
@@ -1656,6 +1833,14 @@ void IDLParser::Signed_long_intContext::exitRule(tree::ParseTreeListener *listen
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSigned_long_int(this);
+}
+
+
+antlrcpp::Any IDLParser::Signed_long_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSigned_long_int(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Signed_long_intContext* IDLParser::signed_long_int() {
@@ -1723,6 +1908,14 @@ void IDLParser::Signed_longlong_intContext::exitRule(tree::ParseTreeListener *li
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSigned_longlong_int(this);
+}
+
+
+antlrcpp::Any IDLParser::Signed_longlong_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSigned_longlong_int(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Signed_longlong_intContext* IDLParser::signed_longlong_int() {
@@ -1805,6 +1998,14 @@ void IDLParser::Unsigned_intContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitUnsigned_int(this);
 }
 
+
+antlrcpp::Any IDLParser::Unsigned_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnsigned_int(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Unsigned_intContext* IDLParser::unsigned_int() {
   Unsigned_intContext *_localctx = _tracker.createInstance<Unsigned_intContext>(_ctx, getState());
   enterRule(_localctx, 48, IDLParser::RuleUnsigned_int);
@@ -1883,6 +2084,14 @@ void IDLParser::Unsigned_tiny_intContext::exitRule(tree::ParseTreeListener *list
     parserListener->exitUnsigned_tiny_int(this);
 }
 
+
+antlrcpp::Any IDLParser::Unsigned_tiny_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnsigned_tiny_int(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Unsigned_tiny_intContext* IDLParser::unsigned_tiny_int() {
   Unsigned_tiny_intContext *_localctx = _tracker.createInstance<Unsigned_tiny_intContext>(_ctx, getState());
   enterRule(_localctx, 50, IDLParser::RuleUnsigned_tiny_int);
@@ -1938,6 +2147,14 @@ void IDLParser::Unsigned_short_intContext::exitRule(tree::ParseTreeListener *lis
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitUnsigned_short_int(this);
+}
+
+
+antlrcpp::Any IDLParser::Unsigned_short_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnsigned_short_int(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Unsigned_short_intContext* IDLParser::unsigned_short_int() {
@@ -2014,6 +2231,14 @@ void IDLParser::Unsigned_long_intContext::exitRule(tree::ParseTreeListener *list
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitUnsigned_long_int(this);
+}
+
+
+antlrcpp::Any IDLParser::Unsigned_long_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnsigned_long_int(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Unsigned_long_intContext* IDLParser::unsigned_long_int() {
@@ -2096,6 +2321,14 @@ void IDLParser::Unsigned_longlong_intContext::exitRule(tree::ParseTreeListener *
     parserListener->exitUnsigned_longlong_int(this);
 }
 
+
+antlrcpp::Any IDLParser::Unsigned_longlong_intContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnsigned_longlong_int(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Unsigned_longlong_intContext* IDLParser::unsigned_longlong_int() {
   Unsigned_longlong_intContext *_localctx = _tracker.createInstance<Unsigned_longlong_intContext>(_ctx, getState());
   enterRule(_localctx, 56, IDLParser::RuleUnsigned_longlong_int);
@@ -2166,6 +2399,14 @@ void IDLParser::Char_typeContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitChar_type(this);
 }
 
+
+antlrcpp::Any IDLParser::Char_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitChar_type(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Char_typeContext* IDLParser::char_type() {
   Char_typeContext *_localctx = _tracker.createInstance<Char_typeContext>(_ctx, getState());
   enterRule(_localctx, 58, IDLParser::RuleChar_type);
@@ -2215,6 +2456,14 @@ void IDLParser::Boolean_typeContext::exitRule(tree::ParseTreeListener *listener)
     parserListener->exitBoolean_type(this);
 }
 
+
+antlrcpp::Any IDLParser::Boolean_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitBoolean_type(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Boolean_typeContext* IDLParser::boolean_type() {
   Boolean_typeContext *_localctx = _tracker.createInstance<Boolean_typeContext>(_ctx, getState());
   enterRule(_localctx, 60, IDLParser::RuleBoolean_type);
@@ -2262,6 +2511,14 @@ void IDLParser::Octet_typeContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitOctet_type(this);
+}
+
+
+antlrcpp::Any IDLParser::Octet_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitOctet_type(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Octet_typeContext* IDLParser::octet_type() {
@@ -2329,6 +2586,14 @@ void IDLParser::Struct_typeContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitStruct_type(this);
 }
 
+
+antlrcpp::Any IDLParser::Struct_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitStruct_type(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Struct_typeContext* IDLParser::struct_type() {
   Struct_typeContext *_localctx = _tracker.createInstance<Struct_typeContext>(_ctx, getState());
   enterRule(_localctx, 64, IDLParser::RuleStruct_type);
@@ -2388,6 +2653,14 @@ void IDLParser::Member_listContext::exitRule(tree::ParseTreeListener *listener) 
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitMember_list(this);
+}
+
+
+antlrcpp::Any IDLParser::Member_listContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitMember_list(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Member_listContext* IDLParser::member_list() {
@@ -2478,6 +2751,14 @@ void IDLParser::MemberContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitMember(this);
+}
+
+
+antlrcpp::Any IDLParser::MemberContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitMember(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::MemberContext* IDLParser::member() {
@@ -2571,6 +2852,14 @@ void IDLParser::Union_typeContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitUnion_type(this);
 }
 
+
+antlrcpp::Any IDLParser::Union_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitUnion_type(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Union_typeContext* IDLParser::union_type() {
   Union_typeContext *_localctx = _tracker.createInstance<Union_typeContext>(_ctx, getState());
   enterRule(_localctx, 70, IDLParser::RuleUnion_type);
@@ -2640,6 +2929,14 @@ void IDLParser::Switch_type_specContext::exitRule(tree::ParseTreeListener *liste
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitSwitch_type_spec(this);
+}
+
+
+antlrcpp::Any IDLParser::Switch_type_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSwitch_type_spec(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Switch_type_specContext* IDLParser::switch_type_spec() {
@@ -2722,6 +3019,14 @@ void IDLParser::Switch_bodyContext::exitRule(tree::ParseTreeListener *listener) 
     parserListener->exitSwitch_body(this);
 }
 
+
+antlrcpp::Any IDLParser::Switch_bodyContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitSwitch_body(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Switch_bodyContext* IDLParser::switch_body() {
   Switch_bodyContext *_localctx = _tracker.createInstance<Switch_bodyContext>(_ctx, getState());
   enterRule(_localctx, 74, IDLParser::RuleSwitch_body);
@@ -2793,6 +3098,14 @@ void IDLParser::Case_stmtContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitCase_stmt(this);
+}
+
+
+antlrcpp::Any IDLParser::Case_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitCase_stmt(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Case_stmtContext* IDLParser::case_stmt() {
@@ -2881,6 +3194,14 @@ void IDLParser::Case_labelContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitCase_label(this);
 }
 
+
+antlrcpp::Any IDLParser::Case_labelContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitCase_label(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Case_labelContext* IDLParser::case_label() {
   Case_labelContext *_localctx = _tracker.createInstance<Case_labelContext>(_ctx, getState());
   enterRule(_localctx, 78, IDLParser::RuleCase_label);
@@ -2960,6 +3281,14 @@ void IDLParser::Element_specContext::exitRule(tree::ParseTreeListener *listener)
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitElement_spec(this);
+}
+
+
+antlrcpp::Any IDLParser::Element_specContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitElement_spec(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Element_specContext* IDLParser::element_spec() {
@@ -3043,6 +3372,14 @@ void IDLParser::Enum_typeContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitEnum_type(this);
 }
 
+
+antlrcpp::Any IDLParser::Enum_typeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitEnum_type(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Enum_typeContext* IDLParser::enum_type() {
   Enum_typeContext *_localctx = _tracker.createInstance<Enum_typeContext>(_ctx, getState());
   enterRule(_localctx, 82, IDLParser::RuleEnum_type);
@@ -3113,6 +3450,14 @@ void IDLParser::EnumeratorContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitEnumerator(this);
 }
 
+
+antlrcpp::Any IDLParser::EnumeratorContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitEnumerator(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::EnumeratorContext* IDLParser::enumerator() {
   EnumeratorContext *_localctx = _tracker.createInstance<EnumeratorContext>(_ctx, getState());
   enterRule(_localctx, 84, IDLParser::RuleEnumerator);
@@ -3168,6 +3513,14 @@ void IDLParser::Array_declaratorContext::exitRule(tree::ParseTreeListener *liste
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitArray_declarator(this);
+}
+
+
+antlrcpp::Any IDLParser::Array_declaratorContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitArray_declarator(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Array_declaratorContext* IDLParser::array_declarator() {
@@ -3238,6 +3591,14 @@ void IDLParser::Fixed_array_sizeContext::exitRule(tree::ParseTreeListener *liste
     parserListener->exitFixed_array_size(this);
 }
 
+
+antlrcpp::Any IDLParser::Fixed_array_sizeContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitFixed_array_size(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Fixed_array_sizeContext* IDLParser::fixed_array_size() {
   Fixed_array_sizeContext *_localctx = _tracker.createInstance<Fixed_array_sizeContext>(_ctx, getState());
   enterRule(_localctx, 88, IDLParser::RuleFixed_array_size);
@@ -3293,6 +3654,14 @@ void IDLParser::AnnappsContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAnnapps(this);
+}
+
+
+antlrcpp::Any IDLParser::AnnappsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitAnnapps(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::AnnappsContext* IDLParser::annapps() {
@@ -3367,6 +3736,14 @@ void IDLParser::Annotation_applContext::exitRule(tree::ParseTreeListener *listen
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAnnotation_appl(this);
+}
+
+
+antlrcpp::Any IDLParser::Annotation_applContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitAnnotation_appl(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Annotation_applContext* IDLParser::annotation_appl() {
@@ -3447,6 +3824,14 @@ void IDLParser::Annotation_appl_paramsContext::exitRule(tree::ParseTreeListener 
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitAnnotation_appl_params(this);
+}
+
+
+antlrcpp::Any IDLParser::Annotation_appl_paramsContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitAnnotation_appl_params(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::Annotation_appl_paramsContext* IDLParser::annotation_appl_params() {
@@ -3545,6 +3930,14 @@ void IDLParser::Annotation_appl_paramContext::exitRule(tree::ParseTreeListener *
     parserListener->exitAnnotation_appl_param(this);
 }
 
+
+antlrcpp::Any IDLParser::Annotation_appl_paramContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitAnnotation_appl_param(this);
+  else
+    return visitor->visitChildren(this);
+}
+
 IDLParser::Annotation_appl_paramContext* IDLParser::annotation_appl_param() {
   Annotation_appl_paramContext *_localctx = _tracker.createInstance<Annotation_appl_paramContext>(_ctx, getState());
   enterRule(_localctx, 96, IDLParser::RuleAnnotation_appl_param);
@@ -3600,6 +3993,14 @@ void IDLParser::IdentifierContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<IDLListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitIdentifier(this);
+}
+
+
+antlrcpp::Any IDLParser::IdentifierContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<IDLVisitor*>(visitor))
+    return parserVisitor->visitIdentifier(this);
+  else
+    return visitor->visitChildren(this);
 }
 
 IDLParser::IdentifierContext* IDLParser::identifier() {
