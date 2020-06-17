@@ -1,11 +1,27 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <iostream>
 
 #include "antlr4-runtime.h"
 #include "BooleanErrorListener.h"
 #include "IDLLexer.h"
 #include "IDLParser.h"
-#include "CDRDeclareTypes.h"
+#include "CDRBuildTypes.h"
 #include "CDRModuleCounter.h"
+#include "CDRTypes.h"
 
 using namespace std;
 using namespace antlr4;
@@ -13,7 +29,7 @@ using namespace antlr4;
 int main(int argc, const char* argv[]) {
     CDRModuleCounter moduleCounter;
     antlr4::tree::ParseTreeWalker moduleWalker;
-    CDRDeclareTypes declareTypes;
+    CDRBuildTypes buildTypes;
     ANTLRInputStream input(cin);
     IDLLexer lexer(&input);
     CommonTokenStream tokens(&lexer);
@@ -46,7 +62,10 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    declareTypes.visit(topLevelDef);
+    TypeSpec* topLevelSpec = buildTypes.visit(topLevelDef);
+    ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(topLevelSpec);
+
+    cout << moduleDecl->cType() << endl;
 
     return 0;
 }
