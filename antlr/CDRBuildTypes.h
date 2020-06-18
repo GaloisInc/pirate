@@ -26,5 +26,5 @@ public:
   virtual antlrcpp::Any visitMember(IDLParser::MemberContext *ctx) override;
   virtual antlrcpp::Any visitSimple_declarator(IDLParser::Simple_declaratorContext *ctx) override;
   virtual antlrcpp::Any visitArray_declarator(IDLParser::Array_declaratorContext *ctx) override;
-  virtual antlrcpp::Any visitFloating_pt_type(IDLParser::Floating_pt_typeContext *context) override;
+  virtual antlrcpp::Any visitFloating_pt_type(IDLParser::Floating_pt_typeContext *ctx) override;
 };

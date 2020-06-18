@@ -23,7 +23,6 @@
 #include "CDRModuleCounter.h"
 #include "CDRTypes.h"
 
-using namespace std;
 using namespace antlr4;
 
 int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
@@ -45,20 +44,20 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     }
 
     if (specification->definition().size() != 1) {
-        estream << "Expected top-level module definition" << endl;
+        estream << "Expected top-level module definition" << std::endl;
         return 1;
     }
 
     IDLParser::DefinitionContext* topLevelDef = specification->definition()[0];
 
     if (topLevelDef->module() == NULL) {
-        estream << "Expected top-level module definition" << endl;
+        estream << "Expected top-level module definition" << std::endl;
         return 1;
     }
 
     moduleWalker.walk(&moduleCounter, topLevelDef);
     if (moduleCounter.getCounter() > 1) {
-        estream << "Nested modules are not-yet-implemented" << endl;
+        estream << "Nested modules are not-yet-implemented" << std::endl;
         return 1;
     }
 
@@ -66,13 +65,10 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(topLevelSpec);
 
     ostream << "#include <endian.h>" << std::endl;
+    ostream << "#include <stdint.h>" << std::endl;
     ostream << std::endl;
     moduleDecl->cTypeStream(ostream);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
     return 0;
-}
-
-int main(int argc, const char* argv[]) {
-    return parse(std::cin, std::cout, std::cerr);
 }
