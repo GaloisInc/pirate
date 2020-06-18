@@ -17,6 +17,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <sstream>
 
 enum class CDRTypeOf {
     FLOAT_T,
@@ -26,11 +28,32 @@ enum class CDRTypeOf {
     MODULE_T,
 };
 
+enum class CDRFunc {
+    SERIALIZE,
+    DESERIALIZE,
+};
+
+enum class CDRBits {
+    UNDEFINED,
+    B8,
+    B16,
+    B32,
+    B64,
+    B128,
+};
+
 class TypeSpec {
 public:
     virtual CDRTypeOf typeOf() = 0;
-    virtual std::string cType() = 0;
+    virtual void cTypeStream(std::ostream &ostream) = 0;
+    virtual std::string cTypeString() {
+        std::stringstream ostream;
+        cTypeStream(ostream);
+        return ostream.str();
+    }
+    virtual CDRBits cTypeBits() = 0;
     virtual uint8_t alignment() = 0;
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
 };
 
 // Implementation of the primitive types
@@ -39,13 +62,17 @@ class BaseTypeSpec : public TypeSpec {
 private:
     CDRTypeOf m_typeOf;
     std::string m_cType;
+    CDRBits m_cTypeBits;
     uint8_t m_align;
-    BaseTypeSpec(CDRTypeOf typeOf, std::string cType, uint8_t align) :
-        m_typeOf(typeOf), m_cType(cType), m_align(align) { }
+    BaseTypeSpec(CDRTypeOf typeOf, std::string cType, CDRBits cTypeBits, uint8_t align) :
+        m_typeOf(typeOf), m_cType(cType), m_cTypeBits(cTypeBits), m_align(align) { }
 public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
-    virtual std::string cType() override { return m_cType; }
+    virtual std::string cTypeString() override { return m_cType; }
+    virtual CDRBits cTypeBits() override { return m_cTypeBits; }
+    virtual void cTypeStream(std::ostream &ostream) override { ostream << m_cType; }
     virtual uint8_t alignment() override { return m_align; }
+    virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
@@ -69,13 +96,19 @@ public:
 
 // Implementation of the struct type
 class StructTypeSpec : public TypeSpec {
+private:
+    void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
+    void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType);
+    void cAssignLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
 public:
     std::string identifier;
     std::vector<StructMember*> members;
     StructTypeSpec(std::string identifier) : identifier(identifier), members() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::STRUCT_T; }
-    virtual std::string cType() override;
+    virtual void cTypeStream(std::ostream &ostream) override;
+    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual uint8_t alignment() override { return 0; }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addMember(StructMember* member);
 };
 
@@ -86,7 +119,9 @@ public:
     std::vector<TypeSpec*> definitions;
     ModuleDecl(std::string identifier) : identifier(identifier), definitions() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
-    virtual std::string cType() override;
+    virtual void cTypeStream(std::ostream &ostream) override;
+    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual uint8_t alignment() override { return 0; }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addDefinition(TypeSpec* definition);
 };

@@ -16,20 +16,19 @@
 #include "CDRTypes.h"
 
 #include <iostream>
-#include <sstream>
 
 TypeSpec* BaseTypeSpec::floatType() {
-    static BaseTypeSpec instance(CDRTypeOf::FLOAT_T, "float", 4);
+    static BaseTypeSpec instance(CDRTypeOf::FLOAT_T, "float", CDRBits::B32, 4);
     return &instance;
 }
 
 TypeSpec* BaseTypeSpec::doubleType() {
-    static BaseTypeSpec instance(CDRTypeOf::DOUBLE_T, "double", 8);
+    static BaseTypeSpec instance(CDRTypeOf::DOUBLE_T, "double", CDRBits::B64, 8);
     return &instance;
 }
 
 TypeSpec* BaseTypeSpec::longDoubleType() {
-    static BaseTypeSpec instance(CDRTypeOf::LONG_DOUBLE_T, "long double", 16);
+    static BaseTypeSpec instance(CDRTypeOf::LONG_DOUBLE_T, "long double", CDRBits::B128, 16);
     return &instance;
 }
 
@@ -41,12 +40,12 @@ void StructTypeSpec::addMember(StructMember* member) {
     members.push_back(member);
 }
 
-std::string StructTypeSpec::cType() {
-    std::stringstream ostream;
+void StructTypeSpec::cTypeStream(std::ostream &ostream) {
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            ostream << member->typeSpec->cType() << " ";
+            member->typeSpec->cTypeStream(ostream);
+            ostream << " ";
             ostream << declarator->identifier;
             // TODO: implement multidimensional arrays
             if (declarator->arrayLength > 0) {
@@ -62,20 +61,142 @@ std::string StructTypeSpec::cType() {
             ostream << ";" << std::endl;
         }
     }
-    ostream << "}" << ";" << std::endl;
-    return ostream.str();
+    ostream << "}";
+}
+
+std::string bitsCType(CDRBits cdrBits) {
+    switch (cdrBits) {
+        case CDRBits::B8:
+            return "uint8_t";
+        case CDRBits::B16:
+            return "uint16_t";
+        case CDRBits::B32:
+            return "uint32_t";
+        case CDRBits::B64:
+            return "uint64_t";
+        case CDRBits::B128:
+            return "uint128_t";
+        case CDRBits::UNDEFINED:
+        default:
+            throw std::runtime_error("unexpected bits type");
+    }
+}
+
+std::string bitsSerialize(CDRBits cdrBits) {
+    switch (cdrBits) {
+        case CDRBits::B16:
+            return "htobe16";
+        case CDRBits::B32:
+            return "htobe32";
+        case CDRBits::B64:
+            return "htobe64";
+        case CDRBits::B8:
+        case CDRBits::B128:
+        case CDRBits::UNDEFINED:
+        default:
+            throw std::runtime_error("unexpected bits type");
+    }
+}
+
+std::string bitsDeserialize(CDRBits cdrBits) {
+    switch (cdrBits) {
+        case CDRBits::B16:
+            return "be16toh";
+        case CDRBits::B32:
+            return "be32toh";
+        case CDRBits::B64:
+            return "be64toh";
+        case CDRBits::B8:
+        case CDRBits::B128:
+        case CDRBits::UNDEFINED:
+        default:
+            throw std::runtime_error("unexpected bits type");
+    }
+}
+
+void StructTypeSpec::cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
+        return;
+    }
+    // TODO: arrays
+    ostream << bitsCType(cdrBits) << " " << declarator->identifier << " ";
+    ostream << "=" << " " << "*" << "(" << bitsCType(cdrBits) << "*" << ")";
+    ostream << " " << "&" << "input->" << declarator->identifier << ";" << std::endl;
+}
+
+void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
+        return;
+    }
+    ostream << declarator->identifier << " " << "=" << " ";
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
+            ostream << bitsSerialize(cdrBits);
+            break;
+        case CDRFunc::DESERIALIZE:
+            ostream << bitsDeserialize(cdrBits);
+            break;
+    }
+    ostream << "(" << declarator->identifier << ")" << ";" << std::endl;
+}
+
+void StructTypeSpec::cAssignLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
+    ostream << "output->" << declarator->identifier << " ";
+    ostream << "=" << " " << "*" << "(" << typeSpec->cTypeString() << "*" << ")";
+    ostream << " " << "&" << declarator->identifier << ";" << std::endl;
+}
+
+void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << "void" << " ";
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
+            ostream << "encode";
+            break;
+        case CDRFunc::DESERIALIZE:
+            ostream << "decode";
+            break;
+    }
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
+    ostream << ")" << " " << "{" << std::endl;
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            cDeclareLocalVar(ostream, member->typeSpec, declarator);
+        }
+    }
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            cConvertByteOrder(ostream, member->typeSpec, declarator, functionType);
+        }
+    }
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            cAssignLocalVar(ostream, member->typeSpec, declarator);
+        }
+    }
+    ostream << "}" << std::endl;
 }
 
 void ModuleDecl::addDefinition(TypeSpec* definition) {
     definitions.push_back(definition);
 }
 
-std::string ModuleDecl::cType() {
+void ModuleDecl::cTypeStream(std::ostream &ostream) {
     // TODO: prefix definition names with module namespace
-    std::stringstream ostream;
     for (TypeSpec* definition : definitions) {
         ostream << std::endl;
-        ostream << definition->cType();
+        definition->cTypeStream(ostream);
+        ostream << ";" << std::endl;
     }
-    return ostream.str();
+}
+
+void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    // TODO: prefix function names with module namespace
+    for (TypeSpec* definition : definitions) {
+        ostream << std::endl;
+        definition->cDeclareFunctions(ostream, functionType);
+    }
 }

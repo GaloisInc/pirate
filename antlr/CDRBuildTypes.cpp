@@ -32,7 +32,9 @@ antlrcpp::Any CDRBuildTypes::aggregateResult(antlrcpp::Any aggregate, const antl
 }
 
 antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
-  TypeSpec *typeSpec = new ModuleDecl(ctx->identifier()->getText());
+  std::string identifier = ctx->identifier()->getText();
+  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
+  TypeSpec *typeSpec = new ModuleDecl(identifier);
   ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(typeSpec);
   std::vector<IDLParser::DefinitionContext*> definitions = ctx->definition();
   for (IDLParser::DefinitionContext* definitionCtx : definitions) {
@@ -42,7 +44,9 @@ antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
 }
 
 antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx) {
-  TypeSpec *typeSpec = new StructTypeSpec(ctx->identifier()->getText());
+  std::string identifier = ctx->identifier()->getText();
+  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
+  TypeSpec *typeSpec = new StructTypeSpec(identifier);
   StructTypeSpec *structSpec = dynamic_cast<StructTypeSpec*>(typeSpec);
   std::vector<IDLParser::MemberContext*> members = ctx->member_list()->member();
   for (IDLParser::MemberContext* memberCtx : members) {
