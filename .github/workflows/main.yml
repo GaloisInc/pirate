@@ -290,13 +290,27 @@ jobs:
         cmake --build . --target install
     - name: antlr4-runtime
       run: |
-        mkdir ~/antlr4
+        mkdir -p ~/antlr4
         cd ~/antlr4
         wget -qO - https://www.antlr.org/download/antlr4-cpp-runtime-4.8-source.zip > antlr4-cpp-runtime-4.8-source.zip
         unzip antlr4-cpp-runtime-4.8-source.zip
         mkdir build
         cd build
         cmake -D ANTLR4_INSTALL=1 ..
-        make install
+        sudo make install
         cd ..
         wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
+    - name: build-idl
+      run: |
+        cd antlr
+        mkdir -p build
+        cd build
+        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
+              -DPIRATE_UNIT_TEST=ON \
+              -DANTLR4_MODULE_PATH=/usr/local/lib/cmake/antlr4 \
+              -DANTLR4_JAR_LOCATION=$HOME/antlr4/antlr-4.8-complete.jar \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
+        make
+        ./idl_test
+        make valgrind
