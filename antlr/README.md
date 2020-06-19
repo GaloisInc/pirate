@@ -50,6 +50,57 @@ The following CMake flags are optional:
 ./CDRGenerator < [input idl file] > [output C file]
 ```
 
+### Example
+
+The following IDL specification generates the C output below.
+
+```
+module PNT {
+	struct Position {
+		double x, y, z;
+	};
+};
+```
+
+generates,
+
+```
+#include <endian.h>
+#include <stdint.h>
+
+struct position {
+    double x __attribute__((aligned(8)));
+    double y __attribute__((aligned(8)));
+    double z __attribute__((aligned(8)));
+};
+
+void encode_position(struct position* input, struct position* output) {
+    uint64_t x = *(uint64_t*) &input->x;
+    uint64_t y = *(uint64_t*) &input->y;
+    uint64_t z = *(uint64_t*) &input->z;
+    x = htobe64(x);
+    y = htobe64(y);
+    z = htobe64(z);
+    output->x = *(double*) &x;
+    output->y = *(double*) &y;
+    output->z = *(double*) &z;
+}
+
+void decode_position(struct position* input, struct position* output) {
+    uint64_t x = *(uint64_t*) &input->x;
+    uint64_t y = *(uint64_t*) &input->y;
+    uint64_t z = *(uint64_t*) &input->z;
+    x = be64toh(x);
+    y = be64toh(y);
+    z = be64toh(z);
+    output->x = *(double*) &x;
+    output->y = *(double*) &y;
+    output->z = *(double*) &z;
+}
+
+```
+
+
 ### Tests
 
 The regression test suite will run the code generator on a set of pre-defined
