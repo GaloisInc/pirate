@@ -68,9 +68,6 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   }
 
   // Create channels
-//  piratePipe(gpsToTarget, 0);
-//  auto gpsToTargetSend = gdSender<Position>(gpsToTarget, 0);            // Green to green
-//  auto gpsToTargetRecv = gdReceiver<Position>(gpsToTarget, 0);          // Green to green
   auto gpsToUAVSend    = pirateSender<Position>(gpsToUAVPath);       // Green to orange
   auto uavToTargetRecv = pirateReceiver<Position>(uavToTargetPath);
   auto rfToTargetRecv  = pirateReceiver<Distance>(rfToTargetPath);
@@ -97,13 +94,13 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
   // Create target and event handling threads.
   Target tgt(10); // updates at 10 Hz frequency
   std::mutex tgtMutex;
-  auto uavToTargetThread = 
+  auto uavToTargetThread =
     asyncReadMessages<Position>(uavToTargetRecv,
       [&tgt, &tgtMutex](const Position& p) {
         std::lock_guard<std::mutex> g(tgtMutex);
         tgt.setUAVLocation(p);
       });
-  std::thread rfToTargetThread = 
+  std::thread rfToTargetThread =
     asyncReadMessages<Distance>(rfToTargetRecv,
       [&tgt, &tgtMutex](const Distance& d) {
         std::lock_guard<std::mutex> g(tgtMutex);
@@ -117,14 +114,14 @@ int run_green(int argc, char** argv) PIRATE_ENCLAVE_MAIN("green")
       };
 
   // Run GPS every 10 milliseconds.
-  onTimer(start, duration, std::chrono::milliseconds(10), 
+  onTimer(start, duration, std::chrono::milliseconds(10),
            [&gps](TimerMsec now){ gps.read(now); });
 
-  // Close GPS  
+  // Close GPS
   gpsSender.close();
   uavToTargetRecv.close();
   rfToTargetRecv.close();
-  
+
   // Wait for all target threads to terminate.
   uavToTargetThread.join();
   rfToTargetThread.join();
@@ -167,7 +164,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
   std::function<TimerMsec()> getTime;
   TimerMsec base;
   if (fixedPeriod) {
-    getTime = [&base] () { 
+    getTime = [&base] () {
       TimerMsec now = base;
       base = base + std::chrono::milliseconds(10);
       return now;
@@ -198,7 +195,7 @@ int run_orange(int argc, char** argv) PIRATE_ENCLAVE_MAIN("orange")
         // Note. We could send RF and UAV data simultaneously to reduce
         // number of messages here.
         rfs.read(getTime());
-        uav.onGpsPositionChange(p); 
+        uav.onGpsPositionChange(p);
       });
   gpsToUAVThread.join();
 
