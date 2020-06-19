@@ -270,3 +270,30 @@ jobs:
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
         docker push pirateteam/ubuntu:${{ github.event.release.tag_name }}
       if: github.event_name == 'release'
+  antlr-idl:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: update apt sources
+      run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev default-jre-headless
+    - name: googletest
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake --build . --target install
+    - name: antlr4-runtime
+      run: |
+        mkdir ~/antlr4
+        cd ~/antlr4
+        wget -qO - https://www.antlr.org/download/antlr4-cpp-runtime-4.8-source.zip > antlr4-cpp-runtime-4.8-source.zip
+        unzip antlr4-cpp-runtime-4.8-source.zip
+        cmake -D ANTLR4_INSTALL=1
+        cmake --build . --target install
+        wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
