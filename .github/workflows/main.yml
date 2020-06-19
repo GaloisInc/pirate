@@ -288,19 +288,32 @@ jobs:
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-    - name: antlr4-runtime
+    - name: Cache antlr4 runtime
+      id: cache-antlr4-runtime
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-antlr4.8-runtime
+      with:
+        path: ~/antlr4
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: Build antlr4 runtime
+      if: steps.cache-antlr4-runtime.outputs.cache-hit != 'true'
       run: |
         mkdir -p ~/antlr4
         cd ~/antlr4
+        wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
         wget -qO - https://www.antlr.org/download/antlr4-cpp-runtime-4.8-source.zip > antlr4-cpp-runtime-4.8-source.zip
         unzip antlr4-cpp-runtime-4.8-source.zip
         mkdir build
         cd build
         cmake -D ANTLR4_INSTALL=1 ..
+        make
+    - name: Install antlr4 runtime
+      run: |
+        cd ~/antlr4/build
         sudo make install
         cd ..
-        wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
-    - name: build-idl
+    - name: Build idl
       run: |
         cd antlr
         mkdir -p build
