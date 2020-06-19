@@ -25,18 +25,18 @@ if (GAPS_DISABLE)
 else()
     add_executable(pnt_green ${COMMON_SRC})
     add_executable(pnt_orange ${COMMON_SRC})
-    set_target_properties(pnt_green  PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,green  -fuse-ld=lld")
-    set_target_properties(pnt_orange PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-enclave,orange -fuse-ld=lld")
+    set_target_properties(pnt_green  PROPERTIES LINK_FLAGS "-Wl,-enclave,green  -fuse-ld=lld")
+    set_target_properties(pnt_orange PROPERTIES LINK_FLAGS "-Wl,-enclave,orange -fuse-ld=lld")
 endif(GAPS_DISABLE)
 
-target_link_libraries(pnt_green ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_green pirate pthread)
 set_target_properties(pnt_green PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-target_link_libraries(pnt_orange ${PIRATE_APP_LIBS} pthread)
+target_link_libraries(pnt_orange pirate pthread)
 set_target_properties(pnt_orange PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
