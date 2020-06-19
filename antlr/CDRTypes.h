@@ -54,6 +54,8 @@ public:
     virtual CDRBits cTypeBits() = 0;
     virtual uint8_t alignment() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
+    virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
+    virtual ~TypeSpec() { };
 };
 
 // Implementation of the primitive types
@@ -76,6 +78,7 @@ public:
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
+    virtual bool singleton() { return true; }
 };
 
 class Declarator {
@@ -92,6 +95,7 @@ public:
     std::vector<Declarator*> declarators;
     StructMember(TypeSpec* typeSpec) : typeSpec(typeSpec), declarators() { }
     void addDeclarator(Declarator* declarator);
+    ~StructMember();
 };
 
 // Implementation of the struct type
@@ -110,6 +114,7 @@ public:
     virtual uint8_t alignment() override { return 0; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addMember(StructMember* member);
+    virtual ~StructTypeSpec();
 };
 
 // Implementation of the module declaration
@@ -124,4 +129,5 @@ public:
     virtual uint8_t alignment() override { return 0; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addDefinition(TypeSpec* definition);
+    virtual ~ModuleDecl();
 };

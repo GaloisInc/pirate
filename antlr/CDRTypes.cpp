@@ -40,6 +40,15 @@ void StructTypeSpec::addMember(StructMember* member) {
     members.push_back(member);
 }
 
+StructMember::~StructMember() {
+    if (!typeSpec->singleton()) {
+        delete typeSpec;
+    }
+    for (Declarator* declarator : declarators) {
+        delete declarator;
+    }
+}
+
 void StructTypeSpec::cTypeStream(std::ostream &ostream) {
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     for (StructMember* member : members) {
@@ -180,6 +189,12 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     ostream << "}" << std::endl;
 }
 
+StructTypeSpec::~StructTypeSpec() {
+    for (StructMember* member : members) {
+        delete member;
+    }
+}
+
 void ModuleDecl::addDefinition(TypeSpec* definition) {
     definitions.push_back(definition);
 }
@@ -198,5 +213,11 @@ void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) 
     for (TypeSpec* definition : definitions) {
         ostream << std::endl;
         definition->cDeclareFunctions(ostream, functionType);
+    }
+}
+
+ModuleDecl::~ModuleDecl() {
+    for (TypeSpec* definition : definitions) {
+        delete definition;
     }
 }

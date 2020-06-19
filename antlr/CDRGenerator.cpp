@@ -70,5 +70,7 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     moduleDecl->cTypeStream(ostream);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
+
+    delete topLevelSpec;
     return 0;
 }

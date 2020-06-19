@@ -36,7 +36,7 @@ TEST(CDRGeneratorTest, IdlRegressionTests) {
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir("input")) == NULL) {
-        FAIL() << "input " << strerror(errno);
+        FAIL() << "input directory " << strerror(errno);
     }
     while ((ent = readdir(dir)) != NULL) {
         char source[64];
