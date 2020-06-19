@@ -42,6 +42,10 @@ if(PIRATE_UNIT_TEST)
     target_compile_options(idl_test PRIVATE ${IDL_CXX_FLAGS})
     target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread)
 
+    file(GLOB IDL_REGRESSION_TEST_SRC test/output/*.c)
+    add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})
+    target_compile_options(idl-regression PRIVATE ${IDL_CXX_FLAGS})
+
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/input DESTINATION .)
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/output DESTINATION .)
 

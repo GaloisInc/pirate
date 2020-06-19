@@ -52,10 +52,11 @@ The following CMake flags are optional:
 
 ### Tests
 
-The regression test suite will run the code generator on a set of
-pre-defined IDL grammars and compares the generated code to the
-expected good output. The valgrind target will run the regression
-test suite under the valgrind leak detection tool.
+The regression test suite will run the code generator on a set of pre-defined
+IDL grammars and compares the generated code to the expected good output. The
+expected good output of the regression tests are compiled as a sanity check.
+The valgrind target will run the regression test suite under the valgrind leak
+detection tool.
 
 ### Features Implemented
 
