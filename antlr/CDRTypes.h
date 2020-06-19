@@ -26,6 +26,17 @@ enum class CDRTypeOf {
     LONG_DOUBLE_T,
     STRUCT_T,
     MODULE_T,
+    TINY_T,
+    SHORT_T,
+    LONG_T,
+    LONG_LONG_T,
+    UNSIGNED_TINY_T,
+    UNSIGNED_SHORT_T,
+    UNSIGNED_LONG_T,
+    UNSIGNED_LONG_LONG_T,
+    CHAR_T,
+    BOOL_T,
+    OCTET_T,
 };
 
 enum class CDRFunc {
@@ -42,6 +53,11 @@ enum class CDRBits {
     B128,
 };
 
+std::string bitsCType(CDRBits cdrBits);
+uint8_t bitsAlignment(CDRBits cdrBits);
+std::string bitsSerialize(CDRBits cdrBits);
+std::string bitsDeserialize(CDRBits cdrBits);
+
 class TypeSpec {
 public:
     virtual CDRTypeOf typeOf() = 0;
@@ -52,7 +68,6 @@ public:
         return ostream.str();
     }
     virtual CDRBits cTypeBits() = 0;
-    virtual uint8_t alignment() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
     virtual ~TypeSpec() { };
@@ -65,19 +80,28 @@ private:
     CDRTypeOf m_typeOf;
     std::string m_cType;
     CDRBits m_cTypeBits;
-    uint8_t m_align;
-    BaseTypeSpec(CDRTypeOf typeOf, std::string cType, CDRBits cTypeBits, uint8_t align) :
-        m_typeOf(typeOf), m_cType(cType), m_cTypeBits(cTypeBits), m_align(align) { }
+    BaseTypeSpec(CDRTypeOf typeOf, std::string cType, CDRBits cTypeBits) :
+        m_typeOf(typeOf), m_cType(cType), m_cTypeBits(cTypeBits) { }
 public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
     virtual std::string cTypeString() override { return m_cType; }
     virtual CDRBits cTypeBits() override { return m_cTypeBits; }
     virtual void cTypeStream(std::ostream &ostream) override { ostream << m_cType; }
-    virtual uint8_t alignment() override { return m_align; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
+    static TypeSpec* tinyType();
+    static TypeSpec* shortType();
+    static TypeSpec* longType();
+    static TypeSpec* longLongType();
+    static TypeSpec* unsignedTinyType();
+    static TypeSpec* unsignedShortType();
+    static TypeSpec* unsignedLongType();
+    static TypeSpec* unsignedLongLongType();
+    static TypeSpec* charType();
+    static TypeSpec* boolType();
+    static TypeSpec* octetType();
     virtual bool singleton() { return true; }
 };
 
@@ -109,7 +133,6 @@ public:
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::STRUCT_T; }
     virtual void cTypeStream(std::ostream &ostream) override;
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual uint8_t alignment() override { return 0; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
@@ -124,7 +147,6 @@ public:
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
     virtual void cTypeStream(std::ostream &ostream) override;
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual uint8_t alignment() override { return 0; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addDefinition(TypeSpec* definition);
     virtual ~ModuleDecl();

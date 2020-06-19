@@ -27,4 +27,15 @@ public:
   virtual antlrcpp::Any visitSimple_declarator(IDLParser::Simple_declaratorContext *ctx) override;
   virtual antlrcpp::Any visitArray_declarator(IDLParser::Array_declaratorContext *ctx) override;
   virtual antlrcpp::Any visitFloating_pt_type(IDLParser::Floating_pt_typeContext *ctx) override;
+  virtual antlrcpp::Any visitSigned_tiny_int(IDLParser::Signed_tiny_intContext *ctx) override;
+  virtual antlrcpp::Any visitSigned_short_int(IDLParser::Signed_short_intContext *ctx) override;
+  virtual antlrcpp::Any visitSigned_long_int(IDLParser::Signed_long_intContext *ctx) override;
+  virtual antlrcpp::Any visitSigned_longlong_int(IDLParser::Signed_longlong_intContext *ctx) override;
+  virtual antlrcpp::Any visitUnsigned_tiny_int(IDLParser::Unsigned_tiny_intContext *ctx) override;
+  virtual antlrcpp::Any visitUnsigned_short_int(IDLParser::Unsigned_short_intContext *ctx) override;
+  virtual antlrcpp::Any visitUnsigned_long_int(IDLParser::Unsigned_long_intContext *ctx) override;
+  virtual antlrcpp::Any visitUnsigned_longlong_int(IDLParser::Unsigned_longlong_intContext *ctx) override;
+  virtual antlrcpp::Any visitChar_type(IDLParser::Char_typeContext *ctx) override;
+  virtual antlrcpp::Any visitBoolean_type(IDLParser::Boolean_typeContext *ctx) override;
+  virtual antlrcpp::Any visitOctet_type(IDLParser::Octet_typeContext *ctx) override;
 };

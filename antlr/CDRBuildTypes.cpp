@@ -87,3 +87,47 @@ antlrcpp::Any CDRBuildTypes::visitFloating_pt_type(IDLParser::Floating_pt_typeCo
     return nullptr;
   }
 }
+
+antlrcpp::Any CDRBuildTypes::visitSigned_tiny_int(IDLParser::Signed_tiny_intContext *ctx) {
+  return BaseTypeSpec::tinyType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitSigned_short_int(IDLParser::Signed_short_intContext *ctx) {
+  return BaseTypeSpec::shortType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitSigned_long_int(IDLParser::Signed_long_intContext *ctx) {
+  return BaseTypeSpec::longType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitSigned_longlong_int(IDLParser::Signed_longlong_intContext *ctx) {
+  return BaseTypeSpec::longLongType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitUnsigned_tiny_int(IDLParser::Unsigned_tiny_intContext *ctx) {
+  return BaseTypeSpec::unsignedTinyType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitUnsigned_short_int(IDLParser::Unsigned_short_intContext *ctx) {
+  return BaseTypeSpec::unsignedShortType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitUnsigned_long_int(IDLParser::Unsigned_long_intContext *ctx) {
+  return BaseTypeSpec::unsignedLongType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitUnsigned_longlong_int(IDLParser::Unsigned_longlong_intContext *ctx) {
+  return BaseTypeSpec::unsignedLongLongType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitChar_type(IDLParser::Char_typeContext *ctx) {
+  return BaseTypeSpec::charType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitBoolean_type(IDLParser::Boolean_typeContext *ctx) {
+  return BaseTypeSpec::boolType();
+}
+
+antlrcpp::Any CDRBuildTypes::visitOctet_type(IDLParser::Octet_typeContext *ctx) {
+  return BaseTypeSpec::octetType();
+}
