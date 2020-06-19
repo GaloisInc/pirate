@@ -123,23 +123,14 @@ std::string bitsDeserialize(CDRBits cdrBits) {
     }
 }
 
-void StructTypeSpec::cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
-    CDRBits cdrBits = typeSpec->cTypeBits();
-    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
-        return;
-    }
-    // TODO: arrays
-    ostream << bitsCType(cdrBits) << " " << declarator->identifier << " ";
-    ostream << "=" << " " << "*" << "(" << bitsCType(cdrBits) << "*" << ")";
-    ostream << " " << "&" << "input->" << declarator->identifier << ";" << std::endl;
-}
-
 void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType) {
     CDRBits cdrBits = typeSpec->cTypeBits();
+    // TODO: arrays
     if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
         return;
     }
-    ostream << declarator->identifier << " " << "=" << " ";
+    ostream << "output->" << declarator->identifier << " ";
+    ostream << "=" << " " << "*" << "(" << typeSpec->cTypeString() << "*" << ")" << " ";
     switch (functionType) {
         case CDRFunc::SERIALIZE:
             ostream << bitsSerialize(cdrBits);
@@ -148,13 +139,10 @@ void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec
             ostream << bitsDeserialize(cdrBits);
             break;
     }
-    ostream << "(" << declarator->identifier << ")" << ";" << std::endl;
-}
-
-void StructTypeSpec::cAssignLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
-    ostream << "output->" << declarator->identifier << " ";
-    ostream << "=" << " " << "*" << "(" << typeSpec->cTypeString() << "*" << ")";
-    ostream << " " << "&" << declarator->identifier << ";" << std::endl;
+    ostream << "(";
+    ostream << "*" << "(" << bitsCType(cdrBits) << "*" << ")";
+    ostream << " " << "&" << "input->" << declarator->identifier;
+    ostream << ")" << ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
@@ -173,17 +161,7 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     ostream << ")" << " " << "{" << std::endl;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cDeclareLocalVar(ostream, member->typeSpec, declarator);
-        }
-    }
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
             cConvertByteOrder(ostream, member->typeSpec, declarator, functionType);
-        }
-    }
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
-            cAssignLocalVar(ostream, member->typeSpec, declarator);
         }
     }
     ostream << "}" << std::endl;
