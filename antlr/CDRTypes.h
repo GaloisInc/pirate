@@ -125,7 +125,9 @@ public:
 // Implementation of the struct type
 class StructTypeSpec : public TypeSpec {
 private:
+    void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
     void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType);
+    void cAssignOutputVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
 public:
     std::string identifier;
     std::vector<StructMember*> members;

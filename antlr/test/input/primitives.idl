@@ -1,0 +1,26 @@
+module Primitives {
+	struct Primitives {
+        float a;
+        double b;
+        short d;
+        long e;
+        long long f;
+        unsigned short g;
+        unsigned long h;
+        unsigned long long i;
+        char j;
+        boolean k;
+        octet l;
+	};
+
+	struct Alt_Primitives {
+        int8 a;
+        int16 b;
+        int32 c;
+        int64 d;
+        uint8 e;
+        uint16 f;
+        uint32 g;
+        uint64 h;
+	};    
+};
