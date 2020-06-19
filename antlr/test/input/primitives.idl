@@ -1,26 +1,27 @@
 module Primitives {
 	struct Primitives {
-        float a;
-        double b;
-        short d;
-        long e;
-        long long f;
-        unsigned short g;
-        unsigned long h;
-        unsigned long long i;
-        char j;
-        boolean k;
-        octet l;
+        float float_val;
+        double double_val;
+        // long double long_double_val;
+        short short_val;
+        long long_val;
+        long long long_long_val;
+        unsigned short unsigned_short_val;
+        unsigned long unsigned_long_val;
+        unsigned long long unsigned_long_long_val;
+        char char_val;
+        boolean bool_val;
+        octet octet_val;
 	};
 
 	struct Alt_Primitives {
-        int8 a;
-        int16 b;
-        int32 c;
-        int64 d;
-        uint8 e;
-        uint16 f;
-        uint32 g;
-        uint64 h;
-	};    
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+        uint8 uint8_val;
+        uint16 uint16_val;
+        uint32 uint32_val;
+        uint64 uint64_val;
+	};
 };
