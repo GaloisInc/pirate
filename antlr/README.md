@@ -63,15 +63,15 @@ detection tool.
  - [x] float
  - [x] double
  - [ ] long double
- - [ ] short
- - [ ] long
- - [ ] long long
- - [ ] unsigned short
- - [ ] unsigned long
- - [ ] unsigned long long
- - [ ] char
- - [ ] boolean
- - [ ] octet
+ - [x] short
+ - [x] long
+ - [x] long long
+ - [x] unsigned short
+ - [x] unsigned long
+ - [x] unsigned long long
+ - [x] char
+ - [x] boolean
+ - [x] octet
  - [ ] enum
  - [ ] 1-dimensional array
  - [ ] N-dimensional array
