@@ -280,7 +280,7 @@ jobs:
     - name: install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev default-jre-headless
+        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev uuid-dev default-jre-headless
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -294,6 +294,9 @@ jobs:
         cd ~/antlr4
         wget -qO - https://www.antlr.org/download/antlr4-cpp-runtime-4.8-source.zip > antlr4-cpp-runtime-4.8-source.zip
         unzip antlr4-cpp-runtime-4.8-source.zip
-        cmake -D ANTLR4_INSTALL=1
-        cmake --build . --target install
+        mkdir build
+        cd build
+        cmake -D ANTLR4_INSTALL=1 ..
+        make install
+        cd ..
         wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
