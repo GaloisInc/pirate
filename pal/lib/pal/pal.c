@@ -194,6 +194,10 @@ static void init_resources_common(const char *type, get_func_t get_func,
     for(pr = start; pr < stop; ++pr) {
         int err;
 
+        if(!pr || !pr->pr_name || !pr->pr_obj)
+            fprintf(stderr, "Invalid pirate resource section for `%s'\n",
+                    type);
+
         if((err = get_func(fd, pr->pr_name, pr->pr_obj))) {
             fprintf(stderr, "Fatal error getting %s resource %s: %s\n",
                     type, pr->pr_name,
@@ -261,6 +265,10 @@ void __attribute__((constructor)) init_pirate_channel_resources()
     for(pr = start; pr < stop; ++pr) {
         int err, perms = O_RDWR;
         char *cfg, *permstr;
+
+        if(!pr || !pr->pr_name || !pr->pr_obj)
+            fputs("Invalid pirate resource section for `pirate_channel'\n",
+                    stderr);
 
         if((err = get_pirate_channel_cfg(fd, pr->pr_name, &cfg))) {
             fprintf(stderr, "Fatal error getting pirate_channel %s: %s\n",
