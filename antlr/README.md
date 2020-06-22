@@ -44,6 +44,22 @@ The following CMake flags are optional:
 
 - PIRATE_UNIT_TESTS. Enables the unit tests. googletest library is required.
 
+The directory `generated-src` is not used by the build system.
+The build script will regenerate those files from the ANTLR grammar.
+Those files are included in the git repository to make it
+easier for development. The Visual Studio Code ANTLR plugin can
+be configured with the following settings:
+
+```
+"antlr4.generation": {
+    "mode": "external",
+    "language": "Cpp",
+    "outputDir": "generated-src",
+    "listeners": true,
+    "visitors": true
+},
+```
+
 ### Usage
 
 ```
