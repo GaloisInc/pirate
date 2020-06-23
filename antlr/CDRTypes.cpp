@@ -105,13 +105,13 @@ StructMember::~StructMember() {
     }
 }
 
-void StructTypeSpec::cTypeStream(std::ostream &ostream) {
+void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
+    ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            member->typeSpec->cTypeStream(ostream);
-            ostream << " ";
+            ostream << member->typeSpec->cTypeName() << " ";
             ostream << declarator->identifier;
             // TODO: implement multidimensional arrays
             if (declarator->arrayLength > 0) {
@@ -126,7 +126,7 @@ void StructTypeSpec::cTypeStream(std::ostream &ostream) {
             ostream << ";" << std::endl;
         }
     }
-    ostream << "}";
+    ostream << "}" << ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
@@ -226,12 +226,10 @@ void ModuleDecl::addDefinition(TypeSpec* definition) {
     definitions.push_back(definition);
 }
 
-void ModuleDecl::cTypeStream(std::ostream &ostream) {
+void ModuleDecl::cTypeDecl(std::ostream &ostream) {
     // TODO: prefix definition names with module namespace
     for (TypeSpec* definition : definitions) {
-        ostream << std::endl;
-        definition->cTypeStream(ostream);
-        ostream << ";" << std::endl;
+        definition->cTypeDecl(ostream);
     }
 }
 

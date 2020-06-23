@@ -61,12 +61,8 @@ std::string bitsDeserialize(CDRBits cdrBits);
 class TypeSpec {
 public:
     virtual CDRTypeOf typeOf() = 0;
-    virtual void cTypeStream(std::ostream &ostream) = 0;
-    virtual std::string cTypeString() {
-        std::stringstream ostream;
-        cTypeStream(ostream);
-        return ostream.str();
-    }
+    virtual void cTypeDecl(std::ostream &ostream) = 0;
+    virtual std::string cTypeName() = 0;
     virtual CDRBits cTypeBits() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
@@ -84,9 +80,10 @@ private:
         m_typeOf(typeOf), m_cType(cType), m_cTypeBits(cTypeBits) { }
 public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
-    virtual std::string cTypeString() override { return m_cType; }
+
     virtual CDRBits cTypeBits() override { return m_cTypeBits; }
-    virtual void cTypeStream(std::ostream &ostream) override { ostream << m_cType; }
+    virtual void cTypeDecl(std::ostream &ostream) override { ostream << m_cType; }
+    virtual std::string cTypeName() override { return m_cType; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
@@ -134,7 +131,9 @@ public:
     std::vector<StructMember*> members;
     StructTypeSpec(std::string identifier) : identifier(identifier), members() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::STRUCT_T; }
-    virtual void cTypeStream(std::ostream &ostream) override;
+    virtual void cTypeDecl(std::ostream &ostream) override;
+    // nested structs must be prefixed by parent names in C++
+    virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addMember(StructMember* member);
@@ -148,7 +147,8 @@ public:
     std::vector<TypeSpec*> definitions;
     ModuleDecl(std::string identifier) : identifier(identifier), definitions() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
-    virtual void cTypeStream(std::ostream &ostream) override;
+    virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addDefinition(TypeSpec* definition);
