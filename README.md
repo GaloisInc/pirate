@@ -77,8 +77,8 @@ Invoke with
 $ cmake -D<OPTION_NAME>=<OPTON_VALUE> ..
 ```
 
- * ```BUILD_LAUNCHER``` build the application launcher (default ```ON```)
- * ```BUILD_RESOURCE_LOADER``` build resource loader library (default ```ON```)
+ * ```PIRATE_LAUNCHER``` build the application launcher (default ```ON```)
+ * ```PIRATE_GETOPT``` build resource loader library (default ```ON```)
  * ```GAPS_DISABLE``` use the standard compiler installed on the system
    instead of the GAPS LLVM compiler (default ```OFF```)
  * ```PIRATE_UNIT_TEST``` enable compilation of libpirate unit tests

@@ -92,6 +92,12 @@ namespace {
     }
 }
 
+/**
+ * This loads resources by parsing command line arguments.
+ *
+ * It returns 0 if successful and -1 if unsuccessful.
+ * If errors occur, they are reported by printing to stderr.
+ */
 int load_resources(int &argc, char **&argv) {
 
     std::vector<Handler> handlers;

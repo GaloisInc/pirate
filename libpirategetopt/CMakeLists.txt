@@ -14,7 +14,7 @@ add_library(pirategetopt_static STATIC
 )
 
 target_include_directories(pirategetopt_static PUBLIC include)
-set_target_properties(pirategetopt_static PROPERTIES OUTPUT_NAME libpirategetopt CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(pirategetopt_static PROPERTIES OUTPUT_NAME pirategetopt CLEAN_DIRECT_OUTPUT 1)
 
 install(FILES include/resource_loader.hpp DESTINATION include)
 install(TARGETS pirategetopt_static DESTINATION lib)
