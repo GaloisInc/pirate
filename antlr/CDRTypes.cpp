@@ -131,13 +131,23 @@ void StructTypeSpec::cTypeStream(std::ostream &ostream) {
 
 void StructTypeSpec::cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
     CDRBits cdrBits = typeSpec->cTypeBits();
-    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
+    if (cdrBits == CDRBits::UNDEFINED) {
         return;
     }
     // TODO: arrays
-    ostream << bitsCType(cdrBits) << " " << declarator->identifier << " ";
-    ostream << "=" << " " << "*" << "(" << bitsCType(cdrBits) << "*" << ")";
-    ostream << " " << "&" << "input->" << declarator->identifier << ";" << std::endl;
+    ostream << bitsCType(cdrBits) << " " << declarator->identifier << ";" << std::endl;
+}
+
+void StructTypeSpec::cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if (cdrBits == CDRBits::UNDEFINED) {
+        return;
+    }
+    ostream << "memcpy" << "(";
+    ostream << "&" << declarator->identifier << "," << " ";
+    ostream << "&" << "input->" << declarator->identifier << "," << " ";
+    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
+    ostream << ")" << ";" << std::endl;
 }
 
 void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType) {
@@ -157,19 +167,16 @@ void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec
     ostream << "(" << declarator->identifier << ")" << ";" << std::endl;
 }
 
-void StructTypeSpec::cAssignOutputVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
+void StructTypeSpec::cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
     CDRBits cdrBits = typeSpec->cTypeBits();
     if (cdrBits == CDRBits::UNDEFINED) {
         return;
     }
-    ostream << "output->" << declarator->identifier << " " << "=" << " ";
-    if (cdrBits == CDRBits::B8) {
-        ostream << "input->" << declarator->identifier;
-    } else {
-        ostream << "*" << "(" << typeSpec->cTypeString() << "*" << ")";
-        ostream << " " << "&" << declarator->identifier;
-    }
-    ostream << ";" << std::endl;
+    ostream << "memcpy" << "(";
+    ostream << "&" << "output->" << declarator->identifier << "," << " ";
+    ostream << "&" << declarator->identifier << "," << " ";
+    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
+    ostream << ")" << ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
@@ -193,12 +200,17 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     }
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
+            cCopyMemoryIn(ostream, member->typeSpec, declarator);
+        }
+    }
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
             cConvertByteOrder(ostream, member->typeSpec, declarator, functionType);
         }
     }
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cAssignOutputVar(ostream, member->typeSpec, declarator);
+            cCopyMemoryOut(ostream, member->typeSpec, declarator);
         }
     }
     ostream << "}" << std::endl;

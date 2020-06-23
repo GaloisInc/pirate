@@ -66,6 +66,7 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
 
     ostream << "#include <endian.h>" << std::endl;
     ostream << "#include <stdint.h>" << std::endl;
+    ostream << "#include <string.h>" << std::endl;
     ostream << std::endl;
     moduleDecl->cTypeStream(ostream);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
