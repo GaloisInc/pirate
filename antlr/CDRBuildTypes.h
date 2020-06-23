@@ -24,6 +24,8 @@ public:
   virtual antlrcpp::Any visitModule(IDLParser::ModuleContext *ctx) override;
   virtual antlrcpp::Any visitStruct_type(IDLParser::Struct_typeContext *ctx) override;
   virtual antlrcpp::Any visitMember(IDLParser::MemberContext *ctx) override;
+  virtual antlrcpp::Any visitUnion_type(IDLParser::Union_typeContext *ctx) override;
+  virtual antlrcpp::Any visitCase_stmt(IDLParser::Case_stmtContext *ctx) override;
   virtual antlrcpp::Any visitSimple_declarator(IDLParser::Simple_declaratorContext *ctx) override;
   virtual antlrcpp::Any visitArray_declarator(IDLParser::Array_declaratorContext *ctx) override;
   virtual antlrcpp::Any visitFloating_pt_type(IDLParser::Floating_pt_typeContext *ctx) override;

@@ -143,7 +143,7 @@ detection tool.
  - [ ] 1-dimensional array
  - [ ] N-dimensional array
  - [x] struct
- - [ ] union
+ - [x] union
  - [x] module
  - [ ] nested struct
  - [ ] nested union

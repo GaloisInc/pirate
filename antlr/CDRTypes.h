@@ -24,8 +24,6 @@ enum class CDRTypeOf {
     FLOAT_T,
     DOUBLE_T,
     LONG_DOUBLE_T,
-    STRUCT_T,
-    MODULE_T,
     TINY_T,
     SHORT_T,
     LONG_T,
@@ -37,6 +35,9 @@ enum class CDRTypeOf {
     CHAR_T,
     BOOL_T,
     OCTET_T,
+    STRUCT_T,
+    UNION_T,
+    MODULE_T,
 };
 
 enum class CDRFunc {
@@ -107,7 +108,7 @@ public:
     std::string identifier;
     int arrayLength;
     Declarator(std::string identifier) : identifier(identifier), arrayLength(0) { }
-    Declarator(std::string identifier, int arrayLength) : identifier(identifier), arrayLength(arrayLength) { }    
+    Declarator(std::string identifier, int arrayLength) : identifier(identifier), arrayLength(arrayLength) { }
 };
 
 class StructMember {
@@ -121,11 +122,6 @@ public:
 
 // Implementation of the struct type
 class StructTypeSpec : public TypeSpec {
-private:
-    void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
-    void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
-    void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType);
-    void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator);
 public:
     std::string identifier;
     std::vector<StructMember*> members;
@@ -138,6 +134,37 @@ public:
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
+};
+
+class UnionMember {
+public:
+    TypeSpec* typeSpec;
+    Declarator* declarator;
+    std::vector<std::string> labels;
+    bool hasDefault;
+    UnionMember(TypeSpec* typeSpec, Declarator *declarator) :
+        typeSpec(typeSpec), declarator(declarator), labels(), hasDefault(false) { }
+    void addLabel(std::string label);
+    void setHasDefault();
+    ~UnionMember();
+};
+
+// Implementation of the union type
+class UnionTypeSpec : public TypeSpec {
+public:
+    std::string identifier;
+    TypeSpec* switchType;
+    std::vector<UnionMember*> members;
+    UnionTypeSpec(std::string identifier, TypeSpec *switchType) :
+        identifier(identifier), switchType(switchType), members() { }
+    virtual CDRTypeOf typeOf() override { return CDRTypeOf::UNION_T; }
+    virtual void cTypeDecl(std::ostream &ostream) override;
+    // nested structs must be prefixed by parent names in C++
+    virtual std::string cTypeName() override { return "struct " + identifier; }
+    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    void addMember(UnionMember* member);
+    virtual ~UnionTypeSpec();
 };
 
 // Implementation of the module declaration
@@ -154,3 +181,8 @@ public:
     void addDefinition(TypeSpec* definition);
     virtual ~ModuleDecl();
 };
+
+void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier);
+void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
+void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
+void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);

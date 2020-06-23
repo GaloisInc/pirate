@@ -1,0 +1,12 @@
+module UnionType {
+  union Union_Example switch (short) { 
+    case 1:
+      boolean a; 
+    case 2:
+    case 3:
+      long b;
+    case 4:
+    default:
+      float c; 
+    };
+};

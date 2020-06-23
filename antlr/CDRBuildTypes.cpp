@@ -66,6 +66,35 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
   return structMember;
 }
 
+antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) {
+  std::string identifier = ctx->identifier()->getText();
+  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
+  TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
+  TypeSpec *typeSpec = new UnionTypeSpec(identifier, switchType);
+  UnionTypeSpec *unionSpec = dynamic_cast<UnionTypeSpec*>(typeSpec);
+  std::vector<IDLParser::Case_stmtContext*> members = ctx->switch_body()->case_stmt();
+  for (IDLParser::Case_stmtContext* caseCtx : members) {
+    UnionMember* member = caseCtx->accept(this);
+    unionSpec->addMember(member);
+  }
+  return typeSpec;
+}
+
+antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
+  TypeSpec* typeSpec = ctx->element_spec()->type_spec()->accept(this);
+  Declarator* decl = ctx->element_spec()->declarator()->accept(this);
+  UnionMember *member = new UnionMember(typeSpec, decl);
+  std::vector<IDLParser::Case_labelContext*> labels = ctx->case_label();
+  for (IDLParser::Case_labelContext* labelCtx : labels) {
+    if (labelCtx->const_exp() == nullptr) {
+      member->setHasDefault();
+    } else {
+      member->addLabel(labelCtx->const_exp()->getText());
+    }
+  }
+  return member;
+}
+
 antlrcpp::Any CDRBuildTypes::visitSimple_declarator(IDLParser::Simple_declaratorContext *ctx) {
   return new Declarator(ctx->ID()->getText());
 }

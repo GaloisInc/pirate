@@ -129,56 +129,6 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << "}" << ";" << std::endl;
 }
 
-void StructTypeSpec::cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
-    CDRBits cdrBits = typeSpec->cTypeBits();
-    if (cdrBits == CDRBits::UNDEFINED) {
-        return;
-    }
-    // TODO: arrays
-    ostream << bitsCType(cdrBits) << " " << declarator->identifier << ";" << std::endl;
-}
-
-void StructTypeSpec::cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
-    CDRBits cdrBits = typeSpec->cTypeBits();
-    if (cdrBits == CDRBits::UNDEFINED) {
-        return;
-    }
-    ostream << "memcpy" << "(";
-    ostream << "&" << declarator->identifier << "," << " ";
-    ostream << "&" << "input->" << declarator->identifier << "," << " ";
-    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
-    ostream << ")" << ";" << std::endl;
-}
-
-void StructTypeSpec::cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator, CDRFunc functionType) {
-    CDRBits cdrBits = typeSpec->cTypeBits();
-    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
-        return;
-    }
-    ostream << declarator->identifier << " " << "=" << " ";
-    switch (functionType) {
-        case CDRFunc::SERIALIZE:
-            ostream << bitsSerialize(cdrBits);
-            break;
-        case CDRFunc::DESERIALIZE:
-            ostream << bitsDeserialize(cdrBits);
-            break;
-    }
-    ostream << "(" << declarator->identifier << ")" << ";" << std::endl;
-}
-
-void StructTypeSpec::cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator) {
-    CDRBits cdrBits = typeSpec->cTypeBits();
-    if (cdrBits == CDRBits::UNDEFINED) {
-        return;
-    }
-    ostream << "memcpy" << "(";
-    ostream << "&" << "output->" << declarator->identifier << "," << " ";
-    ostream << "&" << declarator->identifier << "," << " ";
-    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
-    ostream << ")" << ";" << std::endl;
-}
-
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     ostream << "void" << " ";
     switch (functionType) {
@@ -195,22 +145,22 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     ostream << ")" << " " << "{" << std::endl;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cDeclareLocalVar(ostream, member->typeSpec, declarator);
+            cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier);
         }
     }
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cCopyMemoryIn(ostream, member->typeSpec, declarator);
+            cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier);
         }
     }
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cConvertByteOrder(ostream, member->typeSpec, declarator, functionType);
+            cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, functionType);
         }
     }
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cCopyMemoryOut(ostream, member->typeSpec, declarator);
+            cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier);
         }
     }
     ostream << "}" << std::endl;
@@ -218,6 +168,103 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
 
 StructTypeSpec::~StructTypeSpec() {
     for (StructMember* member : members) {
+        delete member;
+    }
+}
+
+void UnionMember::addLabel(std::string label) {
+    labels.push_back(label);
+}
+
+void UnionMember::setHasDefault() {
+    hasDefault = true;
+}
+
+UnionMember::~UnionMember() {
+    if (!typeSpec->singleton()) {
+        delete typeSpec;
+    }
+    delete declarator;
+}
+
+void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "struct" << " " << identifier << " " << "{" << std::endl;
+    int tagAlign = bitsAlignment(switchType->cTypeBits());
+    ostream << switchType->cTypeName() << " " << "tag";
+    ostream << " " << "__attribute__((aligned(" << tagAlign << ")))";
+    ostream << ";" << std::endl;
+    ostream << "union" << " " << "{" << std::endl;
+    for (UnionMember* member : members) {
+        Declarator* declarator = member->declarator;
+        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
+        ostream << member->typeSpec->cTypeName() << " ";
+        ostream << declarator->identifier;
+        // TODO: implement multidimensional arrays
+        if (declarator->arrayLength > 0) {
+            ostream << "[" << declarator->arrayLength << "]";
+        }
+        if (alignment > 0) {
+            if (declarator->arrayLength > 0) {
+                alignment *= declarator->arrayLength;
+            }
+            ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+        }
+        ostream << ";" << std::endl;
+    }
+    ostream << "}" << " " << "data" << ";" << std::endl;
+    ostream << "}" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << "void" << " ";
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
+            ostream << "encode";
+            break;
+        case CDRFunc::DESERIALIZE:
+            ostream << "decode";
+            break;
+    }
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
+    ostream << ")" << " " << "{" << std::endl;
+    cDeclareLocalVar(ostream, switchType, "tag");
+    for (UnionMember* member : members) {
+        Declarator* declarator = member->declarator;
+        cDeclareLocalVar(ostream, member->typeSpec, "data_" + declarator->identifier);
+    }
+    cCopyMemoryIn(ostream, switchType, "tag", "tag");
+    cConvertByteOrder(ostream, switchType, "tag", functionType);
+    cCopyMemoryOut(ostream, switchType, "tag", "tag");
+    ostream << "switch" << " " << "(" << "tag" << ")" << " " << "{" << std::endl;
+    for (UnionMember* member : members) {
+         Declarator* declarator = member->declarator;
+        for (std::string label : member->labels) {
+            ostream << "case" << " " << label << ":" << std::endl;
+        }
+        if (member->hasDefault) {
+            ostream << "default" << ":" << std::endl;
+        }
+        cCopyMemoryIn(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
+        cConvertByteOrder(ostream, member->typeSpec, "data_" + declarator->identifier, functionType);
+        cCopyMemoryOut(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
+        ostream << "break" << ";" << std::endl;
+    }
+    ostream << "}" << std::endl;
+    ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::addMember(UnionMember* member) {
+    members.push_back(member);
+}
+
+UnionTypeSpec::~UnionTypeSpec() {
+    if (!switchType->singleton()) {
+        delete switchType;
+    }
+    for (UnionMember* member : members) {
         delete member;
     }
 }
@@ -314,4 +361,54 @@ std::string bitsDeserialize(CDRBits cdrBits) {
         default:
             throw std::runtime_error("unexpected bits type");
     }
+}
+
+void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if (cdrBits == CDRBits::UNDEFINED) {
+        return;
+    }
+    // TODO: arrays
+    ostream << bitsCType(cdrBits) << " " << identifier << ";" << std::endl;
+}
+
+void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if (cdrBits == CDRBits::UNDEFINED) {
+        return;
+    }
+    ostream << "memcpy" << "(";
+    ostream << "&" << local << "," << " ";
+    ostream << "&" << "input->" << input << "," << " ";
+    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
+    ostream << ")" << ";" << std::endl;
+}
+
+void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if ((cdrBits == CDRBits::UNDEFINED) || (cdrBits == CDRBits::B8)) {
+        return;
+    }
+    ostream << identifier << " " << "=" << " ";
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
+            ostream << bitsSerialize(cdrBits);
+            break;
+        case CDRFunc::DESERIALIZE:
+            ostream << bitsDeserialize(cdrBits);
+            break;
+    }
+    ostream << "(" << identifier << ")" << ";" << std::endl;
+}
+
+void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output) {
+    CDRBits cdrBits = typeSpec->cTypeBits();
+    if (cdrBits == CDRBits::UNDEFINED) {
+        return;
+    }
+    ostream << "memcpy" << "(";
+    ostream << "&" << "output->" << output << "," << " ";
+    ostream << "&" << local << "," << " ";
+    ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
+    ostream << ")" << ";" << std::endl;
 }
