@@ -1,0 +1,29 @@
+{
+    // This has tasks for building PIRATE applications.
+    //
+    // It uses docker for each step so they we can run this
+    // on multiple operating systems.
+    "version": "2.0.0",
+    "tasks": [
+        // Clean all compiled-produced files.
+        // We have to run this inside the docker image as the build artifacts
+        // get owned by root.
+        {
+            "label": "pirate:clean",
+            "type": "shell",
+            "command": "scripts/drun.sh _build rm -rf *",
+        },
+        // This runs cmake to generate the makefile.
+        {
+            "label": "pirate:cmake",
+            "type": "shell",
+            "command": "scripts/drun.sh _build cmake ../src",
+        },
+        // This runs cmake to generate the makefile and then builds.
+        {
+            "label": "pirate:build",
+            "type": "shell",
+            "command": "scripts/drun.sh _build make",
+        },
+    ]
+}

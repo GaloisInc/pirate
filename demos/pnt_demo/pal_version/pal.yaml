@@ -1,0 +1,36 @@
+#! /usr/bin/env pal
+# This script starts both enclaves to run locally using pal.
+
+enclaves:
+- name: orange
+  path: ./pnt_pal_orange
+- name: green
+  path: ./pnt_pal_green
+resources:
+  - name: gps-to-uav
+    ids: [ "orange/gps-to-uav-path", "green/gps-to-uav-path" ]
+    type: string
+    contents:
+      string_value: "pipe,/tmp/gapsGU"
+  - name: uav-to-target-path
+    ids: [ "orange/uav-to-target-path", "green/uav-to-target-path" ]
+    type: string
+    contents:
+      string_value: "pipe,/tmp/gapsUT"
+  - name: rf-to-target-path
+    ids: [ "orange/rf-to-target-path", "green/rf-to-target-path" ]
+    type: string
+    contents:
+      string_value: "pipe,/tmp/gapsRT"
+  - name: timer-duration
+    ids: [ "green/timer-duration" ]
+    type: integer
+    contents:
+      integer_value: 0
+  - name: fixed-period
+    ids: [ "orange/fixed-period" ]
+    type: boolean
+    contents:
+      boolean_value: true
+config:
+    log_level: debug

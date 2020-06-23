@@ -5,6 +5,7 @@ on:
   release:
     type: [created]
 jobs:
+  # This task builds the HTML documentation using sphinx.
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -52,8 +53,8 @@ jobs:
               -DGAPS_DISABLE=ON \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
-              -DBUILD_LAUNCHER=OFF \
-              -DBUILD_RESOURCE_LOADER=OFF \
+              -DPIRATE_LAUNCHER=OFF \
+              -DPIRATE_GETOPT=OFF \
               ..
         make
         make install
@@ -97,7 +98,7 @@ jobs:
         cd build
         cmake -DGAPS_BENCH=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
-    - name: build demos
+    - name: build demos with GAPS_DISABLE=ON
       run: |
         cd build
         cmake -DGAPS_DEMOS=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
@@ -141,8 +142,8 @@ jobs:
               -DGAPS_DISABLE=ON \
               -DPIRATE_SHMEM_FEATURE=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-              -DBUILD_LAUNCHER=OFF \
-              -DBUILD_RESOURCE_LOADER=OFF \
+              -DPIRATE_LAUNCHER=OFF \
+              -DPIRATE_GETOPT=OFF \
               ..
         make
     - name: libpirate tests
@@ -161,7 +162,7 @@ jobs:
         cd build
         cmake -DCMAKE_C_COMPILER="gcc" \
               -DGAPS_DISABLE=ON \
-              -DBUILD_LAUNCHER=OFF \
+              -DPIRATE_LAUNCHER=OFF \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: build benchmarks
