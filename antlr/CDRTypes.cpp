@@ -14,6 +14,7 @@
  */
 
 #include "CDRTypes.h"
+#include "indent_facet.hpp"
 
 #include <iostream>
 
@@ -108,6 +109,7 @@ StructMember::~StructMember() {
 void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
@@ -126,6 +128,7 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
             ostream << ";" << std::endl;
         }
     }
+    ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
 }
 
@@ -143,6 +146,7 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     ostream << "struct" << " " << identifier << "*" << " " << "input";
     ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
     ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
             cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier);
@@ -163,6 +167,7 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
             cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier);
         }
     }
+    ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 
@@ -190,11 +195,13 @@ UnionMember::~UnionMember() {
 void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     int tagAlign = bitsAlignment(switchType->cTypeBits());
     ostream << switchType->cTypeName() << " " << "tag";
     ostream << " " << "__attribute__((aligned(" << tagAlign << ")))";
     ostream << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
         int alignment = bitsAlignment(member->typeSpec->cTypeBits());
@@ -212,7 +219,9 @@ void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
         }
         ostream << ";" << std::endl;
     }
+    ostream << indent_manip::pop;
     ostream << "}" << " " << "data" << ";" << std::endl;
+    ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
 }
 
@@ -230,6 +239,7 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
     ostream << "struct" << " " << identifier << "*" << " " << "input";
     ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
     ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
@@ -247,12 +257,15 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
         if (member->hasDefault) {
             ostream << "default" << ":" << std::endl;
         }
+        ostream << indent_manip::push;
         cCopyMemoryIn(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
         cConvertByteOrder(ostream, member->typeSpec, "data_" + declarator->identifier, functionType);
         cCopyMemoryOut(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
         ostream << "break" << ";" << std::endl;
+        ostream << indent_manip::pop;
     }
     ostream << "}" << std::endl;
+    ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 

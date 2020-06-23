@@ -16,7 +16,9 @@
 #include <iostream>
 
 #include "CDRGenerator.h"
+#include "indent_facet.hpp"
 
 int main(int argc, const char* argv[]) {
+    std::ios_base::sync_with_stdio(false);
     return parse(std::cin, std::cout, std::cerr);
 }
