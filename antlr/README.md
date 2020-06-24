@@ -145,15 +145,17 @@ detection tool.
  - [x] char
  - [x] boolean
  - [x] octet
- - [ ] enum
+ - [x] enum
  - [x] 1-dimensional array
  - [x] N-dimensional array
  - [x] struct
  - [x] union
  - [x] module
+ - [x] type references
  - [ ] nested struct
  - [ ] nested union
  - [ ] nested module
+ - [ ] type references across namespaces
  - [ ] annotations
 
 ### Dependencies

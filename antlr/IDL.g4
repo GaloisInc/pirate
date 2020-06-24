@@ -89,6 +89,7 @@ type_spec
 
 simple_type_spec
    : base_type_spec
+   | scoped_name
    ;
 
 base_type_spec

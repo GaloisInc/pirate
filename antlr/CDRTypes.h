@@ -37,9 +37,11 @@ enum class CDRTypeOf {
     CHAR_T,
     BOOL_T,
     OCTET_T,
+    ENUM_T,
     STRUCT_T,
     UNION_T,
     MODULE_T,
+    ERROR_T,
 };
 
 enum class CDRFunc {
@@ -83,7 +85,6 @@ private:
         m_typeOf(typeOf), m_cType(cType), m_cTypeBits(cTypeBits) { }
 public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
-
     virtual CDRBits cTypeBits() override { return m_cTypeBits; }
     virtual void cTypeDecl(std::ostream &ostream) override { ostream << m_cType; }
     virtual std::string cTypeName() override { return m_cType; }
@@ -102,7 +103,23 @@ public:
     static TypeSpec* charType();
     static TypeSpec* boolType();
     static TypeSpec* octetType();
+    static TypeSpec* errorType();
     virtual bool singleton() { return true; }
+};
+
+// Implementation of the enum type
+class EnumTypeSpec : public TypeSpec {
+public:
+    std::string identifier;
+    std::vector<std::string> enumerators;
+    EnumTypeSpec(std::string identifier) : identifier(identifier), enumerators() { }
+    virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
+    virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual std::string cTypeName() override { return "uint32_t"; }
+    virtual CDRBits cTypeBits() override { return CDRBits::B32; }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    void addEnumerator(std::string enumerator);
+    virtual ~EnumTypeSpec() { }
 };
 
 class Declarator {
@@ -111,6 +128,21 @@ public:
     std::vector<int> dimensions;
     Declarator(std::string identifier) : identifier(identifier), dimensions() { }
     void addDimension(int dimension);
+};
+
+// TypeReference wraps a reference to another type.
+// Acts as weak reference to the type. Destructor does not cleanup.
+class TypeReference : public TypeSpec {
+private:
+    TypeSpec *child;
+public:
+    TypeReference(TypeSpec *child) : child(child) { }
+    virtual CDRTypeOf typeOf() override { return child->typeOf(); };
+    virtual void cTypeDecl(std::ostream &ostream) override { }
+    virtual std::string cTypeName() override { return child->cTypeName(); }
+    virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }
+    virtual ~TypeReference() { child = nullptr; }
 };
 
 class StructMember {

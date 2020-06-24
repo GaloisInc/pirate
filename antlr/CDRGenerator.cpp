@@ -62,6 +62,12 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     }
 
     TypeSpec* topLevelSpec = buildTypes.visit(topLevelDef);
+    if (buildTypes.getErrors().size() > 0) {
+        for (std::string errorMsg : buildTypes.getErrors()) {
+            estream << errorMsg << std::endl;
+        }
+        return 1;
+    }
     ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(topLevelSpec);
 
     ostream << "#include <endian.h>" << std::endl;

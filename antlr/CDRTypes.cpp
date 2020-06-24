@@ -88,6 +88,51 @@ TypeSpec* BaseTypeSpec::octetType() {
     return &instance;
 }
 
+TypeSpec* BaseTypeSpec::errorType() {
+    static BaseTypeSpec instance(CDRTypeOf::ERROR_T, "", CDRBits::UNDEFINED);
+    return &instance;
+}
+
+void EnumTypeSpec::addEnumerator(std::string enumerator) {
+    enumerators.push_back(enumerator);
+}
+
+void EnumTypeSpec::cTypeDecl(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "enum" << " " << identifier << " " << "{" << std::endl;
+    size_t len = enumerators.size();
+    for (size_t i = 0; i < len; i++) {
+        ostream << enumerators[i];
+        if (i < len - 1) {
+            ostream << ",";
+        }
+        ostream << std::endl;
+    }
+    ostream << indent_manip::push;
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << "uint32_t" << " ";
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
+            ostream << "encode";
+            break;
+        case CDRFunc::DESERIALIZE:
+            ostream << "decode";
+            break;
+    }
+    ostream << "_" << identifier << "(";
+    ostream << "uint32_t" << " " << "value";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cConvertByteOrder(ostream, this, "value", functionType);
+    ostream << "return" << " " << "value" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
 void Declarator::addDimension(int dimension) {
     dimensions.push_back(dimension);
 }

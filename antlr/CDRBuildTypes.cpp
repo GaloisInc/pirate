@@ -43,6 +43,36 @@ antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
   return typeSpec;
 }
 
+antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specContext *ctx) {
+  if (ctx->scoped_name() != nullptr) {
+    std::string name = ctx->scoped_name()->getText();
+    TypeSpec *typeSpecRef = typeDeclarations[name];
+    if (typeSpecRef == nullptr) {
+      errors.push_back("unknown reference to type " + name + " on line " +
+        std::to_string(ctx->scoped_name()->getStart()->getLine()));
+      return BaseTypeSpec::errorType();
+    } else {
+      TypeSpec *typeSpec = new TypeReference(typeSpecRef);
+      return typeSpec;
+    }
+  } else {
+    return ctx->base_type_spec()->accept(this);
+  }
+}
+
+antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
+  std::string identifier = ctx->identifier()->getText();
+  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
+  TypeSpec *typeSpec = new EnumTypeSpec(identifier);
+  EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);
+  std::vector<IDLParser::EnumeratorContext *> enumerators = ctx->enumerator();
+  for (IDLParser::EnumeratorContext* enumCtx : enumerators) {
+    enumSpec->addEnumerator(enumCtx->identifier()->getText());
+  }
+  typeDeclarations[ctx->identifier()->getText()] = typeSpec;
+  return typeSpec;
+}
+
 antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
@@ -52,6 +82,7 @@ antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx
   for (IDLParser::MemberContext* memberCtx : members) {
     structSpec->addMember(memberCtx->accept(this));
   }
+  typeDeclarations[ctx->identifier()->getText()] = typeSpec;
   return typeSpec;
 }
 
@@ -77,6 +108,7 @@ antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) 
     UnionMember* member = caseCtx->accept(this);
     unionSpec->addMember(member);
   }
+  typeDeclarations[ctx->identifier()->getText()] = typeSpec;
   return typeSpec;
 }
 

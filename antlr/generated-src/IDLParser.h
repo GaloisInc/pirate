@@ -299,6 +299,7 @@ public:
     Simple_type_specContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     Base_type_specContext *base_type_spec();
+    Scoped_nameContext *scoped_name();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

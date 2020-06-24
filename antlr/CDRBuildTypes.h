@@ -15,13 +15,23 @@
 
 #pragma once
 
+#include <map>
+
 #include "antlr4-runtime.h"
 #include "IDLBaseVisitor.h"
+#include "CDRTypes.h"
 
 class CDRBuildTypes : public IDLBaseVisitor {
+private:
+  std::map<std::string, TypeSpec*> typeDeclarations;
+  std::vector<std::string> errors;
 public:
+  CDRBuildTypes() : typeDeclarations(), errors() { }
+  std::vector<std::string> getErrors() { return errors; }
   virtual antlrcpp::Any aggregateResult(antlrcpp::Any aggregate, const antlrcpp::Any &nextResult) override;
   virtual antlrcpp::Any visitModule(IDLParser::ModuleContext *ctx) override;
+  virtual antlrcpp::Any visitSimple_type_spec(IDLParser::Simple_type_specContext *ctx) override;
+  virtual antlrcpp::Any visitEnum_type(IDLParser::Enum_typeContext *ctx) override;
   virtual antlrcpp::Any visitStruct_type(IDLParser::Struct_typeContext *ctx) override;
   virtual antlrcpp::Any visitMember(IDLParser::MemberContext *ctx) override;
   virtual antlrcpp::Any visitUnion_type(IDLParser::Union_typeContext *ctx) override;
