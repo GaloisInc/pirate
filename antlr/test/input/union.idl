@@ -8,5 +8,5 @@ module UnionType {
     case 4:
     default:
       float c; 
-    };
+  };
 };

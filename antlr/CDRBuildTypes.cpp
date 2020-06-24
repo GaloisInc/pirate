@@ -100,9 +100,13 @@ antlrcpp::Any CDRBuildTypes::visitSimple_declarator(IDLParser::Simple_declarator
 }
 
 antlrcpp::Any CDRBuildTypes::visitArray_declarator(IDLParser::Array_declaratorContext *ctx) {
-  // TODO: implement multidimensional arrays
-  int len = atoi(ctx->fixed_array_size()[0]->positive_int_const()->getText().c_str());
-  return new Declarator(ctx->ID()->getText(), len);
+  Declarator *decl = new Declarator(ctx->ID()->getText());
+  std::vector<IDLParser::Fixed_array_sizeContext*> sizes = ctx->fixed_array_size();
+  for (IDLParser::Fixed_array_sizeContext* sizeCtx : sizes) {
+    int dim = atoi(sizeCtx->positive_int_const()->getText().c_str());
+    decl->addDimension(dim);
+  }
+  return decl;
 }
 
 antlrcpp::Any CDRBuildTypes::visitFloating_pt_type(IDLParser::Floating_pt_typeContext *ctx) {

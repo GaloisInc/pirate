@@ -88,6 +88,9 @@ TypeSpec* BaseTypeSpec::octetType() {
     return &instance;
 }
 
+void Declarator::addDimension(int dimension) {
+    dimensions.push_back(dimension);
+}
 
 void StructMember::addDeclarator(Declarator* declarator) {
     declarators.push_back(declarator);   
@@ -115,14 +118,11 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << member->typeSpec->cTypeName() << " ";
             ostream << declarator->identifier;
-            // TODO: implement multidimensional arrays
-            if (declarator->arrayLength > 0) {
-                ostream << "[" << declarator->arrayLength << "]";
-            }
-            if (alignment > 0) {
-                if (declarator->arrayLength > 0) {
-                    alignment *= declarator->arrayLength;
+            if (declarator->dimensions.size() > 0) {
+                for (int dim : declarator->dimensions) {
+                    ostream << "[" << dim << "]";
                 }
+            } else if (alignment > 0) {
                 ostream << " " << "__attribute__((aligned(" << alignment << ")))";
             }
             ostream << ";" << std::endl;
@@ -130,6 +130,17 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
     }
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            if (((declarator->dimensions.size() == 0) && scalar) ||
+                ((declarator->dimensions.size() > 0) && array)) {
+                apply(member, declarator);
+            }
+        }
+    }
 }
 
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
@@ -147,26 +158,16 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
-            cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier);
-        }
-    }
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
-            cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier);
-        }
-    }
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
-            cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, functionType);
-        }
-    }
-    for (StructMember* member : members) {
-        for (Declarator* declarator : member->declarators) {
-            cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier);
-        }
-    }
+    cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
+        { cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier); });
+    cDeclareFunctionApply(false, true, [&ostream, functionType] (StructMember* member, Declarator* declarator)
+        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "", ""); });
+    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
+        { cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+    cDeclareFunctionApply(true, false, [&ostream, functionType] (StructMember* member, Declarator* declarator)
+        { cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, functionType); });
+    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
+        { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -207,14 +208,11 @@ void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
         int alignment = bitsAlignment(member->typeSpec->cTypeBits());
         ostream << member->typeSpec->cTypeName() << " ";
         ostream << declarator->identifier;
-        // TODO: implement multidimensional arrays
-        if (declarator->arrayLength > 0) {
-            ostream << "[" << declarator->arrayLength << "]";
-        }
-        if (alignment > 0) {
-            if (declarator->arrayLength > 0) {
-                alignment *= declarator->arrayLength;
+        if (declarator->dimensions.size() > 0) {
+            for (int dim : declarator->dimensions) {
+                ostream << "[" << dim << "]";
             }
+        } else if (alignment > 0) {
             ostream << " " << "__attribute__((aligned(" << alignment << ")))";
         }
         ostream << ";" << std::endl;
@@ -258,9 +256,15 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
             ostream << "default" << ":" << std::endl;
         }
         ostream << indent_manip::push;
-        cCopyMemoryIn(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
-        cConvertByteOrder(ostream, member->typeSpec, "data_" + declarator->identifier, functionType);
-        cCopyMemoryOut(ostream, member->typeSpec, "data_" + declarator->identifier, "data." + declarator->identifier);
+        if (declarator->dimensions.size() == 0) {
+            std::string local = "data_" + declarator->identifier;
+            std::string remote = "data." + declarator->identifier;
+            cCopyMemoryIn(ostream, member->typeSpec, local, remote);
+            cConvertByteOrder(ostream, member->typeSpec, local, functionType);
+            cCopyMemoryOut(ostream, member->typeSpec, local, remote);
+        } else {
+            cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "data_", "data.");
+        }
         ostream << "break" << ";" << std::endl;
         ostream << indent_manip::pop;
     }
@@ -424,4 +428,35 @@ void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local
     ostream << "&" << local << "," << " ";
     ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
     ostream << ")" << ";" << std::endl;
+}
+
+void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
+    Declarator* declarator, CDRFunc functionType,
+    std::string localPrefix, std::string remotePrefix) {
+
+    std::vector<int> dimensions = declarator->dimensions;
+    std::string identifier = declarator->identifier;
+    int len = dimensions.size();
+    std::stringstream dest;
+    for(int i = 0; i < len; i++) {
+        std::string idx = identifier + "_" + std::to_string(i);
+        int dim = dimensions[i];
+        ostream << "for" << " " << "(";
+        ostream << "size_t" << " " << idx << " " << "=" << " " << "0" << ";";
+        ostream << " " << idx << " " << "<" << " " << dim << ";";
+        ostream << " " << idx << "++" << ")" << " " << "{" << std::endl;
+        ostream << indent_manip::push;
+    }
+    dest << identifier;
+    for(int i = 0; i < len; i++) {
+        std::string idx = identifier + "_" + std::to_string(i);
+        dest << "[" << idx << "]";
+    }
+    cCopyMemoryIn(ostream, typeSpec, localPrefix + identifier, remotePrefix + dest.str());
+    cConvertByteOrder(ostream, typeSpec, localPrefix + identifier, functionType);
+    cCopyMemoryOut(ostream, typeSpec, localPrefix + identifier, remotePrefix + dest.str());
+    for(int i = 0; i < len; i++) {
+        ostream << indent_manip::pop;
+        ostream << "}" << std::endl;
+    }
 }

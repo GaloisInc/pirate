@@ -48,11 +48,7 @@ inline indent_facet::result indent_facet::do_out(state_type &need_indentation,
 			res = std::codecvt_base::ok;
 			state(need_indentation) = 1;
 			for(int i=0; i<m_indentation_level; ++i){
-//				*to = '\t'; ++to;
-				*to = ' '; ++to;
-				*to = ' '; ++to;
-				*to = ' '; ++to;
-				*to = ' '; ++to;
+				*to = '\t'; ++to;
 			}
 			if (to == to_end) {
 				res = std::codecvt_base::partial;

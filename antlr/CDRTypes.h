@@ -15,10 +15,12 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include <functional>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
+
 
 enum class CDRTypeOf {
     FLOAT_T,
@@ -106,9 +108,9 @@ public:
 class Declarator {
 public:
     std::string identifier;
-    int arrayLength;
-    Declarator(std::string identifier) : identifier(identifier), arrayLength(0) { }
-    Declarator(std::string identifier, int arrayLength) : identifier(identifier), arrayLength(arrayLength) { }
+    std::vector<int> dimensions;
+    Declarator(std::string identifier) : identifier(identifier), dimensions() { }
+    void addDimension(int dimension);
 };
 
 class StructMember {
@@ -120,8 +122,12 @@ public:
     ~StructMember();
 };
 
+typedef std::function<void(StructMember* member, Declarator* declarator)> StructFunction;
+
 // Implementation of the struct type
 class StructTypeSpec : public TypeSpec {
+private:
+    void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
 public:
     std::string identifier;
     std::vector<StructMember*> members;
@@ -186,3 +192,7 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
 void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
 void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
+
+void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
+    Declarator* declarator, CDRFunc functionType,
+    std::string localPrefix, std::string remotePrefix);

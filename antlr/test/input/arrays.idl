@@ -1,0 +1,19 @@
+
+module Arrays {
+  union Union_Array_Field switch (short) { 
+    case 1:
+      boolean a;
+    case 2:
+    case 3:
+      long b[10];
+    case 4:
+    default:
+      float c[1][2][3];
+  };
+
+  struct Struct_Array_Field {
+    boolean a;
+    long b[10];
+    float c[1][2][3][4][5][6];      
+  };
+};

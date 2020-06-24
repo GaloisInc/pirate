@@ -146,8 +146,8 @@ detection tool.
  - [x] boolean
  - [x] octet
  - [ ] enum
- - [ ] 1-dimensional array
- - [ ] N-dimensional array
+ - [x] 1-dimensional array
+ - [x] N-dimensional array
  - [x] struct
  - [x] union
  - [x] module
