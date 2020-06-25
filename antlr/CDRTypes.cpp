@@ -114,6 +114,7 @@ void EnumTypeSpec::cTypeDecl(std::ostream &ostream) {
 }
 
 void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << std::endl;
     ostream << "uint32_t" << " ";
     switch (functionType) {
         case CDRFunc::SERIALIZE:
@@ -163,11 +164,10 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << member->typeSpec->cTypeName() << " ";
             ostream << declarator->identifier;
-            if (declarator->dimensions.size() > 0) {
-                for (int dim : declarator->dimensions) {
-                    ostream << "[" << dim << "]";
-                }
-            } else if (alignment > 0) {
+            for (int dim : declarator->dimensions) {
+                ostream << "[" << dim << "]";
+            }
+            if (alignment > 0) {
                 ostream << " " << "__attribute__((aligned(" << alignment << ")))";
             }
             ostream << ";" << std::endl;
@@ -175,6 +175,45 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
     }
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
+            if (alignment == 0) {
+                ostream << member->typeSpec->cTypeName() << " ";
+                ostream << declarator->identifier;
+                for (int dim : declarator->dimensions) {
+                    ostream << "[" << dim << "]";
+                }
+            } else {
+                ostream << "unsigned" << " " << "char" << " ";
+                ostream << declarator->identifier;
+                for (int dim : declarator->dimensions) {
+                    ostream << "[" << dim << "]";
+                }
+                ostream << "[" << alignment << "]";
+                ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+            }
+            ostream << ";" << std::endl;
+        }
+    }
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
+    ostream << "static_assert" << "(";
+    ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
+    ostream << " " << "==" << " ";
+    ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
+    ostream << "," << " ";
+    ostream << "\"" << "size of struct " << identifier << " not equal to wire protocol struct" << "\"";
+    ostream << ")" << ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {
@@ -188,20 +227,30 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
     }
 }
 
-void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
-    ostream << "void" << " ";
+void declareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
     switch (functionType) {
         case CDRFunc::SERIALIZE:
+            ostream << "void" << " ";
             ostream << "encode";
+            ostream << "_" << identifier << "(";
+            ostream << "struct" << " " << identifier << "*" << " " << "input";
+            ostream << "," << " " << "struct" << " " << identifier << "_wire" << "*" << " " << "output";
+            ostream << ")" << " " << "{" << std::endl;
             break;
         case CDRFunc::DESERIALIZE:
+            ostream << "void" << " ";
             ostream << "decode";
+            ostream << "_" << identifier << "(";
+            ostream << "struct" << " " << identifier << "_wire" << "*" << " " << "input";
+            ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
+            ostream << ")" << " " << "{" << std::endl;
             break;
     }
-    ostream << "_" << identifier << "(";
-    ostream << "struct" << " " << identifier << "*" << " " << "input";
-    ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
-    ostream << ")" << " " << "{" << std::endl;
+}
+
+void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << std::endl;
+    declareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier); });
@@ -253,11 +302,10 @@ void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
         int alignment = bitsAlignment(member->typeSpec->cTypeBits());
         ostream << member->typeSpec->cTypeName() << " ";
         ostream << declarator->identifier;
-        if (declarator->dimensions.size() > 0) {
-            for (int dim : declarator->dimensions) {
-                ostream << "[" << dim << "]";
-            }
-        } else if (alignment > 0) {
+        for (int dim : declarator->dimensions) {
+            ostream << "[" << dim << "]";
+        }
+        if (alignment > 0) {
             ostream << " " << "__attribute__((aligned(" << alignment << ")))";
         }
         ostream << ";" << std::endl;
@@ -268,20 +316,54 @@ void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << "}" << ";" << std::endl;
 }
 
-void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
-    ostream << "void" << " ";
-    switch (functionType) {
-        case CDRFunc::SERIALIZE:
-            ostream << "encode";
-            break;
-        case CDRFunc::DESERIALIZE:
-            ostream << "decode";
-            break;
+void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    int tagAlign = bitsAlignment(switchType->cTypeBits());
+    ostream << "unsigned" << " " << "char" << " " << "tag";
+    ostream << "[" << tagAlign << "]";
+    ostream << ";" << std::endl;
+    ostream << "union" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    for (UnionMember* member : members) {
+        Declarator* declarator = member->declarator;
+        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
+        if (alignment == 0) {
+            ostream << member->typeSpec->cTypeName() << " ";
+            ostream << declarator->identifier;
+            for (int dim : declarator->dimensions) {
+                ostream << "[" << dim << "]";
+            }
+        } else {
+            ostream << "unsigned" << " " << "char" << " ";
+            ostream << declarator->identifier;
+            for (int dim : declarator->dimensions) {
+                ostream << "[" << dim << "]";
+            }
+            ostream << "[" << alignment << "]";
+            ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+        }
+        ostream << ";" << std::endl;
     }
-    ostream << "_" << identifier << "(";
-    ostream << "struct" << " " << identifier << "*" << " " << "input";
-    ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
-    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << " " << "data" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
+    ostream << "static_assert" << "(";
+    ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
+    ostream << " " << "==" << " ";
+    ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
+    ostream << "," << " " << "\"" << "size of " << identifier << " not equal to wire protocol size" << "\"" << std::endl;
+    ostream << ")" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << std::endl;
+    declareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
@@ -342,11 +424,24 @@ void ModuleDecl::cTypeDecl(std::ostream &ostream) {
     }
 }
 
+void ModuleDecl::cTypeDeclWire(std::ostream &ostream) {
+    // TODO: prefix definition names with module namespace
+    for (TypeSpec* definition : definitions) {
+        definition->cTypeDeclWire(ostream);
+    }
+}
+
 void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     // TODO: prefix function names with module namespace
     for (TypeSpec* definition : definitions) {
-        ostream << std::endl;
         definition->cDeclareFunctions(ostream, functionType);
+    }
+}
+
+void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
+    ostream << std::endl;
+    for (TypeSpec* definition : definitions) {
+        definition->cDeclareAsserts(ostream);
     }
 }
 

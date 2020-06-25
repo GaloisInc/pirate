@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <endian.h>
 #include <stdint.h>
 #include <string.h>
@@ -12,7 +13,19 @@ struct union_example {
 	} data;
 };
 
-void encode_union_example(struct union_example* input, struct union_example* output) {
+struct union_example_wire {
+	unsigned char tag[2];
+	union {
+		unsigned char a[1] __attribute__((aligned(1)));
+		unsigned char b[4] __attribute__((aligned(4)));
+		unsigned char c[4] __attribute__((aligned(4)));
+	} data;
+};
+
+static_assert(sizeof(struct union_example) == sizeof(struct union_example_wire), "size of union_example not equal to wire protocol size"
+);
+
+void encode_union_example(struct union_example* input, struct union_example_wire* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;
@@ -40,7 +53,7 @@ void encode_union_example(struct union_example* input, struct union_example* out
 	}
 }
 
-void decode_union_example(struct union_example* input, struct union_example* output) {
+void decode_union_example(struct union_example_wire* input, struct union_example* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;

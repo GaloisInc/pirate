@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <endian.h>
 #include <stdint.h>
 #include <string.h>
@@ -7,18 +8,37 @@ struct union_array_field {
 	int16_t tag __attribute__((aligned(2)));
 	union {
 		uint8_t a __attribute__((aligned(1)));
-		int32_t b[10];
-		float c[1][2][3];
+		int32_t b[10] __attribute__((aligned(4)));
+		float c[1][2][3] __attribute__((aligned(4)));
 	} data;
 };
 
 struct struct_array_field {
 	uint8_t a __attribute__((aligned(1)));
-	int32_t b[10];
-	float c[1][2][3][4][5][6];
+	int32_t b[10] __attribute__((aligned(4)));
+	float c[1][2][3][4][5][6] __attribute__((aligned(4)));
 };
 
-void encode_union_array_field(struct union_array_field* input, struct union_array_field* output) {
+struct union_array_field_wire {
+	unsigned char tag[2];
+	union {
+		unsigned char a[1] __attribute__((aligned(1)));
+		unsigned char b[10][4] __attribute__((aligned(4)));
+		unsigned char c[1][2][3][4] __attribute__((aligned(4)));
+	} data;
+};
+
+struct struct_array_field_wire {
+	unsigned char a[1] __attribute__((aligned(1)));
+	unsigned char b[10][4] __attribute__((aligned(4)));
+	unsigned char c[1][2][3][4][5][6][4] __attribute__((aligned(4)));
+};
+
+static_assert(sizeof(struct union_array_field) == sizeof(struct union_array_field_wire), "size of union_array_field not equal to wire protocol size"
+);
+static_assert(sizeof(struct struct_array_field) == sizeof(struct struct_array_field_wire), "size of struct struct_array_field not equal to wire protocol struct");
+
+void encode_union_array_field(struct union_array_field* input, struct union_array_field_wire* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;
@@ -54,7 +74,7 @@ void encode_union_array_field(struct union_array_field* input, struct union_arra
 	}
 }
 
-void encode_struct_array_field(struct struct_array_field* input, struct struct_array_field* output) {
+void encode_struct_array_field(struct struct_array_field* input, struct struct_array_field_wire* output) {
 	uint8_t a;
 	uint32_t b;
 	uint32_t c;
@@ -82,7 +102,7 @@ void encode_struct_array_field(struct struct_array_field* input, struct struct_a
 	memcpy(&output->a, &a, sizeof(uint8_t));
 }
 
-void decode_union_array_field(struct union_array_field* input, struct union_array_field* output) {
+void decode_union_array_field(struct union_array_field_wire* input, struct union_array_field* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;
@@ -118,7 +138,7 @@ void decode_union_array_field(struct union_array_field* input, struct union_arra
 	}
 }
 
-void decode_struct_array_field(struct struct_array_field* input, struct struct_array_field* output) {
+void decode_struct_array_field(struct struct_array_field_wire* input, struct struct_array_field* output) {
 	uint8_t a;
 	uint32_t b;
 	uint32_t c;

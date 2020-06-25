@@ -67,9 +67,11 @@ class TypeSpec {
 public:
     virtual CDRTypeOf typeOf() = 0;
     virtual void cTypeDecl(std::ostream &ostream) = 0;
+    virtual void cTypeDeclWire(std::ostream &ostream) = 0;
     virtual std::string cTypeName() = 0;
     virtual CDRBits cTypeBits() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
+    virtual void cDeclareAsserts(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
     virtual ~TypeSpec() { };
 };
@@ -86,7 +88,8 @@ private:
 public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
     virtual CDRBits cTypeBits() override { return m_cTypeBits; }
-    virtual void cTypeDecl(std::ostream &ostream) override { ostream << m_cType; }
+    virtual void cTypeDecl(std::ostream &ostream) override { }
+    virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return m_cType; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     static TypeSpec* floatType();
@@ -104,7 +107,7 @@ public:
     static TypeSpec* boolType();
     static TypeSpec* octetType();
     static TypeSpec* errorType();
-    virtual bool singleton() { return true; }
+    virtual bool singleton() override { return true; }
 };
 
 // Implementation of the enum type
@@ -115,6 +118,7 @@ public:
     EnumTypeSpec(std::string identifier) : identifier(identifier), enumerators() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual CDRBits cTypeBits() override { return CDRBits::B32; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
@@ -139,6 +143,7 @@ public:
     TypeReference(TypeSpec *child) : child(child) { }
     virtual CDRTypeOf typeOf() override { return child->typeOf(); };
     virtual void cTypeDecl(std::ostream &ostream) override { }
+    virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }
@@ -166,10 +171,12 @@ public:
     StructTypeSpec(std::string identifier) : identifier(identifier), members() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::STRUCT_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual void cTypeDeclWire(std::ostream &ostream) override;
     // nested structs must be prefixed by parent names in C++
     virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
 };
@@ -197,10 +204,12 @@ public:
         identifier(identifier), switchType(switchType), members() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::UNION_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual void cTypeDeclWire(std::ostream &ostream) override;
     // nested structs must be prefixed by parent names in C++
     virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addMember(UnionMember* member);
     virtual ~UnionTypeSpec();
 };
@@ -213,9 +222,11 @@ public:
     ModuleDecl(std::string identifier) : identifier(identifier), definitions() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
+    virtual void cTypeDeclWire(std::ostream &ostream) override;
     virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addDefinition(TypeSpec* definition);
     virtual ~ModuleDecl();
 };

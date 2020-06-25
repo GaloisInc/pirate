@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <endian.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,7 +26,31 @@ struct primitives {
 	uint8_t uint8_val __attribute__((aligned(1)));
 };
 
-void encode_primitives(struct primitives* input, struct primitives* output) {
+struct primitives_wire {
+	unsigned char float_val[4] __attribute__((aligned(4)));
+	unsigned char double_val[8] __attribute__((aligned(8)));
+	unsigned char short_val[2] __attribute__((aligned(2)));
+	unsigned char int16_val[2] __attribute__((aligned(2)));
+	unsigned char long_val[4] __attribute__((aligned(4)));
+	unsigned char int32_val[4] __attribute__((aligned(4)));
+	unsigned char long_long_val[8] __attribute__((aligned(8)));
+	unsigned char int64_val[8] __attribute__((aligned(8)));
+	unsigned char unsigned_short_val[2] __attribute__((aligned(2)));
+	unsigned char uint16_val[2] __attribute__((aligned(2)));
+	unsigned char unsigned_long_val[4] __attribute__((aligned(4)));
+	unsigned char uint32_val[4] __attribute__((aligned(4)));
+	unsigned char unsigned_long_long_val[8] __attribute__((aligned(8)));
+	unsigned char uint64_val[8] __attribute__((aligned(8)));
+	unsigned char char_val[1] __attribute__((aligned(1)));
+	unsigned char int8_val[1] __attribute__((aligned(1)));
+	unsigned char bool_val[1] __attribute__((aligned(1)));
+	unsigned char octet_val[1] __attribute__((aligned(1)));
+	unsigned char uint8_val[1] __attribute__((aligned(1)));
+};
+
+static_assert(sizeof(struct primitives) == sizeof(struct primitives_wire), "size of struct primitives not equal to wire protocol struct");
+
+void encode_primitives(struct primitives* input, struct primitives_wire* output) {
 	uint32_t float_val;
 	uint64_t double_val;
 	uint16_t short_val;
@@ -99,7 +124,7 @@ void encode_primitives(struct primitives* input, struct primitives* output) {
 	memcpy(&output->uint8_val, &uint8_val, sizeof(uint8_t));
 }
 
-void decode_primitives(struct primitives* input, struct primitives* output) {
+void decode_primitives(struct primitives_wire* input, struct primitives* output) {
 	uint32_t float_val;
 	uint64_t double_val;
 	uint16_t short_val;
