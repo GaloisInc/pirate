@@ -24,12 +24,17 @@
 class CDRBuildTypes : public IDLBaseVisitor {
 private:
   std::map<std::string, TypeSpec*> typeDeclarations;
-  std::vector<std::string> errors;
+  std::set<std::string> errors;
+  int annotationIds;
+  MinAnnotation* buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  MaxAnnotation* buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:
-  CDRBuildTypes() : typeDeclarations(), errors() { }
-  std::vector<std::string> getErrors() { return errors; }
+  CDRBuildTypes() : typeDeclarations(), errors(), annotationIds(0) { }
+  std::set<std::string> getErrors() { return errors; }
   virtual antlrcpp::Any aggregateResult(antlrcpp::Any aggregate, const antlrcpp::Any &nextResult) override;
   virtual antlrcpp::Any visitModule(IDLParser::ModuleContext *ctx) override;
+  virtual antlrcpp::Any visitAnnotation_appl(IDLParser::Annotation_applContext *ctx) override;
   virtual antlrcpp::Any visitSimple_type_spec(IDLParser::Simple_type_specContext *ctx) override;
   virtual antlrcpp::Any visitEnum_type(IDLParser::Enum_typeContext *ctx) override;
   virtual antlrcpp::Any visitStruct_type(IDLParser::Struct_typeContext *ctx) override;

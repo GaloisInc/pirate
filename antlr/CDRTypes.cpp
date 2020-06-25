@@ -138,6 +138,16 @@ void Declarator::addDimension(int dimension) {
     dimensions.push_back(dimension);
 }
 
+void Declarator::addAnnotation(AnnotationSpec* annotation) {
+    annotations.push_back(annotation);
+}
+
+Declarator::~Declarator() {
+    for (AnnotationSpec* annotation : annotations) {
+        delete annotation;
+    }
+}
+
 void StructMember::addDeclarator(Declarator* declarator) {
     declarators.push_back(declarator);   
 }
@@ -262,6 +272,26 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
         { cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
         { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "int" << " ";
+    ostream << "validate";
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            for (AnnotationSpec* annotation : declarator->annotations) {
+                annotation->cDeclareConstraint(ostream, "input->" + declarator->identifier);
+            }
+        }
+    }
+    ostream << "return" << " " << "0" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -400,6 +430,36 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
     ostream << "}" << std::endl;
 }
 
+void UnionTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "int" << " ";
+    ostream << "validate";
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "switch" << " " << "(" << "input->tag" << ")" << " " << "{" << std::endl;
+    for (UnionMember* member : members) {
+        Declarator* declarator = member->declarator;
+        for (std::string label : member->labels) {
+            ostream << "case" << " " << label << ":" << std::endl;
+        }
+        if (member->hasDefault) {
+            ostream << "default" << ":" << std::endl;
+        }
+        ostream << indent_manip::push;
+        for (AnnotationSpec* annotation : declarator->annotations) {
+            annotation->cDeclareConstraint(ostream, "input->data." + declarator->identifier);
+        }
+        ostream << "break" << ";" << std::endl;
+        ostream << indent_manip::pop;
+    }
+    ostream << "}" << std::endl;
+    ostream << "return" << " " << "0" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
 void UnionTypeSpec::addMember(UnionMember* member) {
     members.push_back(member);
 }
@@ -438,6 +498,12 @@ void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) 
     }
 }
 
+void ModuleDecl::cDeclareAnnotationValidate(std::ostream &ostream) {
+    for (TypeSpec* definition : definitions) {
+        definition->cDeclareAnnotationValidate(ostream);
+    }
+}
+
 void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
     ostream << std::endl;
     for (TypeSpec* definition : definitions) {
@@ -449,6 +515,34 @@ ModuleDecl::~ModuleDecl() {
     for (TypeSpec* definition : definitions) {
         delete definition;
     }
+}
+
+void MinAnnotation::cDeclareConstraint(std::ostream &ostream, std::string identifier) {
+    ostream << "if" << " " << "(" << identifier << " " << "<" << " " << min << ")";
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "return" << " " << "-1" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void MaxAnnotation::cDeclareConstraint(std::ostream &ostream, std::string identifier) {
+    ostream << "if" << " " << "(" << identifier << " " << ">" << " " << max << ")";
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "return" << " " << "-1" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void RangeAnnotation::cDeclareConstraint(std::ostream &ostream, std::string identifier) {
+    ostream << "if" << " " << "(" << "(" << identifier << " " << "<" << " " << min << ")";
+    ostream << " " << "||" << " " << "(" << identifier << " " << ">" << " " << max << ")";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "return" << " " << "-1" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 std::string bitsCType(CDRBits cdrBits) {

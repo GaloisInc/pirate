@@ -72,8 +72,17 @@ public:
     virtual CDRBits cTypeBits() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
     virtual void cDeclareAsserts(std::ostream &ostream) { }
+    virtual void cDeclareAnnotationValidate(std::ostream &ostream) = 0;
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
     virtual ~TypeSpec() { };
+};
+
+class AnnotationSpec {
+public:
+    int id;
+    AnnotationSpec(int id) : id(id) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) = 0;
+    virtual ~AnnotationSpec() { };
 };
 
 // Implementation of the primitive types
@@ -92,6 +101,7 @@ public:
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return m_cType; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
+    virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
@@ -122,6 +132,7 @@ public:
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual CDRBits cTypeBits() override { return CDRBits::B32; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     void addEnumerator(std::string enumerator);
     virtual ~EnumTypeSpec() { }
 };
@@ -130,8 +141,11 @@ class Declarator {
 public:
     std::string identifier;
     std::vector<int> dimensions;
+    std::vector<AnnotationSpec*> annotations;
     Declarator(std::string identifier) : identifier(identifier), dimensions() { }
     void addDimension(int dimension);
+    void addAnnotation(AnnotationSpec* annotation);
+    ~Declarator();
 };
 
 // TypeReference wraps a reference to another type.
@@ -147,6 +161,7 @@ public:
     virtual std::string cTypeName() override { return child->cTypeName(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }
+    virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual ~TypeReference() { child = nullptr; }
 };
 
@@ -176,6 +191,7 @@ public:
     virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
@@ -188,7 +204,8 @@ public:
     std::vector<std::string> labels;
     bool hasDefault;
     UnionMember(TypeSpec* typeSpec, Declarator *declarator) :
-        typeSpec(typeSpec), declarator(declarator), labels(), hasDefault(false) { }
+        typeSpec(typeSpec), declarator(declarator), labels(),
+        hasDefault(false) { }
     void addLabel(std::string label);
     void setHasDefault();
     ~UnionMember();
@@ -209,6 +226,7 @@ public:
     virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addMember(UnionMember* member);
     virtual ~UnionTypeSpec();
@@ -226,9 +244,42 @@ public:
     virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     void addDefinition(TypeSpec* definition);
     virtual ~ModuleDecl();
+};
+
+class MinAnnotation : public AnnotationSpec {
+public:
+    std::string min;
+    MinAnnotation(int id, std::string min) : AnnotationSpec(id), min(min) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
+    virtual ~MinAnnotation() { };
+};
+
+class MaxAnnotation : public AnnotationSpec {
+public:
+    std::string max;
+    MaxAnnotation(int id, std::string max) : AnnotationSpec(id), max(max) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
+    virtual ~MaxAnnotation() { };
+};
+
+class RangeAnnotation : public AnnotationSpec {
+public:
+    std::string min;
+    std::string max;
+    RangeAnnotation(int id, std::string min, std::string max) : AnnotationSpec(id), min(min), max(max) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
+    virtual ~RangeAnnotation() { };
+};
+
+class ErrorAnnotation : public AnnotationSpec {
+public:
+    ErrorAnnotation() : AnnotationSpec(0) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override { };
+    virtual ~ErrorAnnotation() { };
 };
 
 void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier);

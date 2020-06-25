@@ -1,0 +1,23 @@
+module Annotations_Module {
+	struct Annotation_Struct_Example {
+		@min(0)
+		double x;
+
+		@max(value = 10)
+		double y;
+
+		@range(min = 0, max = 10)
+		double z;
+	};
+	
+	union Annotation_Union_Example switch (short) { 
+    case 1:
+    	@min(0) short a;
+    case 2:
+    case 3:
+    	@max(value = 10) long b;
+    case 4:
+    default:
+    	@range(min = 0, max = 10) float c;
+	};
+};

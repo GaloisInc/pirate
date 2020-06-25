@@ -90,3 +90,11 @@ void decode_distance(struct distance_wire* input, struct distance* output) {
 	memcpy(&output->y, &y, sizeof(uint64_t));
 	memcpy(&output->z, &z, sizeof(uint64_t));
 }
+
+int validate_position(struct position* input) {
+	return 0;
+}
+
+int validate_distance(struct distance* input) {
+	return 0;
+}

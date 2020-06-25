@@ -80,3 +80,17 @@ void decode_union_example(struct union_example_wire* input, struct union_example
 		break;
 	}
 }
+
+int validate_union_example(struct union_example* input) {
+	switch (input->tag) {
+	case 1:
+		break;
+	case 2:
+	case 3:
+		break;
+	case 4:
+	default:
+		break;
+	}
+	return 0;
+}

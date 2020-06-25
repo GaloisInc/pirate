@@ -80,6 +80,7 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     moduleDecl->cDeclareAsserts(ostream);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
+    moduleDecl->cDeclareAnnotationValidate(ostream);
 
     delete topLevelSpec;
     return 0;

@@ -55,3 +55,7 @@ void decode_week_interval(struct week_interval_wire* input, struct week_interval
 	memcpy(&output->begin, &begin, sizeof(uint32_t));
 	memcpy(&output->end, &end, sizeof(uint32_t));
 }
+
+int validate_week_interval(struct week_interval* input) {
+	return 0;
+}

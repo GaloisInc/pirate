@@ -43,12 +43,114 @@ antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
   return typeSpec;
 }
 
+static std::string unknownMember(std::string name, IDLParser::Annotation_appl_paramContext* param) {
+  return "unknown annotation member " + param->ID()->getText() +
+    " for annotation @" + name + " on line " + std::to_string(param->getStart()->getLine());
+}
+
+static std::string missingRequiredMember(std::string name, IDLParser::Annotation_appl_paramsContext *params) {
+  return "missing required annotation members for annotation @" + name +
+    " on line " + std::to_string(params->getStart()->getLine());
+}
+
+MinAnnotation *CDRBuildTypes::buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
+  std::string min = "";
+  bool error = false;
+  if (params->const_exp() != nullptr) {
+    min = params->const_exp()->getText();
+  } else {
+    for (IDLParser::Annotation_appl_paramContext* param : params->annotation_appl_param()) {
+      if (param->ID()->getText() == "value") {
+        min = param->const_exp()->getText();
+      } else {
+        errors.insert(unknownMember("min", param));
+        error = true;
+      }
+    }
+  }
+  if (min.length() > 0) {
+    return new MinAnnotation(++annotationIds, min);
+  } else if (!error) {
+    errors.insert(missingRequiredMember("min", params));
+  }
+  return nullptr;
+}
+
+MaxAnnotation *CDRBuildTypes::buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
+  std::string max = "";
+  bool error = false;
+  if (params->const_exp() != nullptr) {
+    max = params->const_exp()->getText();
+  } else {
+    for (IDLParser::Annotation_appl_paramContext* param : params->annotation_appl_param()) {
+      if (param->ID()->getText() == "value") {
+        max = param->const_exp()->getText();
+      } else {
+        errors.insert(unknownMember("max", param));
+        error = true;
+      }
+    }
+  }
+  if (max.length() > 0) {
+    return new MaxAnnotation(++annotationIds, max);
+  } else if (!error) {
+    errors.insert(missingRequiredMember("max", params));
+  }
+  return nullptr;
+}
+
+RangeAnnotation *CDRBuildTypes::buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
+  std::string min = "";
+  std::string max = "";
+  bool error = false;
+  if (params->const_exp() != nullptr) {
+    // do nothing
+  } else {
+    for (IDLParser::Annotation_appl_paramContext* param : params->annotation_appl_param()) {
+      if (param->ID()->getText() == "min") {
+        min = param->const_exp()->getText();
+      } else if (param->ID()->getText() == "max") {
+        max = param->const_exp()->getText();
+      } else {
+        errors.insert(unknownMember("range", param));
+        error = true;
+      }
+    }
+  }
+  if ((min.length() > 0) && (max.length() > 0)) {
+    return new RangeAnnotation(++annotationIds, min, max);
+  } else if (!error) {
+    errors.insert(missingRequiredMember("range", params));
+  }
+  return nullptr;
+}
+
+antlrcpp::Any CDRBuildTypes::visitAnnotation_appl(IDLParser::Annotation_applContext *ctx) {
+  std::string name = ctx->scoped_name()->getText();
+  IDLParser::Annotation_appl_paramsContext *params = ctx->annotation_appl_params();
+  AnnotationSpec *annotationSpec = nullptr;
+  if (name == "min") {
+    annotationSpec = buildMinAnnotation(params);
+  } else if (name == "max") {
+    annotationSpec = buildMaxAnnotation(params);
+  } else if (name == "range") {
+    annotationSpec = buildRangeAnnotation(params);
+  } else {
+    errors.insert("unknown annotation @" + name +
+      " on line " + std::to_string(ctx->getStart()->getLine()));
+  }
+  if (annotationSpec == nullptr) {
+    annotationSpec = new ErrorAnnotation();
+  }
+  return annotationSpec;
+}
+
 antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specContext *ctx) {
   if (ctx->scoped_name() != nullptr) {
     std::string name = ctx->scoped_name()->getText();
     TypeSpec *typeSpecRef = typeDeclarations[name];
     if (typeSpecRef == nullptr) {
-      errors.push_back("unknown reference to type " + name + " on line " +
+      errors.insert("unknown reference to type " + name + " on line " +
         std::to_string(ctx->scoped_name()->getStart()->getLine()));
       return BaseTypeSpec::errorType();
     } else {
@@ -92,8 +194,15 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
   std::vector<IDLParser::DeclaratorContext*> declCtxs = ctx->declarators()->declarator();
   for (IDLParser::DeclaratorContext* declCtx : declCtxs) {
     Declarator* decl = declCtx->accept(this);
+    if (ctx->annapps() != nullptr) {
+      std::vector<IDLParser::Annotation_applContext*> annCtxs = ctx->annapps()->annotation_appl();
+      for (IDLParser::Annotation_applContext* annCtx : annCtxs) {
+        decl->addAnnotation(annCtx->accept(this));
+      }
+    }
     structMember->addDeclarator(decl);
   }
+
   return structMember;
 }
 
@@ -122,6 +231,12 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
       member->setHasDefault();
     } else {
       member->addLabel(labelCtx->const_exp()->getText());
+    }
+  }
+  if (ctx->element_spec()->annapps() != nullptr) {
+    std::vector<IDLParser::Annotation_applContext*> annCtxs = ctx->element_spec()->annapps()->annotation_appl();
+    for (IDLParser::Annotation_applContext* annCtx : annCtxs) {
+      decl->addAnnotation(annCtx->accept(this));
     }
   }
   return member;
