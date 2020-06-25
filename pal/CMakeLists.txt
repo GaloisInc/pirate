@@ -30,6 +30,7 @@ ExternalProject_Add(project_libcyaml
     BUILD_COMMAND make VARIANT=release
     INSTALL_COMMAND make install
     PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2/lib/libcyaml.so
 )
 
 add_library(libcyaml SHARED IMPORTED)
