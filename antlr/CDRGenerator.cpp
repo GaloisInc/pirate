@@ -72,6 +72,8 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
 
     ostream << "#include <assert.h>" << std::endl;
     ostream << "#include <endian.h>" << std::endl;
+    ostream << "#include <fenv.h>"   << std::endl;
+    ostream << "#include <math.h>"   << std::endl;
     ostream << "#include <stdint.h>" << std::endl;
     ostream << "#include <string.h>" << std::endl;
     ostream << std::endl;
@@ -81,6 +83,7 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
     moduleDecl->cDeclareAnnotationValidate(ostream);
+    moduleDecl->cDeclareAnnotationTransform(ostream);
 
     delete topLevelSpec;
     return 0;

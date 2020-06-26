@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <endian.h>
+#include <fenv.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -81,7 +83,7 @@ void decode_union_example(struct union_example_wire* input, struct union_example
 	}
 }
 
-int validate_union_example(struct union_example* input) {
+int validate_union_example(const struct union_example* input) {
 	switch (input->tag) {
 	case 1:
 		break;
@@ -93,4 +95,23 @@ int validate_union_example(struct union_example* input) {
 		break;
 	}
 	return 0;
+}
+
+void transform_union_example(struct union_example* input) {
+	switch (input->tag) {
+		case 1:
+		{
+			break;
+		}
+		case 2:
+		case 3:
+		{
+			break;
+		}
+		case 4:
+		default:
+		{
+			break;
+		}
+	}
 }

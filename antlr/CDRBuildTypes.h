@@ -29,6 +29,7 @@ private:
   MinAnnotation* buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   MaxAnnotation* buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:
   CDRBuildTypes() : typeDeclarations(), errors(), annotationIds(0) { }
   std::set<std::string> getErrors() { return errors; }

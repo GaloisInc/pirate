@@ -281,7 +281,7 @@ void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
     ostream << "int" << " ";
     ostream << "validate";
     ostream << "_" << identifier << "(";
-    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << "const" << " " << "struct" << " " << identifier << "*" << " " << "input";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
@@ -292,6 +292,25 @@ void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
         }
     }
     ostream << "return" << " " << "0" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void StructTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "void" << " ";
+    ostream << "transform";
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            for (AnnotationSpec* annotation : declarator->annotations) {
+                annotation->cDeclareTransform(ostream, member->typeSpec, "input->" + declarator->identifier);
+            }
+        }
+    }
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -435,7 +454,7 @@ void UnionTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
     ostream << "int" << " ";
     ostream << "validate";
     ostream << "_" << identifier << "(";
-    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << "const" << " " << "struct" << " " << identifier << "*" << " " << "input";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     ostream << "switch" << " " << "(" << "input->tag" << ")" << " " << "{" << std::endl;
@@ -456,6 +475,39 @@ void UnionTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
     }
     ostream << "}" << std::endl;
     ostream << "return" << " " << "0" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "void" << " ";
+    ostream << "transform";
+    ostream << "_" << identifier << "(";
+    ostream << "struct" << " " << identifier << "*" << " " << "input";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "switch" << " " << "(" << "input->tag" << ")" << " " << "{" << std::endl;
+    for (UnionMember* member : members) {
+        ostream << indent_manip::push;
+        Declarator* declarator = member->declarator;
+        for (std::string label : member->labels) {
+            ostream << "case" << " " << label << ":" << std::endl;
+        }
+        if (member->hasDefault) {
+            ostream << "default" << ":" << std::endl;
+        }
+        ostream << "{" << std::endl;
+        ostream << indent_manip::push;
+        for (AnnotationSpec* annotation : declarator->annotations) {
+            annotation->cDeclareTransform(ostream, member->typeSpec, "input->data." + declarator->identifier);
+        }
+        ostream << "break" << ";" << std::endl;
+        ostream << indent_manip::pop;
+        ostream << "}" << std::endl;
+        ostream << indent_manip::pop;
+    }
+    ostream << "}" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -504,6 +556,12 @@ void ModuleDecl::cDeclareAnnotationValidate(std::ostream &ostream) {
     }
 }
 
+void ModuleDecl::cDeclareAnnotationTransform(std::ostream &ostream) {
+    for (TypeSpec* definition : definitions) {
+        definition->cDeclareAnnotationTransform(ostream);
+    }
+}
+
 void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
     ostream << std::endl;
     for (TypeSpec* definition : definitions) {
@@ -543,6 +601,29 @@ void RangeAnnotation::cDeclareConstraint(std::ostream &ostream, std::string iden
     ostream << "return" << " " << "-1" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
+}
+
+void RoundAnnotation::cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) {
+    CDRTypeOf typeOf = typeSpec->typeOf();
+    std::string roundFunc = "";
+    switch (typeOf) {
+        case CDRTypeOf::FLOAT_T:
+            roundFunc = "nearbyintf";
+            break;
+        case CDRTypeOf::DOUBLE_T:
+            roundFunc = "nearbyint";
+            break;
+        default:
+            break;
+    }
+    if (roundFunc != "") {
+        ostream << "int" << " " << "rmode" << " " << "=" << " ";
+        ostream << "fegetround" << "(" << ")" << ";" << std::endl;
+        ostream << "fesetround" << "(" << "FE_TONEAREST" << ")" << ";" << std::endl;
+        ostream << identifier << " " << "=" << " ";
+        ostream << roundFunc << "(" << identifier << ")" << ";" << std::endl;
+        ostream << "fesetround" << "(" << "rmode" << ")" << ";" << std::endl;
+    }
 }
 
 std::string bitsCType(CDRBits cdrBits) {

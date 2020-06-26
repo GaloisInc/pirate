@@ -156,7 +156,14 @@ detection tool.
  - [ ] nested union
  - [ ] nested module
  - [ ] type references across namespaces
- - [ ] annotations
+ - [x] annotations
+
+### Supported Annotations
+ 
+ - `@min(value)` specifies a minimum value for the annotated element
+ - `@max(value)` specifies a minimum value for the annotated element
+ - `@range(min=value,max=value)` specifies a minimum and maximum value for the annotated element
+ - `@round` specifies the float-point value will be rounded to the nearest integer using round half to even mode
 
 ### Dependencies
 

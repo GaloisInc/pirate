@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <endian.h>
+#include <fenv.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -126,7 +128,7 @@ void decode_annotation_union_example(struct annotation_union_example_wire* input
 	}
 }
 
-int validate_annotation_struct_example(struct annotation_struct_example* input) {
+int validate_annotation_struct_example(const struct annotation_struct_example* input) {
 	if (input->x < 0) {
 		return -1;
 	}
@@ -139,7 +141,7 @@ int validate_annotation_struct_example(struct annotation_struct_example* input) 
 	return 0;
 }
 
-int validate_annotation_union_example(struct annotation_union_example* input) {
+int validate_annotation_union_example(const struct annotation_union_example* input) {
 	switch (input->tag) {
 	case 1:
 		if (input->data.a < 0) {
@@ -160,4 +162,34 @@ int validate_annotation_union_example(struct annotation_union_example* input) {
 		break;
 	}
 	return 0;
+}
+
+void transform_annotation_struct_example(struct annotation_struct_example* input) {
+	int rmode = fegetround();
+	fesetround(FE_TONEAREST);
+	input->z = nearbyint(input->z);
+	fesetround(rmode);
+}
+
+void transform_annotation_union_example(struct annotation_union_example* input) {
+	switch (input->tag) {
+		case 1:
+		{
+			break;
+		}
+		case 2:
+		case 3:
+		{
+			break;
+		}
+		case 4:
+		default:
+		{
+			int rmode = fegetround();
+			fesetround(FE_TONEAREST);
+			input->data.c = nearbyintf(input->data.c);
+			fesetround(rmode);
+			break;
+		}
+	}
 }

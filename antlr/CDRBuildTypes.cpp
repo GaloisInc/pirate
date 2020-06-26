@@ -48,6 +48,11 @@ static std::string unknownMember(std::string name, IDLParser::Annotation_appl_pa
     " for annotation @" + name + " on line " + std::to_string(param->getStart()->getLine());
 }
 
+static std::string unknownDefaultMember(std::string name, IDLParser::Annotation_appl_paramsContext *params) {
+  return "unknown default annotation member for annotation @" + name +
+    " on line " + std::to_string(params->getStart()->getLine());
+}
+
 static std::string missingRequiredMember(std::string name, IDLParser::Annotation_appl_paramsContext *params) {
   return "missing required annotation members for annotation @" + name +
     " on line " + std::to_string(params->getStart()->getLine());
@@ -125,6 +130,26 @@ RangeAnnotation *CDRBuildTypes::buildRangeAnnotation(IDLParser::Annotation_appl_
   return nullptr;
 }
 
+RoundAnnotation *CDRBuildTypes::buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
+  bool error = false;
+  if (params != nullptr) {
+    if (params->const_exp() != nullptr) {
+      errors.insert(unknownDefaultMember("round", params));
+      error = true;
+    } else {
+      for (IDLParser::Annotation_appl_paramContext* param : params->annotation_appl_param()) {
+        errors.insert(unknownMember("round", param));
+        error = true;
+      }
+    }
+  }
+  if (!error) {
+    return new RoundAnnotation(++annotationIds);
+  } else {
+    return nullptr;
+  }
+}
+
 antlrcpp::Any CDRBuildTypes::visitAnnotation_appl(IDLParser::Annotation_applContext *ctx) {
   std::string name = ctx->scoped_name()->getText();
   IDLParser::Annotation_appl_paramsContext *params = ctx->annotation_appl_params();
@@ -135,6 +160,8 @@ antlrcpp::Any CDRBuildTypes::visitAnnotation_appl(IDLParser::Annotation_applCont
     annotationSpec = buildMaxAnnotation(params);
   } else if (name == "range") {
     annotationSpec = buildRangeAnnotation(params);
+  } else if (name == "round") {
+    annotationSpec = buildRoundAnnotation(params);
   } else {
     errors.insert("unknown annotation @" + name +
       " on line " + std::to_string(ctx->getStart()->getLine()));

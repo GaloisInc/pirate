@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <endian.h>
+#include <fenv.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -91,10 +93,16 @@ void decode_distance(struct distance_wire* input, struct distance* output) {
 	memcpy(&output->z, &z, sizeof(uint64_t));
 }
 
-int validate_position(struct position* input) {
+int validate_position(const struct position* input) {
 	return 0;
 }
 
-int validate_distance(struct distance* input) {
+int validate_distance(const struct distance* input) {
 	return 0;
+}
+
+void transform_position(struct position* input) {
+}
+
+void transform_distance(struct distance* input) {
 }
