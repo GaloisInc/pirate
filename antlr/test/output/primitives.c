@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <endian.h>
-#include <fenv.h>
-#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -198,11 +196,4 @@ void decode_primitives(struct primitives_wire* input, struct primitives* output)
 	memcpy(&output->bool_val, &bool_val, sizeof(uint8_t));
 	memcpy(&output->octet_val, &octet_val, sizeof(uint8_t));
 	memcpy(&output->uint8_val, &uint8_val, sizeof(uint8_t));
-}
-
-int validate_primitives(const struct primitives* input) {
-	return 0;
-}
-
-void transform_primitives(struct primitives* input) {
 }

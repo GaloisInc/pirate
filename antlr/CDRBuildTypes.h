@@ -26,13 +26,18 @@ private:
   std::map<std::string, TypeSpec*> typeDeclarations;
   std::set<std::string> errors;
   int annotationIds;
+  bool hasValidate;
+  bool hasTransform;
   MinAnnotation* buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   MaxAnnotation* buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:
-  CDRBuildTypes() : typeDeclarations(), errors(), annotationIds(0) { }
+  CDRBuildTypes() : typeDeclarations(), errors(),
+    annotationIds(0), hasValidate(false), hasTransform(false) { }
   std::set<std::string> getErrors() { return errors; }
+  bool hasValidateAnnotations() { return hasValidate; }
+  bool hasTransformAnnotations() { return hasTransform; }
   virtual antlrcpp::Any aggregateResult(antlrcpp::Any aggregate, const antlrcpp::Any &nextResult) override;
   virtual antlrcpp::Any visitModule(IDLParser::ModuleContext *ctx) override;
   virtual antlrcpp::Any visitAnnotation_appl(IDLParser::Annotation_applContext *ctx) override;

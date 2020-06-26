@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <endian.h>
-#include <fenv.h>
-#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -56,11 +54,4 @@ void decode_week_interval(struct week_interval_wire* input, struct week_interval
 	end = be32toh(end);
 	memcpy(&output->begin, &begin, sizeof(uint32_t));
 	memcpy(&output->end, &end, sizeof(uint32_t));
-}
-
-int validate_week_interval(const struct week_interval* input) {
-	return 0;
-}
-
-void transform_week_interval(struct week_interval* input) {
 }

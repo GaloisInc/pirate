@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <endian.h>
-#include <fenv.h>
-#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -166,44 +164,4 @@ void decode_struct_array_field(struct struct_array_field_wire* input, struct str
 	}
 	memcpy(&a, &input->a, sizeof(uint8_t));
 	memcpy(&output->a, &a, sizeof(uint8_t));
-}
-
-int validate_union_array_field(const struct union_array_field* input) {
-	switch (input->tag) {
-	case 1:
-		break;
-	case 2:
-	case 3:
-		break;
-	case 4:
-	default:
-		break;
-	}
-	return 0;
-}
-
-int validate_struct_array_field(const struct struct_array_field* input) {
-	return 0;
-}
-
-void transform_union_array_field(struct union_array_field* input) {
-	switch (input->tag) {
-		case 1:
-		{
-			break;
-		}
-		case 2:
-		case 3:
-		{
-			break;
-		}
-		case 4:
-		default:
-		{
-			break;
-		}
-	}
-}
-
-void transform_struct_array_field(struct struct_array_field* input) {
 }

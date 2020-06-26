@@ -74,6 +74,7 @@ MinAnnotation *CDRBuildTypes::buildMinAnnotation(IDLParser::Annotation_appl_para
     }
   }
   if (min.length() > 0) {
+    hasValidate = true;
     return new MinAnnotation(++annotationIds, min);
   } else if (!error) {
     errors.insert(missingRequiredMember("min", params));
@@ -97,6 +98,7 @@ MaxAnnotation *CDRBuildTypes::buildMaxAnnotation(IDLParser::Annotation_appl_para
     }
   }
   if (max.length() > 0) {
+    hasValidate = true;
     return new MaxAnnotation(++annotationIds, max);
   } else if (!error) {
     errors.insert(missingRequiredMember("max", params));
@@ -123,6 +125,7 @@ RangeAnnotation *CDRBuildTypes::buildRangeAnnotation(IDLParser::Annotation_appl_
     }
   }
   if ((min.length() > 0) && (max.length() > 0)) {
+    hasValidate = true;
     return new RangeAnnotation(++annotationIds, min, max);
   } else if (!error) {
     errors.insert(missingRequiredMember("range", params));
@@ -144,6 +147,7 @@ RoundAnnotation *CDRBuildTypes::buildRoundAnnotation(IDLParser::Annotation_appl_
     }
   }
   if (!error) {
+    hasTransform = true;
     return new RoundAnnotation(++annotationIds);
   } else {
     return nullptr;

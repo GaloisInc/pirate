@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <endian.h>
-#include <fenv.h>
-#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -80,38 +78,5 @@ void decode_union_example(struct union_example_wire* input, struct union_example
 		data_c = be32toh(data_c);
 		memcpy(&output->data.c, &data_c, sizeof(uint32_t));
 		break;
-	}
-}
-
-int validate_union_example(const struct union_example* input) {
-	switch (input->tag) {
-	case 1:
-		break;
-	case 2:
-	case 3:
-		break;
-	case 4:
-	default:
-		break;
-	}
-	return 0;
-}
-
-void transform_union_example(struct union_example* input) {
-	switch (input->tag) {
-		case 1:
-		{
-			break;
-		}
-		case 2:
-		case 3:
-		{
-			break;
-		}
-		case 4:
-		default:
-		{
-			break;
-		}
 	}
 }
