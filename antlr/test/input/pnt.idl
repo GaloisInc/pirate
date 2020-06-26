@@ -1,0 +1,10 @@
+module PNT {
+	struct Position {
+		double x;
+		double y;
+		double z;
+	};
+	struct Distance {
+		double x, y, z;
+	};
+};

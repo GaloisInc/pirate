@@ -1,0 +1,7 @@
+module EnumType {
+  enum DayOfWeek { Monday, Tuesday, Wednesday, Thursday, Friday };
+  struct Week_Interval {
+    DayOfWeek begin;
+    DayOfWeek end;
+  };
+};

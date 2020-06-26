@@ -1,0 +1,24 @@
+module Primitives {
+	struct Primitives {
+		float float_val;
+		double double_val;
+		// long double long_double_val;
+		short short_val;
+		int16 int16_val;
+		long long_val;
+		int32 int32_val;
+		long long long_long_val;
+		int64 int64_val;
+		unsigned short unsigned_short_val;
+		uint16 uint16_val;
+		unsigned long unsigned_long_val;
+		uint32 uint32_val;
+		unsigned long long unsigned_long_long_val;
+		uint64 uint64_val;
+		char char_val;
+		int8 int8_val;
+		boolean bool_val;
+		octet octet_val;
+		uint8 uint8_val;
+	};
+};
