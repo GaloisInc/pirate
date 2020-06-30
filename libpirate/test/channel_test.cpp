@@ -155,7 +155,6 @@ void ChannelTest::RunChildOpen(bool child)
     void *WriterStatus, *ReaderStatus;
 
     childOpen = child;
-    errno = 0;
 
     ChannelInit();
 
