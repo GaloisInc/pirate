@@ -101,6 +101,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     int err, rv;
     int server_fd;
     struct sockaddr_in addr;
+    struct linger lo;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
@@ -155,6 +156,17 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         close(server_fd);
         errno = err;
         return ctx->sock;
+    }
+
+    lo.l_onoff = 1;
+    lo.l_linger = 0;
+    rv = setsockopt(ctx->sock, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        close(server_fd);
+        errno = err;
+        return rv;
     }
 
     close(server_fd);
@@ -237,7 +249,8 @@ int pirate_tcp_socket_open(void *_param, void *_ctx) {
 
 int pirate_tcp_socket_close(void *_ctx) {
     tcp_socket_ctx *ctx = (tcp_socket_ctx *)_ctx;
-    int rv = -1;
+    int err, rv = -1;
+    int access = ctx->flags & O_ACCMODE;
 
     if (ctx->min_tx_buf != NULL) {
         free(ctx->min_tx_buf);
@@ -248,8 +261,18 @@ int pirate_tcp_socket_close(void *_ctx) {
         return -1;
     }
 
+    err = errno;
+    shutdown(ctx->sock, SHUT_RDWR);
+    errno = err;
+
     rv = close(ctx->sock);
     ctx->sock = -1;
+    // Reader closes with RST packet.
+    // If the reader closes before the writer then a
+    // connection reset error is expected.
+    if ((access == O_WRONLY) && (errno == ENOTCONN)) {
+        errno = 0;
+    }
     return rv;
 }
 

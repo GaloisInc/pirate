@@ -26,7 +26,7 @@ static ssize_t pirate_stream_do_read(int fd, uint8_t *buf, size_t count) {
     ssize_t rv;
     while (rx < count) {
         rv = read(fd, buf + rx, count - rx);
-        if (rv < 0) {
+        if (rv <= 0) {
             return rv;
         }
         rx += rv;
@@ -47,7 +47,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
     }
 
     rv = pirate_stream_do_read(fd, ctx->min_tx_buf, min_tx);
-    if (rv < 0) {
+    if (rv <= 0) {
         return rv;
     }
     packet_count = ntohl(header->count);
@@ -56,7 +56,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
     memcpy(buf, ctx->min_tx_buf + sizeof(pirate_header_t), min_tx_data);
     if (min_tx_data < count) {
         rv = pirate_stream_do_read(fd, ((uint8_t*) buf) + min_tx_data, count - min_tx_data);
-        if (rv < 0) {
+        if (rv <= 0) {
             return rv;
         }
     }
@@ -66,7 +66,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
         uint8_t *temp = malloc(packet_count - rx);
         rv = pirate_stream_do_read(fd, temp, packet_count - rx);
         free(temp);
-        if (rv < 0) {
+        if (rv <= 0) {
             return rv;
         }
     }

@@ -45,10 +45,11 @@ protected:
     virtual void WriterChannelClose();
     virtual void ReaderChannelClose();
 
+    virtual void WriterTest();
+    virtual void ReaderTest();
+
     void Run();
-    void RunChildOpen(bool child);
-    void WriterTest();
-    void ReaderTest();
+    virtual void RunChildOpen(bool child);
 
     struct TestPoint {
         TestPoint() : 
@@ -94,6 +95,25 @@ public:
     ChannelTest();
     static void *WriterThreadS(void *param);
     static void *ReaderThreadS(void *param);
+};
+
+class HalfClosedTest : public ChannelTest
+{
+protected:
+    virtual void WriterTest() override;
+    virtual void ReaderTest() override;
+};
+
+class ClosedWriterTest : public HalfClosedTest
+{
+public:
+    virtual void RunChildOpen(bool child) override;
+};
+
+class ClosedReaderTest : public HalfClosedTest
+{
+public:
+    virtual void RunChildOpen(bool child) override;
 };
 
 static const unsigned TEST_MIN_TX_LEN = 16;
