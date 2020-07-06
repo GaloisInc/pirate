@@ -69,7 +69,7 @@ They can be installed on Ubuntu using the following command:
     $ llvm-build/bin/clang -ffunction-sections -fdata-sections --target=x86_64-pc-linux-elf -c enclave.c
 
     # see that the example worked
-    $ llvm-build/bin/llvm-readobj --gaps-info enclave.o
+    $ llvm-build/bin/llvm-readobj --pirate-info enclave.o
 
     # link the example to produce an executable for each enclave
     $ llvm-build/bin/clang -fuse-ld=lld enclave.o -o enclave_alpha -Xlinker -enclave -Xlinker alpha
