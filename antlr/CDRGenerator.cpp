@@ -130,3 +130,15 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, t
     delete topLevelSpec;
     return rv;
 }
+
+std::string target_as_string(TargetLanguage target) {
+    switch (target) {
+        case C_LANG:
+            return "c";
+        case CPP_LANG:
+            return "cpp";
+        case UNKNOWN:
+        default:
+            return "unknown";
+    }
+}

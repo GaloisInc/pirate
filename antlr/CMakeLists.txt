@@ -42,7 +42,7 @@ if(PIRATE_UNIT_TEST)
     target_compile_options(idl_test PRIVATE ${IDL_CXX_FLAGS})
     target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread)
 
-    file(GLOB IDL_REGRESSION_TEST_SRC test/output/*.c)
+    file(GLOB IDL_REGRESSION_TEST_SRC test/output/c/*.c)
     add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})
     target_compile_options(idl-regression PRIVATE ${IDL_CXX_FLAGS})
 

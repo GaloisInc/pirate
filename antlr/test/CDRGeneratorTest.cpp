@@ -10,14 +10,19 @@
 
 using namespace std;
 
-class RegressionTest : public ::testing::TestWithParam<std::string> { };
+class RegressionTest : public ::testing::TestWithParam<std::tuple<std::string, target_t>> { };
 
 std::vector<std::string> filenames;
 
 TEST_P(RegressionTest, RegressionTestCase) {
-    std::string root = GetParam();
+    auto params = GetParam();
+    std::string root = std::get<0>(params);
+    target_t target = std::get<1>(params);
+    if (target == CPP_LANG) {
+        GTEST_SKIP();
+    }
     std::string input_path = "input/" + root + ".idl";
-    std::string output_path = "output/" + root + ".c";
+    std::string output_path = "output/" + target_as_string(target) + "/" + root + ".c";
 
     ifstream input_file;
     ifstream expected_output_file;
@@ -39,7 +44,7 @@ TEST_P(RegressionTest, RegressionTestCase) {
     ASSERT_FALSE(observed_output_file_w.fail());
     expected_output << expected_output_file.rdbuf();
     expected_output_file.close();
-    rv = parse(input_file, observed_output_file_w, observed_error, TargetLanguage::C_LANG);
+    rv = parse(input_file, observed_output_file_w, observed_error, target);
     input_file.close();
     observed_output_file_w.close();
     observed_output_file_r.open("/tmp/" + root + ".c");
@@ -52,13 +57,14 @@ TEST_P(RegressionTest, RegressionTestCase) {
 }
 
 struct PrintParamName {
-  string operator()(const testing::TestParamInfo<string>& info) const {
-    return info.param;
+  string operator()(const testing::TestParamInfo<std::tuple<std::string, target_t>>& info) const {
+    return std::get<0>(info.param) + "_" + target_as_string(std::get<1>(info.param));
   }
 };
 
 INSTANTIATE_TEST_SUITE_P(RegressionTestSuite,
-    RegressionTest, ::testing::ValuesIn(filenames),
+    RegressionTest, ::testing::Combine(::testing::ValuesIn(filenames),
+        ::testing::Values(TargetLanguage::C_LANG, TargetLanguage::CPP_LANG)),
     PrintParamName());
 
 void initial_setup() {
