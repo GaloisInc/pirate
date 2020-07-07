@@ -42,7 +42,7 @@ This project uses CMake. The following CMake flags are required:
 
 The following CMake flags are optional:
 
-- PIRATE_UNIT_TESTS. Enables the unit tests. googletest library is required.
+- PIRATE_UNIT_TEST. Enables the unit tests. googletest library is required.
 
 The directory `generated-src` is not used by the build system.
 The build script will regenerate those files from the ANTLR grammar.

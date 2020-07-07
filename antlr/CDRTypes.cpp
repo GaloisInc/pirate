@@ -108,7 +108,6 @@ void EnumTypeSpec::cTypeDecl(std::ostream &ostream) {
         }
         ostream << std::endl;
     }
-    ostream << indent_manip::push;
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
 }
@@ -274,6 +273,41 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
         { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "template" << "<" << ">" << std::endl;
+    ostream << "struct" << " " << "Serialization";
+    ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "static" << " " << "void" << " " << "toBuffer";
+    ostream << "(" << "struct" << " " << namespacePrefix << identifier << " " << "const" << "&" << " " << "val";
+    ostream << "," << " " << "std" << "::" << "vector" << "<" <<"char" << ">" << "*";
+    ostream << " " << "buf" << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
+        { cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier); });
+    ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "(" << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")" << " ";
+    ostream << "buf" << "->" << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
+    ostream << "=" << " " << "&" << "val" << ";" << std::endl;
+    ostream << "buf" << "->" << "resize" << "(";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << ")" << ";" << std::endl;
+    cDeclareFunctionApply(false, true, [&ostream] (StructMember* member, Declarator* declarator)
+        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, CDRFunc::SERIALIZE, "", ""); });
+    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
+        { cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
+        { cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, CDRFunc::SERIALIZE); });
+    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
+        { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
@@ -569,6 +603,23 @@ void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
     }
 }
 
+void ModuleDecl::cppDeclareFunctions(std::ostream &ostream) {
+    for (TypeSpec* definition : definitions) {
+        definition->cppDeclareFunctions(ostream);
+    }
+}
+
+void ModuleDecl::cppDeclareHeader(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "namespace" << " " << identifier << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+}
+
+void ModuleDecl::cppDeclareFooter(std::ostream &ostream) {
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
 ModuleDecl::~ModuleDecl() {
     for (TypeSpec* definition : definitions) {
         delete definition;
@@ -774,4 +825,22 @@ void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
         ostream << indent_manip::pop;
         ostream << "}" << std::endl;
     }
+}
+
+void cppPirateNamespaceHeader(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "namespace" << " " << "pirate" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "template <typename T>" << std::endl;
+    ostream << "struct Serialization {" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "static void toBuffer(T const& val, std::vector<char>* buf);" << std::endl;
+    ostream << "static T fromBuffer(std::vector<char> const& buf);" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void cppPirateNamespaceFooter(std::ostream &ostream) {
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
