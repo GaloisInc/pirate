@@ -80,4 +80,40 @@ TEST_P(PipeTest, Run)
 INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
     Values(0, TEST_MIN_TX_LEN));
 
+class PipeCloseWriterTest : public ClosedWriterTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_pipe_param_t *param = &Reader.param.channel.pipe;
+
+        pirate_init_channel_param(PIPE, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(PipeCloseWriterTest, Run)
+{
+    Run();
+}
+
+class PipeCloseReaderTest : public ClosedReaderTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_pipe_param_t *param = &Reader.param.channel.pipe;
+
+        pirate_init_channel_param(PIPE, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(PipeCloseReaderTest, Run)
+{
+    Run();
+}
+
 } // namespace

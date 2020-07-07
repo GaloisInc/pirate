@@ -97,4 +97,40 @@ INSTANTIATE_TEST_SUITE_P(UnixSocketFunctionalTest, UnixSocketTest,
     Values(std::make_tuple(0, 0),
         std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
+class UnixSocketCloseWriterTest : public ClosedWriterTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_unix_socket_param_t *param = &Reader.param.channel.unix_socket;
+
+        pirate_init_channel_param(UNIX_SOCKET, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(UnixSocketCloseWriterTest, Run)
+{
+    Run();
+}
+
+class UnixSocketCloseReaderTest : public ClosedReaderTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_unix_socket_param_t *param = &Reader.param.channel.unix_socket;
+
+        pirate_init_channel_param(UNIX_SOCKET, &Reader.param);
+        strncpy(param->path, "/tmp/gaps.channel.test.sock", PIRATE_LEN_NAME);
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(UnixSocketCloseReaderTest, Run)
+{
+    Run();
+}
+
 } // namespace
