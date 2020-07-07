@@ -262,15 +262,15 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
     declareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
-        { cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier); });
+        { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     cDeclareFunctionApply(false, true, [&ostream, functionType] (StructMember* member, Declarator* declarator)
-        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "", ""); });
+        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "field_", ""); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+        { cCopyMemoryIn(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
     cDeclareFunctionApply(true, false, [&ostream, functionType] (StructMember* member, Declarator* declarator)
-        { cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, functionType); });
+        { cConvertByteOrder(ostream, member->typeSpec, "field_" + declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+        { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
