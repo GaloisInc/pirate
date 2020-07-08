@@ -72,13 +72,13 @@ The following IDL specification generates the C output below.
 
 ```
 module PNT {
-	struct Position {
-		double x, y, z;
-	};
+    struct Position {
+        double x, y, z;
+    };
 };
 ```
 
-generates,
+generates the following C code,
 
 ```
 #include <assert.h>
@@ -103,37 +103,117 @@ static_assert(sizeof(struct position) == sizeof(struct position_wire),
     "size of struct position not equal to wire protocol struct");
 
 void encode_position(struct position* input, struct position_wire* output) {
-    uint64_t x;
-    uint64_t y;
-    uint64_t z;
-    memcpy(&x, &input->x, sizeof(uint64_t));
-    memcpy(&y, &input->y, sizeof(uint64_t));
-    memcpy(&z, &input->z, sizeof(uint64_t));
-    x = htobe64(x);
-    y = htobe64(y);
-    z = htobe64(z);
-    memcpy(&output->x, &x, sizeof(uint64_t));
-    memcpy(&output->y, &y, sizeof(uint64_t));
-    memcpy(&output->z, &z, sizeof(uint64_t));
+    uint64_t field_x;
+    uint64_t field_y;
+    uint64_t field_z;
+    memcpy(&field_x, &input->x, sizeof(uint64_t));
+    memcpy(&field_y, &input->y, sizeof(uint64_t));
+    memcpy(&field_z, &input->z, sizeof(uint64_t));
+    field_x = htobe64(field_x);
+    field_y = htobe64(field_y);
+    field_z = htobe64(field_z);
+    memcpy(&output->x, &field_x, sizeof(uint64_t));
+    memcpy(&output->y, &field_y, sizeof(uint64_t));
+    memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
 void decode_position(struct position_wire* input, struct position* output) {
-    uint64_t x;
-    uint64_t y;
-    uint64_t z;
-    memcpy(&x, &input->x, sizeof(uint64_t));
-    memcpy(&y, &input->y, sizeof(uint64_t));
-    memcpy(&z, &input->z, sizeof(uint64_t));
-    x = be64toh(x);
-    y = be64toh(y);
-    z = be64toh(z);
-    memcpy(&output->x, &x, sizeof(uint64_t));
-    memcpy(&output->y, &y, sizeof(uint64_t));
-    memcpy(&output->z, &z, sizeof(uint64_t));
+    uint64_t field_x;
+    uint64_t field_y;
+    uint64_t field_z;
+    memcpy(&field_x, &input->x, sizeof(uint64_t));
+    memcpy(&field_y, &input->y, sizeof(uint64_t));
+    memcpy(&field_z, &input->z, sizeof(uint64_t));
+    field_x = be64toh(field_x);
+    field_y = be64toh(field_y);
+    field_z = be64toh(field_z);
+    memcpy(&output->x, &field_x, sizeof(uint64_t));
+    memcpy(&output->y, &field_y, sizeof(uint64_t));
+    memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
-
 ```
 
+or the following C++ code,
+
+```
+#include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+
+#include <endian.h>
+
+namespace pnt {
+
+    struct position {
+        double x __attribute__((aligned(8)));
+        double y __attribute__((aligned(8)));
+        double z __attribute__((aligned(8)));
+    };
+
+    struct position_wire {
+        unsigned char x[8] __attribute__((aligned(8)));
+        unsigned char y[8] __attribute__((aligned(8)));
+        unsigned char z[8] __attribute__((aligned(8)));
+    };
+
+    static_assert(sizeof(struct position) == sizeof(struct position_wire),
+        "size of struct position not equal to wire protocol struct");
+}
+
+namespace pirate {
+#ifndef _PIRATE_SERIALIZATION_H
+#define _PIRATE_SERIALIZATION_H
+    template <typename T>
+    struct Serialization {
+        static void toBuffer(T const& val, std::vector<char>* buf);
+        static T fromBuffer(std::vector<char> const& buf);
+    };
+#endif // _PIRATE_SERIALIZATION_H
+
+    template<>
+    struct Serialization<struct pnt::position> {
+        static void toBuffer(struct pnt::position const& val, std::vector<char>* buf) {
+            buf->resize(sizeof(struct pnt::position));
+            struct pnt::position_wire* output = (struct pnt::position_wire*) buf->data();
+            const struct pnt::position* input = &val;
+            uint64_t field_x;
+            uint64_t field_y;
+            uint64_t field_z;
+            memcpy(&field_x, &input->x, sizeof(uint64_t));
+            memcpy(&field_y, &input->y, sizeof(uint64_t));
+            memcpy(&field_z, &input->z, sizeof(uint64_t));
+            field_x = htobe64(field_x);
+            field_y = htobe64(field_y);
+            field_z = htobe64(field_z);
+            memcpy(&output->x, &field_x, sizeof(uint64_t));
+            memcpy(&output->y, &field_y, sizeof(uint64_t));
+            memcpy(&output->z, &field_z, sizeof(uint64_t));
+        }
+
+        static struct pnt::position fromBuffer(std::vector<char> const& buf) {
+            struct pnt::position retval;
+            const struct pnt::position_wire* input = (const struct pnt::position_wire*) buf.data();
+            struct pnt::position* output = &retval;
+            if (buf.size() != sizeof(struct pnt::position)) {
+            }
+            uint64_t field_x;
+            uint64_t field_y;
+            uint64_t field_z;
+            memcpy(&field_x, &input->x, sizeof(uint64_t));
+            memcpy(&field_y, &input->y, sizeof(uint64_t));
+            memcpy(&field_z, &input->z, sizeof(uint64_t));
+            field_x = be64toh(field_x);
+            field_y = be64toh(field_y);
+            field_z = be64toh(field_z);
+            memcpy(&output->x, &field_x, sizeof(uint64_t));
+            memcpy(&output->y, &field_y, sizeof(uint64_t));
+            memcpy(&output->z, &field_z, sizeof(uint64_t));
+            return retval;
+        }
+    };
+}
+```
 
 ### Tests
 
