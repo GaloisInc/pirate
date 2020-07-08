@@ -51,6 +51,10 @@ if(PIRATE_UNIT_TEST)
     add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})
     target_compile_options(idl-regression PRIVATE ${IDL_CXX_FLAGS})
 
+    file(GLOB IDL_REGRESSION_TEST_CXX_SRC test/output/cpp/*.cpp)
+    add_library(idl-regression-cxx STATIC ${IDL_REGRESSION_TEST_CXX_SRC})
+    target_compile_options(idl-regression-cxx PRIVATE ${IDL_CXX_FLAGS})
+
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/input DESTINATION .)
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/output DESTINATION .)
 

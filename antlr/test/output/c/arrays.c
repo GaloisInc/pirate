@@ -46,7 +46,7 @@ void encode_union_array_field(struct union_array_field* input, struct union_arra
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (input->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint8_t));
 		memcpy(&output->data.a, &data_a, sizeof(uint8_t));
@@ -110,7 +110,7 @@ void decode_union_array_field(struct union_array_field_wire* input, struct union
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = be16toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (output->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint8_t));
 		memcpy(&output->data.a, &data_a, sizeof(uint8_t));

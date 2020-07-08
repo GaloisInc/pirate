@@ -63,7 +63,7 @@ void encode_annotation_union_example(struct annotation_union_example* input, str
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (input->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint16_t));
 		data_a = htobe16(data_a);
@@ -107,7 +107,7 @@ void decode_annotation_union_example(struct annotation_union_example_wire* input
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = be16toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (output->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint16_t));
 		data_a = be16toh(data_a);

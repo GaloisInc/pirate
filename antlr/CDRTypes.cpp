@@ -100,6 +100,7 @@ void EnumTypeSpec::addEnumerator(std::string enumerator) {
 void EnumTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "enum" << " " << identifier << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     size_t len = enumerators.size();
     for (size_t i = 0; i < len; i++) {
         ostream << enumerators[i];

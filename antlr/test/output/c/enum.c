@@ -5,11 +5,11 @@
 
 
 enum dayofweek {
-Monday,
-Tuesday,
-Wednesday,
-Thursday,
-Friday
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday
 };
 
 struct week_interval {

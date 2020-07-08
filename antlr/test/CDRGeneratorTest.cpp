@@ -32,11 +32,8 @@ TEST_P(RegressionTest, RegressionTestCase) {
     auto params = GetParam();
     std::string root = std::get<0>(params);
     target_t target = std::get<1>(params);
-    if (target == CPP_LANG) {
-        GTEST_SKIP();
-    }
     std::string input_path = "input/" + root + ".idl";
-    std::string output_path = "output/" + target_as_string(target) + "/" + root + ".c";
+    std::string output_path = "output/" + target_as_string(target) + "/" + root + "." + target_as_string(target);
 
     ifstream input_file;
     ifstream expected_output_file;
