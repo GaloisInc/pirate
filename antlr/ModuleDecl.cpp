@@ -26,6 +26,12 @@ void ModuleDecl::cTypeDecl(std::ostream &ostream) {
     }
 }
 
+void ModuleDecl::cppTypeDecl(std::ostream &ostream) {
+    for (TypeSpec* definition : definitions) {
+        definition->cppTypeDecl(ostream);
+    }
+}
+
 void ModuleDecl::cTypeDeclWire(std::ostream &ostream) {
     for (TypeSpec* definition : definitions) {
         definition->cTypeDeclWire(ostream);

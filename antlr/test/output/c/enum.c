@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-enum dayofweek {
+enum DayOfWeek {
 	Monday,
 	Tuesday,
 	Wednesday,

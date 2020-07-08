@@ -35,6 +35,7 @@ public:
 class UnionTypeSpec : public TypeSpec {
 private:
     void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cCppTypeDecl(std::ostream &ostream, bool cpp);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
 public:
@@ -55,7 +56,7 @@ public:
     virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream) override;
-    virtual void cppTypeDecl(std::ostream &ostream) override { cTypeDecl(ostream); }
+    virtual void cppTypeDecl(std::ostream &ostream) override;
     virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;

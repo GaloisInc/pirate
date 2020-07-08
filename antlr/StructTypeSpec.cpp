@@ -34,13 +34,26 @@ void StructTypeSpec::addMember(StructMember* member) {
 }
 
 void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
+    cCppTypeDecl(ostream, false);
+}
+
+void StructTypeSpec::cppTypeDecl(std::ostream &ostream) {
+    cCppTypeDecl(ostream, true);
+}
+
+void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            ostream << member->typeSpec->cTypeName() << " ";
+            if (cpp) {
+                ostream << member->typeSpec->cppTypeName();
+            } else {
+                ostream << member->typeSpec->cTypeName();
+            }
+            ostream << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";

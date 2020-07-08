@@ -69,6 +69,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
     virtual std::string cTypeName() = 0;
+    virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
@@ -146,13 +147,14 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return "uint32_t"; }
+    virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::B32; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
-    virtual void cppTypeDecl(std::ostream &ostream) override { cTypeDecl(ostream); }
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
+    virtual void cppTypeDecl(std::ostream &ostream) override;
+    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     void addEnumerator(std::string enumerator);
     virtual ~EnumTypeSpec() { }
@@ -180,6 +182,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
+    virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }

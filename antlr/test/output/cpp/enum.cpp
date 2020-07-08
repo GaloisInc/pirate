@@ -7,7 +7,7 @@
 
 namespace enumtype {
 
-	enum dayofweek {
+	enum class DayOfWeek : uint32_t {
 		Monday,
 		Tuesday,
 		Wednesday,
@@ -16,8 +16,8 @@ namespace enumtype {
 	};
 
 	struct week_interval {
-		uint32_t begin __attribute__((aligned(4)));
-		uint32_t end __attribute__((aligned(4)));
+		DayOfWeek begin __attribute__((aligned(4)));
+		DayOfWeek end __attribute__((aligned(4)));
 	};
 
 	struct week_interval_wire {

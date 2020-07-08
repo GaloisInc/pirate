@@ -210,7 +210,6 @@ antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specCo
 
 antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
   std::string parent = namespacePrefix.get(ctx);
   TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier);
   EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);

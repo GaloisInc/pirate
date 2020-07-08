@@ -16,6 +16,7 @@
 #include "CDRTypes.hpp"
 #include "indent_facet.hpp"
 
+#include <algorithm>
 #include <iostream>
 
 TypeSpec* BaseTypeSpec::floatType() {
@@ -113,7 +114,26 @@ void EnumTypeSpec::cTypeDecl(std::ostream &ostream) {
     ostream << "}" << ";" << std::endl;
 }
 
+void EnumTypeSpec::cppTypeDecl(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "enum" << " " << "class" << " " << identifier << " ";
+    ostream << ":" << " " << "uint32_t" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    size_t len = enumerators.size();
+    for (size_t i = 0; i < len; i++) {
+        ostream << enumerators[i];
+        if (i < len - 1) {
+            ostream << ",";
+        }
+        ostream << std::endl;
+    }
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
 void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    std::string funcname = identifier;
+    transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     ostream << std::endl;
     ostream << "uint32_t" << " ";
     switch (functionType) {
@@ -124,7 +144,7 @@ void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType
             ostream << "decode";
             break;
     }
-    ostream << "_" << identifier << "(";
+    ostream << "_" << funcname << "(";
     ostream << "uint32_t" << " " << "value";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;

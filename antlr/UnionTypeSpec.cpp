@@ -32,6 +32,14 @@ UnionMember::~UnionMember() {
 }
 
 void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
+    cCppTypeDecl(ostream, false);
+}
+
+void UnionTypeSpec::cppTypeDecl(std::ostream &ostream) {
+    cCppTypeDecl(ostream, true);
+}
+
+void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -44,7 +52,12 @@ void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
         int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        ostream << member->typeSpec->cTypeName() << " ";
+        if (cpp) {
+            ostream << member->typeSpec->cppTypeName();
+        } else {
+            ostream << member->typeSpec->cTypeName();
+        }
+        ostream << " ";
         ostream << declarator->identifier;
         for (int dim : declarator->dimensions) {
             ostream << "[" << dim << "]";
