@@ -105,10 +105,7 @@ void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
     ostream << ")" << ";" << std::endl;
 }
 
-void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
-    ostream << std::endl;
-    cDeclareFunctionName(ostream, functionType, identifier);
-    ostream << indent_manip::push;
+void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
@@ -117,7 +114,11 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
     cCopyMemoryIn(ostream, switchType, "tag", "tag");
     cConvertByteOrder(ostream, switchType, "tag", functionType);
     cCopyMemoryOut(ostream, switchType, "tag", "tag");
-    ostream << "switch" << " " << "(" << "tag" << ")" << " " << "{" << std::endl;
+    if (functionType == CDRFunc::SERIALIZE) {
+        ostream << "switch" << " " << "(" << "input" << "->" << "tag" << ")" << " " << "{" << std::endl;
+    } else {
+        ostream << "switch" << " " << "(" << "output" << "->" << "tag" << ")" << " " << "{" << std::endl;
+    }
     for (UnionMember* member : members) {
          Declarator* declarator = member->declarator;
         for (std::string label : member->labels) {
@@ -140,6 +141,13 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
         ostream << indent_manip::pop;
     }
     ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << std::endl;
+    cDeclareFunctionName(ostream, functionType, identifier);
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, functionType);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -203,6 +211,60 @@ void UnionTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
         ostream << indent_manip::pop;
     }
     ostream << "}" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
+    ostream << std::endl;
+    ostream << "template" << "<" << ">" << std::endl;
+    ostream << "struct" << " " << "Serialization";
+    ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cppDeclareSerializationFunction(ostream);
+    ostream << std::endl;
+    cppDeclareDeserializationFunction(ostream);
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
+    cppDeclareSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "buf" << "->" << "resize" << "(";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << ")" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
+    ostream << " " << "output" << " " << "=" << " ";
+    ostream << "(" << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")" << " ";
+    ostream << "buf" << "->" << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
+    ostream << "=" << " " << "&" << "val" << ";" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
+    cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
+    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
+    ostream << " " << "input" << " " << "=" << " ";
+    ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
+    ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+    ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }

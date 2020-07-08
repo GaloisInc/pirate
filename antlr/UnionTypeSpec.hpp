@@ -33,6 +33,10 @@ public:
 
 // Implementation of the union type
 class UnionTypeSpec : public TypeSpec {
+private:
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cppDeclareSerializationFunction(std::ostream &ostream);
+    void cppDeclareDeserializationFunction(std::ostream &ostream);
 public:
     std::string namespacePrefix;
     std::string identifier;
@@ -54,7 +58,7 @@ public:
     virtual void cppTypeDecl(std::ostream &ostream) override { cTypeDecl(ostream); }
     virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
-    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream) override;
     void addMember(UnionMember* member);
     virtual ~UnionTypeSpec();
 };

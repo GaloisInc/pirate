@@ -63,7 +63,7 @@ be configured with the following settings:
 ### Usage
 
 ```
-./CDRGenerator < [input idl file] > [output C file]
+./CDRGenerator --target [c|cpp] < [input idl file] > [output C or C++ file]
 ```
 
 ### Example
