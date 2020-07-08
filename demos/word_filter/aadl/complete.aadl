@@ -1,0 +1,69 @@
+package Complete
+public
+	
+	system Complete
+	end Complete;
+	
+	process filter_ui
+		features
+			ui_to_host : out event data port;
+			host_to_ui : in event data port;
+		properties
+			Source_Text => ("filter.c");
+	end filter_ui;
+	
+	process filter_host
+		features
+			ui_to_host : in event data port;
+			host_to_ui : out event data port;
+		properties
+			Source_Text => ("filter.c");
+	end filter_host;
+	
+	system implementation Complete.One_Node
+		subcomponents
+			filter_ui : process filter_ui;
+			filter_host : process filter_host;
+		connections
+			DC0 : port filter_ui.ui_to_host -> filter_host.ui_to_host;
+			DC1 : port filter_host.host_to_ui -> filter_ui.host_to_ui;
+	end Complete.One_Node;
+	
+	system client_node -- Get node name from config file?
+		features
+			ui_to_host : out event data port;
+			host_to_ui : in event data port;
+	end client_node;
+	
+	system implementation client_node.Impl
+		subcomponents
+			filter_ui : process filter_ui;
+		connections
+			DC0 : port filter_ui.ui_to_host -> ui_to_host;
+			DC1 : port host_to_ui -> filter_ui.host_to_ui;
+	end client_node.impl;
+	
+	system server_node
+		features
+			ui_to_host : in event data port;
+			host_to_ui : out event data port;
+	end server_node;
+	
+	system implementation server_node.Impl
+		subcomponents
+			filter_host : process filter_host;
+		connections
+			DC0 : port ui_to_host -> filter_host.ui_to_host;
+			DC1 : port filter_host.host_to_ui -> host_to_ui;
+	end server_node.impl;
+	
+	system implementation Complete.Two_Node
+		subcomponents
+			client_node : system client_node.Impl;
+			server_node : system server_node.Impl;
+		connections
+			DC0 : port client_node.ui_to_host -> server_node.ui_to_host;
+			DC1 : port server_node.host_to_ui -> client_node.host_to_ui;
+	end Complete.Two_Node;
+	
+end Complete;

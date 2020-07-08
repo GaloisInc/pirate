@@ -107,4 +107,42 @@ INSTANTIATE_TEST_SUITE_P(TcpSocketFunctionalTest, TcpSocketTest,
     Values(std::make_tuple(0, 0),
         std::make_tuple(TEST_BUF_LEN, TEST_MIN_TX_LEN)));
 
+class TcpSocketCloseWriterTest : public ClosedWriterTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_tcp_socket_param_t *param = &Reader.param.channel.tcp_socket;
+
+        pirate_init_channel_param(TCP_SOCKET, &Reader.param);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
+        param->port = 26427;
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(TcpSocketCloseWriterTest, Run)
+{
+    Run();
+}
+
+class TcpSocketCloseReaderTest : public ClosedReaderTest
+{
+public:
+    void ChannelInit()
+    {
+        pirate_tcp_socket_param_t *param = &Reader.param.channel.tcp_socket;
+
+        pirate_init_channel_param(TCP_SOCKET, &Reader.param);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
+        param->port = 26427;
+        Writer.param = Reader.param;
+    }
+};
+
+TEST_F(TcpSocketCloseReaderTest, Run)
+{
+    Run();
+}
+
 } // namespace

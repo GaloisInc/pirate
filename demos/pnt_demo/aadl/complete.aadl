@@ -1,0 +1,67 @@
+package Complete
+public
+	
+	process green
+		features
+			gps_to_uav : out event data port;
+			uav_to_target : in event data port;
+			rf_to_target : in event data port;
+		properties
+			Source_Text => ("pnt_example.cpp");
+	end green;
+	
+	process orange
+		features
+			gps_to_uav : in event data port;
+			uav_to_target : out event data port;
+			rf_to_target : out event data port;
+		properties
+			Source_Text => ("pnt_example.cpp");
+	end orange;
+	
+	system green_node
+		features
+			gps_to_uav : out event data port;
+			uav_to_target : in event data port;
+			rf_to_target : in event data port;
+	end green_node;
+	
+	system implementation green_node.Impl
+		subcomponents
+			green : process green;
+		connections
+			DC0 : port green.gps_to_uav -> gps_to_uav;
+			DC1 : port uav_to_target -> green.uav_to_target;
+			DC2 : port rf_to_target -> green.rf_to_target;
+	end green_node.impl;
+	
+	system orange_node
+		features
+			gps_to_uav : in event data port;
+			uav_to_target : out event data port;
+			rf_to_target : out event data port;
+	end orange_node;
+	
+	system implementation orange_node.Impl
+		subcomponents
+			orange : process orange;
+		connections
+			DC0 : port gps_to_uav -> orange.gps_to_uav;
+			DC1 : port orange.uav_to_target -> uav_to_target;
+			DC2 : port orange.rf_to_target -> rf_to_target;
+	end orange_node.impl;
+	
+	system Complete
+	end Complete;
+	
+	system implementation Complete.Impl
+		subcomponents
+			green_node : system green_node.Impl;
+			orange_node : system orange_node.Impl;
+		connections
+			DC0 : port green_node.gps_to_uav -> orange_node.gps_to_uav;
+			DC1 : port orange_node.uav_to_target -> green_node.uav_to_target;
+			DC2 : port orange_node.rf_to_target -> green_node.rf_to_target;
+	end Complete.Impl;
+	
+end Complete;

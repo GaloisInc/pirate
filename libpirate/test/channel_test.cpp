@@ -262,4 +262,66 @@ void ChannelTest::ReaderTest()
     ReaderChannelClose();
 }
 
+void HalfClosedTest::ReaderTest()
+{
+    if (childOpen)
+    {
+        ReaderChannelOpen();
+    }
+}
+
+void HalfClosedTest::WriterTest()
+{
+    if (childOpen)
+    {
+        WriterChannelOpen();
+    }
+}
+
+void ClosedWriterTest::RunChildOpen(bool child)
+{
+    int rv;
+
+    ChannelTest::RunChildOpen(child);
+
+    WriterChannelClose();
+
+    rv = pirate_read(Reader.gd, Reader.buf, buf_size);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    ReaderChannelClose();
+}
+
+void ClosedReaderTest::RunChildOpen(bool child)
+{
+    int rv;
+    struct sigaction new_action, prev_action;
+
+    ChannelTest::RunChildOpen(child);
+
+    memset(&new_action, 0, sizeof(new_action));
+    new_action.sa_handler = SIG_IGN;
+    new_action.sa_flags = 0;
+
+    rv = sigaction(SIGPIPE, &new_action, &prev_action);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+
+    ReaderChannelClose();
+
+    WriteDataInit(buf_size);
+    rv = pirate_write(Writer.gd, Writer.buf, buf_size);
+    ASSERT_EQ(errno, EPIPE);
+    ASSERT_EQ(rv, -1);
+    errno = 0;
+
+    WriterChannelClose();
+
+    rv = sigaction(SIGPIPE, &prev_action, NULL);
+    ASSERT_EQ(errno, 0);
+    ASSERT_EQ(rv, 0);
+}
+
+
 } // namespace

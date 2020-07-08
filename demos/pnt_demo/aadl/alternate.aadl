@@ -1,0 +1,242 @@
+package Alternate
+public
+	with Base_Types;
+	
+	data Position
+	end Position;
+	
+	data implementation Position.I
+		subcomponents
+			x : data Base_Types::Float_64;
+			y : data Base_Types::Float_64;
+			z : data Base_Types::Float_64;
+	end Position.I;
+	
+	data Distance
+	end Distance;
+	
+	data implementation Distance.I
+		subcomponents
+			dx : data Base_Types::Float_64;
+			dy : data Base_Types::Float_64;
+			dz : data Base_Types::Float_64;
+	end Distance.I;
+	
+	subprogram GpsSensor_read
+	end GpsSensor_read;
+	
+	subprogram implementation GpsSensor_read.I
+		properties
+			Source_Text => ("sensors.h");
+			Source_Name => "GpsSensor::read";
+	end GpsSensor_read.I;
+	
+	thread gps
+		features
+			gpsPosition : out data port Position.I;
+			read : requires subprogram access GpsSensor_read.I;
+	end gps;
+	
+	thread implementation gps.I
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 10 ms;
+			Compute_Entrypoint => classifier(GpsSensor_read.I);
+	end gps.I;
+	
+	subprogram Target_setUAVLocation
+		features
+			trackPosition : in parameter Position.I;
+	end Target_setUAVLocation;
+	
+	subprogram implementation Target_setUAVLocation.I
+		properties
+			Source_Text => ("target.h");
+			Source_Name => "Target::setUAVLocation";
+	end Target_setUAVLocation.I;
+	
+	thread uavToTargetThread
+		features
+			trackPosition : in data port Position.I;
+			setUAVLocation : requires subprogram access Target_setUAVLocation.I;
+	end uavToTargetThread;
+	
+	thread implementation uavToTargetThread.I
+		--calls
+		--	call_chain : {
+		--		Target_setUAVLocation : subprogram Target_setUAVLocation.I;
+		--	};
+		--connections
+		--	PC0 : parameter trackPosition -> Target_setUAVLocation.trackPosition;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Dispatch_Trigger => (reference(trackPosition));
+			Compute_Entrypoint => classifier(Target_setUAVLocation.I);
+	end uavToTargetThread.I;
+	
+	subprogram Target_setDistance
+		features
+			distance : in parameter Distance.I;
+	end Target_setDistance;
+	
+	subprogram implementation Target_setDistance.I
+		properties
+			Source_Text => ("target.h");
+			Source_Name => "Target::setDistance";
+	end Target_setDistance.I;
+	
+	thread rfToTargetThread
+		features
+			distance : in data port Distance.I;
+			setDistance : requires subprogram access Target_setDistance.I;
+	end rfToTargetThread;
+	
+	thread implementation rfToTargetThread.I
+		--calls
+		--	call_chain : {
+		--		Target_setDistance : subprogram Target_setDistance.I;
+		--	};
+		--connections
+		--	PC0 : parameter distance -> Target_setDistance.distance;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Dispatch_Trigger => (reference(distance));
+			Compute_Entrypoint => classifier(Target_setDistance);
+	end rfToTargetThread.I;
+	
+	process green
+		features
+			gpsPosition : out data port Position.I;
+			trackPosition : in data port Position.I;
+			distance : in data port Distance.I;
+	end green;
+	
+	process implementation green.I
+		subcomponents
+			gps : thread gps.I;
+			uavToTargetThread : thread uavToTargetThread.I;
+			rfToTargetThread : thread rfToTargetThread.I;
+			GpsSensor_read : subprogram GpsSensor_read.I;
+			Target_setUAVLocation : subprogram Target_setUAVLocation.I;
+			Target_setDistance : subprogram Target_setDistance.I;
+		connections
+			DC0 : port gps.gpsPosition -> gpsPosition;
+			DC1 : port trackPosition -> uavToTargetThread.trackPosition;
+			DC2 : port distance -> rfToTargetThread.distance;
+			SA3 : subprogram access gps.read <-> GpsSensor_read;
+			SA4 : subprogram access uavToTargetThread.setUAVLocation <-> Target_setUAVLocation;
+			SA5 : subprogram access rfToTargetThread.setDistance <-> Target_setDistance;
+	end green.I;
+	
+	system Green_Node
+		features
+			gpsPosition : out data port Position.I;
+			trackPosition : in data port Position.I;
+			distance : in data port Distance.I;
+			Green_To_Orange : requires bus access GE_Eth;
+			Orange_To_Green : requires bus access GE_Eth;
+	end green_node;
+	
+	system implementation green_node.I
+		subcomponents
+			green : process green.I;
+		connections
+			DC0 : port green.gpsPosition -> gpsPosition;
+			DC1 : port trackPosition -> green.trackPosition;
+			DC2 : port distance -> green.distance;
+	end green_node.I;
+	
+	subprogram OwnShip_onGpsPositionChange
+		features
+			gpsPosition : in parameter Position.I;
+	end OwnShip_onGpsPositionChange;
+	
+	subprogram implementation OwnShip_onGpsPositionChange.I
+		properties
+			Source_Text => ("ownship.cpp");
+			Source_Name => "OwnShip::onGpsPositionChange";
+	end OwnShip_onGpsPositionChange.I;
+	
+	thread gpsToUAVThread
+		features
+			gpsPosition : in data port Position.I;
+			trackPosition : out data port Position.I;
+			distance : out data port Distance.I;
+			onGpsPositionChange : requires subprogram access OwnShip_onGpsPositionChange.I;
+	end gpsToUAVThread;
+	
+	thread implementation gpsToUAVThread.I
+		--calls
+		--	call_chain : {
+		--		OwnShip_onGpsPositionChange : subprogram OwnShip_onGpsPositionChange.I;
+		--	};
+		--connections
+		--	PC0 : parameter OwnShip_gpsPosition -> onGpsPositionChange.gpsPosition;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Dispatch_Trigger => (reference(gpsPosition));
+			Compute_Entrypoint => classifier(OwnShip_onGpsPositionChange.I);
+	end gpsToUAVThread.I;
+	
+	process orange
+		features
+			gpsPosition : in data port Position.I;
+			trackPosition : out data port Position.I;
+			distance : out data port Distance.I;
+	end orange;
+	
+	process implementation orange.I
+		subcomponents
+			gpsToUAVThread : thread gpsToUAVThread.I;
+			OwnShip_onGpsPositionChange : subprogram OwnShip_onGpsPositionChange.I;
+		connections
+			DC0 : port gpsPosition -> gpsToUAVThread.gpsPosition;
+			DC1 : port gpsToUAVThread.trackPosition -> trackPosition;
+			DC2 : port gpsToUAVThread.distance -> distance;
+			SA3 : subprogram access OwnShip_onGpsPositionChange <-> gpsToUAVThread.onGpsPositionChange;
+	end orange.I;
+	
+	system Orange_Node
+		features
+			gpsPosition : in data port Position.I;
+			trackPosition : out data port Position.I;
+			distance : out data port Distance.I;
+			Green_To_Orange : requires bus access GE_Eth;
+			Orange_To_Green : requires bus access GE_Eth;
+	end Orange_Node;
+	
+	system implementation Orange_Node.I
+		subcomponents
+			orange : process orange.I;
+		connections
+			DC0 : port gpsPosition -> orange.gpsPosition;
+			DC1 : port orange.trackPosition -> trackPosition;
+			DC2 : port orange.distance -> distance;
+	end Orange_Node.I;
+	
+	system Alternate
+	end Alternate;
+	
+	bus GE_Eth
+	end GE_Eth;
+	
+	system implementation Alternate.I
+		subcomponents
+			Green_Node : system Green_Node.I;
+			Orange_Node : system Orange_Node.I;
+			Green_To_Orange : bus GE_Eth;
+			Orange_To_Green : bus GE_Eth;
+		connections
+			DC0 : port Green_Node.gpsPosition -> Orange_Node.gpsPosition;
+			DC1 : port Orange_Node.trackPosition -> Green_Node.trackPosition;
+			DC2 : port Orange_Node.distance -> Green_Node.distance;
+			BA3 : bus access Green_Node.Green_To_Orange <-> Green_To_Orange;
+			BA4 : bus access Green_Node.Orange_To_Green <-> Orange_To_Green;
+			BA5 : bus access Orange_Node.Green_To_Orange <-> Green_To_Orange;
+			BA6 : bus access Orange_Node.Orange_To_Green <-> Orange_To_Green;
+		properties
+			Actual_Connection_Binding => (reference(Green_To_Orange)) applies to DC0;
+			Actual_Connection_Binding => (reference(Orange_To_Green)) applies to DC1, DC2;
+	end Alternate.I;
+	
+end Alternate;
