@@ -27,6 +27,11 @@ SET(CDR_SOURCES
     "CDRBuildTypes.cpp"
     "CDRGenerator.cpp"
     "CDRTypes.cpp"
+    "StructTypeSpec.cpp"
+    "UnionTypeSpec.cpp"
+    "ModuleDecl.cpp"
+    "Annotations.cpp"
+    "indent_facet.cpp"
 )
 
 add_executable(CDRGenerator CDRGeneratorMain.cpp ${CDR_SOURCES} ${ANTLR4_SRC_FILES_IDL})

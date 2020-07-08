@@ -18,7 +18,7 @@
 
 #include <getopt.h>
 
-#include "CDRGenerator.h"
+#include "CDRGenerator.hpp"
 #include "indent_facet.hpp"
 
 int main(int argc, char* argv[]) {

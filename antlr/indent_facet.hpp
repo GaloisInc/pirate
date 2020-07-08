@@ -73,66 +73,11 @@ inline indent_facet::result indent_facet::do_out(state_type &need_indentation,
 }
 
 
-
-/// I hate the way I solved this, but I can't think of a better way
-/// around the problem.  I even asked stackoverflow for help:
-///
-///   http://stackoverflow.com/questions/32480237/apply-a-facet-to-all-stream-output-use-custom-string-manipulators
-///
-///
 namespace  indent_manip{
 
-static const int index = std::ios_base::xalloc();
+	std::ostream& push(std::ostream& os);
+	std::ostream& pop(std::ostream& os);
 
-inline static std::ostream & push(std::ostream& os)
-{
-	auto ilevel = ++os.iword(index);
-	os.imbue(std::locale(os.getloc(), new indent_facet(ilevel)));
-	return os;
-}
-
-inline std::ostream& pop(std::ostream& os)
-{
-	auto ilevel = (os.iword(index)>0) ? --os.iword(index) : 0;
-	os.imbue(std::locale(os.getloc(), new indent_facet(ilevel)));
-	return os;
-}
-
-/// Clears the ostream indentation set, but NOT the raii_guard.
-inline std::ostream& clear(std::ostream& os)
-{
-	os.iword(index) = 0;
-	os.imbue(std::locale(os.getloc(), new indent_facet(0)));
-	return os;
-}
-
-
-
-/// Provides a RAII guard around your manipulation.
-class raii_guard
-{
-public:
-	raii_guard(std::ostream& os):
-		oref(os),
-		start_level(os.iword(index))
-	{}
-
-	~raii_guard()
-	{
-		reset();
-	}
-
-	/// Resets the streams indentation level to the point itw as at
-	/// when the guard was created.
-	void reset()
-	{
-		oref.iword(index) = start_level;
-		oref.imbue(std::locale(oref.getloc(), new indent_facet(start_level)));
-	}
-
-private:
-	std::ostream& oref;
-	int start_level;
-};
-
+	/// Clears the ostream indentation set, but NOT the raii_guard.
+	std::ostream& clear(std::ostream& os);
 }

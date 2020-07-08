@@ -16,13 +16,13 @@
 #include <iostream>
 
 #include "antlr4-runtime.h"
-#include "BooleanErrorListener.h"
 #include "IDLLexer.h"
 #include "IDLParser.h"
-#include "CDRBuildTypes.h"
-#include "CDRGenerator.h"
-#include "CDRModuleCounter.h"
-#include "CDRTypes.h"
+#include "BooleanErrorListener.hpp"
+#include "CDRBuildTypes.hpp"
+#include "CDRGenerator.hpp"
+#include "CDRModuleCounter.hpp"
+#include "ModuleDecl.hpp"
 
 using namespace antlr4;
 

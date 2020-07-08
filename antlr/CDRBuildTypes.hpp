@@ -19,7 +19,8 @@
 
 #include "antlr4-runtime.h"
 #include "IDLBaseVisitor.h"
-#include "CDRTypes.h"
+#include "CDRTypes.hpp"
+#include "Annotations.hpp"
 
 class CDRBuildTypes : public IDLBaseVisitor {
 private:

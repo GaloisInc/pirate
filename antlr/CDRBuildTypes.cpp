@@ -14,8 +14,10 @@
  */
 
 #include "antlr4-runtime.h"
-#include "CDRBuildTypes.h"
-#include "CDRTypes.h"
+#include "CDRBuildTypes.hpp"
+#include "StructTypeSpec.hpp"
+#include "UnionTypeSpec.hpp"
+#include "ModuleDecl.hpp"
 
 #include <algorithm>
 
