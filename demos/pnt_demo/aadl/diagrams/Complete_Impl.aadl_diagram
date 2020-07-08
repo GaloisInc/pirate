@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="ASCII"?>
+<diagram:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:diagram="http://osate.org/diagram" formatVersion="7">
+  <element uuid="cf27556c-7e3f-4c9d-b58e-20cf44fa312e" manual="true">
+    <element uuid="e268adf4-5857-4ca5-a6ed-ca6a1e303cd1" manual="true">
+      <element uuid="f1af5451-86bf-484f-affe-7c91384ab202">
+        <bo>
+          <seg>tag</seg>
+          <seg>unidirectional</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>connection</seg>
+        <seg>dc0</seg>
+      </bo>
+      <contentFilters/>
+    </element>
+    <element uuid="8ab15135-0e17-45e6-93c7-f4d1be3a50d8" manual="true">
+      <element uuid="20350cd4-eac1-4702-a575-a0c0d1746052">
+        <bo>
+          <seg>tag</seg>
+          <seg>unidirectional</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>connection</seg>
+        <seg>dc1</seg>
+      </bo>
+      <contentFilters/>
+    </element>
+    <element uuid="b7d7d7c4-e9f0-412d-ab1a-5fd1bad606f3" manual="true">
+      <element uuid="1b763be8-b2a7-4597-8112-1b302da7acb6">
+        <bo>
+          <seg>tag</seg>
+          <seg>unidirectional</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>connection</seg>
+        <seg>dc2</seg>
+      </bo>
+      <contentFilters/>
+    </element>
+    <element uuid="aba95486-314a-4a84-8041-b5a96af44bd7" manual="true">
+      <element uuid="3432f888-2ea7-466a-b41e-da1c1052e15d" manual="true">
+        <element uuid="8ed1b3fb-d5e5-475e-ac75-54362ba3eb6c">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc0</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="6652ae6e-2b3c-423c-b982-0c111997308b" manual="true">
+        <element uuid="4fcc0ce4-6bd2-48dd-8466-8d03be2dd530">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc1</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="6630b5a4-b118-469e-b2fa-21dca8ab5d95" manual="true">
+        <element uuid="ccaf7dc8-2bba-45cf-b9ec-0ee95f00dc48">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc2</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="d700468b-f040-4a8b-851d-3d06d82f1bb6" manual="true" dockArea="left">
+        <bo>
+          <seg>feature</seg>
+          <seg>gps_to_uav</seg>
+        </bo>
+        <position y="145.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="af86820e-0b6c-455f-8ccc-b80d69878752" manual="true" dockArea="left">
+        <bo>
+          <seg>feature</seg>
+          <seg>rf_to_target</seg>
+        </bo>
+        <position y="50.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="bf706fd4-8f91-4003-ba66-8d6d0b940086" manual="true" dockArea="left">
+        <bo>
+          <seg>feature</seg>
+          <seg>uav_to_target</seg>
+        </bo>
+        <position y="100.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="068a6701-5ddd-4c0d-8864-75c12b8aaf2a" manual="true">
+        <element uuid="aafc27fe-bc13-4f85-b581-8c1b70e12cb8" manual="true" dockArea="left">
+          <bo>
+            <seg>feature</seg>
+            <seg>gps_to_uav</seg>
+          </bo>
+          <position y="107.0"/>
+          <contentFilters/>
+        </element>
+        <element uuid="efa8570c-1915-4e67-84e5-e2492728189d" manual="true" dockArea="left">
+          <bo>
+            <seg>feature</seg>
+            <seg>rf_to_target</seg>
+          </bo>
+          <position y="12.0"/>
+          <contentFilters/>
+        </element>
+        <element uuid="26a67d21-be69-402d-a4bb-150093605458" manual="true" dockArea="left">
+          <bo>
+            <seg>feature</seg>
+            <seg>uav_to_target</seg>
+          </bo>
+          <position y="62.0"/>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>subcomponent</seg>
+          <seg>green</seg>
+        </bo>
+        <position x="113.0" y="38.0"/>
+        <size width="297.0" height="163.0"/>
+        <contentFilters>
+          <filter>features</filter>
+          <filter>internalFeatures</filter>
+          <filter>processorFeatures</filter>
+          <filter>connections</filter>
+          <filter>flowSpecifications</filter>
+        </contentFilters>
+      </element>
+      <bo>
+        <seg>subcomponent</seg>
+        <seg>green_node</seg>
+      </bo>
+      <position x="571.0" y="38.0"/>
+      <size width="511.0" height="221.0"/>
+      <contentFilters>
+        <filter>features</filter>
+        <filter>internalFeatures</filter>
+        <filter>processorFeatures</filter>
+        <filter>connections</filter>
+        <filter>flowSpecifications</filter>
+      </contentFilters>
+    </element>
+    <element uuid="74a56b86-15ab-4dd7-a097-ad3b198f15a4" manual="true">
+      <element uuid="8d630f6d-219c-4ecf-b82a-939f8ff7b1f3" manual="true">
+        <element uuid="a0e56143-2f82-4467-b4a5-26f80c267c6d">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc0</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="03f2abf2-ce92-43e6-b0ef-68d94e69731c" manual="true">
+        <element uuid="b1f7bf7f-2b6c-42e8-8452-a05a736575a9">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc1</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="0e7b2c5e-d88b-4620-91fa-1ffa210bfe8e" manual="true">
+        <element uuid="29c2b76a-7ae8-4d93-a8ab-284899547575">
+          <bo>
+            <seg>tag</seg>
+            <seg>unidirectional</seg>
+          </bo>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>connection</seg>
+          <seg>dc2</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <element uuid="9dd1a9ad-66d5-4a3b-bace-befc3f87baf0" manual="true" dockArea="right">
+        <bo>
+          <seg>feature</seg>
+          <seg>gps_to_uav</seg>
+        </bo>
+        <position x="430.0" y="145.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="713fd1bc-a551-4b2d-befe-42365b8ecd5f" manual="true" dockArea="right">
+        <bo>
+          <seg>feature</seg>
+          <seg>rf_to_target</seg>
+        </bo>
+        <position x="431.0" y="50.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="d4861e8c-4720-463f-ac66-0917b75b3632" manual="true" dockArea="right">
+        <bo>
+          <seg>feature</seg>
+          <seg>uav_to_target</seg>
+        </bo>
+        <position x="418.0" y="100.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="3bb166ee-736d-415b-bf21-51b9c7ec7961" manual="true">
+        <element uuid="9a2e0528-71bb-4231-94c1-1e73937f1d9c" manual="true" dockArea="right">
+          <bo>
+            <seg>feature</seg>
+            <seg>gps_to_uav</seg>
+          </bo>
+          <position x="216.0" y="107.0"/>
+          <contentFilters/>
+        </element>
+        <element uuid="94cd9443-50e8-4133-a6c3-2bd2620efe57" manual="true" dockArea="right">
+          <bo>
+            <seg>feature</seg>
+            <seg>rf_to_target</seg>
+          </bo>
+          <position x="217.0" y="12.0"/>
+          <contentFilters/>
+        </element>
+        <element uuid="87d002f6-e3bf-480f-a828-fce9a6cf99c9" manual="true" dockArea="right">
+          <bo>
+            <seg>feature</seg>
+            <seg>uav_to_target</seg>
+          </bo>
+          <position x="204.0" y="62.0"/>
+          <contentFilters/>
+        </element>
+        <bo>
+          <seg>subcomponent</seg>
+          <seg>orange</seg>
+        </bo>
+        <position x="101.0" y="38.0"/>
+        <size width="305.0" height="163.0"/>
+        <contentFilters>
+          <filter>features</filter>
+          <filter>internalFeatures</filter>
+          <filter>processorFeatures</filter>
+          <filter>connections</filter>
+          <filter>flowSpecifications</filter>
+        </contentFilters>
+      </element>
+      <bo>
+        <seg>subcomponent</seg>
+        <seg>orange_node</seg>
+      </bo>
+      <position x="32.0" y="38.0"/>
+      <size width="519.0" height="221.0"/>
+      <contentFilters>
+        <filter>features</filter>
+        <filter>internalFeatures</filter>
+        <filter>processorFeatures</filter>
+        <filter>connections</filter>
+        <filter>flowSpecifications</filter>
+      </contentFilters>
+    </element>
+    <bo>
+      <seg>classifier</seg>
+      <seg>complete.impl</seg>
+    </bo>
+    <position x="12.0" y="12.0"/>
+    <size width="1104.0" height="279.0"/>
+    <contentFilters>
+      <filter>features</filter>
+      <filter>internalFeatures</filter>
+      <filter>processorFeatures</filter>
+      <filter>connections</filter>
+      <filter>flowSpecifications</filter>
+      <filter>subcomponents</filter>
+    </contentFilters>
+  </element>
+  <config type="structure" connectionPrimaryLabelsVisible="false">
+    <enabledAadlProperties/>
+    <context>
+      <seg>classifier</seg>
+      <seg>complete::complete.impl</seg>
+    </context>
+  </config>
+</diagram:Diagram>

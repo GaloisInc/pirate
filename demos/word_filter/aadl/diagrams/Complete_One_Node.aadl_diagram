@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="ASCII"?>
+<diagram:Diagram xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:diagram="http://osate.org/diagram" formatVersion="7">
+  <element uuid="84e8cb89-bf87-4778-886c-21ebc46fe182" manual="true">
+    <element uuid="503c45a1-35d5-48bc-9a2e-a58ebf1f98ba" manual="true">
+      <element uuid="3a13fd35-65d6-4b96-92c3-bd85942d1795">
+        <bo>
+          <seg>tag</seg>
+          <seg>unidirectional</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>connection</seg>
+        <seg>dc0</seg>
+      </bo>
+      <contentFilters/>
+    </element>
+    <element uuid="b82c2610-8aef-4a47-a2b3-932c71cd7607" manual="true">
+      <element uuid="51637a64-fa4f-4c46-b077-a4d2655d9b31">
+        <bo>
+          <seg>tag</seg>
+          <seg>unidirectional</seg>
+        </bo>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>connection</seg>
+        <seg>dc1</seg>
+      </bo>
+      <contentFilters/>
+    </element>
+    <element uuid="a58819ca-d2b5-40a3-8d70-c5784acf0ea4" manual="true">
+      <element uuid="5c51da81-9d52-4fec-ad0b-876f4238094b" manual="true" dockArea="left">
+        <bo>
+          <seg>feature</seg>
+          <seg>host_to_ui</seg>
+        </bo>
+        <position y="60.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="f0311ace-1c37-4510-8881-7ea7a34d1dc4" manual="true" dockArea="left">
+        <bo>
+          <seg>feature</seg>
+          <seg>ui_to_host</seg>
+        </bo>
+        <position y="10.0"/>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>subcomponent</seg>
+        <seg>filter_host</seg>
+      </bo>
+      <position x="305.0" y="38.0"/>
+      <size width="288.0" height="110.0"/>
+      <contentFilters>
+        <filter>features</filter>
+        <filter>internalFeatures</filter>
+        <filter>processorFeatures</filter>
+        <filter>connections</filter>
+        <filter>flowSpecifications</filter>
+      </contentFilters>
+    </element>
+    <element uuid="cc05d8a8-d436-4e2d-b8a4-3b6c3c24d539" manual="true">
+      <element uuid="bda4f4fb-61cd-4c16-9de4-82253de9afc3" manual="true" dockArea="right">
+        <bo>
+          <seg>feature</seg>
+          <seg>host_to_ui</seg>
+        </bo>
+        <position x="190.0" y="60.0"/>
+        <contentFilters/>
+      </element>
+      <element uuid="631cf8ae-04be-465a-bdd0-8bce4b1ac2b4" manual="true" dockArea="right">
+        <bo>
+          <seg>feature</seg>
+          <seg>ui_to_host</seg>
+        </bo>
+        <position x="190.0" y="10.0"/>
+        <contentFilters/>
+      </element>
+      <bo>
+        <seg>subcomponent</seg>
+        <seg>filter_ui</seg>
+      </bo>
+      <position x="12.0" y="38.0"/>
+      <size width="273.0" height="110.0"/>
+      <contentFilters>
+        <filter>features</filter>
+        <filter>internalFeatures</filter>
+        <filter>processorFeatures</filter>
+        <filter>connections</filter>
+        <filter>flowSpecifications</filter>
+      </contentFilters>
+    </element>
+    <bo>
+      <seg>classifier</seg>
+      <seg>complete.one_node</seg>
+    </bo>
+    <position x="12.0" y="12.0"/>
+    <size width="605.0" height="160.0"/>
+    <contentFilters>
+      <filter>features</filter>
+      <filter>internalFeatures</filter>
+      <filter>processorFeatures</filter>
+      <filter>connections</filter>
+      <filter>flowSpecifications</filter>
+      <filter>subcomponents</filter>
+    </contentFilters>
+  </element>
+  <config type="structure" connectionPrimaryLabelsVisible="false">
+    <enabledAadlProperties/>
+    <context>
+      <seg>classifier</seg>
+      <seg>complete::complete.one_node</seg>
+    </context>
+  </config>
+</diagram:Diagram>
