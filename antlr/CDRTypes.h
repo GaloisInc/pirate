@@ -206,6 +206,9 @@ typedef std::function<void(StructMember* member, Declarator* declarator)> Struct
 class StructTypeSpec : public TypeSpec {
 private:
     void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cppDeclareSerializationFunction(std::ostream &ostream);
+    void cppDeclareDeserializationFunction(std::ostream &ostream);
 public:
     std::string namespacePrefix;
     std::string identifier;

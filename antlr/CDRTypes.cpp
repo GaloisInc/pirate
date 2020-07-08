@@ -236,7 +236,7 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
     }
 }
 
-void declareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+static void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
     switch (functionType) {
         case CDRFunc::SERIALIZE:
             ostream << "void" << " ";
@@ -257,10 +257,20 @@ void declareFunctionName(std::ostream &ostream, CDRFunc functionType, std::strin
     }
 }
 
-void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
-    ostream << std::endl;
-    declareFunctionName(ostream, functionType, identifier);
-    ostream << indent_manip::push;
+void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << "static" << " " << "void" << " " << "toBuffer";
+    ostream << "(" << typeName << " " << "const" << "&" << " " << "val";
+    ostream << "," << " " << "std" << "::" << "vector" << "<" << "char" << ">" << "*";
+    ostream << " " << "buf" << ")";
+}
+
+void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << "static" << " " << typeName << " " << "fromBuffer";
+    ostream << "(" << "std" << "::" << "vector" << "<" << "char" << ">" << " " << "const" << "&";
+    ostream << " " << "buf" << ")";
+}
+
+void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     cDeclareFunctionApply(false, true, [&ostream, functionType] (StructMember* member, Declarator* declarator)
@@ -271,6 +281,13 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
         { cConvertByteOrder(ostream, member->typeSpec, "field_" + declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
+}
+
+void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+    ostream << std::endl;
+    cDeclareFunctionName(ostream, functionType, identifier);
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, functionType);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -281,33 +298,52 @@ void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << "struct" << " " << "Serialization";
     ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "static" << " " << "void" << " " << "toBuffer";
-    ostream << "(" << "struct" << " " << namespacePrefix << identifier << " " << "const" << "&" << " " << "val";
-    ostream << "," << " " << "std" << "::" << "vector" << "<" <<"char" << ">" << "*";
-    ostream << " " << "buf" << ")" << " " << "{" << std::endl;
+    cppDeclareSerializationFunction(ostream);
+    ostream << std::endl;
+    cppDeclareDeserializationFunction(ostream);
+    ostream << indent_manip::pop;
+    ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
+    cppDeclareSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
-        { cDeclareLocalVar(ostream, member->typeSpec, declarator->identifier); });
-    ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << " " << "output" << " ";
-    ostream << "=" << " " << "(" << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")" << " ";
-    ostream << "buf" << "->" << "data" << "(" << ")" << ";" << std::endl;
-    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
-    ostream << "=" << " " << "&" << "val" << ";" << std::endl;
     ostream << "buf" << "->" << "resize" << "(";
     ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
     ostream << ")" << ";" << std::endl;
-    cDeclareFunctionApply(false, true, [&ostream] (StructMember* member, Declarator* declarator)
-        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, CDRFunc::SERIALIZE, "", ""); });
-    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryIn(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
-    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cConvertByteOrder(ostream, member->typeSpec, declarator->identifier, CDRFunc::SERIALIZE); });
-    cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryOut(ostream, member->typeSpec, declarator->identifier, declarator->identifier); });
+    ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
+    ostream << " " << "output" << " " << "=" << " ";
+    ostream << "(" << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")" << " ";
+    ostream << "buf" << "->" << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
+    ostream << "=" << " " << "&" << "val" << ";" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
+    cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
+    ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
+    ostream << " " << "input" << " " << "=" << " ";
+    ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
+    ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+    ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << ")" << " " << "{" << std::endl;
+    ostream << indent_manip::push;
     ostream << indent_manip::pop;
-    ostream << "}" << ";" << std::endl;
+    ostream << "}" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    ostream << "return" << " " << "retval" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
@@ -446,7 +482,7 @@ void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
 
 void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     ostream << std::endl;
-    declareFunctionName(ostream, functionType, identifier);
+    cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
@@ -830,14 +866,21 @@ void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
 void cppPirateNamespaceHeader(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "namespace" << " " << "pirate" << " " << "{" << std::endl;
+    ostream << "#ifndef" << " " << "_PIRATE_SERIALIZATION_H" << std::endl;
+    ostream << "#define" << " " << "_PIRATE_SERIALIZATION_H" << std::endl;
     ostream << indent_manip::push;
-    ostream << "template <typename T>" << std::endl;
-    ostream << "struct Serialization {" << std::endl;
+    ostream << "template" << " " << "<" << "typename" << " " << "T" << ">" << std::endl;
+    ostream << "struct" << " " << "Serialization" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "static void toBuffer(T const& val, std::vector<char>* buf);" << std::endl;
-    ostream << "static T fromBuffer(std::vector<char> const& buf);" << std::endl;
+    cppDeclareSerializationFunctionName(ostream, "T");
+    ostream << ";" << std::endl;
+    cppDeclareDeserializationFunctionName(ostream, "T");
+    ostream << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "#endif" << " " << "//" << " " << "_PIRATE_SERIALIZATION_H" << std::endl;
+    ostream << indent_manip::push;
 }
 
 void cppPirateNamespaceFooter(std::ostream &ostream) {
