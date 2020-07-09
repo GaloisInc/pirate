@@ -139,6 +139,7 @@ or the following C++ code,
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -166,16 +167,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
     template <typename T>
     struct Serialization {
-        static void toBuffer(T const& val, std::vector<char>* buf);
+        static void toBuffer(T const& val, std::vector<char>& buf);
         static T fromBuffer(std::vector<char> const& buf);
     };
 #endif // _PIRATE_SERIALIZATION_H
 
     template<>
     struct Serialization<struct pnt::position> {
-        static void toBuffer(struct pnt::position const& val, std::vector<char>* buf) {
-            buf->resize(sizeof(struct pnt::position));
-            struct pnt::position_wire* output = (struct pnt::position_wire*) buf->data();
+        static void toBuffer(struct pnt::position const& val, std::vector<char>& buf) {
+            buf.resize(sizeof(struct pnt::position));
+            struct pnt::position_wire* output = (struct pnt::position_wire*) buf.data();
             const struct pnt::position* input = &val;
             uint64_t field_x;
             uint64_t field_y;
@@ -196,6 +197,10 @@ namespace pirate {
             const struct pnt::position_wire* input = (const struct pnt::position_wire*) buf.data();
             struct pnt::position* output = &retval;
             if (buf.size() != sizeof(struct pnt::position)) {
+                static const std::string error_msg =
+                    std::string("pirate::Serialization::fromBuffer() for pnt::position type did not receive a buffer of size ") +
+                    std::to_string(sizeof(struct pnt::position));
+                throw std::length_error(error_msg);
             }
             uint64_t field_x;
             uint64_t field_y;
