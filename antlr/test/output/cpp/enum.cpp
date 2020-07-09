@@ -33,16 +33,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct enumtype::week_interval> {
-		static void toBuffer(struct enumtype::week_interval const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct enumtype::week_interval));
-			struct enumtype::week_interval_wire* output = (struct enumtype::week_interval_wire*) buf->data();
+		static void toBuffer(struct enumtype::week_interval const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct enumtype::week_interval));
+			struct enumtype::week_interval_wire* output = (struct enumtype::week_interval_wire*) buf.data();
 			const struct enumtype::week_interval* input = &val;
 			uint32_t field_begin;
 			uint32_t field_end;

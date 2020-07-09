@@ -40,16 +40,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct pnt::position> {
-		static void toBuffer(struct pnt::position const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct pnt::position));
-			struct pnt::position_wire* output = (struct pnt::position_wire*) buf->data();
+		static void toBuffer(struct pnt::position const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct pnt::position));
+			struct pnt::position_wire* output = (struct pnt::position_wire*) buf.data();
 			const struct pnt::position* input = &val;
 			uint64_t field_x;
 			uint64_t field_y;
@@ -89,9 +89,9 @@ namespace pirate {
 
 	template<>
 	struct Serialization<struct pnt::distance> {
-		static void toBuffer(struct pnt::distance const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct pnt::distance));
-			struct pnt::distance_wire* output = (struct pnt::distance_wire*) buf->data();
+		static void toBuffer(struct pnt::distance const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct pnt::distance));
+			struct pnt::distance_wire* output = (struct pnt::distance_wire*) buf.data();
 			const struct pnt::distance* input = &val;
 			uint64_t field_x;
 			uint64_t field_y;

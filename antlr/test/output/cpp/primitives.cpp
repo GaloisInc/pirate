@@ -59,16 +59,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct primitives::primitives> {
-		static void toBuffer(struct primitives::primitives const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct primitives::primitives));
-			struct primitives::primitives_wire* output = (struct primitives::primitives_wire*) buf->data();
+		static void toBuffer(struct primitives::primitives const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct primitives::primitives));
+			struct primitives::primitives_wire* output = (struct primitives::primitives_wire*) buf.data();
 			const struct primitives::primitives* input = &val;
 			uint32_t field_float_val;
 			uint64_t field_double_val;

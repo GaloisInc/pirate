@@ -47,16 +47,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct arrays::union_array_field> {
-		static void toBuffer(struct arrays::union_array_field const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct arrays::union_array_field));
-			struct arrays::union_array_field_wire* output = (struct arrays::union_array_field_wire*) buf->data();
+		static void toBuffer(struct arrays::union_array_field const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct arrays::union_array_field));
+			struct arrays::union_array_field_wire* output = (struct arrays::union_array_field_wire*) buf.data();
 			const struct arrays::union_array_field* input = &val;
 			uint16_t tag;
 			uint8_t data_a;
@@ -138,9 +138,9 @@ namespace pirate {
 
 	template<>
 	struct Serialization<struct arrays::struct_array_field> {
-		static void toBuffer(struct arrays::struct_array_field const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct arrays::struct_array_field));
-			struct arrays::struct_array_field_wire* output = (struct arrays::struct_array_field_wire*) buf->data();
+		static void toBuffer(struct arrays::struct_array_field const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct arrays::struct_array_field));
+			struct arrays::struct_array_field_wire* output = (struct arrays::struct_array_field_wire*) buf.data();
 			const struct arrays::struct_array_field* input = &val;
 			uint8_t field_a;
 			uint32_t field_b;

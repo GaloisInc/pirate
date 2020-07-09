@@ -47,16 +47,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct annotations_module::annotation_struct_example> {
-		static void toBuffer(struct annotations_module::annotation_struct_example const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct annotations_module::annotation_struct_example));
-			struct annotations_module::annotation_struct_example_wire* output = (struct annotations_module::annotation_struct_example_wire*) buf->data();
+		static void toBuffer(struct annotations_module::annotation_struct_example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct annotations_module::annotation_struct_example));
+			struct annotations_module::annotation_struct_example_wire* output = (struct annotations_module::annotation_struct_example_wire*) buf.data();
 			const struct annotations_module::annotation_struct_example* input = &val;
 			uint64_t field_x;
 			uint64_t field_y;
@@ -96,9 +96,9 @@ namespace pirate {
 
 	template<>
 	struct Serialization<struct annotations_module::annotation_union_example> {
-		static void toBuffer(struct annotations_module::annotation_union_example const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct annotations_module::annotation_union_example));
-			struct annotations_module::annotation_union_example_wire* output = (struct annotations_module::annotation_union_example_wire*) buf->data();
+		static void toBuffer(struct annotations_module::annotation_union_example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct annotations_module::annotation_union_example));
+			struct annotations_module::annotation_union_example_wire* output = (struct annotations_module::annotation_union_example_wire*) buf.data();
 			const struct annotations_module::annotation_union_example* input = &val;
 			uint16_t tag;
 			uint16_t data_a;

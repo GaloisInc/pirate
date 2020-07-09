@@ -34,16 +34,16 @@ namespace pirate {
 #define _PIRATE_SERIALIZATION_H
 	template <typename T>
 	struct Serialization {
-		static void toBuffer(T const& val, std::vector<char>* buf);
+		static void toBuffer(T const& val, std::vector<char>& buf);
 		static T fromBuffer(std::vector<char> const& buf);
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
 	struct Serialization<struct uniontype::union_example> {
-		static void toBuffer(struct uniontype::union_example const& val, std::vector<char>* buf) {
-			buf->resize(sizeof(struct uniontype::union_example));
-			struct uniontype::union_example_wire* output = (struct uniontype::union_example_wire*) buf->data();
+		static void toBuffer(struct uniontype::union_example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct uniontype::union_example));
+			struct uniontype::union_example_wire* output = (struct uniontype::union_example_wire*) buf.data();
 			const struct uniontype::union_example* input = &val;
 			uint16_t tag;
 			uint8_t data_a;

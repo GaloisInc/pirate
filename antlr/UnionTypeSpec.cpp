@@ -245,13 +245,13 @@ void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     cppDeclareSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "buf" << "->" << "resize" << "(";
+    ostream << "buf" << "." << "resize" << "(";
     ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
     ostream << ")" << ";" << std::endl;
     ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "output" << " " << "=" << " ";
     ostream << "(" << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")" << " ";
-    ostream << "buf" << "->" << "data" << "(" << ")" << ";" << std::endl;
+    ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
     cCppFunctionBody(ostream, CDRFunc::SERIALIZE);

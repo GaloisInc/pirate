@@ -192,7 +192,7 @@ void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::stri
 void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName) {
     ostream << "static" << " " << "void" << " " << "toBuffer";
     ostream << "(" << typeName << " " << "const" << "&" << " " << "val";
-    ostream << "," << " " << "std" << "::" << "vector" << "<" << "char" << ">" << "*";
+    ostream << "," << " " << "std" << "::" << "vector" << "<" << "char" << ">" << "&";
     ostream << " " << "buf" << ")";
 }
 
