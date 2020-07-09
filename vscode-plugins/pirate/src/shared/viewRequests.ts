@@ -7,8 +7,6 @@ interface Port {
 	readonly name:string;
 }
 
-
-
 export const enum Tag {
 	VisitServiceClass = "visitServiceClass"
 }

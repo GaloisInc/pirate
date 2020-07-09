@@ -1,5 +1,2 @@
-out
-node_modules
-.vscode-test/
-*.vsix
-examples
+/out
+/node_modules
