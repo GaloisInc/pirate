@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -77,6 +78,10 @@ namespace pirate {
 			const struct annotations_module::annotation_struct_example_wire* input = (const struct annotations_module::annotation_struct_example_wire*) buf.data();
 			struct annotations_module::annotation_struct_example* output = &retval;
 			if (buf.size() != sizeof(struct annotations_module::annotation_struct_example)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for annotations_module::annotation_struct_example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct annotations_module::annotation_struct_example));
+				throw std::length_error(error_msg);
 			}
 			uint64_t field_x;
 			uint64_t field_y;
@@ -133,6 +138,10 @@ namespace pirate {
 			const struct annotations_module::annotation_union_example_wire* input = (const struct annotations_module::annotation_union_example_wire*) buf.data();
 			struct annotations_module::annotation_union_example* output = &retval;
 			if (buf.size() != sizeof(struct annotations_module::annotation_union_example)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for annotations_module::annotation_union_example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct annotations_module::annotation_union_example));
+				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
 			uint16_t data_a;

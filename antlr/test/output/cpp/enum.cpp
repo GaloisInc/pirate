@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -59,6 +60,10 @@ namespace pirate {
 			const struct enumtype::week_interval_wire* input = (const struct enumtype::week_interval_wire*) buf.data();
 			struct enumtype::week_interval* output = &retval;
 			if (buf.size() != sizeof(struct enumtype::week_interval)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for enumtype::week_interval type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct enumtype::week_interval));
+				throw std::length_error(error_msg);
 			}
 			uint32_t field_begin;
 			uint32_t field_end;

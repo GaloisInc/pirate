@@ -51,12 +51,13 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDe
 }
 
 static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
-    ostream << "#include <cassert>" << std::endl;
-    ostream << "#include <cstdint>" << std::endl;
-    ostream << "#include <cstring>" << std::endl;
-    ostream << "#include <vector>" << std::endl;
+    ostream << "#include <cassert>"   << std::endl;
+    ostream << "#include <cstdint>"   << std::endl;
+    ostream << "#include <cstring>"   << std::endl;
+    ostream << "#include <stdexcept>" << std::endl;
+    ostream << "#include <vector>"    << std::endl;
     ostream << std::endl;
-    ostream << "#include <endian.h>" << std::endl;
+    ostream << "#include <endian.h>"  << std::endl;
     moduleDecl->cppDeclareHeader(ostream);
     moduleDecl->cppTypeDecl(ostream);
     moduleDecl->cppTypeDeclWire(ostream);

@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -148,6 +149,10 @@ namespace pirate {
 			const struct primitives::primitives_wire* input = (const struct primitives::primitives_wire*) buf.data();
 			struct primitives::primitives* output = &retval;
 			if (buf.size() != sizeof(struct primitives::primitives)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for primitives::primitives type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct primitives::primitives));
+				throw std::length_error(error_msg);
 			}
 			uint32_t field_float_val;
 			uint64_t field_double_val;

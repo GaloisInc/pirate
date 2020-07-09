@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -70,6 +71,10 @@ namespace pirate {
 			const struct pnt::position_wire* input = (const struct pnt::position_wire*) buf.data();
 			struct pnt::position* output = &retval;
 			if (buf.size() != sizeof(struct pnt::position)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for pnt::position type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct pnt::position));
+				throw std::length_error(error_msg);
 			}
 			uint64_t field_x;
 			uint64_t field_y;
@@ -112,6 +117,10 @@ namespace pirate {
 			const struct pnt::distance_wire* input = (const struct pnt::distance_wire*) buf.data();
 			struct pnt::distance* output = &retval;
 			if (buf.size() != sizeof(struct pnt::distance)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for pnt::distance type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct pnt::distance));
+				throw std::length_error(error_msg);
 			}
 			uint64_t field_x;
 			uint64_t field_y;

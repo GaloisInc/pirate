@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -77,6 +78,10 @@ namespace pirate {
 			const struct uniontype::union_example_wire* input = (const struct uniontype::union_example_wire*) buf.data();
 			struct uniontype::union_example* output = &retval;
 			if (buf.size() != sizeof(struct uniontype::union_example)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for uniontype::union_example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct uniontype::union_example));
+				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
 			uint8_t data_a;

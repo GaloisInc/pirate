@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <endian.h>
@@ -98,6 +99,10 @@ namespace pirate {
 			const struct arrays::union_array_field_wire* input = (const struct arrays::union_array_field_wire*) buf.data();
 			struct arrays::union_array_field* output = &retval;
 			if (buf.size() != sizeof(struct arrays::union_array_field)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for arrays::union_array_field type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct arrays::union_array_field));
+				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
 			uint8_t data_a;
@@ -174,6 +179,10 @@ namespace pirate {
 			const struct arrays::struct_array_field_wire* input = (const struct arrays::struct_array_field_wire*) buf.data();
 			struct arrays::struct_array_field* output = &retval;
 			if (buf.size() != sizeof(struct arrays::struct_array_field)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for arrays::struct_array_field type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct arrays::struct_array_field));
+				throw std::length_error(error_msg);
 			}
 			uint8_t field_a;
 			uint32_t field_b;
