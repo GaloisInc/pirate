@@ -75,7 +75,7 @@ int pirate_unix_socket_get_channel_description(const void *_param, char *desc, i
     min_tx_str[0] = 0;
     buffer_size_str[0] = 0;
     mtu_str[0] = 0;
-    if ((param->min_tx != 0) && (param->min_tx != PIRATE_DEFAULT_MIN_TX)) {
+    if (param->min_tx != 0) {
         snprintf(min_tx_str, 32, ",min_tx_size=%u", param->min_tx);
     }
     if (param->mtu != 0) {
