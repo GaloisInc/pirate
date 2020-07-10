@@ -161,8 +161,8 @@ void ChannelTest::Run()
     {
         for (int nonblock = 0; nonblock <= 1; nonblock++)
         {
-            child_open = (child == 0);
-            nonblocking_IO = (nonblock == 0);
+            child_open = (child == 1);
+            nonblocking_IO = (nonblock == 1);
             if (nonblocking_IO && !pirate_nonblock_channel_type(Writer.param.channel_type))
             {
                 continue;
