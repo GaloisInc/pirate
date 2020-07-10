@@ -91,8 +91,9 @@ int pirate_udp_socket_get_channel_description(const void *_param, char *desc, in
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int err, rv;
     struct sockaddr_in addr;
+    int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
         return ctx->sock;
     }
@@ -140,8 +141,9 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int err, rv;
     struct sockaddr_in addr;
+    int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
         return ctx->sock;
     }

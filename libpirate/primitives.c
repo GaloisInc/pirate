@@ -372,6 +372,7 @@ static int pirate_open(pirate_channel_t *channel) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
     int access = channel->ctx.common.flags & O_ACCMODE;
+    int nonblock = channel->ctx.common.flags & O_NONBLOCK;
     pirate_open_t open_func;
 
     if ((access != O_RDONLY) && (access != O_WRONLY)) {
@@ -380,10 +381,17 @@ static int pirate_open(pirate_channel_t *channel) {
     }
 
     if (pirate_write_mtu(param) < 0) {
+        errno = EINVAL;
         return -1;
     }
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type)) {
+        errno = EINVAL;
         return -1;
     }
 
@@ -454,6 +462,16 @@ int pirate_open_parse(const char *param, int flags) {
 int pirate_pipe_channel_type(channel_enum_t channel_type) {
     switch (channel_type) {
     case PIPE:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+int pirate_nonblock_channel_type(channel_enum_t channel_type) {
+    switch (channel_type) {
+    case UDP_SOCKET:
+    case GE_ETH:
         return 1;
     default:
         return 0;

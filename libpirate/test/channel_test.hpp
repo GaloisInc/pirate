@@ -29,7 +29,7 @@ protected:
     void SetUp() override;
     void TearDown() override;
 
-    virtual void WriteDataInit(ssize_t len);
+    virtual void WriteDataInit(ssize_t offset, ssize_t len);
 
     virtual void ChannelInit() = 0;
 
@@ -49,7 +49,7 @@ protected:
     virtual void ReaderTest();
 
     void Run();
-    virtual void RunChildOpen(bool child);
+    virtual void RunTestCase();
 
     struct TestPoint {
         TestPoint() : 
@@ -80,17 +80,23 @@ protected:
     // Reader writer synchronization
     pthread_barrier_t barrier;
 
+    sem_t nonblocking_sem;
+
     // If true the producer and consumer
     // open the channel.
     // If false the producer and consumer
     // assume the channel is open.
-    bool childOpen;
+    bool child_open;
+
+    // If true then producer and consumer
+    // use non-blocking I/O
+    bool nonblocking_IO;
 
     // Channel statistics
     struct {
         uint32_t bytes;
         uint32_t packets;
-    } statsWr, statsRd;
+    } stats_wr, stats_rd;
 public:
     ChannelTest();
     static void *WriterThreadS(void *param);
@@ -107,13 +113,13 @@ protected:
 class ClosedWriterTest : public HalfClosedTest
 {
 public:
-    virtual void RunChildOpen(bool child) override;
+    virtual void RunTestCase() override;
 };
 
 class ClosedReaderTest : public HalfClosedTest
 {
 public:
-    virtual void RunChildOpen(bool child) override;
+    virtual void RunTestCase() override;
 };
 
 static const unsigned TEST_MIN_TX_LEN = 16;
