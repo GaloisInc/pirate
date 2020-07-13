@@ -249,9 +249,9 @@ public:
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        ASSERT_EQ(statsWr.packets, test_stats.send_count);
+        ASSERT_EQ(stats_wr.packets, test_stats.send_count);
         ASSERT_EQ(0u, test_stats.send_reject_count);
-        ASSERT_EQ(statsWr.packets, test_stats.send_ilip_count);
+        ASSERT_EQ(stats_wr.packets, test_stats.send_ilip_count);
         ASSERT_EQ(0u, test_stats.send_ilip_reject_count);
     }
 
@@ -262,9 +262,9 @@ public:
         ASSERT_EQ(0, rv);
         ASSERT_EQ(0, errno);
 
-        ASSERT_EQ(statsRd.packets, test_stats.receive_count);
+        ASSERT_EQ(stats_rd.packets, test_stats.receive_count);
         ASSERT_EQ(0u, test_stats.receive_reject_count);
-        ASSERT_EQ(statsRd.packets, test_stats.receive_ilip_count);
+        ASSERT_EQ(stats_rd.packets, test_stats.receive_ilip_count);
         ASSERT_EQ(0u, test_stats.receive_ilip_reject_count);
     }
 

@@ -39,6 +39,9 @@ void ChannelTest::SetUp()
     rv = pthread_barrier_init(&barrier, NULL, 2);
     ASSERT_EQ(0, rv);
 
+    rv = sem_init(&nonblocking_sem, 0, 0);
+    ASSERT_EQ(0, rv);
+
     pirate_reset_gd();
 }
 
@@ -57,20 +60,21 @@ void ChannelTest::TearDown()
     }
 
     pthread_barrier_destroy(&barrier);
+    sem_destroy(&nonblocking_sem);
     errno = 0;
 }
 
-void ChannelTest::WriteDataInit(ssize_t len)
+void ChannelTest::WriteDataInit(ssize_t offset, ssize_t len)
 {
     for (ssize_t i = 0; i < len; ++i)
     {
-        Writer.buf[i] = (i + len) & 0xFF; 
+        Writer.buf[i] = (offset + i) & 0xFF;
     }
 }
 
 void ChannelTest::WriterChannelOpen()
 {
-    int rv;
+    int flags, rv;
     char desc[256];
     pirate_channel_param_t temp_param;
 
@@ -83,7 +87,11 @@ void ChannelTest::WriterChannelOpen()
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, memcmp(&Writer.param, &temp_param, sizeof(pirate_channel_param_t)));
 
-    Writer.gd = pirate_open_param(&Writer.param, O_WRONLY);
+    flags = O_WRONLY;
+    if (nonblocking_IO) {
+        flags |= O_NONBLOCK;
+    }
+    Writer.gd = pirate_open_param(&Writer.param, flags);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Writer.gd, 0);
 
@@ -95,7 +103,7 @@ void ChannelTest::WriterChannelOpen()
 
 void ChannelTest::ReaderChannelOpen()
 {
-    int rv;
+    int flags, rv;
     char desc[256];
     pirate_channel_param_t temp_param;
 
@@ -108,7 +116,11 @@ void ChannelTest::ReaderChannelOpen()
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, memcmp(&Reader.param, &temp_param, sizeof(pirate_channel_param_t)));
 
-    Reader.gd = pirate_open_param(&Reader.param, O_RDONLY);
+    flags = O_RDONLY;
+    if (nonblocking_IO) {
+        flags |= O_NONBLOCK;
+    }
+    Reader.gd = pirate_open_param(&Reader.param, flags);
     ASSERT_EQ(0, errno);
     ASSERT_GE(Reader.gd, 0);
 
@@ -142,23 +154,35 @@ void ChannelTest::ReaderChannelClose()
 
 void ChannelTest::Run()
 {
-    RunChildOpen(true);
-    if (pirate_pipe_channel_type(Writer.param.channel_type)) {
-        RunChildOpen(false);
+    ChannelInit();
+    ASSERT_NE(INVALID, Reader.param.channel_type);
+    ASSERT_EQ(Reader.param.channel_type, Writer.param.channel_type);
+    for(int child = 0; child <= 1; child++)
+    {
+        for (int nonblock = 0; nonblock <= 1; nonblock++)
+        {
+            child_open = (child == 1);
+            nonblocking_IO = (nonblock == 1);
+            if (nonblocking_IO && !pirate_nonblock_channel_type(Writer.param.channel_type))
+            {
+                continue;
+            }
+            if (!child_open && !pirate_pipe_channel_type(Writer.param.channel_type))
+            {
+                continue;
+            }
+            RunTestCase();
+        }
     }
 }
 
-void ChannelTest::RunChildOpen(bool child)
+void ChannelTest::RunTestCase()
 {
     int rv;
     pthread_t WriterId, ReaderId;
     void *WriterStatus, *ReaderStatus;
 
-    childOpen = child;
-
-    ChannelInit();
-
-    if (!childOpen)
+    if (!child_open)
     {
         int rv, gd[2] = {-1, -1};
         rv = pirate_pipe_param(gd, &Writer.param, O_RDWR);
@@ -199,12 +223,13 @@ void *ChannelTest::ReaderThreadS(void *param)
 
 void ChannelTest::WriterTest()
 {
-    if (childOpen)
+    ssize_t offset = 0;
+    if (child_open)
     {
         WriterChannelOpen();
     }
 
-    memset(&statsWr, 0, sizeof(statsWr));
+    memset(&stats_wr, 0, sizeof(stats_wr));
 
     for (size_t i = 0; i < len_size; i++)
     {
@@ -212,14 +237,22 @@ void ChannelTest::WriterTest()
         ssize_t rv;
         ssize_t wl = len_arr[i].writer;
 
-        WriteDataInit(wl);
+        WriteDataInit(offset, wl);
+        offset += wl;
 
         rv = pirate_write(Writer.gd, Writer.buf, wl);
         EXPECT_EQ(wl, rv);
         EXPECT_EQ(0, errno);
 
-        statsWr.packets++;
-        statsWr.bytes += wl;
+        if (nonblocking_IO)
+        {
+            rv = sem_post(&nonblocking_sem);
+            EXPECT_EQ(0, errno);
+            EXPECT_EQ(0, rv);
+        }
+
+        stats_wr.packets++;
+        stats_wr.bytes += wl;
 
         sts = pthread_barrier_wait(&barrier);
         EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
@@ -230,12 +263,12 @@ void ChannelTest::WriterTest()
 
 void ChannelTest::ReaderTest()
 {
-    if (childOpen)
+    if (child_open)
     {
         ReaderChannelOpen();
     }
 
-    memset(&statsRd, 0, sizeof(statsRd));
+    memset(&stats_rd, 0, sizeof(stats_rd));
 
     for (size_t i = 0; i < len_size; i++)
     {
@@ -246,17 +279,32 @@ void ChannelTest::ReaderTest()
 
         memset(Reader.buf, 0xFA, rl);
 
+        if (nonblocking_IO)
+        {
+            rv = sem_wait(&nonblocking_sem);
+            EXPECT_EQ(0, errno);
+            EXPECT_EQ(0, rv);
+        }
+
         uint8_t *buf = Reader.buf;
         rv = pirate_read(Reader.gd, buf, rl);
         EXPECT_EQ(0, errno);
         EXPECT_EQ(rv, exp);
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, exp));
 
-        statsRd.packets++;
-        statsRd.bytes += exp;
+        stats_rd.packets++;
+        stats_rd.bytes += exp;
 
         sts = pthread_barrier_wait(&barrier);
         EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+    }
+
+    if (nonblocking_IO)
+    {
+        ssize_t rv = pirate_read(Reader.gd, Reader.buf, 1);
+        EXPECT_TRUE((errno == EAGAIN) || (errno == EWOULDBLOCK));
+        EXPECT_EQ(rv, -1);
+        errno = 0;
     }
 
     ReaderChannelClose();
@@ -264,7 +312,7 @@ void ChannelTest::ReaderTest()
 
 void HalfClosedTest::ReaderTest()
 {
-    if (childOpen)
+    if (child_open)
     {
         ReaderChannelOpen();
     }
@@ -272,17 +320,17 @@ void HalfClosedTest::ReaderTest()
 
 void HalfClosedTest::WriterTest()
 {
-    if (childOpen)
+    if (child_open)
     {
         WriterChannelOpen();
     }
 }
 
-void ClosedWriterTest::RunChildOpen(bool child)
+void ClosedWriterTest::RunTestCase()
 {
     int rv;
 
-    ChannelTest::RunChildOpen(child);
+    ChannelTest::RunTestCase();
 
     WriterChannelClose();
 
@@ -293,12 +341,12 @@ void ClosedWriterTest::RunChildOpen(bool child)
     ReaderChannelClose();
 }
 
-void ClosedReaderTest::RunChildOpen(bool child)
+void ClosedReaderTest::RunTestCase()
 {
     int rv;
     struct sigaction new_action, prev_action;
 
-    ChannelTest::RunChildOpen(child);
+    ChannelTest::RunTestCase();
 
     memset(&new_action, 0, sizeof(new_action));
     new_action.sa_handler = SIG_IGN;
@@ -310,7 +358,7 @@ void ClosedReaderTest::RunChildOpen(bool child)
 
     ReaderChannelClose();
 
-    WriteDataInit(buf_size);
+    WriteDataInit(0, buf_size);
     rv = pirate_write(Writer.gd, Writer.buf, buf_size);
     ASSERT_EQ(errno, EPIPE);
     ASSERT_EQ(rv, -1);

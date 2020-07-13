@@ -186,8 +186,9 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int err, rv;
     struct sockaddr_in addr;
+    int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
         return ctx->sock;
     }
@@ -222,8 +223,9 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
 static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int err, rv;
     struct sockaddr_in addr;
+    int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM, 0);
+    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
         return ctx->sock;
     }

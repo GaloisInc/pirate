@@ -11,6 +11,10 @@ libpirate is a datagram communication library. Reads and writes are
 transmitted in indivisible packets. Reading a partial packet will
 drop the remaining contents of the packet.
 
+Non-blocking I/O is currently supported for the UDP and GE-eth
+channel types. Passing O_NONBLOCK to pirate_open() on other
+channel types will return an errno status of EINVAL.
+
 ## Usage
 
 See [libpirate.h](/libpirate/libpirate.h) for additional documentation.
