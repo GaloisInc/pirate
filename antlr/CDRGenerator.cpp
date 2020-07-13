@@ -16,16 +16,60 @@
 #include <iostream>
 
 #include "antlr4-runtime.h"
-#include "BooleanErrorListener.h"
 #include "IDLLexer.h"
 #include "IDLParser.h"
-#include "CDRBuildTypes.h"
-#include "CDRModuleCounter.h"
-#include "CDRTypes.h"
+#include "BooleanErrorListener.hpp"
+#include "CDRBuildTypes.hpp"
+#include "CDRGenerator.hpp"
+#include "CDRModuleCounter.hpp"
+#include "ModuleDecl.hpp"
 
 using namespace antlr4;
 
-int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
+static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
+    ostream << "#include <assert.h>" << std::endl;
+    ostream << "#include <endian.h>" << std::endl;
+    if (buildTypes.hasTransformAnnotations()) {
+        ostream << "#include <fenv.h>"   << std::endl;
+        ostream << "#include <math.h>"   << std::endl;
+    }
+    ostream << "#include <stdint.h>" << std::endl;
+    ostream << "#include <string.h>" << std::endl;
+    ostream << std::endl;
+    moduleDecl->cTypeDecl(ostream);
+    moduleDecl->cTypeDeclWire(ostream);
+    moduleDecl->cDeclareAsserts(ostream);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
+    if (buildTypes.hasValidateAnnotations()) {
+        moduleDecl->cDeclareAnnotationValidate(ostream);
+    }
+    if (buildTypes.hasTransformAnnotations()) {
+        moduleDecl->cDeclareAnnotationTransform(ostream);
+    }
+    return 0;
+}
+
+static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
+    ostream << "#include <cassert>"   << std::endl;
+    ostream << "#include <cstdint>"   << std::endl;
+    ostream << "#include <cstring>"   << std::endl;
+    ostream << "#include <stdexcept>" << std::endl;
+    ostream << "#include <vector>"    << std::endl;
+    ostream << std::endl;
+    ostream << "#include <endian.h>"  << std::endl;
+    moduleDecl->cppDeclareHeader(ostream);
+    moduleDecl->cppTypeDecl(ostream);
+    moduleDecl->cppTypeDeclWire(ostream);
+    moduleDecl->cppDeclareAsserts(ostream);
+    moduleDecl->cppDeclareFooter(ostream);
+    cppPirateNamespaceHeader(ostream);
+    moduleDecl->cppDeclareFunctions(ostream);
+    cppPirateNamespaceFooter(ostream);
+    return 0;
+}
+
+int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target) {
     CDRModuleCounter moduleCounter;
     antlr4::tree::ParseTreeWalker moduleWalker;
     CDRBuildTypes buildTypes;
@@ -34,6 +78,7 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     CommonTokenStream tokens(&lexer);
     IDLParser parser(&tokens);
     BooleanErrorListener errorListener;
+    int rv;
 
     lexer.addErrorListener(&errorListener);
     parser.addErrorListener(&errorListener);
@@ -70,27 +115,31 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream) {
     }
     ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(topLevelSpec);
 
-    ostream << "#include <assert.h>" << std::endl;
-    ostream << "#include <endian.h>" << std::endl;
-    if (buildTypes.hasTransformAnnotations()) {
-        ostream << "#include <fenv.h>"   << std::endl;
-        ostream << "#include <math.h>"   << std::endl;
-    }
-    ostream << "#include <stdint.h>" << std::endl;
-    ostream << "#include <string.h>" << std::endl;
-    ostream << std::endl;
-    moduleDecl->cTypeDecl(ostream);
-    moduleDecl->cTypeDeclWire(ostream);
-    moduleDecl->cDeclareAsserts(ostream);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
-    if (buildTypes.hasValidateAnnotations()) {
-        moduleDecl->cDeclareAnnotationValidate(ostream);
-    }
-    if (buildTypes.hasTransformAnnotations()) {
-        moduleDecl->cDeclareAnnotationTransform(ostream);
+    switch (target) {
+        case TargetLanguage::C_LANG:
+            rv = generate_c(ostream, buildTypes, moduleDecl);
+            break;
+        case TargetLanguage::CPP_LANG:
+            rv = generate_cpp(ostream, buildTypes, moduleDecl);
+            break;
+        default:
+            estream << "unknown target language " << target << std::endl;
+            rv = 1;
+            break;
     }
 
     delete topLevelSpec;
-    return 0;
+    return rv;
+}
+
+std::string target_as_string(TargetLanguage target) {
+    switch (target) {
+        case C_LANG:
+            return "c";
+        case CPP_LANG:
+            return "cpp";
+        case UNKNOWN:
+        default:
+            return "unknown";
+    }
 }

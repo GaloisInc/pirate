@@ -14,8 +14,10 @@
  */
 
 #include "antlr4-runtime.h"
-#include "CDRBuildTypes.h"
-#include "CDRTypes.h"
+#include "CDRBuildTypes.hpp"
+#include "StructTypeSpec.hpp"
+#include "UnionTypeSpec.hpp"
+#include "ModuleDecl.hpp"
 
 #include <algorithm>
 
@@ -34,13 +36,26 @@ antlrcpp::Any CDRBuildTypes::aggregateResult(antlrcpp::Any aggregate, const antl
 antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
-  TypeSpec *typeSpec = new ModuleDecl(identifier);
+  std::string parent = namespacePrefix.get(ctx);
+  std::string newNamespace = parent + identifier + "::";
+  TypeSpec *typeSpec = new ModuleDecl(parent, identifier);
   ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(typeSpec);
   std::vector<IDLParser::DefinitionContext*> definitions = ctx->definition();
   for (IDLParser::DefinitionContext* definitionCtx : definitions) {
+    namespacePrefix.put(definitionCtx, newNamespace);
     moduleDecl->addDefinition(definitionCtx->accept(this));
   }
   return typeSpec;
+}
+
+antlrcpp::Any CDRBuildTypes::visitDefinition(IDLParser::DefinitionContext *ctx) {
+  std::string parent = namespacePrefix.get(ctx);
+  if (ctx->type_decl() != nullptr) {
+    namespacePrefix.put(ctx->type_decl(), parent);
+  } else if (ctx->module() != nullptr) {
+    namespacePrefix.put(ctx->module(), parent);
+  }
+  return visitChildren(ctx);
 }
 
 static std::string unknownMember(std::string name, IDLParser::Annotation_appl_paramContext* param) {
@@ -195,8 +210,8 @@ antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specCo
 
 antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
-  TypeSpec *typeSpec = new EnumTypeSpec(identifier);
+  std::string parent = namespacePrefix.get(ctx);
+  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier);
   EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);
   std::vector<IDLParser::EnumeratorContext *> enumerators = ctx->enumerator();
   for (IDLParser::EnumeratorContext* enumCtx : enumerators) {
@@ -206,10 +221,23 @@ antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   return typeSpec;
 }
 
+antlrcpp::Any CDRBuildTypes::visitType_decl(IDLParser::Type_declContext *ctx) {
+  std::string parent = namespacePrefix.get(ctx);
+  if (ctx->struct_type() != nullptr) {
+    namespacePrefix.put(ctx->struct_type(), parent);
+  } else if (ctx->union_type() != nullptr) {
+    namespacePrefix.put(ctx->union_type(), parent);
+  } else if (ctx->enum_type() != nullptr) {
+    namespacePrefix.put(ctx->enum_type(), parent);
+  }
+  return visitChildren(ctx);
+}
+
 antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
-  TypeSpec *typeSpec = new StructTypeSpec(identifier);
+  std::string parent = namespacePrefix.get(ctx);
+  TypeSpec *typeSpec = new StructTypeSpec(parent, identifier);
   StructTypeSpec *structSpec = dynamic_cast<StructTypeSpec*>(typeSpec);
   std::vector<IDLParser::MemberContext*> members = ctx->member_list()->member();
   for (IDLParser::MemberContext* memberCtx : members) {
@@ -241,7 +269,8 @@ antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) 
   std::string identifier = ctx->identifier()->getText();
   transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
   TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
-  TypeSpec *typeSpec = new UnionTypeSpec(identifier, switchType);
+  std::string parent = namespacePrefix.get(ctx);
+  TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType);
   UnionTypeSpec *unionSpec = dynamic_cast<UnionTypeSpec*>(typeSpec);
   std::vector<IDLParser::Case_stmtContext*> members = ctx->switch_body()->case_stmt();
   for (IDLParser::Case_stmtContext* caseCtx : members) {

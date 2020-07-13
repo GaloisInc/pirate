@@ -4,12 +4,12 @@
 #include <string.h>
 
 
-enum dayofweek {
-Monday,
-Tuesday,
-Wednesday,
-Thursday,
-Friday
+enum DayOfWeek {
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday
 };
 
 struct week_interval {
@@ -30,14 +30,14 @@ uint32_t encode_dayofweek(uint32_t value) {
 }
 
 void encode_week_interval(struct week_interval* input, struct week_interval_wire* output) {
-	uint32_t begin;
-	uint32_t end;
-	memcpy(&begin, &input->begin, sizeof(uint32_t));
-	memcpy(&end, &input->end, sizeof(uint32_t));
-	begin = htobe32(begin);
-	end = htobe32(end);
-	memcpy(&output->begin, &begin, sizeof(uint32_t));
-	memcpy(&output->end, &end, sizeof(uint32_t));
+	uint32_t field_begin;
+	uint32_t field_end;
+	memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+	memcpy(&field_end, &input->end, sizeof(uint32_t));
+	field_begin = htobe32(field_begin);
+	field_end = htobe32(field_end);
+	memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+	memcpy(&output->end, &field_end, sizeof(uint32_t));
 }
 
 uint32_t decode_dayofweek(uint32_t value) {
@@ -46,12 +46,12 @@ uint32_t decode_dayofweek(uint32_t value) {
 }
 
 void decode_week_interval(struct week_interval_wire* input, struct week_interval* output) {
-	uint32_t begin;
-	uint32_t end;
-	memcpy(&begin, &input->begin, sizeof(uint32_t));
-	memcpy(&end, &input->end, sizeof(uint32_t));
-	begin = be32toh(begin);
-	end = be32toh(end);
-	memcpy(&output->begin, &begin, sizeof(uint32_t));
-	memcpy(&output->end, &end, sizeof(uint32_t));
+	uint32_t field_begin;
+	uint32_t field_end;
+	memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+	memcpy(&field_end, &input->end, sizeof(uint32_t));
+	field_begin = be32toh(field_begin);
+	field_end = be32toh(field_end);
+	memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+	memcpy(&output->end, &field_end, sizeof(uint32_t));
 }

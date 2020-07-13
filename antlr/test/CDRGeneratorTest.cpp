@@ -1,3 +1,17 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
 
 #include <gtest/gtest.h>
 #include <dirent.h>
@@ -6,18 +20,20 @@
 #include <fstream>
 #include <cstring>
 
-#include "CDRGenerator.h"
+#include "CDRGenerator.hpp"
 
 using namespace std;
 
-class RegressionTest : public ::testing::TestWithParam<std::string> { };
+class RegressionTest : public ::testing::TestWithParam<std::tuple<std::string, target_t>> { };
 
 std::vector<std::string> filenames;
 
 TEST_P(RegressionTest, RegressionTestCase) {
-    std::string root = GetParam();
+    auto params = GetParam();
+    std::string root = std::get<0>(params);
+    target_t target = std::get<1>(params);
     std::string input_path = "input/" + root + ".idl";
-    std::string output_path = "output/" + root + ".c";
+    std::string output_path = "output/" + target_as_string(target) + "/" + root + "." + target_as_string(target);
 
     ifstream input_file;
     ifstream expected_output_file;
@@ -39,7 +55,7 @@ TEST_P(RegressionTest, RegressionTestCase) {
     ASSERT_FALSE(observed_output_file_w.fail());
     expected_output << expected_output_file.rdbuf();
     expected_output_file.close();
-    rv = parse(input_file, observed_output_file_w, observed_error);
+    rv = parse(input_file, observed_output_file_w, observed_error, target);
     input_file.close();
     observed_output_file_w.close();
     observed_output_file_r.open("/tmp/" + root + ".c");
@@ -52,13 +68,14 @@ TEST_P(RegressionTest, RegressionTestCase) {
 }
 
 struct PrintParamName {
-  string operator()(const testing::TestParamInfo<string>& info) const {
-    return info.param;
+  string operator()(const testing::TestParamInfo<std::tuple<std::string, target_t>>& info) const {
+    return std::get<0>(info.param) + "_" + target_as_string(std::get<1>(info.param));
   }
 };
 
 INSTANTIATE_TEST_SUITE_P(RegressionTestSuite,
-    RegressionTest, ::testing::ValuesIn(filenames),
+    RegressionTest, ::testing::Combine(::testing::ValuesIn(filenames),
+        ::testing::Values(TargetLanguage::C_LANG, TargetLanguage::CPP_LANG)),
     PrintParamName());
 
 void initial_setup() {

@@ -41,18 +41,18 @@ static_assert(sizeof(struct annotation_union_example) == sizeof(struct annotatio
 );
 
 void encode_annotation_struct_example(struct annotation_struct_example* input, struct annotation_struct_example_wire* output) {
-	uint64_t x;
-	uint64_t y;
-	uint64_t z;
-	memcpy(&x, &input->x, sizeof(uint64_t));
-	memcpy(&y, &input->y, sizeof(uint64_t));
-	memcpy(&z, &input->z, sizeof(uint64_t));
-	x = htobe64(x);
-	y = htobe64(y);
-	z = htobe64(z);
-	memcpy(&output->x, &x, sizeof(uint64_t));
-	memcpy(&output->y, &y, sizeof(uint64_t));
-	memcpy(&output->z, &z, sizeof(uint64_t));
+	uint64_t field_x;
+	uint64_t field_y;
+	uint64_t field_z;
+	memcpy(&field_x, &input->x, sizeof(uint64_t));
+	memcpy(&field_y, &input->y, sizeof(uint64_t));
+	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_x = htobe64(field_x);
+	field_y = htobe64(field_y);
+	field_z = htobe64(field_z);
+	memcpy(&output->x, &field_x, sizeof(uint64_t));
+	memcpy(&output->y, &field_y, sizeof(uint64_t));
+	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
 void encode_annotation_union_example(struct annotation_union_example* input, struct annotation_union_example_wire* output) {
@@ -63,7 +63,7 @@ void encode_annotation_union_example(struct annotation_union_example* input, str
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (input->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint16_t));
 		data_a = htobe16(data_a);
@@ -85,18 +85,18 @@ void encode_annotation_union_example(struct annotation_union_example* input, str
 }
 
 void decode_annotation_struct_example(struct annotation_struct_example_wire* input, struct annotation_struct_example* output) {
-	uint64_t x;
-	uint64_t y;
-	uint64_t z;
-	memcpy(&x, &input->x, sizeof(uint64_t));
-	memcpy(&y, &input->y, sizeof(uint64_t));
-	memcpy(&z, &input->z, sizeof(uint64_t));
-	x = be64toh(x);
-	y = be64toh(y);
-	z = be64toh(z);
-	memcpy(&output->x, &x, sizeof(uint64_t));
-	memcpy(&output->y, &y, sizeof(uint64_t));
-	memcpy(&output->z, &z, sizeof(uint64_t));
+	uint64_t field_x;
+	uint64_t field_y;
+	uint64_t field_z;
+	memcpy(&field_x, &input->x, sizeof(uint64_t));
+	memcpy(&field_y, &input->y, sizeof(uint64_t));
+	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_x = be64toh(field_x);
+	field_y = be64toh(field_y);
+	field_z = be64toh(field_z);
+	memcpy(&output->x, &field_x, sizeof(uint64_t));
+	memcpy(&output->y, &field_y, sizeof(uint64_t));
+	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
 void decode_annotation_union_example(struct annotation_union_example_wire* input, struct annotation_union_example* output) {
@@ -107,7 +107,7 @@ void decode_annotation_union_example(struct annotation_union_example_wire* input
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = be16toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (output->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint16_t));
 		data_a = be16toh(data_a);
