@@ -69,11 +69,19 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
     virtual std::string cTypeName() = 0;
+    virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
+    virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
     virtual void cDeclareAsserts(std::ostream &ostream) { }
     virtual void cDeclareAnnotationValidate(std::ostream &ostream) = 0;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) = 0;
+    virtual void cppDeclareHeader(std::ostream &ostream) { }
+    virtual void cppTypeDecl(std::ostream &ostream) = 0;
+    virtual void cppTypeDeclWire(std::ostream &ostream) = 0;
+    virtual void cppDeclareAsserts(std::ostream &ostream) { }
+    virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
+    virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
     virtual ~TypeSpec() { };
 };
@@ -102,9 +110,13 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return m_cType; }
+    virtual std::string cppNamespacePrefix() override { return ""; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
+    virtual void cppTypeDecl(std::ostream &ostream) override { }
+    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
@@ -126,17 +138,24 @@ public:
 // Implementation of the enum type
 class EnumTypeSpec : public TypeSpec {
 public:
+    std::string namespacePrefix;
     std::string identifier;
     std::vector<std::string> enumerators;
-    EnumTypeSpec(std::string identifier) : identifier(identifier), enumerators() { }
+    EnumTypeSpec(std::string namespacePrefix, std::string identifier) :
+        namespacePrefix(namespacePrefix), identifier(identifier), enumerators() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return "uint32_t"; }
+    virtual std::string cppTypeName() override { return identifier; }
+    virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::B32; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
+    virtual void cppTypeDecl(std::ostream &ostream) override;
+    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     void addEnumerator(std::string enumerator);
     virtual ~EnumTypeSpec() { }
 };
@@ -163,143 +182,16 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
+    virtual std::string cppTypeName() override { return child->cppTypeName(); }
+    virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }
-    virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
-    virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
+    virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { }
+    virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { }
+    virtual void cppTypeDecl(std::ostream &ostream) override { }
+    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     virtual ~TypeReference() { child = nullptr; }
-};
-
-class StructMember {
-public:
-    TypeSpec* typeSpec;
-    std::vector<Declarator*> declarators;
-    StructMember(TypeSpec* typeSpec) : typeSpec(typeSpec), declarators() { }
-    void addDeclarator(Declarator* declarator);
-    ~StructMember();
-};
-
-typedef std::function<void(StructMember* member, Declarator* declarator)> StructFunction;
-
-// Implementation of the struct type
-class StructTypeSpec : public TypeSpec {
-private:
-    void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
-public:
-    std::string identifier;
-    std::vector<StructMember*> members;
-    StructTypeSpec(std::string identifier) : identifier(identifier), members() { }
-    virtual CDRTypeOf typeOf() override { return CDRTypeOf::STRUCT_T; }
-    virtual void cTypeDecl(std::ostream &ostream) override;
-    virtual void cTypeDeclWire(std::ostream &ostream) override;
-    // nested structs must be prefixed by parent names in C++
-    virtual std::string cTypeName() override { return "struct " + identifier; }
-    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
-    virtual void cDeclareAnnotationValidate(std::ostream &ostream) override;
-    virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
-    virtual void cDeclareAsserts(std::ostream &ostream) override;
-    void addMember(StructMember* member);
-    virtual ~StructTypeSpec();
-};
-
-class UnionMember {
-public:
-    TypeSpec* typeSpec;
-    Declarator* declarator;
-    std::vector<std::string> labels;
-    bool hasDefault;
-    UnionMember(TypeSpec* typeSpec, Declarator *declarator) :
-        typeSpec(typeSpec), declarator(declarator), labels(),
-        hasDefault(false) { }
-    void addLabel(std::string label);
-    void setHasDefault();
-    ~UnionMember();
-};
-
-// Implementation of the union type
-class UnionTypeSpec : public TypeSpec {
-public:
-    std::string identifier;
-    TypeSpec* switchType;
-    std::vector<UnionMember*> members;
-    UnionTypeSpec(std::string identifier, TypeSpec *switchType) :
-        identifier(identifier), switchType(switchType), members() { }
-    virtual CDRTypeOf typeOf() override { return CDRTypeOf::UNION_T; }
-    virtual void cTypeDecl(std::ostream &ostream) override;
-    virtual void cTypeDeclWire(std::ostream &ostream) override;
-    // nested structs must be prefixed by parent names in C++
-    virtual std::string cTypeName() override { return "struct " + identifier; }
-    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
-    virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
-    virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
-    virtual void cDeclareAsserts(std::ostream &ostream) override;
-    void addMember(UnionMember* member);
-    virtual ~UnionTypeSpec();
-};
-
-// Implementation of the module declaration
-class ModuleDecl : public TypeSpec {
-public:
-    std::string identifier;
-    std::vector<TypeSpec*> definitions;
-    ModuleDecl(std::string identifier) : identifier(identifier), definitions() { }
-    virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
-    virtual void cTypeDecl(std::ostream &ostream) override;
-    virtual void cTypeDeclWire(std::ostream &ostream) override;
-    virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
-    virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
-    virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
-    virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
-    virtual void cDeclareAsserts(std::ostream &ostream) override;
-    void addDefinition(TypeSpec* definition);
-    virtual ~ModuleDecl();
-};
-
-class MinAnnotation : public AnnotationSpec {
-public:
-    std::string min;
-    MinAnnotation(int id, std::string min) : AnnotationSpec(id), min(min) { }
-    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
-    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override { };
-    virtual ~MinAnnotation() { };
-};
-
-class MaxAnnotation : public AnnotationSpec {
-public:
-    std::string max;
-    MaxAnnotation(int id, std::string max) : AnnotationSpec(id), max(max) { }
-    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
-    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override { };
-    virtual ~MaxAnnotation() { };
-};
-
-class RangeAnnotation : public AnnotationSpec {
-public:
-    std::string min;
-    std::string max;
-    RangeAnnotation(int id, std::string min, std::string max) : AnnotationSpec(id), min(min), max(max) { }
-    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
-    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override { };
-    virtual ~RangeAnnotation() { };
-};
-
-class RoundAnnotation : public AnnotationSpec {
-public:
-    RoundAnnotation(int id) : AnnotationSpec(id) { }
-    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override { };
-    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override;
-    virtual ~RoundAnnotation() { };
-};
-
-class ErrorAnnotation : public AnnotationSpec {
-public:
-    ErrorAnnotation() : AnnotationSpec(0) { }
-    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override { };
-    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override { };
-    virtual ~ErrorAnnotation() { };
 };
 
 void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier);
@@ -310,3 +202,10 @@ void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
     Declarator* declarator, CDRFunc functionType,
     std::string localPrefix, std::string remotePrefix);
+
+void cppPirateNamespaceHeader(std::ostream &ostream);
+void cppPirateNamespaceFooter(std::ostream &ostream);
+
+void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier);
+void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName);
+void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName);

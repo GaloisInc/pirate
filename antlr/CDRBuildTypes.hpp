@@ -19,10 +19,12 @@
 
 #include "antlr4-runtime.h"
 #include "IDLBaseVisitor.h"
-#include "CDRTypes.h"
+#include "CDRTypes.hpp"
+#include "Annotations.hpp"
 
 class CDRBuildTypes : public IDLBaseVisitor {
 private:
+  antlr4::tree::ParseTreeProperty<std::string> namespacePrefix;
   std::map<std::string, TypeSpec*> typeDeclarations;
   std::set<std::string> errors;
   int annotationIds;
@@ -33,16 +35,18 @@ private:
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:
-  CDRBuildTypes() : typeDeclarations(), errors(),
+  CDRBuildTypes() : namespacePrefix(), typeDeclarations(), errors(),
     annotationIds(0), hasValidate(false), hasTransform(false) { }
   std::set<std::string> getErrors() { return errors; }
   bool hasValidateAnnotations() { return hasValidate; }
   bool hasTransformAnnotations() { return hasTransform; }
   virtual antlrcpp::Any aggregateResult(antlrcpp::Any aggregate, const antlrcpp::Any &nextResult) override;
   virtual antlrcpp::Any visitModule(IDLParser::ModuleContext *ctx) override;
+  virtual antlrcpp::Any visitDefinition(IDLParser::DefinitionContext *ctx) override;
   virtual antlrcpp::Any visitAnnotation_appl(IDLParser::Annotation_applContext *ctx) override;
   virtual antlrcpp::Any visitSimple_type_spec(IDLParser::Simple_type_specContext *ctx) override;
   virtual antlrcpp::Any visitEnum_type(IDLParser::Enum_typeContext *ctx) override;
+  virtual antlrcpp::Any visitType_decl(IDLParser::Type_declContext *ctx) override;
   virtual antlrcpp::Any visitStruct_type(IDLParser::Struct_typeContext *ctx) override;
   virtual antlrcpp::Any visitMember(IDLParser::MemberContext *ctx) override;
   virtual antlrcpp::Any visitUnion_type(IDLParser::Union_typeContext *ctx) override;

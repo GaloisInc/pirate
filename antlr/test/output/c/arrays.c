@@ -46,7 +46,7 @@ void encode_union_array_field(struct union_array_field* input, struct union_arra
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (input->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint8_t));
 		memcpy(&output->data.a, &data_a, sizeof(uint8_t));
@@ -75,13 +75,13 @@ void encode_union_array_field(struct union_array_field* input, struct union_arra
 }
 
 void encode_struct_array_field(struct struct_array_field* input, struct struct_array_field_wire* output) {
-	uint8_t a;
-	uint32_t b;
-	uint32_t c;
+	uint8_t field_a;
+	uint32_t field_b;
+	uint32_t field_c;
 	for (size_t b_0 = 0; b_0 < 10; b_0++) {
-		memcpy(&b, &input->b[b_0], sizeof(uint32_t));
-		b = htobe32(b);
-		memcpy(&output->b[b_0], &b, sizeof(uint32_t));
+		memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
+		field_b = htobe32(field_b);
+		memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
 	}
 	for (size_t c_0 = 0; c_0 < 1; c_0++) {
 		for (size_t c_1 = 0; c_1 < 2; c_1++) {
@@ -89,17 +89,17 @@ void encode_struct_array_field(struct struct_array_field* input, struct struct_a
 				for (size_t c_3 = 0; c_3 < 4; c_3++) {
 					for (size_t c_4 = 0; c_4 < 5; c_4++) {
 						for (size_t c_5 = 0; c_5 < 6; c_5++) {
-							memcpy(&c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
-							c = htobe32(c);
-							memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &c, sizeof(uint32_t));
+							memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
+							field_c = htobe32(field_c);
+							memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
 						}
 					}
 				}
 			}
 		}
 	}
-	memcpy(&a, &input->a, sizeof(uint8_t));
-	memcpy(&output->a, &a, sizeof(uint8_t));
+	memcpy(&field_a, &input->a, sizeof(uint8_t));
+	memcpy(&output->a, &field_a, sizeof(uint8_t));
 }
 
 void decode_union_array_field(struct union_array_field_wire* input, struct union_array_field* output) {
@@ -110,7 +110,7 @@ void decode_union_array_field(struct union_array_field_wire* input, struct union
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = be16toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
-	switch (tag) {
+	switch (output->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint8_t));
 		memcpy(&output->data.a, &data_a, sizeof(uint8_t));
@@ -139,13 +139,13 @@ void decode_union_array_field(struct union_array_field_wire* input, struct union
 }
 
 void decode_struct_array_field(struct struct_array_field_wire* input, struct struct_array_field* output) {
-	uint8_t a;
-	uint32_t b;
-	uint32_t c;
+	uint8_t field_a;
+	uint32_t field_b;
+	uint32_t field_c;
 	for (size_t b_0 = 0; b_0 < 10; b_0++) {
-		memcpy(&b, &input->b[b_0], sizeof(uint32_t));
-		b = be32toh(b);
-		memcpy(&output->b[b_0], &b, sizeof(uint32_t));
+		memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
+		field_b = be32toh(field_b);
+		memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
 	}
 	for (size_t c_0 = 0; c_0 < 1; c_0++) {
 		for (size_t c_1 = 0; c_1 < 2; c_1++) {
@@ -153,15 +153,15 @@ void decode_struct_array_field(struct struct_array_field_wire* input, struct str
 				for (size_t c_3 = 0; c_3 < 4; c_3++) {
 					for (size_t c_4 = 0; c_4 < 5; c_4++) {
 						for (size_t c_5 = 0; c_5 < 6; c_5++) {
-							memcpy(&c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
-							c = be32toh(c);
-							memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &c, sizeof(uint32_t));
+							memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
+							field_c = be32toh(field_c);
+							memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
 						}
 					}
 				}
 			}
 		}
 	}
-	memcpy(&a, &input->a, sizeof(uint8_t));
-	memcpy(&output->a, &a, sizeof(uint8_t));
+	memcpy(&field_a, &input->a, sizeof(uint8_t));
+	memcpy(&output->a, &field_a, sizeof(uint8_t));
 }

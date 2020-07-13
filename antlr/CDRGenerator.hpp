@@ -17,4 +17,11 @@
 
 #include <iostream>
 
-int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream);
+typedef enum TargetLanguage {
+    UNKNOWN,
+    C_LANG,
+    CPP_LANG
+} target_t;
+
+std::string target_as_string(TargetLanguage target);
+int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target);
