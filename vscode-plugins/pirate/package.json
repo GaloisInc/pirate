@@ -23,7 +23,7 @@
 						"filenamePattern": "pirate.yml"
 					}
 				],
-				"priority": "option"
+				"priority": "default"
 			}
 		]
 	},

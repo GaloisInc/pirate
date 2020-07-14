@@ -1,9 +1,9 @@
-import * as U from "../shared/modelUpdates";
-//import type * as R from "../shared/viewrequests";
-import * as R from "../shared/viewRequests";
 import { TextEditorRevealType } from "vscode";
 import { Func } from "mocha";
 import { exitCode } from "process";
+import * as D from "./dragHandlers.js";
+import * as U from "../shared/modelUpdates.js";
+import * as R from "../shared/viewRequests.js";
 
 declare var acquireVsCodeApi: any;
 
@@ -19,7 +19,7 @@ interface Rect {
 }
 
 interface XRange {
-	readonly left:    number;
+	readonly left:  number;
 	readonly width: number;
 }
 
@@ -28,13 +28,7 @@ interface YRange {
 	readonly height: number;
 }
 
-interface Shift {
-    readonly x: number;
-    readonly y: number;
-}
-
 const lasterrormsg = document.getElementById('lasterrormsg') as HTMLDivElement;
-
 
 class System {
     #svg:SVGSVGElement;
@@ -176,76 +170,6 @@ class Coords implements U.CoordsInterface {
     height:number;
 }
 
-/**
- * Interface needed for addSVGDragHandlers to make an element dragable.
- */
-interface DragableSVGElement extends Element {
-    readonly x:SVGAnimatedLength;
-    readonly y:SVGAnimatedLength;
-    onpointerdown: ((this: GlobalEventHandlers, ev: PointerEvent) => any) | null;
-    onpointermove: ((this: GlobalEventHandlers, ev: PointerEvent) => any) | null;
-    onpointerup: ((this: GlobalEventHandlers, ev: PointerEvent) => any) | null;
-}
-
-/**
- * Coordinates for recording where dragging started.
- */
-interface DragCoords {
-    readonly rx: number;
-    readonly ry: number;
-    readonly px: number;
-    readonly py: number;
-}
-
-/**
- *
- */
-interface DragEvent {
-    /**
-     * Top coordinate in SVG address space.
-     */
-    readonly top: number;
-    /**
-     * Left coordinate to drag to in SVG address space.
-     */
-    readonly left: number;
-}
-
-function addSVGDragHandlers(container:SVGSVGElement, innerSVG:DragableSVGElement, drag:(p:DragEvent) => void) {
-    let dragOffset:DragCoords|null = null;
-    function startDrag(evt:PointerEvent) {
-        dragOffset = {
-            rx: innerSVG.x.baseVal.value,
-            ry: innerSVG.y.baseVal.value,
-            px: evt.pageX,
-            py: evt.pageY
-        };
-        innerSVG.setPointerCapture(evt.pointerId);
-        evt.stopImmediatePropagation();
-    }
-    function onpointermove(evt:PointerEvent) {
-        if (dragOffset) {
-            evt.stopImmediatePropagation();
-            const CTM = container.getScreenCTM() as DOMMatrix;
-            // Get left
-            let left = dragOffset.rx + (evt.pageX - dragOffset.px) / CTM.a;
-            let top  = dragOffset.ry + (evt.pageY - dragOffset.py) / CTM.d;
-            drag({left: left, top: top});
-         }
-    };
-
-    function endDrag(evt:PointerEvent) {
-        if (dragOffset) {
-            dragOffset = null;
-            innerSVG.releasePointerCapture(evt.pointerId);
-            evt.stopImmediatePropagation();
-        }
-    };
-    innerSVG.onpointerdown = startDrag;
-    innerSVG.onpointermove = onpointermove;
-    innerSVG.onpointerup = endDrag;
-}
-
 class Service {
     #coords:Coords;
     #innerSVG:SVGSVGElement;
@@ -276,7 +200,7 @@ class Service {
 
         let ports = this.#ports;
 
-        function drag(evt:DragEvent) {
+        function drag(evt:D.SVGDragEvent) {
             let left = evt.left;
             let top  = evt.top;
             const width  = +(innerSVG.getAttributeNS('', 'width') as any);
@@ -300,7 +224,7 @@ class Service {
                 innerSVG.y.baseVal.value = top;
              }
         };
-        addSVGDragHandlers(svg, innerSVG, drag);
+        D.addSVGDragHandlers(svg, innerSVG, drag);
 
         var div = document.createElement('div');
         var enclaveName = document.createElement('span') as HTMLSpanElement;
@@ -368,19 +292,28 @@ function clamp(v:number, min:number, max:number) {
 }
 
 /**
- *
+ * This calculate the orientation of the 
  */
-function calculatePortRotate(mode:U.PortType, border:U.Border):number {
+function calculatePortRotate(mode:U.PortType, left:number, maxLeft:number, top:number, maxTop:number) {
+    let orient:number;
+    if (top <= 0) {
+        orient = 0;
+    } else if (top < maxTop) {
+        if (left <= 0) {
+            orient = 270;
+        } else {
+            orient = 90;
+        }
+    } else {
+        orient = 180;
+    }
+
     const inPort = mode == U.PortType.InPort;
-    switch (border) {
-    case U.Border.Left:
-        return inPort ? 180 : 0;
-    case U.Border.Right:
-        return inPort ? 0 : 180;
-    case U.Border.Top:
-        return inPort ? -90 : 90;
-    case U.Border.Bottom:
-        return inPort ? 90 : -90;
+    
+    if (inPort) {
+        return (orient + 270) % 360;
+    } else {
+        return (orient + 90) % 360;
     }
 }
 
@@ -393,6 +326,7 @@ function rotateString(rotate:number, xoff:number, yoff:number):string {
                      + yoff.toString() + ')';
 
 }
+
 
 /** `outsideRangeDist(x,l,h)` returns the amount `x` is outside the range `[l,h]`. */
 function outsideRangeDist(x:number, l:number, h:number):number {
@@ -435,6 +369,7 @@ function setPortElementPosition(svg:SVGSVGElement, elt:SVGUseElement, bbox:DOMRe
     const maxLeft = svg.width.baseVal.value - bbox.width;
     // Maximum top value
     const maxTop = svg.height.baseVal.value - bbox.height;
+    let maxPosition:number;
     switch (border) {
     case U.Border.Left:
         elt.x.baseVal.value = 0;
@@ -454,7 +389,7 @@ function setPortElementPosition(svg:SVGSVGElement, elt:SVGUseElement, bbox:DOMRe
         break;
     }
     // Populate initial transform attribute.
-    const rotate = calculatePortRotate(portType, border);
+    const rotate = calculatePortRotate(portType, elt.x.baseVal.value, maxLeft, elt.y.baseVal.value, maxTop);
     const centerX = elt.x.baseVal.value + bbox.width / 2;
     const centerY = elt.y.baseVal.value + bbox.height / 2;
     elt.setAttributeNS('', 'transform', rotateString(rotate, centerX, centerY));
@@ -482,7 +417,7 @@ class Port {
         setPortElementPosition(svg, elt, bbox, portType, p.border, p.position);
 
 
-        addSVGDragHandlers(svg, elt, (evt:DragEvent) => {
+        D.addSVGDragHandlers(svg, elt, (evt:D.SVGDragEvent) => {
             // Maximum left value
             const maxLeft = svg.width.baseVal.value - bbox.width;
             // Maximum top value

@@ -188,30 +188,30 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 	 * Get the static html used for the editor webviews.
 	 */
 	private getHtmlForWebview(webview: vscode.Webview): string {
-		const mediaPath = path.join(this.context.extensionPath, 'media');
 		// Local path to script and css for the webview
 		const cssDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.css');
-		const cssResource = webview.asWebviewUri(vscode.Uri.file(cssDiskPath));
-		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview',      'pirateYMLEditor.js');
+		const cssResource    = webview.asWebviewUri(vscode.Uri.file(cssDiskPath));
+		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview', 'pirateYMLEditor.js');
 		const scriptResource = webview.asWebviewUri(vscode.Uri.file(scriptDiskPath));
 		const htmlBodyDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.html');
 		const htmlBodyContents    = fs.readFileSync(htmlBodyDiskPath, 'utf8');
 		// Use a nonce to whitelist which scripts can be run
-		//const nonce = getNonce();
+		const nonce = getNonce();
 
 		return /* html */`
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
-				<title>PIRATE Project Viewer</title>
 				<meta charset="UTF-8">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; "/>
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${cssResource}" rel="stylesheet">
+				<title>PIRATE Project Viewer</title>
+				<link nonce="${nonce}" href="${cssResource}" rel="stylesheet">
 			</head>
-			<body>
+			<body nonce="${nonce}">
 			<div id="lasterrormsg">No error message</div>
 			${htmlBodyContents}
-			<script src="${scriptResource}" />
+			<script type="module" nonce="${nonce}" src="${scriptResource}" />
 			</body>
 			</html>`;
 	}
