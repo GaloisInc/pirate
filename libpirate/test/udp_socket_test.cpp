@@ -13,8 +13,13 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#ifdef _WIN32
+#include "windows/libpirate.h"
+#else
 #include "libpirate.h"
+#endif
 #include "channel_test.hpp"
+#include "cross_platform_test.hpp"
 
 namespace GAPS
 {
@@ -37,19 +42,19 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
@@ -58,7 +63,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,buffer_size=%u", name, addr, port, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr, udp_socket_param->addr);
@@ -75,7 +80,7 @@ public:
         pirate_udp_socket_param_t *param = &Reader.param.channel.udp_socket;
 
         pirate_init_channel_param(UDP_SOCKET, &Reader.param);
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
         param->port = 26427;
         param->buffer_size = GetParam();
         Writer.param = Reader.param;

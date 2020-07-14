@@ -37,7 +37,11 @@ if(BUILD_ALL)
 endif(BUILD_ALL)
 
 # Common build options
-set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(PIRATE_C_FLAGS /W3 /MT)
+else()
+    set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
