@@ -11,9 +11,35 @@ libpirate is a datagram communication library. Reads and writes are
 transmitted in indivisible packets. Reading a partial packet will
 drop the remaining contents of the packet.
 
-Non-blocking I/O is currently supported for the UDP and GE-eth
-channel types. Passing O_NONBLOCK to pirate_open() on other
-channel types will return an errno status of EINVAL.
+Nonblocking I/O is supported for the UDP and GE_ETH channel types.
+The stream-based channel types (Unix pipe, Unix socket, TCP socket,
+etc) cannot support datagram semantics on write requests with
+non-blocking I/O. A partial read or partial write of a datagram is
+not allowed. This can be prevented on reads using an internal
+temporary buffer. The same technique cannot be applied to writes.
+Passing O_NONBLOCK to pirate_open() to channel types that do not
+support nonblocking I/O will return an errno status of EINVAL.
+
+A Windows implementation of libpirate is provided for development
+purposes. The Windows implementation only supports the UDP and
+GE_ETH channel types.
+
+The following tables summarizes the capabilities of libpirate
+channels.
+
+| Channel type | Linux blocking I/O  | Linux nonblocking I/O | Windows blocking I/O | Windows nonblocking I/O |
+| ------------ | ------------------- | --------------------- | -------------------- | ----------------------- |
+| device       | Y | | | |
+| pipe         | Y | | | | 
+| unix_socket  | Y | | | |
+| tcp_socket   | Y | | | |
+| udp_socket   | Y | Y | Y | Y |
+| shmem        | Y | | | |
+| udp_shmem    | Y | | | |
+| uio          | Y | | | |
+| serial       | Y | | | |
+| mercury      | Y | | | |
+| ge_eth       | Y | Y | Y | Y |
 
 ## Usage
 
