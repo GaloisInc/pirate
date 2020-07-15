@@ -35,7 +35,6 @@ channels.
 | tcp_socket   | Y | | | |
 | udp_socket   | Y | Y | Y | Y |
 | shmem        | Y | | | |
-| udp_shmem    | Y | | | |
 | uio          | Y | | | |
 | serial       | Y | | | |
 | mercury      | Y | | | |
