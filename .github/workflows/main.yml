@@ -271,6 +271,7 @@ jobs:
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
         docker push pirateteam/ubuntu:${{ github.event.release.tag_name }}
       if: github.event_name == 'release'
+  # This builds the IDL tool
   antlr-idl:
     runs-on: ubuntu-latest
     steps:
@@ -328,3 +329,21 @@ jobs:
         make
         ./idl_test
         make valgrind
+  # This builds the VSCode plugins
+  vscode-plugins:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install npm
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y npm
+    - name: Install vsce
+      run: sudo npm install -g --no-optional vsce
+    - name: Install dependencies
+      working-directory: vscode-plugins/architecture
+      run: npm install
+    - name: Package extension
+      working-directory: vscode-plugins/architecture
+      run: vsce package
+      
