@@ -6,6 +6,11 @@
 	"engines": {
 		"vscode": "^1.44.0"
 	},
+	"publisher": "pirateteam",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/GaloisInc/pirate.git"
+	},
 	"categories": [
 		"Other"
 	],
@@ -23,7 +28,7 @@
 						"filenamePattern": "pirate.yml"
 					}
 				],
-				"priority": "option"
+				"priority": "default"
 			}
 		]
 	},
@@ -33,7 +38,7 @@
 		"lint": "eslint src --ext ts",
 		"watch": "./node_modules/.bin/nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'npm run compile'",
 		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
+		"test": "node ./out/extension/test/runTest.js"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.44.0",
