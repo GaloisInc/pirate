@@ -121,7 +121,8 @@ jobs:
         cd googletest-release-1.10.0
         mkdir build
         cd build
-        cmake --build .. --config Release --target install
+        cmake ..
+        cmake --build . --config Release --target install
     - name: build libpirate
       run: |
         mkdir build
