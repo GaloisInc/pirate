@@ -6,13 +6,13 @@
 #include <string.h>
 
 
-struct annotation_struct_example {
+struct Annotation_Struct_Example {
 	double x __attribute__((aligned(8)));
 	double y __attribute__((aligned(8)));
 	double z __attribute__((aligned(8)));
 };
 
-struct annotation_union_example {
+struct Annotation_Union_Example {
 	int16_t tag __attribute__((aligned(2)));
 	union {
 		int16_t a __attribute__((aligned(2)));
@@ -21,13 +21,13 @@ struct annotation_union_example {
 	} data;
 };
 
-struct annotation_struct_example_wire {
+struct Annotation_Struct_Example_wire {
 	unsigned char x[8] __attribute__((aligned(8)));
 	unsigned char y[8] __attribute__((aligned(8)));
 	unsigned char z[8] __attribute__((aligned(8)));
 };
 
-struct annotation_union_example_wire {
+struct Annotation_Union_Example_wire {
 	unsigned char tag[2];
 	union {
 		unsigned char a[2] __attribute__((aligned(2)));
@@ -36,11 +36,11 @@ struct annotation_union_example_wire {
 	} data;
 };
 
-static_assert(sizeof(struct annotation_struct_example) == sizeof(struct annotation_struct_example_wire), "size of struct annotation_struct_example not equal to wire protocol struct");
-static_assert(sizeof(struct annotation_union_example) == sizeof(struct annotation_union_example_wire), "size of annotation_union_example not equal to wire protocol size"
+static_assert(sizeof(struct Annotation_Struct_Example) == sizeof(struct Annotation_Struct_Example_wire), "size of struct Annotation_Struct_Example not equal to wire protocol struct");
+static_assert(sizeof(struct Annotation_Union_Example) == sizeof(struct Annotation_Union_Example_wire), "size of Annotation_Union_Example not equal to wire protocol size"
 );
 
-void encode_annotation_struct_example(struct annotation_struct_example* input, struct annotation_struct_example_wire* output) {
+void encode_annotation_struct_example(struct Annotation_Struct_Example* input, struct Annotation_Struct_Example_wire* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
@@ -55,7 +55,7 @@ void encode_annotation_struct_example(struct annotation_struct_example* input, s
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void encode_annotation_union_example(struct annotation_union_example* input, struct annotation_union_example_wire* output) {
+void encode_annotation_union_example(struct Annotation_Union_Example* input, struct Annotation_Union_Example_wire* output) {
 	uint16_t tag;
 	uint16_t data_a;
 	uint32_t data_b;
@@ -84,7 +84,7 @@ void encode_annotation_union_example(struct annotation_union_example* input, str
 	}
 }
 
-void decode_annotation_struct_example(struct annotation_struct_example_wire* input, struct annotation_struct_example* output) {
+void decode_annotation_struct_example(struct Annotation_Struct_Example_wire* input, struct Annotation_Struct_Example* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
@@ -99,7 +99,7 @@ void decode_annotation_struct_example(struct annotation_struct_example_wire* inp
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void decode_annotation_union_example(struct annotation_union_example_wire* input, struct annotation_union_example* output) {
+void decode_annotation_union_example(struct Annotation_Union_Example_wire* input, struct Annotation_Union_Example* output) {
 	uint16_t tag;
 	uint16_t data_a;
 	uint32_t data_b;
@@ -128,7 +128,7 @@ void decode_annotation_union_example(struct annotation_union_example_wire* input
 	}
 }
 
-int validate_annotation_struct_example(const struct annotation_struct_example* input) {
+int validate_annotation_struct_example(const struct Annotation_Struct_Example* input) {
 	if (input->x < 0) {
 		return -1;
 	}
@@ -141,7 +141,7 @@ int validate_annotation_struct_example(const struct annotation_struct_example* i
 	return 0;
 }
 
-int validate_annotation_union_example(const struct annotation_union_example* input) {
+int validate_annotation_union_example(const struct Annotation_Union_Example* input) {
 	switch (input->tag) {
 	case 1:
 		if (input->data.a < 0) {
@@ -164,14 +164,14 @@ int validate_annotation_union_example(const struct annotation_union_example* inp
 	return 0;
 }
 
-void transform_annotation_struct_example(struct annotation_struct_example* input) {
+void transform_annotation_struct_example(struct Annotation_Struct_Example* input) {
 	int rmode = fegetround();
 	fesetround(FE_TONEAREST);
 	input->z = nearbyint(input->z);
 	fesetround(rmode);
 }
 
-void transform_annotation_union_example(struct annotation_union_example* input) {
+void transform_annotation_union_example(struct Annotation_Union_Example* input) {
 	switch (input->tag) {
 		case 1:
 		{
