@@ -118,9 +118,10 @@ jobs:
         cd ~/googletest
         Invoke-WebRequest -Uri https://github.com/google/googletest/archive/release-1.10.0.tar.gz -MaximumRedirection 10 -OutFile release-1.10.0.tar.gz
         tar -x -z -f release-1.10.0.tar.gz
-        dir
-        cmake -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
-        cmake --build . --target install
+        cd googletest-release-1.10.0
+        mkdir build
+        cd build
+        cmake --build .. --config Release --target install
     - name: build libpirate
       run: |
         mkdir build
