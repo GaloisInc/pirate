@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2019-2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 #include <errno.h>
@@ -381,12 +381,10 @@ static int pirate_open(pirate_channel_t *channel) {
     }
 
     if (pirate_write_mtu(param) < 0) {
-        errno = EINVAL;
         return -1;
     }
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
-        errno = EINVAL;
         return -1;
     }
 

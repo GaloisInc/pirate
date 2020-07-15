@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2019-2020 Two Six Labs, LLC.  All rights reserved.
  */
 
 
@@ -23,12 +23,14 @@
 
 #include "libpirate.h"
 #include "udp_socket.h"
+#include "ge_eth.h"
 #include "pirate_common.h"
 #include "channel_funcs.h"
 
 typedef union {
     common_ctx         common;
     udp_socket_ctx     udp_socket;
+    ge_eth_ctx         ge_eth;
 } pirate_channel_ctx_t;
 
 typedef struct {
@@ -38,17 +40,10 @@ typedef struct {
 
 static pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 
-static char gaps_enclave_names[PIRATE_NUM_ENCLAVES][PIRATE_LEN_NAME];
-char* gaps_enclave_names_sorted[PIRATE_NUM_ENCLAVES];
-
-int gaps_reader_gds[PIRATE_NUM_CHANNELS];
-int gaps_reader_gds_num;
-
-int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
-
 static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-    PIRATE_UDP_SOCKET_CHANNEL_FUNCS
+    PIRATE_UDP_SOCKET_CHANNEL_FUNCS,
+    PIRATE_GE_ETH_CHANNEL_FUNCS
 };
 
 int pirate_close_channel(pirate_channel_t *channel);
@@ -118,6 +113,8 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
 
     if (strncmp("udp_socket", opt, strlen("udp_socket")) == 0) {
         param->channel_type = UDP_SOCKET;
+    } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
+        param->channel_type = GE_ETH;
     }
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
@@ -278,6 +275,7 @@ int pirate_pipe_channel_type(channel_enum_t channel_type) {
 int pirate_nonblock_channel_type(channel_enum_t channel_type) {
     switch (channel_type) {
     case UDP_SOCKET:
+    case GE_ETH:
         return 1;
     default:
         return 0;

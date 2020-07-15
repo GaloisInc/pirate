@@ -17,6 +17,7 @@
 #define __PIRATE_PRIMITIVES_H
 
 #include <BaseTsd.h>
+#include <stdint.h>
 
 #include <WinSock2.h>
 #include <Ws2ipdef.h>
@@ -43,6 +44,14 @@ typedef enum {
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
+    // The gaps channel for GRC Ethernet devices
+    // Configuration parameters - pirate_ge_eth_param_t
+    //  - addr       - IP address, if empty then 127.0.0.1 is used
+    //  - port       - IP port
+    //  - message_id - send/receive message ID
+    //  - mtu        - maximum frame length, default 1454
+    GE_ETH,
+
    // Number of GAPS channel types
     PIRATE_CHANNEL_TYPE_COUNT
 } channel_enum_t;
@@ -57,10 +66,21 @@ typedef struct {
     unsigned mtu;
 } pirate_udp_socket_param_t;
 
+// GE_ETH parameters
+#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
+#define PIRATE_DEFAULT_GE_ETH_MTU      1454u
+typedef struct {
+    char addr[INET_ADDRSTRLEN];
+    short port;
+    uint32_t message_id;
+    uint32_t mtu;
+} pirate_ge_eth_param_t;
+
 typedef struct {
     channel_enum_t channel_type;
     union {
         pirate_udp_socket_param_t       udp_socket;
+        pirate_ge_eth_param_t           ge_eth;
     } channel;
 } pirate_channel_param_t;
 
@@ -114,6 +134,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 #define GAPS_CHANNEL_OPTIONS                                                                   \
     "Supported channels:\n"                                                                    \
     "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
+    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
@@ -123,7 +144,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 //
 // Return:
 //  0 on success
-// -1 on failure, errno is set
+// -1 on failure, GetLastError() is set
 
 int pirate_get_channel_param(int gd, pirate_channel_param_t *param);
 
@@ -154,7 +175,7 @@ int pirate_get_channel_description(int gd, char *str, int len);
 // processes.
 
 // The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// error occurred (in which case, GetLastError() is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 
@@ -166,7 +187,7 @@ int pirate_open_parse(const char *param, int flags);
 // processes.
 
 // The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// error occurred (in which case, GetLastError() is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 
@@ -190,8 +211,8 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type);
 // The caller is responsible for closing the reader and the writer.
 //
 // On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
+// and GetLastError() is set appropriately. If the channel type
+// does not support this functionality then GetLastError() is set
 // to ENOSYS.
 //
 // The argument flags must have access mode O_RDWR.
@@ -205,8 +226,8 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
 // The caller is responsible for closing the reader and the writer.
 //
 // On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
+// and GetLastError() is set appropriately. If the channel type
+// does not support this functionality then GetLastError() is set
 // to ENOSYS.
 //
 // The argument flags must have access mode O_RDWR.
@@ -222,7 +243,7 @@ int pirate_pipe_parse(int gd[2], const char *param, int flags);
 // is lost.
 //
 // On success, the number of bytes read is returned.
-// On error, -1 is returned, and errno is set appropriately.
+// On error, -1 is returned, and GetLastError() is set appropriately.
 
 SSIZE_T pirate_read(int gd, void *buf, size_t count);
 
@@ -230,9 +251,8 @@ SSIZE_T pirate_read(int gd, void *buf, size_t count);
 // from the buffer starting at buf to the gaps descriptor
 // gd.
 //
-// On success, the number of bytes written is returned
-// (zero indicates nothing was written). On error,
-// -1 is returned, and errno is set appropriately.
+// On success, the number of bytes written is returned. On error,
+// -1 is returned, and GetLastError() is set appropriately.
 
 SSIZE_T pirate_write(int gd, const void *buf, size_t count);
 
@@ -242,14 +262,14 @@ SSIZE_T pirate_write(int gd, const void *buf, size_t count);
 // the given channel. A value of 0 indicates no maximum length.
 //
 // On success, the mtu is returned. On error,
-// -1 is returned, and errno is set appropriately.
+// -1 is returned, and GetLastError() is set appropriately.
 
 SSIZE_T pirate_write_mtu(const pirate_channel_param_t *param);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //
 // pirate_close() returns zero on success.  On error,
-// -1 is returned, and errno is set appropriately.
+// -1 is returned, and GetLastError() is set appropriately.
 
 int pirate_close(int gd);
 

@@ -8,6 +8,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         "windows/primitives.c"
         "windows/pirate_common.c"
         "windows/udp_socket.c"
+        "windows/ge_eth.c"
     )
     set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES})
 else()
@@ -105,7 +106,10 @@ if(PIRATE_UNIT_TEST)
     set(GAPS_CHANNELS_TEST gaps_channels_test)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS})
-    SET(GAPS_CHANNELS_TEST_SRC "test/channel_test.cpp" "test/udp_socket_test.cpp")
+    SET(GAPS_CHANNELS_TEST_SRC
+        "test/channel_test.cpp"
+        "test/udp_socket_test.cpp"
+        "test/ge_eth_test.cpp")
 else()
     set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)

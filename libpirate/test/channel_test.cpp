@@ -255,7 +255,7 @@ void *ChannelTest::WriterThreadS(void *param)
     CROSS_PLATFORM_RESET_ERROR();
     ChannelTest *inst = static_cast<ChannelTest*>(param);
     inst->WriterTest();
-    return 0;
+    return NULL;
 }
 
 #ifdef _WIN32
