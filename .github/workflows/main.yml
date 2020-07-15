@@ -107,6 +107,18 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
+  windows-build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: googletest
+      shell: powershell
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        curl https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
+        cmake -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
+        cmake --build . --target install
   shmem:
     runs-on: ubuntu-latest
     steps:
