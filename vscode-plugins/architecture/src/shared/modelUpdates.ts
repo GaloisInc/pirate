@@ -1,3 +1,9 @@
+export const enum Border {
+	Top = "top",
+	Left = "left",
+	Right = "right",
+	Bottom = "bottom"
+}
 
 export
 interface CoordsInterface {
@@ -30,6 +36,13 @@ export interface NewService extends ModelUpdate {
 	readonly name: string;
 	/** Coordinates for placing rectangle */
 	readonly coords: CoordsInterface;
+	/** Color of the service. */
+	readonly color: string;
+}
+
+export const enum PortType {
+    InPort = "in",
+    OutPort = "out"
 }
 
 export interface NewPort extends ModelUpdate {
@@ -37,8 +50,16 @@ export interface NewPort extends ModelUpdate {
 	readonly serviceName: string;
 	/** Name of new port.  Should be unique for service. */
 	readonly portName: string;
-	/** Coordinates for placing rectangle */
-	readonly coords: CoordsInterface;
+	/** Flag controlling whether port is for receiving (in) or sending (out). */
+	readonly mode: PortType;
+	/** Side that port is on in model */
+	readonly border: Border;
+	/**
+	 * Position of port on border.
+	 * On Top/Bottom border this is units from left.
+	 * On Left/Right border this is units from top.
+	 */
+	readonly position: number;
 }
 
 /**
