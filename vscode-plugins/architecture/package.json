@@ -6,6 +6,11 @@
 	"engines": {
 		"vscode": "^1.44.0"
 	},
+	"publisher": "pirateteam",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/GaloisInc/pirate.git"
+	},
 	"categories": [
 		"Other"
 	],
