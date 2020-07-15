@@ -1,0 +1,16 @@
+#! /usr/bin/env pal
+
+enclaves:
+    - name: send
+      path: ObjectModelSend
+    - name: recv
+      path: ObjectModelRecv
+resources:
+    - name: mychannel
+      ids: [ "recv/in", "send/out" ]
+      type: pirate_channel
+      contents:
+          channel_type: pipe
+          path: /tmp/object-model.fifo
+config:
+    log_level: default

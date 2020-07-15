@@ -1,0 +1,5 @@
+module OM {
+  struct Position {
+    double x, y, z;
+  };
+};
