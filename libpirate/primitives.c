@@ -42,6 +42,7 @@ typedef int pirate_atomic_int;
 #include "device.h"
 #include "pipe.h"
 #include "unix_socket.h"
+#include "unix_seqpacket.h"
 #include "tcp_socket.h"
 #include "udp_socket.h"
 #include "shmem_interface.h"
@@ -58,6 +59,7 @@ typedef union {
     device_ctx         device;
     pipe_ctx           pipe;
     unix_socket_ctx    unix_socket;
+    unix_seqpacket_ctx unix_seqpacket;
     tcp_socket_ctx     tcp_socket;
     udp_socket_ctx     udp_socket;
     shmem_ctx          shmem;
@@ -89,6 +91,7 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_DEVICE_CHANNEL_FUNCS,
     PIRATE_PIPE_CHANNEL_FUNCS,
     PIRATE_UNIX_SOCKET_CHANNEL_FUNCS,
+    PIRATE_UNIX_SEQPACKET_CHANNEL_FUNCS,
     PIRATE_TCP_SOCKET_CHANNEL_FUNCS,
     PIRATE_UDP_SOCKET_CHANNEL_FUNCS,
     PIRATE_SHMEM_CHANNEL_FUNCS,
@@ -250,6 +253,8 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         param->channel_type = PIPE;
     } else if (strncmp("unix_socket", opt, strlen("unix_socket")) == 0) {
         param->channel_type = UNIX_SOCKET;
+    } else if (strncmp("unix_seqpacket", opt, strlen("unix_seqpacket")) == 0) {
+        param->channel_type = UNIX_SEQPACKET;
     } else if (strncmp("tcp_socket", opt, strlen("tcp_socket")) == 0) {
         param->channel_type = TCP_SOCKET;
     } else if (strncmp("udp_socket", opt, strlen("udp_socket")) == 0) {
@@ -470,6 +475,7 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type) {
     switch (channel_type) {
     case UDP_SOCKET:
     case GE_ETH:
+    case UNIX_SEQPACKET:
         return 1;
     default:
         return 0;
@@ -569,6 +575,7 @@ int pirate_get_fd(int gd) {
     case DEVICE:
     case PIPE:
     case UNIX_SOCKET:
+    case UNIX_SEQPACKET:
     case TCP_SOCKET:
     case UDP_SOCKET:
     case SERIAL:

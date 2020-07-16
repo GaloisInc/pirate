@@ -24,6 +24,7 @@ else()
         "tcp_socket.c"
         "udp_socket.c"
         "unix_socket.c"
+        "unix_seqpacket.c"
     )
 
     if(PIRATE_SHMEM_FEATURE)
