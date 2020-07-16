@@ -159,19 +159,26 @@ must be loaded.
 
 ## Tests
 
-### Dependencies
+There are separate instructions for Windows below.
+
+### Unix
+
+#### Dependencies
 
 [Google Test](https://github.com/google/googletest)
 
 ```
 $ git clone https://github.com/google/googletest.git
 $ cd googletest
-$ git checkout v1.10.x
-$ cmake -DCMAKE_BUILD_TYPE=Release googletest-release-1.10.x .
-$ sudo cmake --build . --target install
+$ git checkout release-1.10.0
+$ mkdir build
+$ cd build
+$ cmake ..
+$ sudo cmake --build . --config Release --target install
 ```
 
-### Build
+#### Build
+
 Enable **PIRATE_UNIT_TEST** option:
 ```
 $ mkdir build
@@ -180,15 +187,57 @@ $ cmake -DPIRATE_UNIT_TEST=ON ..
 $ make
 ```
 
-### Run
+#### Run
+
 ```
 $ cd build
 $ ./libpirate/gaps_channels_test
 ```
 
-### Run with [valgrind](https://valgrind.org/)
+#### Run with [valgrind](https://valgrind.org/)
 
 ```
 $ cd build
 $ make valgrind
+```
+
+### Windows
+
+#### Dependencies
+
+[Google Test](https://github.com/google/googletest)
+
+```
+$ git clone https://github.com/google/googletest.git
+$ cd googletest
+$ git checkout release-1.10.0
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build . --config Release --target install
+```
+#### Build
+
+Enable **PIRATE_UNIT_TEST** option:
+
+```
+$ mkdir build
+$ cd build
+$ cmake -DGTEST_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest.lib" `
+    -DGTEST_MAIN_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest_main.lib" `
+    -DGTEST_INCLUDE_DIR="C:\\Program Files (x86)\\googletest-distribution\\include" `
+    -DGAPS_DISABLE=ON `
+    -DPIRATE_UNIT_TEST=ON `
+    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON `
+    -DPIRATE_LAUNCHER=OFF `
+    -DPIRATE_GETOPT=OFF `
+    ..
+$ cmake --build . --config Release
+```
+
+#### Run
+
+```
+$ cd build
+$ ./libpirate/Release/gaps_channels_test.exe
 ```
