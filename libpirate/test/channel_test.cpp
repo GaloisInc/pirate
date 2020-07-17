@@ -318,7 +318,7 @@ void ChannelTest::WriterTest()
         ssize_t wl = len_arr[i].writer;
 
         WriteDataInit(offset, wl);
-        offset += wl;
+        offset += wl + 1;
 
         rv = pirate_write(Writer.gd, Writer.buf, wl);
         EXPECT_EQ(wl, rv);

@@ -83,10 +83,11 @@ protected:
         ssize_t writer;
     };
 
-    static const size_t len_size = 9;
+    static const size_t len_size = 12;
     static const size_t buf_size = 32;
 
     struct len_pair len_arr[len_size] = {
+        {0, 0}, {0, 1}, {1, 0},
         {1, 1}, {1, 2}, {2, 1},
         {8, 8}, {8, 16}, {16, 8},
         {1, 32}, {32, 1}, {32, 32}};
