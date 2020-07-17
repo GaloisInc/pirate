@@ -23,6 +23,7 @@ namespace GAPS
 using ::testing::WithParamInterface;
 using ::testing::TestWithParam;
 using ::testing::Values;
+using ::testing::Combine;
 
 
 TEST(ChannelPipeTest, ConfigurationParser) {
@@ -58,7 +59,7 @@ TEST(ChannelPipeTest, ConfigurationParser) {
     ASSERT_EQ(min_tx, pipe_param->min_tx);
 }
 
-class PipeTest : public ChannelTest, public WithParamInterface<int>
+class PipeTest : public ChannelTest, public WithParamInterface<std::tuple<int, int>>
 {
 public:
     void ChannelInit()
@@ -67,8 +68,22 @@ public:
 
         pirate_init_channel_param(PIPE, &Reader.param);
         strncpy(param->path, "/tmp/gaps.channel.test", PIRATE_LEN_NAME);
-        param->min_tx = GetParam();
+        auto params = GetParam();
+        param->mtu = std::get<0>(params);
+        param->min_tx = std::get<1>(params);
         Writer.param = Reader.param;
+    }
+
+    void TearDown()
+    {
+        pirate_pipe_param_t *param = &Reader.param.channel.pipe;
+        unsigned int mtu = param->mtu;
+        ChannelTest::TearDown();
+        if (mtu > 0) {
+            ASSERT_EQ(1, nonblocking_IO_attempt);
+        } else {
+            ASSERT_EQ(0, nonblocking_IO_attempt);
+        }
     }
 };
 
@@ -78,7 +93,7 @@ TEST_P(PipeTest, Run)
 }
 
 INSTANTIATE_TEST_SUITE_P(PipeFunctionalTest, PipeTest,
-    Values(0, TEST_MIN_TX_LEN));
+    Combine(Values(0, 512), Values(0, TEST_MIN_TX_LEN)));
 
 class PipeCloseWriterTest : public ClosedWriterTest
 {

@@ -272,7 +272,9 @@ int pirate_pipe_channel_type(channel_enum_t channel_type) {
     return 0;
 }
 
-int pirate_nonblock_channel_type(channel_enum_t channel_type) {
+int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
+    (void) mtu;
+
     switch (channel_type) {
     case UDP_SOCKET:
     case GE_ETH:

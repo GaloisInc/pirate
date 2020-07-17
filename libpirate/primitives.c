@@ -14,6 +14,7 @@
  */
 
 #include <errno.h>
+#include <linux/limits.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -378,6 +379,7 @@ static int pirate_open(pirate_channel_t *channel) {
     pirate_channel_ctx_t *ctx = &channel->ctx;
     int access = channel->ctx.common.flags & O_ACCMODE;
     int nonblock = channel->ctx.common.flags & O_NONBLOCK;
+    ssize_t mtu;
     pirate_open_t open_func;
 
     if ((access != O_RDONLY) && (access != O_WRONLY)) {
@@ -385,7 +387,8 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (pirate_write_mtu(param) < 0) {
+    mtu = pirate_write_mtu(param);
+    if (mtu < 0) {
         return -1;
     }
 
@@ -393,7 +396,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (nonblock && !pirate_nonblock_channel_type(param->channel_type)) {
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type, (size_t) mtu)) {
         errno = EINVAL;
         return -1;
     }
@@ -471,12 +474,14 @@ int pirate_pipe_channel_type(channel_enum_t channel_type) {
     }
 }
 
-int pirate_nonblock_channel_type(channel_enum_t channel_type) {
+int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     switch (channel_type) {
     case UDP_SOCKET:
     case GE_ETH:
     case UNIX_SEQPACKET:
         return 1;
+    case PIPE:
+        return ((mtu > 0) && (mtu <= (PIPE_BUF - sizeof(pirate_header_t))));
     default:
         return 0;
     }
@@ -485,8 +490,10 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type) {
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     pirate_channel_t read_channel, write_channel;
     int rv, read_gd, write_gd;
+    ssize_t mtu;
     int access = flags & O_ACCMODE;
     int behavior = flags & ~O_ACCMODE;
+    int nonblock = flags & O_NONBLOCK;
 
     if (!pirate_pipe_channel_type(param->channel_type)) {
         errno = ENOSYS;
@@ -505,11 +512,17 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if (pirate_write_mtu(param) < 0) {
+    mtu = pirate_write_mtu(param);
+    if (mtu < 0) {
         return -1;
     }
 
     if (access != O_RDWR) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type, (size_t) mtu)) {
         errno = EINVAL;
         return -1;
     }

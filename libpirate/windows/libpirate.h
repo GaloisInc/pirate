@@ -202,7 +202,7 @@ int pirate_pipe_channel_type(channel_enum_t channel_type);
 // Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
-int pirate_nonblock_channel_type(channel_enum_t channel_type);
+int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
 
 // Opens both ends of the gaps channel specified by the
 // parameter value. See pipe() system call. Some channel

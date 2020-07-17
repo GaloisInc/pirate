@@ -60,6 +60,8 @@ protected:
     virtual void WriterTest();
     virtual void ReaderTest();
 
+    void BarrierWait();
+
     void Run();
     virtual void RunTestCase();
 
@@ -107,6 +109,8 @@ protected:
     // If true then producer and consumer
     // use non-blocking I/O
     bool nonblocking_IO;
+
+    bool nonblocking_IO_attempt;
 
     // Channel statistics
     struct {

@@ -13,6 +13,8 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -84,6 +86,8 @@ int pirate_pipe_get_channel_description(const void *_param, char *desc, int len)
 int pirate_pipe_open(void *_param, void *_ctx) {
     pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
     pipe_ctx *ctx = (pipe_ctx *)_ctx;
+    int nonblock = ctx->flags & O_NONBLOCK;
+    int status_flags, new_status_flags;
     int err;
 
     pirate_pipe_init_param(param);
@@ -104,6 +108,26 @@ int pirate_pipe_open(void *_param, void *_ctx) {
         return -1;
     }
 
+    status_flags = fcntl(ctx->fd, F_GETFL, NULL);
+    if (status_flags < 0) {
+        return -1;
+    }
+    if (nonblock) {
+        new_status_flags = status_flags | O_NONBLOCK;
+    } else {
+        new_status_flags = status_flags & ~O_NONBLOCK;
+    }
+    if (new_status_flags != status_flags) {
+        if (fcntl(ctx->fd, F_SETFL, new_status_flags) < 0) {
+            return -1;
+        }
+    }
+
+    if (nonblock) {
+        // ensure that one read() or write() consumes the entire datagram
+        param->min_tx = param->mtu;
+    }
+
     if ((ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
         return -1;
     }
@@ -112,13 +136,18 @@ int pirate_pipe_open(void *_param, void *_ctx) {
 }
 
 int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
-    (void) param;
     int rv, fd[2];
+    int nonblock = read_ctx->flags & O_NONBLOCK;
 
     pirate_pipe_init_param(param);
-    rv = pipe(fd);
+    rv = pipe2(fd, nonblock);
     if (rv < 0) {
         return rv;
+    }
+
+    if (nonblock) {
+        // ensure that one read() or write() consumes the entire datagram
+        param->min_tx = param->mtu;
     }
 
     if ((read_ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
