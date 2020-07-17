@@ -87,6 +87,7 @@ int pirate_pipe_open(void *_param, void *_ctx) {
     pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
     pipe_ctx *ctx = (pipe_ctx *)_ctx;
     int nonblock = ctx->flags & O_NONBLOCK;
+    int flags = ctx->flags & ~O_NONBLOCK; // O_NONBLOCK | O_WRONLY can generate ENXIO on open()
     int status_flags, new_status_flags;
     int err;
 
@@ -104,7 +105,7 @@ int pirate_pipe_open(void *_param, void *_ctx) {
         }
     }
 
-    if ((ctx->fd = open(param->path, ctx->flags)) < 0) {
+    if ((ctx->fd = open(param->path, flags)) < 0) {
         return -1;
     }
 
