@@ -15,6 +15,7 @@ option(GAPS_DISABLE "Disable compilation with GAPS annotations" OFF)
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
+option(PAL_UNIT_TEST "Enable compilation of PAL unit tests" OFF)
 option(GAPS_DEMOS "Enable compilation of all GAPS demo applications" OFF)
 option(CHANNEL_DEMO "Enable compilation of GAPS channel application" OFF)
 option(PNT_DEMO "Enable compilation of pnt application" OFF)
@@ -29,12 +30,36 @@ if(BUILD_ALL)
         SET(PIRATE_SHMEM_FEATURE ON BOOL)
     endif()
     SET(PIRATE_UNIT_TEST ON BOOL)
+    SET(PAL_UNIT_TEST ON BOOL)
     SET(GAPS_DEMOS ON BOOL)
     SET(CHANNEL_DEMO ON BOOL)
     SET(PNT_DEMO ON BOOL)
     SET(RESOURCE_DEMOS ON BOOL)
     SET(GAPS_BENCH ON BOOL)
 endif(BUILD_ALL)
+
+# Download googletest library, a la
+# https://github.com/google/googletest/blob/master/googletest/README.md
+
+if(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
+    # Download and unpack googletest at configure time
+    configure_file(googletest.CMakeLists.txt.in googletest-download/CMakeLists.txt)
+    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+    if(result)
+        message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+    endif(result)
+    execute_process(COMMAND ${CMAKE_COMMAND} --build .
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+    if(result)
+        message(FATAL_ERROR "Build step for googletest failed: ${result}")
+    endif(result)
+    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+        ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+        EXCLUDE_FROM_ALL)
+endif(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
 
 # Common build options
 set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
@@ -86,3 +111,4 @@ endif(PIRATE_GETOPT)
 if (GAPS_DEMOS OR CHANNEL_DEMO OR PNT_DEMO OR RESOURCE_DEMOS)
     add_subdirectory(demos)
 endif(GAPS_DEMOS OR CHANNEL_DEMO OR PNT_DEMO OR RESOURCE_DEMOS)
+

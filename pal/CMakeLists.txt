@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 
-if (NOT CMAKE_C_COMPILER)
-    set(CMAKE_C_COMPILER "clang")
-endif(NOT CMAKE_C_COMPILER)
-
 project(pal)
 
 ###
@@ -33,15 +29,32 @@ ExternalProject_Add(project_libcyaml
     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2/lib/libcyaml.so
 )
 
-add_library(libcyaml SHARED IMPORTED)
+add_library(libcyaml_shared SHARED IMPORTED)
 ExternalProject_Get_Property(project_libcyaml install_dir)
 set(CYAML_INSTALL_DIR ${install_dir})
-add_dependencies(libcyaml project_libcyaml)
-set_property(TARGET libcyaml
+add_dependencies(libcyaml_shared project_libcyaml)
+set_property(TARGET libcyaml_shared
     PROPERTY IMPORTED_LOCATION ${CYAML_INSTALL_DIR}/lib/libcyaml.so)
 
 install(DIRECTORY ${CYAML_INSTALL_DIR}/lib/ DESTINATION lib
     USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "libcyaml.so*")
+
+if(PAL_UNIT_TEST)
+    add_executable(pal_unit_test
+        test/unit/main.cpp test/unit/yaml.cpp
+        test/unit/pal.cpp test/unit/envelope.cpp
+        src/yaml.c src/log.c
+        lib/pal/pal.c lib/pal/envelope.c)
+    target_link_libraries(pal_unit_test
+        gtest libcyaml_shared pirate)
+    target_include_directories(pal_unit_test PRIVATE
+        ${CYAML_INSTALL_DIR}/include include src)
+    target_compile_options(pal_unit_test PRIVATE
+        SHELL:-Wall SHELL:-Werror)
+    target_link_options(pal_unit_test PRIVATE
+        SHELL:-fuse-ld=lld LINKER:-enclave=test)
+    add_test(NAME pal_unit COMMAND pal_unit_test)
+endif(PAL_UNIT_TEST)
 
 ###
 # libpal shared library
@@ -73,13 +86,12 @@ add_executable(exepal
     src/log.c src/log.h
     src/yaml.c src/yaml.h
     lib/pal/envelope.c include/pal/envelope.h
-    )
+)
 set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
 target_include_directories(exepal PRIVATE
-    include
-    ${CYAML_INSTALL_DIR}/include
+    include ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml pirate)
+target_link_libraries(exepal libcyaml_shared pirate)
 target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror)
 
 install(TARGETS exepal DESTINATION bin)

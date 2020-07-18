@@ -1,11 +1,13 @@
 #include <errno.h>
 #include <libpirate.h>
 #include <limits.h>
-#include <pal/envelope.h>
-#include <pal/pal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define NO_DECLARE_DUMMIES 1
+#include <pal/envelope.h>
+#include <pal/pal.h>
 
 /*
  * Application resource getters

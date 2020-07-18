@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <libpirate.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,6 +30,8 @@ typedef bool    pal_boolean    __attribute__((pirate_resource_type("boolean")));
 typedef int     pal_file       __attribute__((pirate_resource_type("file")));
 typedef int     pirate_channel __attribute__((pirate_resource_type("pirate_channel")));
 
+#if defined(NO_DECLARE_DUMMIES) && !defined(_DUMMIES_DECLARED)
+#define _DUMMIES_DECLARED 1
 struct pirate_resource _dummy_pirate_res_string[0]
     __attribute__((used, section(".pirate.res.string")));
 struct pirate_resource _dummy_pirate_res_integer[0]
@@ -42,8 +43,9 @@ struct pirate_resource _dummy_pirate_res_file[0]
 struct pirate_resource _dummy_pirate_res_pirate_channel[0]
     __attribute__((used, section(".pirate.res.pirate_channel")));
 // ^ FIXME: Remove this once it's taken care of in clang
+#endif // NO_DECLARE_DUMMIES
 
-#endif
+#endif // __GAPS__
 
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
  * descriptor number.

@@ -28,6 +28,7 @@ struct endpoint {
     uint16_t ep_dst_port;
 };
 
+// mercury pirate_channel session parameters
 struct session {
     uint32_t sess_level;
     uint32_t sess_src_id;
