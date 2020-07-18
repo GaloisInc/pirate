@@ -63,17 +63,6 @@ static struct resource *lookup_resource(char *app_name, char *rsc_name,
     return NULL;
 }
 
-static resource_handler_t *lookup_handler(const char *type)
-{
-    size_t i;
-
-    for(i = 0; i < HANDLER_TABLE_MAX && handler_table[i].type; ++i)
-        if(!strcmp(type, handler_table[i].type))
-            return handler_table[i].handler;
-
-    return NULL;
-}
-
 /* Handle an event received from `epoll_wait`. If that event indicates that
  * data can be read from the pipe, interpret the message and send a response,
  * if appropriate.

@@ -4,6 +4,20 @@
 
 #include "handlers.h"
 
+resource_handler_t *lookup_handler(const char *type)
+{
+    size_t i;
+
+    if(!type)
+        return NULL;
+
+    for(i = 0; i < HANDLER_TABLE_MAX && handler_table[i].type; ++i)
+        if(!strcmp(type, handler_table[i].type))
+            return handler_table[i].handler;
+
+    return NULL;
+}
+
 int cstring_resource_handler(pal_env_t *env,
         const struct app *app, const struct resource *rsc)
 {

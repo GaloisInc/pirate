@@ -28,4 +28,10 @@ struct handler_table_entry {
 
 extern struct handler_table_entry handler_table[HANDLER_TABLE_MAX];
 
+/* Look the handler corresponding to a resource-type name.
+ *
+ * Returns a non-NULL function pointer on success, or NULL otherwise.
+ */
+resource_handler_t *lookup_handler(const char *type);
+
 #endif // _PIRATE_PAL_HANDLERS_H
