@@ -1,3 +1,6 @@
+#ifndef _ANNOTATIONS_MODULE_IDL_CODEGEN_H
+#define _ANNOTATIONS_MODULE_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -6,15 +9,15 @@
 
 #include <endian.h>
 
-namespace annotations_module {
+namespace Annotations_Module {
 
-	struct annotation_struct_example {
+	struct Annotation_Struct_Example {
 		double x __attribute__((aligned(8)));
 		double y __attribute__((aligned(8)));
 		double z __attribute__((aligned(8)));
 	};
 
-	struct annotation_union_example {
+	struct Annotation_Union_Example {
 		int16_t tag __attribute__((aligned(2)));
 		union {
 			int16_t a __attribute__((aligned(2)));
@@ -23,13 +26,13 @@ namespace annotations_module {
 		} data;
 	};
 
-	struct annotation_struct_example_wire {
+	struct Annotation_Struct_Example_wire {
 		unsigned char x[8] __attribute__((aligned(8)));
 		unsigned char y[8] __attribute__((aligned(8)));
 		unsigned char z[8] __attribute__((aligned(8)));
 	};
 
-	struct annotation_union_example_wire {
+	struct Annotation_Union_Example_wire {
 		unsigned char tag[2];
 		union {
 			unsigned char a[2] __attribute__((aligned(2)));
@@ -38,8 +41,8 @@ namespace annotations_module {
 		} data;
 	};
 
-	static_assert(sizeof(struct annotation_struct_example) == sizeof(struct annotation_struct_example_wire), "size of struct annotation_struct_example not equal to wire protocol struct");
-	static_assert(sizeof(struct annotation_union_example) == sizeof(struct annotation_union_example_wire), "size of annotation_union_example not equal to wire protocol size"
+	static_assert(sizeof(struct Annotation_Struct_Example) == sizeof(struct Annotation_Struct_Example_wire), "size of struct Annotation_Struct_Example not equal to wire protocol struct");
+	static_assert(sizeof(struct Annotation_Union_Example) == sizeof(struct Annotation_Union_Example_wire), "size of Annotation_Union_Example not equal to wire protocol size"
 	);
 }
 
@@ -54,11 +57,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct annotations_module::annotation_struct_example> {
-		static void toBuffer(struct annotations_module::annotation_struct_example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct annotations_module::annotation_struct_example));
-			struct annotations_module::annotation_struct_example_wire* output = (struct annotations_module::annotation_struct_example_wire*) buf.data();
-			const struct annotations_module::annotation_struct_example* input = &val;
+	struct Serialization<struct Annotations_Module::Annotation_Struct_Example> {
+		static void toBuffer(struct Annotations_Module::Annotation_Struct_Example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Annotations_Module::Annotation_Struct_Example));
+			struct Annotations_Module::Annotation_Struct_Example_wire* output = (struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
+			const struct Annotations_Module::Annotation_Struct_Example* input = &val;
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
@@ -73,14 +76,14 @@ namespace pirate {
 			memcpy(&output->z, &field_z, sizeof(uint64_t));
 		}
 
-		static struct annotations_module::annotation_struct_example fromBuffer(std::vector<char> const& buf) {
-			struct annotations_module::annotation_struct_example retval;
-			const struct annotations_module::annotation_struct_example_wire* input = (const struct annotations_module::annotation_struct_example_wire*) buf.data();
-			struct annotations_module::annotation_struct_example* output = &retval;
-			if (buf.size() != sizeof(struct annotations_module::annotation_struct_example)) {
+		static struct Annotations_Module::Annotation_Struct_Example fromBuffer(std::vector<char> const& buf) {
+			struct Annotations_Module::Annotation_Struct_Example retval;
+			const struct Annotations_Module::Annotation_Struct_Example_wire* input = (const struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
+			struct Annotations_Module::Annotation_Struct_Example* output = &retval;
+			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for annotations_module::annotation_struct_example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct annotations_module::annotation_struct_example));
+					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Struct_Example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example));
 				throw std::length_error(error_msg);
 			}
 			uint64_t field_x;
@@ -100,11 +103,11 @@ namespace pirate {
 	};
 
 	template<>
-	struct Serialization<struct annotations_module::annotation_union_example> {
-		static void toBuffer(struct annotations_module::annotation_union_example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct annotations_module::annotation_union_example));
-			struct annotations_module::annotation_union_example_wire* output = (struct annotations_module::annotation_union_example_wire*) buf.data();
-			const struct annotations_module::annotation_union_example* input = &val;
+	struct Serialization<struct Annotations_Module::Annotation_Union_Example> {
+		static void toBuffer(struct Annotations_Module::Annotation_Union_Example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Annotations_Module::Annotation_Union_Example));
+			struct Annotations_Module::Annotation_Union_Example_wire* output = (struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
+			const struct Annotations_Module::Annotation_Union_Example* input = &val;
 			uint16_t tag;
 			uint16_t data_a;
 			uint32_t data_b;
@@ -133,14 +136,14 @@ namespace pirate {
 			}
 		}
 
-		static struct annotations_module::annotation_union_example fromBuffer(std::vector<char> const& buf) {
-			struct annotations_module::annotation_union_example retval;
-			const struct annotations_module::annotation_union_example_wire* input = (const struct annotations_module::annotation_union_example_wire*) buf.data();
-			struct annotations_module::annotation_union_example* output = &retval;
-			if (buf.size() != sizeof(struct annotations_module::annotation_union_example)) {
+		static struct Annotations_Module::Annotation_Union_Example fromBuffer(std::vector<char> const& buf) {
+			struct Annotations_Module::Annotation_Union_Example retval;
+			const struct Annotations_Module::Annotation_Union_Example_wire* input = (const struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
+			struct Annotations_Module::Annotation_Union_Example* output = &retval;
+			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Union_Example)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for annotations_module::annotation_union_example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct annotations_module::annotation_union_example));
+					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Union_Example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Annotations_Module::Annotation_Union_Example));
 				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
@@ -173,3 +176,5 @@ namespace pirate {
 		}
 	};
 }
+
+#endif // _ANNOTATIONS_MODULE_IDL_CODEGEN_H

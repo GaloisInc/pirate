@@ -51,6 +51,11 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDe
 }
 
 static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
+    std::string guardname = "_" + moduleDecl->identifier + "_IDL_CODEGEN_H";
+    transform(guardname.begin(), guardname.end(), guardname.begin(), ::toupper);
+    ostream << "#ifndef" << " " << guardname << std::endl;
+    ostream << "#define" << " " << guardname << std::endl;
+    ostream << std::endl;
     ostream << "#include <cassert>"   << std::endl;
     ostream << "#include <cstdint>"   << std::endl;
     ostream << "#include <cstring>"   << std::endl;
@@ -66,6 +71,8 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, Module
     cppPirateNamespaceHeader(ostream);
     moduleDecl->cppDeclareFunctions(ostream);
     cppPirateNamespaceFooter(ostream);
+    ostream << std::endl;
+    ostream << "#endif" << " " << "//" << " " << guardname << std::endl;
     return 0;
 }
 
