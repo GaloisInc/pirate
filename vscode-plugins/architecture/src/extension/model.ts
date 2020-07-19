@@ -1,4 +1,5 @@
 import * as U from "../shared/modelUpdates";
+import { Color } from "vscode";
 
 /**
  * File location for an identifier.
@@ -67,7 +68,11 @@ export class Configuration {
 
 export class Service {
 	/** Create a new extension service. */
-	constructor(system:Configuration, name:string, classDefinition:FileLocation, coords:U.CoordsInterface) {
+	constructor(system:Configuration,
+				name:string,
+				classDefinition:FileLocation,
+				coords:U.CoordsInterface,
+				color:string) {
 		this.#system = system;
 		this.#name = name;
 		this.#classDefinition = classDefinition;
@@ -76,7 +81,8 @@ export class Service {
         {
             tag: U.Tag.NewService,
             name: name,
-            coords: coords,
+			coords: coords,
+			color: color
         };
         system.sendUpdate(upd);
     }
@@ -105,11 +111,21 @@ export class Service {
 	 *
 	 * It should only be called by ExtensionInPort constructor.
 	 */
-	addInPort(s:InPort):void {
-		if (this.#inPorts.has(s.name) || this.#outPorts.has(s.name)) {
-			throw new Error("Duplicate port name " + s.name);
+	addInPort(p:InPort):void {
+		if (this.#inPorts.has(p.name) || this.#outPorts.has(p.name)) {
+			throw new Error("Duplicate port name " + p.name);
 		}
-		this.#inPorts.set(s.name, s);
+		this.#inPorts.set(p.name, p);
+		let upd:U.NewPort =
+		{
+			tag: U.Tag.NewPort,
+			serviceName: this.name,
+			portName: p.name,
+			mode: U.PortType.InPort,
+			border: p.border,
+			position: p.position
+		}
+		this.#system.sendUpdate(upd);
 	}
 
 	/**
@@ -117,21 +133,33 @@ export class Service {
 	 *
 	 * It should only be called by ExtensionInPort constructor.
 	 */
-	addOutPort(s:OutPort):void {
-		if (this.#inPorts.has(s.name) || this.#outPorts.has(s.name)) {
-			throw new Error("Duplicate port name " + s.name);
+	addOutPort(p:OutPort):void {
+		if (this.#inPorts.has(p.name) || this.#outPorts.has(p.name)) {
+			throw new Error("Duplicate port name " + p.name);
 		}
-		this.#outPorts.set(s.name, s);
+		this.#outPorts.set(p.name, p);
+		let upd:U.NewPort =
+		{
+			tag: U.Tag.NewPort,
+			serviceName: this.name,
+			portName: p.name,
+			mode: U.PortType.InPort,
+			border: p.border,
+			position: p.position
+		}
+		this.#system.sendUpdate(upd);
 	}
 }
 
 /** Information about an input port. */
-class InPort {
+export class InPort {
 
-	constructor(service:Service, name:string, methodDefinition:FileLocation) {
+	constructor(service:Service, name:string, methodDefinition:FileLocation, border:U.Border, position:number) {
 		this.#service = service;
 		this.#name = name;
 		this.#methodDefinition = methodDefinition;
+		this.#border = border;
+		this.#position = position;
 		service.addInPort(this);
 	}
 
@@ -151,17 +179,31 @@ class InPort {
 	 * Location of method definition for receiving messages.
 	 */
 	get methodDefinition() { return this.#methodDefinition; }
+
+	#border:U.Border;
+	/**
+	 * Side of the service that this port appears on.
+	 */
+	get border() { return this.#border; }
+
+	#position:number;
+	/**
+	 * Position of the port on border.
+	 */
+	get position() { return this.#position; }
 }
 
 /** Information about an output port. */
-class OutPort {
+export class OutPort {
     /**
      * Construct a output port for a service.
      */
-	constructor(service:Service, name:string, methodDefinition:FileLocation) {
+	constructor(service:Service, name:string, methodDefinition:FileLocation, border: U.Border, position:number) {
 		this.#service = service;
 		this.#name = name;
 		this.#methodDefinition = methodDefinition;
+		this.#border = border;
+		this.#position = position;
 		service.addOutPort(this);
 	}
 
@@ -180,7 +222,18 @@ class OutPort {
 	 * Location of method definition for receiving messages.
 	 */
 	get methodDefinition():FileLocation { return this.#methodDefinition; }
-}
+
+	#border:U.Border;
+	/**
+	 * Side of the service that this port appears on.
+	 */
+	get border() { return this.#border; }
+
+	#position:number;
+	/**
+	 * Position of the port on border.
+	 */
+	get position() { return this.#position; }}
 
 /**
  * A node is a graph entitity that channels can be connected to in-lieu of ports

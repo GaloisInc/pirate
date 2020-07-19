@@ -4,7 +4,7 @@ import { getNonce } from './util';
 import * as fs from "fs";
 import * as Model from "./model";
 import * as R from "../shared/viewRequests";
-
+import * as U from "../shared/modelUpdates";
 /**
  * Bring up a window to show the text document beside this window.
  */
@@ -83,8 +83,34 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 				top: 50,
 				width: 200,
 				height: 100,
-			});
-
+			},
+			'green');
+		const gpsPort = new Model.OutPort(
+			gps,
+			"sensorData",
+			{
+				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
+			  	line: 30,
+			  	column: 6
+			},
+			U.Border.Bottom,
+			90
+		);
+		const target = new Model.Service(
+			system,
+			'Target',
+			{
+				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
+				line: 30,
+				column: 6
+			},
+			{
+				left: 50,
+				top: 200,
+				width: 200,
+				height: 100,
+			},
+			'green');
 		const rfSensor = new Model.Service(
 			system,
 			'RFSensor',
@@ -98,9 +124,34 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 				top:     50,
 				width:  200,
 				height: 100
-			});
-
-//		this.newChannel(webviewPanel.webview, {source:gps, target: rfSensor});
+			},
+			'orange');
+		const rfPort = new Model.OutPort(
+			rfSensor,
+			"sensor",
+			{
+				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
+			  	line: 30,
+			  	column: 6
+			},
+			U.Border.Bottom,
+			90
+		);
+		const uav = new Model.Service(
+				system,
+				'UAV',
+				{
+					uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
+					line: 30,
+					column: 6
+				},
+				{
+					left: 300,
+					top: 200,
+					width: 200,
+					height: 100,
+				},
+				'orange');
 
 		// Receive message from the webview.
 		webviewPanel.webview.onDidReceiveMessage((e:R.ViewRequest) => {
@@ -137,40 +188,31 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 	 * Get the static html used for the editor webviews.
 	 */
 	private getHtmlForWebview(webview: vscode.Webview): string {
-		const mediaPath = path.join(this.context.extensionPath, 'media');
 		// Local path to script and css for the webview
-		const cssContents    = fs.readFileSync(path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.css'), 'utf8');
-		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview',      'pirateYMLEditor.js');
-//		const scriptResource = "vscode-resource:" + scriptDiskPath;
+		const cssDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.css');
+		const cssResource    = webview.asWebviewUri(vscode.Uri.file(cssDiskPath));
+		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview', 'pirateYMLEditor.js');
 		const scriptResource = webview.asWebviewUri(vscode.Uri.file(scriptDiskPath));
+		const htmlBodyDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.html');
+		const htmlBodyContents    = fs.readFileSync(htmlBodyDiskPath, 'utf8');
 		// Use a nonce to whitelist which scripts can be run
-		//const nonce = getNonce();
+		const nonce = getNonce();
 
 		return /* html */`
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; "/>
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<style>${cssContents}</style>
 				<title>PIRATE Project Viewer</title>
+				<link nonce="${nonce}" href="${cssResource}" rel="stylesheet">
 			</head>
-			<body>
+			<body nonce="${nonce}">
 			<div id="lasterrormsg">No error message</div>
-			<svg width=600 height=600 id="panel">
-				<!-- arrowhead marker definition -->
-				<marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-		   			<path d="M 0 0 L 10 5 L 0 10 z" />
-				</marker>
-			</svg>
-			<script src="${scriptResource}" />
+			${htmlBodyContents}
+			<script type="module" nonce="${nonce}" src="${scriptResource}" />
 			</body>
 			</html>`;
-/*
-			<script>
-			${scriptContents}
-			</script>
-*/
-
 	}
 }
