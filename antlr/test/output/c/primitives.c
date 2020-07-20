@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-struct primitives {
+struct Primitives {
 	float float_val __attribute__((aligned(4)));
 	double double_val __attribute__((aligned(8)));
 	int16_t short_val __attribute__((aligned(2)));
@@ -26,7 +26,7 @@ struct primitives {
 	uint8_t uint8_val __attribute__((aligned(1)));
 };
 
-struct primitives_wire {
+struct Primitives_wire {
 	unsigned char float_val[4] __attribute__((aligned(4)));
 	unsigned char double_val[8] __attribute__((aligned(8)));
 	unsigned char short_val[2] __attribute__((aligned(2)));
@@ -48,9 +48,9 @@ struct primitives_wire {
 	unsigned char uint8_val[1] __attribute__((aligned(1)));
 };
 
-static_assert(sizeof(struct primitives) == sizeof(struct primitives_wire), "size of struct primitives not equal to wire protocol struct");
+static_assert(sizeof(struct Primitives) == sizeof(struct Primitives_wire), "size of struct Primitives not equal to wire protocol struct");
 
-void encode_primitives(struct primitives* input, struct primitives_wire* output) {
+void encode_primitives(struct Primitives* input, struct Primitives_wire* output) {
 	uint32_t field_float_val;
 	uint64_t field_double_val;
 	uint16_t field_short_val;
@@ -124,7 +124,7 @@ void encode_primitives(struct primitives* input, struct primitives_wire* output)
 	memcpy(&output->uint8_val, &field_uint8_val, sizeof(uint8_t));
 }
 
-void decode_primitives(struct primitives_wire* input, struct primitives* output) {
+void decode_primitives(struct Primitives_wire* input, struct Primitives* output) {
 	uint32_t field_float_val;
 	uint64_t field_double_val;
 	uint16_t field_short_val;

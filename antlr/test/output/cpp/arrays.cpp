@@ -1,3 +1,6 @@
+#ifndef _ARRAYS_IDL_CODEGEN_H
+#define _ARRAYS_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -6,9 +9,9 @@
 
 #include <endian.h>
 
-namespace arrays {
+namespace Arrays {
 
-	struct union_array_field {
+	struct Union_Array_Field {
 		int16_t tag __attribute__((aligned(2)));
 		union {
 			uint8_t a __attribute__((aligned(1)));
@@ -17,13 +20,13 @@ namespace arrays {
 		} data;
 	};
 
-	struct struct_array_field {
+	struct Struct_Array_Field {
 		uint8_t a __attribute__((aligned(1)));
 		int32_t b[10] __attribute__((aligned(4)));
 		float c[1][2][3][4][5][6] __attribute__((aligned(4)));
 	};
 
-	struct union_array_field_wire {
+	struct Union_Array_Field_wire {
 		unsigned char tag[2];
 		union {
 			unsigned char a[1] __attribute__((aligned(1)));
@@ -32,15 +35,15 @@ namespace arrays {
 		} data;
 	};
 
-	struct struct_array_field_wire {
+	struct Struct_Array_Field_wire {
 		unsigned char a[1] __attribute__((aligned(1)));
 		unsigned char b[10][4] __attribute__((aligned(4)));
 		unsigned char c[1][2][3][4][5][6][4] __attribute__((aligned(4)));
 	};
 
-	static_assert(sizeof(struct union_array_field) == sizeof(struct union_array_field_wire), "size of union_array_field not equal to wire protocol size"
+	static_assert(sizeof(struct Union_Array_Field) == sizeof(struct Union_Array_Field_wire), "size of Union_Array_Field not equal to wire protocol size"
 	);
-	static_assert(sizeof(struct struct_array_field) == sizeof(struct struct_array_field_wire), "size of struct struct_array_field not equal to wire protocol struct");
+	static_assert(sizeof(struct Struct_Array_Field) == sizeof(struct Struct_Array_Field_wire), "size of struct Struct_Array_Field not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -54,11 +57,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct arrays::union_array_field> {
-		static void toBuffer(struct arrays::union_array_field const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct arrays::union_array_field));
-			struct arrays::union_array_field_wire* output = (struct arrays::union_array_field_wire*) buf.data();
-			const struct arrays::union_array_field* input = &val;
+	struct Serialization<struct Arrays::Union_Array_Field> {
+		static void toBuffer(struct Arrays::Union_Array_Field const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Arrays::Union_Array_Field));
+			struct Arrays::Union_Array_Field_wire* output = (struct Arrays::Union_Array_Field_wire*) buf.data();
+			const struct Arrays::Union_Array_Field* input = &val;
 			uint16_t tag;
 			uint8_t data_a;
 			uint32_t data_b;
@@ -94,14 +97,14 @@ namespace pirate {
 			}
 		}
 
-		static struct arrays::union_array_field fromBuffer(std::vector<char> const& buf) {
-			struct arrays::union_array_field retval;
-			const struct arrays::union_array_field_wire* input = (const struct arrays::union_array_field_wire*) buf.data();
-			struct arrays::union_array_field* output = &retval;
-			if (buf.size() != sizeof(struct arrays::union_array_field)) {
+		static struct Arrays::Union_Array_Field fromBuffer(std::vector<char> const& buf) {
+			struct Arrays::Union_Array_Field retval;
+			const struct Arrays::Union_Array_Field_wire* input = (const struct Arrays::Union_Array_Field_wire*) buf.data();
+			struct Arrays::Union_Array_Field* output = &retval;
+			if (buf.size() != sizeof(struct Arrays::Union_Array_Field)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for arrays::union_array_field type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct arrays::union_array_field));
+					std::string("pirate::Serialization::fromBuffer() for Arrays::Union_Array_Field type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Arrays::Union_Array_Field));
 				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
@@ -142,11 +145,11 @@ namespace pirate {
 	};
 
 	template<>
-	struct Serialization<struct arrays::struct_array_field> {
-		static void toBuffer(struct arrays::struct_array_field const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct arrays::struct_array_field));
-			struct arrays::struct_array_field_wire* output = (struct arrays::struct_array_field_wire*) buf.data();
-			const struct arrays::struct_array_field* input = &val;
+	struct Serialization<struct Arrays::Struct_Array_Field> {
+		static void toBuffer(struct Arrays::Struct_Array_Field const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Arrays::Struct_Array_Field));
+			struct Arrays::Struct_Array_Field_wire* output = (struct Arrays::Struct_Array_Field_wire*) buf.data();
+			const struct Arrays::Struct_Array_Field* input = &val;
 			uint8_t field_a;
 			uint32_t field_b;
 			uint32_t field_c;
@@ -174,14 +177,14 @@ namespace pirate {
 			memcpy(&output->a, &field_a, sizeof(uint8_t));
 		}
 
-		static struct arrays::struct_array_field fromBuffer(std::vector<char> const& buf) {
-			struct arrays::struct_array_field retval;
-			const struct arrays::struct_array_field_wire* input = (const struct arrays::struct_array_field_wire*) buf.data();
-			struct arrays::struct_array_field* output = &retval;
-			if (buf.size() != sizeof(struct arrays::struct_array_field)) {
+		static struct Arrays::Struct_Array_Field fromBuffer(std::vector<char> const& buf) {
+			struct Arrays::Struct_Array_Field retval;
+			const struct Arrays::Struct_Array_Field_wire* input = (const struct Arrays::Struct_Array_Field_wire*) buf.data();
+			struct Arrays::Struct_Array_Field* output = &retval;
+			if (buf.size() != sizeof(struct Arrays::Struct_Array_Field)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for arrays::struct_array_field type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct arrays::struct_array_field));
+					std::string("pirate::Serialization::fromBuffer() for Arrays::Struct_Array_Field type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Arrays::Struct_Array_Field));
 				throw std::length_error(error_msg);
 			}
 			uint8_t field_a;
@@ -213,3 +216,5 @@ namespace pirate {
 		}
 	};
 }
+
+#endif // _ARRAYS_IDL_CODEGEN_H

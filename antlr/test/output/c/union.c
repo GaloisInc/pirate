@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-struct union_example {
+struct Union_Example {
 	int16_t tag __attribute__((aligned(2)));
 	union {
 		uint8_t a __attribute__((aligned(1)));
@@ -13,7 +13,7 @@ struct union_example {
 	} data;
 };
 
-struct union_example_wire {
+struct Union_Example_wire {
 	unsigned char tag[2];
 	union {
 		unsigned char a[1] __attribute__((aligned(1)));
@@ -22,10 +22,10 @@ struct union_example_wire {
 	} data;
 };
 
-static_assert(sizeof(struct union_example) == sizeof(struct union_example_wire), "size of union_example not equal to wire protocol size"
+static_assert(sizeof(struct Union_Example) == sizeof(struct Union_Example_wire), "size of Union_Example not equal to wire protocol size"
 );
 
-void encode_union_example(struct union_example* input, struct union_example_wire* output) {
+void encode_union_example(struct Union_Example* input, struct Union_Example_wire* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;
@@ -53,7 +53,7 @@ void encode_union_example(struct union_example* input, struct union_example_wire
 	}
 }
 
-void decode_union_example(struct union_example_wire* input, struct union_example* output) {
+void decode_union_example(struct Union_Example_wire* input, struct Union_Example* output) {
 	uint16_t tag;
 	uint8_t data_a;
 	uint32_t data_b;

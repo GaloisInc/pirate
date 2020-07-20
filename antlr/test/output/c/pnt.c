@@ -4,34 +4,34 @@
 #include <string.h>
 
 
-struct position {
+struct Position {
 	double x __attribute__((aligned(8)));
 	double y __attribute__((aligned(8)));
 	double z __attribute__((aligned(8)));
 };
 
-struct distance {
+struct Distance {
 	double x __attribute__((aligned(8)));
 	double y __attribute__((aligned(8)));
 	double z __attribute__((aligned(8)));
 };
 
-struct position_wire {
+struct Position_wire {
 	unsigned char x[8] __attribute__((aligned(8)));
 	unsigned char y[8] __attribute__((aligned(8)));
 	unsigned char z[8] __attribute__((aligned(8)));
 };
 
-struct distance_wire {
+struct Distance_wire {
 	unsigned char x[8] __attribute__((aligned(8)));
 	unsigned char y[8] __attribute__((aligned(8)));
 	unsigned char z[8] __attribute__((aligned(8)));
 };
 
-static_assert(sizeof(struct position) == sizeof(struct position_wire), "size of struct position not equal to wire protocol struct");
-static_assert(sizeof(struct distance) == sizeof(struct distance_wire), "size of struct distance not equal to wire protocol struct");
+static_assert(sizeof(struct Position) == sizeof(struct Position_wire), "size of struct Position not equal to wire protocol struct");
+static_assert(sizeof(struct Distance) == sizeof(struct Distance_wire), "size of struct Distance not equal to wire protocol struct");
 
-void encode_position(struct position* input, struct position_wire* output) {
+void encode_position(struct Position* input, struct Position_wire* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
@@ -46,7 +46,7 @@ void encode_position(struct position* input, struct position_wire* output) {
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void encode_distance(struct distance* input, struct distance_wire* output) {
+void encode_distance(struct Distance* input, struct Distance_wire* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
@@ -61,7 +61,7 @@ void encode_distance(struct distance* input, struct distance_wire* output) {
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void decode_position(struct position_wire* input, struct position* output) {
+void decode_position(struct Position_wire* input, struct Position* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
@@ -76,7 +76,7 @@ void decode_position(struct position_wire* input, struct position* output) {
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void decode_distance(struct distance_wire* input, struct distance* output) {
+void decode_distance(struct Distance_wire* input, struct Distance* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
