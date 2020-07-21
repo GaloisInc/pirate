@@ -86,6 +86,12 @@ public:
         Writer.param = Reader.param;
     }
 
+    void TearDown()
+    {
+        ChannelTest::TearDown();
+        ASSERT_EQ(1, nonblocking_IO_attempt);
+    }
+
     static const int TEST_BUF_LEN = 4096;
 };
 

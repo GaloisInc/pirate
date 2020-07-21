@@ -27,18 +27,21 @@ GE_ETH channel types.
 The following tables summarizes the capabilities of libpirate
 channels.
 
-| Channel type | Linux blocking I/O  | Linux nonblocking I/O | Windows blocking I/O | Windows nonblocking I/O |
-| ------------ | ------------------- | --------------------- | -------------------- | ----------------------- |
-| device       | Y | | | |
-| pipe         | Y | | | | 
-| unix_socket  | Y | | | |
-| tcp_socket   | Y | | | |
-| udp_socket   | Y | Y | Y | Y |
-| shmem        | Y | | | |
-| uio          | Y | | | |
-| serial       | Y | | | |
-| mercury      | Y | | | |
-| ge_eth       | Y | Y | Y | Y |
+| Channel type   | Linux blocking I/O  | Linux nonblocking I/O | Windows blocking I/O | Windows nonblocking I/O |
+| ------------   | ------------------- | --------------------- | -------------------- | ----------------------- |
+| device         | Y | | | |
+| pipe           | Y | Y <sup>&#8224;</sup> | | |
+| unix_seqpacket | Y | Y | | |
+| unix_socket    | Y | | | |
+| tcp_socket     | Y | | | |
+| udp_socket     | Y | Y | Y | Y |
+| shmem          | Y | | | |
+| uio            | Y | | | |
+| serial         | Y | | | |
+| mercury        | Y | | | |
+| ge_eth         | Y | Y | Y | Y |
+
+&#8224; pipe support nonblocking IO when mtu &#8804; 4096
 
 ## Usage
 

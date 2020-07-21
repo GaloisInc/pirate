@@ -30,7 +30,7 @@
 namespace GAPS
 {
 
-ChannelTest::ChannelTest() : testing::Test() { }
+ChannelTest::ChannelTest() : testing::Test(), nonblocking_IO_attempt(false) { }
 
 void ChannelTest::SetUp()
 {
@@ -184,18 +184,28 @@ void ChannelTest::ReaderChannelClose()
 
 void ChannelTest::Run()
 {
+    // init the channel type
     ChannelInit();
     ASSERT_NE(INVALID, Reader.param.channel_type);
     ASSERT_EQ(Reader.param.channel_type, Writer.param.channel_type);
+    ssize_t mtu = pirate_write_mtu(&Writer.param);
+    ASSERT_GE(mtu, 0);
     for(int child = 0; child <= 1; child++)
     {
         for (int nonblock = 0; nonblock <= 1; nonblock++)
         {
             child_open = (child == 1);
             nonblocking_IO = (nonblock == 1);
-            if (nonblocking_IO && !pirate_nonblock_channel_type(Writer.param.channel_type))
+            if (nonblocking_IO)
             {
-                continue;
+                if (pirate_nonblock_channel_type(Writer.param.channel_type, mtu))
+                {
+                    nonblocking_IO_attempt = true;
+                }
+                else
+                {
+                    continue;
+                }
             }
             if (!child_open && !pirate_pipe_channel_type(Writer.param.channel_type))
             {
@@ -208,10 +218,22 @@ void ChannelTest::Run()
 
 void ChannelTest::RunTestCase()
 {
+    // re-init properties that are affected by
+    // child_open and nonblocking_IO
+    ChannelInit();
+
     if (!child_open)
     {
         int rv, gd[2] = {-1, -1};
-        rv = pirate_pipe_param(gd, &Writer.param, O_RDWR);
+        int flags = O_RDWR;
+        if (nonblocking_IO) {
+            flags |= O_NONBLOCK;
+        }
+        rv = pirate_pipe_param(gd, &Writer.param, flags);
+        // memcpy() to keep reader and writer params in sync
+        // Not needed for correctness of execution
+        // Might be necessary if we compare these values in a test assertion
+        memcpy(&Reader.param.channel, &Writer.param.channel, sizeof(Writer.param.channel));
         ASSERT_CROSS_PLATFORM_NO_ERROR();
         ASSERT_EQ(0, rv);
         ASSERT_GE(gd[0], 0);
@@ -230,7 +252,7 @@ void ChannelTest::RunTestCase()
 #else
     int rv;
     pthread_t WriterId, ReaderId;
-    void* WriterStatus, * ReaderStatus;
+    void *WriterStatus, *ReaderStatus;
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
     ASSERT_EQ(0, rv);
@@ -270,6 +292,16 @@ void* ChannelTest::ReaderThreadS(void* param)
     return NULL;
 }
 
+void ChannelTest::BarrierWait()
+{
+#ifdef _WIN32
+    EnterSynchronizationBarrier(&barrier, 0);
+#else
+    int sts = pthread_barrier_wait(&barrier);
+    EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
+}
+
 void ChannelTest::WriterTest()
 {
     ssize_t offset = 0;
@@ -286,7 +318,7 @@ void ChannelTest::WriterTest()
         ssize_t wl = len_arr[i].writer;
 
         WriteDataInit(offset, wl);
-        offset += wl;
+        offset += wl + 1;
 
         rv = pirate_write(Writer.gd, Writer.buf, wl);
         EXPECT_EQ(wl, rv);
@@ -307,13 +339,11 @@ void ChannelTest::WriterTest()
         stats_wr.packets++;
         stats_wr.bytes += wl;
 
-#ifdef _WIN32
-        EnterSynchronizationBarrier(&barrier, 0);
-#else
-        int sts = pthread_barrier_wait(&barrier);
-        EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
-#endif
+        BarrierWait();
     }
+
+    // barrier for nonblocking read test
+    BarrierWait();
 
     WriterChannelClose();
 }
@@ -356,12 +386,7 @@ void ChannelTest::ReaderTest()
         stats_rd.packets++;
         stats_rd.bytes += exp;
 
-#ifdef _WIN32
-        EnterSynchronizationBarrier(&barrier, 0);
-#else
-        int sts = pthread_barrier_wait(&barrier);
-        EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
-#endif
+        BarrierWait();
     }
 
     if (nonblocking_IO)
@@ -375,6 +400,9 @@ void ChannelTest::ReaderTest()
         EXPECT_EQ(rv, -1);
         errno = 0;
     }
+
+    // barrier for nonblocking read test
+    BarrierWait();
 
     ReaderChannelClose();
 }

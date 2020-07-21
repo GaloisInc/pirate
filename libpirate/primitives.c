@@ -14,6 +14,7 @@
  */
 
 #include <errno.h>
+#include <linux/limits.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,6 +43,7 @@ typedef int pirate_atomic_int;
 #include "device.h"
 #include "pipe.h"
 #include "unix_socket.h"
+#include "unix_seqpacket.h"
 #include "tcp_socket.h"
 #include "udp_socket.h"
 #include "shmem_interface.h"
@@ -58,6 +60,7 @@ typedef union {
     device_ctx         device;
     pipe_ctx           pipe;
     unix_socket_ctx    unix_socket;
+    unix_seqpacket_ctx unix_seqpacket;
     tcp_socket_ctx     tcp_socket;
     udp_socket_ctx     udp_socket;
     shmem_ctx          shmem;
@@ -89,6 +92,7 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_DEVICE_CHANNEL_FUNCS,
     PIRATE_PIPE_CHANNEL_FUNCS,
     PIRATE_UNIX_SOCKET_CHANNEL_FUNCS,
+    PIRATE_UNIX_SEQPACKET_CHANNEL_FUNCS,
     PIRATE_TCP_SOCKET_CHANNEL_FUNCS,
     PIRATE_UDP_SOCKET_CHANNEL_FUNCS,
     PIRATE_SHMEM_CHANNEL_FUNCS,
@@ -250,6 +254,8 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         param->channel_type = PIPE;
     } else if (strncmp("unix_socket", opt, strlen("unix_socket")) == 0) {
         param->channel_type = UNIX_SOCKET;
+    } else if (strncmp("unix_seqpacket", opt, strlen("unix_seqpacket")) == 0) {
+        param->channel_type = UNIX_SEQPACKET;
     } else if (strncmp("tcp_socket", opt, strlen("tcp_socket")) == 0) {
         param->channel_type = TCP_SOCKET;
     } else if (strncmp("udp_socket", opt, strlen("udp_socket")) == 0) {
@@ -373,6 +379,7 @@ static int pirate_open(pirate_channel_t *channel) {
     pirate_channel_ctx_t *ctx = &channel->ctx;
     int access = channel->ctx.common.flags & O_ACCMODE;
     int nonblock = channel->ctx.common.flags & O_NONBLOCK;
+    ssize_t mtu;
     pirate_open_t open_func;
 
     if ((access != O_RDONLY) && (access != O_WRONLY)) {
@@ -380,7 +387,8 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (pirate_write_mtu(param) < 0) {
+    mtu = pirate_write_mtu(param);
+    if (mtu < 0) {
         return -1;
     }
 
@@ -388,7 +396,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (nonblock && !pirate_nonblock_channel_type(param->channel_type)) {
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type, (size_t) mtu)) {
         errno = EINVAL;
         return -1;
     }
@@ -466,11 +474,14 @@ int pirate_pipe_channel_type(channel_enum_t channel_type) {
     }
 }
 
-int pirate_nonblock_channel_type(channel_enum_t channel_type) {
+int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     switch (channel_type) {
     case UDP_SOCKET:
     case GE_ETH:
+    case UNIX_SEQPACKET:
         return 1;
+    case PIPE:
+        return ((mtu > 0) && (mtu <= (PIPE_BUF - sizeof(pirate_header_t))));
     default:
         return 0;
     }
@@ -479,8 +490,10 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type) {
 int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
     pirate_channel_t read_channel, write_channel;
     int rv, read_gd, write_gd;
+    ssize_t mtu;
     int access = flags & O_ACCMODE;
     int behavior = flags & ~O_ACCMODE;
+    int nonblock = flags & O_NONBLOCK;
 
     if (!pirate_pipe_channel_type(param->channel_type)) {
         errno = ENOSYS;
@@ -499,11 +512,17 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if (pirate_write_mtu(param) < 0) {
+    mtu = pirate_write_mtu(param);
+    if (mtu < 0) {
         return -1;
     }
 
     if (access != O_RDWR) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type, (size_t) mtu)) {
         errno = EINVAL;
         return -1;
     }
@@ -569,6 +588,7 @@ int pirate_get_fd(int gd) {
     case DEVICE:
     case PIPE:
     case UNIX_SOCKET:
+    case UNIX_SEQPACKET:
     case TCP_SOCKET:
     case UDP_SOCKET:
     case SERIAL:

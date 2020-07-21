@@ -59,6 +59,12 @@ typedef enum {
     //  - min_tx_size - minimum transmit size (bytes)
     UNIX_SOCKET,
 
+    // The gaps channel is implemented using a Unix domain socket with SOCK_SEQPACKET semantics.
+    //  - path        - file path to unix socket
+    //  - buffer_size - unix socket buffer size
+    //  - min_tx_size - minimum transmit size (bytes)
+    UNIX_SEQPACKET,
+
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
     //  - addr        - IP address, if empty then 127.0.0.1 is used
@@ -149,6 +155,14 @@ typedef struct {
     unsigned mtu;
     unsigned min_tx;
 } pirate_unix_socket_param_t;
+
+// UNIX_SEQPACKET parameters
+typedef struct {
+    char path[PIRATE_LEN_NAME];
+    unsigned buffer_size;
+    unsigned mtu;
+    unsigned min_tx;
+} pirate_unix_seqpacket_param_t;
 
 // TCP_SOCKET parameters
 #define PIRATE_DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
@@ -249,6 +263,7 @@ typedef struct {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
         pirate_unix_socket_param_t      unix_socket;
+        pirate_unix_seqpacket_param_t   unix_seqpacket;
         pirate_tcp_socket_param_t       tcp_socket;
         pirate_udp_socket_param_t       udp_socket;
         pirate_shmem_param_t            shmem;
@@ -411,7 +426,7 @@ int pirate_pipe_channel_type(channel_enum_t channel_type);
 // Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
-int pirate_nonblock_channel_type(channel_enum_t channel_type);
+int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
 
 // Opens both ends of the gaps channel specified by the
 // parameter value. See pipe() system call. Some channel

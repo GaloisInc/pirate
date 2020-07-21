@@ -111,6 +111,12 @@ public:
         Writer.param = Reader.param;
     }
 
+    void TearDown()
+    {
+        ChannelTest::TearDown();
+        ASSERT_EQ(1, nonblocking_IO_attempt);
+    }
+
     static const unsigned TEST_MTU_LEN = PIRATE_DEFAULT_GE_ETH_MTU / 2;
 };
 
