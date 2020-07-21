@@ -11,9 +11,34 @@ libpirate is a datagram communication library. Reads and writes are
 transmitted in indivisible packets. Reading a partial packet will
 drop the remaining contents of the packet.
 
-Non-blocking I/O is currently supported for the UDP and GE-eth
-channel types. Passing O_NONBLOCK to pirate_open() on other
-channel types will return an errno status of EINVAL.
+Nonblocking I/O is supported for the UDP and GE_ETH channel types.
+The stream-based channel types (Unix pipe, Unix socket, TCP socket,
+etc) cannot support datagram semantics on write requests with
+non-blocking I/O. A partial read or partial write of a datagram is
+not allowed. This can be prevented on reads using an internal
+temporary buffer. The same technique cannot be applied to writes.
+Passing O_NONBLOCK to pirate_open() to channel types that do not
+support nonblocking I/O will return an errno status of EINVAL.
+
+A Windows implementation of libpirate is provided for development
+purposes. The Windows implementation only supports the UDP and
+GE_ETH channel types.
+
+The following tables summarizes the capabilities of libpirate
+channels.
+
+| Channel type | Linux blocking I/O  | Linux nonblocking I/O | Windows blocking I/O | Windows nonblocking I/O |
+| ------------ | ------------------- | --------------------- | -------------------- | ----------------------- |
+| device       | Y | | | |
+| pipe         | Y | | | | 
+| unix_socket  | Y | | | |
+| tcp_socket   | Y | | | |
+| udp_socket   | Y | Y | Y | Y |
+| shmem        | Y | | | |
+| uio          | Y | | | |
+| serial       | Y | | | |
+| mercury      | Y | | | |
+| ge_eth       | Y | Y | Y | Y |
 
 ## Usage
 
@@ -134,19 +159,26 @@ must be loaded.
 
 ## Tests
 
-### Dependencies
+There are separate instructions for Windows below.
+
+### Unix
+
+#### Dependencies
 
 [Google Test](https://github.com/google/googletest)
 
 ```
 $ git clone https://github.com/google/googletest.git
 $ cd googletest
-$ git checkout v1.10.x
-$ cmake -DCMAKE_BUILD_TYPE=Release googletest-release-1.10.x .
-$ sudo cmake --build . --target install
+$ git checkout release-1.10.0
+$ mkdir build
+$ cd build
+$ cmake ..
+$ sudo cmake --build . --config Release --target install
 ```
 
-### Build
+#### Build
+
 Enable **PIRATE_UNIT_TEST** option:
 ```
 $ mkdir build
@@ -155,15 +187,57 @@ $ cmake -DPIRATE_UNIT_TEST=ON ..
 $ make
 ```
 
-### Run
+#### Run
+
 ```
 $ cd build
 $ ./libpirate/gaps_channels_test
 ```
 
-### Run with [valgrind](https://valgrind.org/)
+#### Run with [valgrind](https://valgrind.org/)
 
 ```
 $ cd build
 $ make valgrind
+```
+
+### Windows
+
+#### Dependencies
+
+[Google Test](https://github.com/google/googletest)
+
+```
+$ git clone https://github.com/google/googletest.git
+$ cd googletest
+$ git checkout release-1.10.0
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build . --config Release --target install
+```
+#### Build
+
+Enable **PIRATE_UNIT_TEST** option:
+
+```
+$ mkdir build
+$ cd build
+$ cmake -DGTEST_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest.lib" `
+    -DGTEST_MAIN_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest_main.lib" `
+    -DGTEST_INCLUDE_DIR="C:\\Program Files (x86)\\googletest-distribution\\include" `
+    -DGAPS_DISABLE=ON `
+    -DPIRATE_UNIT_TEST=ON `
+    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON `
+    -DPIRATE_LAUNCHER=OFF `
+    -DPIRATE_GETOPT=OFF `
+    ..
+$ cmake --build . --config Release
+```
+
+#### Run
+
+```
+$ cd build
+$ ./libpirate/Release/gaps_channels_test.exe
 ```

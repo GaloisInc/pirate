@@ -3,27 +3,37 @@ project(libpirate)
 
 set(CMAKE_BUILD_TYPE RelwithDebInfo)
 
-SET(PIRATE_SOURCES
-    "primitives.c"
-    "pirate_common.c"
-    "device.c"
-    "pipe.c"
-    "ge_eth.c"
-    "mercury.c"
-    "mercury_cntl.c"
-    "serial.c"
-    "tcp_socket.c"
-    "udp_socket.c"
-    "unix_socket.c"
-)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    SET(PIRATE_SOURCES
+        "windows/primitives.c"
+        "windows/pirate_common.c"
+        "windows/udp_socket.c"
+        "windows/ge_eth.c"
+    )
+    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES})
+else()
+    SET(PIRATE_SOURCES
+        "primitives.c"
+        "pirate_common.c"
+        "device.c"
+        "pipe.c"
+        "ge_eth.c"
+        "mercury.c"
+        "mercury_cntl.c"
+        "serial.c"
+        "tcp_socket.c"
+        "udp_socket.c"
+        "unix_socket.c"
+    )
 
-if(PIRATE_SHMEM_FEATURE)
-    add_definitions(-DPIRATE_SHMEM_FEATURE=1)
-    set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
-endif(PIRATE_SHMEM_FEATURE)
+    if(PIRATE_SHMEM_FEATURE)
+        add_definitions(-DPIRATE_SHMEM_FEATURE=1)
+        set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
+    endif(PIRATE_SHMEM_FEATURE)
 
-set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES} "yield.cpp")
-set(PIRATE_SOURCES ${PIRATE_SOURCES} "yield.c")
+    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES} "yield.cpp")
+    set(PIRATE_SOURCES ${PIRATE_SOURCES} "yield.c")
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
     .
@@ -93,18 +103,19 @@ if(PIRATE_UNIT_TEST)
     link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
-    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
     set(GAPS_CHANNELS_TEST gaps_channels_test)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS})
+    SET(GAPS_CHANNELS_TEST_SRC
+        "test/channel_test.cpp"
+        "test/udp_socket_test.cpp"
+        "test/ge_eth_test.cpp")
+else()
+    set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
+endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
     target_compile_options(${GAPS_CHANNELS_TEST} PRIVATE ${PIRATE_C_TEST_FLAGS})
-
-    set(PIRATE_CXX_TEST_FLAGS ${PIRATE_C_FLAGS})
-    set(GAPS_CHANNELS_TEST_CXX_LIBS ${PIRATE_APP_CXX_LIBS} pthread)
-    set(GAPS_CHANNELS_TEST_CXX gaps_channels_test_cxx)
-    file(GLOB GAPS_CHANNELS_TEST_SRC_CXX test/*.cxx)
-    add_executable(${GAPS_CHANNELS_TEST_CXX} ${GAPS_CHANNELS_TEST_SRC_CXX})
-    target_compile_options(${GAPS_CHANNELS_TEST_CXX} PRIVATE ${PIRATE_CXX_TEST_FLAGS})
 
     # Link test executable against gtest & gtest_main
     target_link_libraries(${GAPS_CHANNELS_TEST}
@@ -113,11 +124,21 @@ if(PIRATE_UNIT_TEST)
         ${GAPS_CHANNELS_TEST_LIBS}
     )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+else()
+    set(PIRATE_CXX_TEST_FLAGS ${PIRATE_C_FLAGS})
+    set(GAPS_CHANNELS_TEST_CXX_LIBS ${PIRATE_APP_CXX_LIBS} pthread)
+    set(GAPS_CHANNELS_TEST_CXX gaps_channels_test_cxx)
+    file(GLOB GAPS_CHANNELS_TEST_SRC_CXX test/*.cxx)
+    add_executable(${GAPS_CHANNELS_TEST_CXX} ${GAPS_CHANNELS_TEST_SRC_CXX})
+    target_compile_options(${GAPS_CHANNELS_TEST_CXX} PRIVATE ${PIRATE_CXX_TEST_FLAGS})
+
     target_link_libraries(${GAPS_CHANNELS_TEST_CXX}
         ${GTEST_MAIN_LIBRARY}
         ${GTEST_LIBRARIES}
         ${GAPS_CHANNELS_TEST_CXX_LIBS}
     )
+endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
     add_custom_target(valgrind COMMAND valgrind
         --leak-check=full

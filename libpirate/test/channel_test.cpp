@@ -14,9 +14,16 @@
  */
 
 #include <stdlib.h>
+#ifdef _WIN32
+#include "windows_port.hpp"
+#include "windows/libpirate.h"
+#include "windows/libpirate_internal.h"
+#else
 #include "libpirate.h"
 #include "libpirate_internal.h"
+#endif
 #include "channel_test.hpp"
+#include "cross_platform_test.hpp"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -27,8 +34,7 @@ ChannelTest::ChannelTest() : testing::Test() { }
 
 void ChannelTest::SetUp()
 {
-    int rv;
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     Writer.buf = (uint8_t *) malloc(buf_size);
     ASSERT_NE(nullptr, Writer.buf);
@@ -36,11 +42,21 @@ void ChannelTest::SetUp()
     Reader.buf = (uint8_t *) malloc(buf_size);
     ASSERT_NE(nullptr, Reader.buf);
 
-    rv = pthread_barrier_init(&barrier, NULL, 2);
+#ifdef _WIN32
+    BOOL success = InitializeSynchronizationBarrier(&barrier, 2, 0);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
+    ASSERT_EQ(TRUE, success);
+
+    nonblocking_sem = CreateSemaphore(NULL, 0, 1, NULL);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
+    ASSERT_TRUE(nonblocking_sem != nullptr);
+#else
+    int rv = pthread_barrier_init(&barrier, NULL, 2);
     ASSERT_EQ(0, rv);
 
     rv = sem_init(&nonblocking_sem, 0, 0);
     ASSERT_EQ(0, rv);
+#endif
 
     pirate_reset_gd();
 }
@@ -59,9 +75,15 @@ void ChannelTest::TearDown()
         Reader.buf = NULL;
     }
 
+
+#ifdef _WIN32
+    DeleteSynchronizationBarrier(&barrier);
+    CloseHandle(nonblocking_sem);
+#else
     pthread_barrier_destroy(&barrier);
     sem_destroy(&nonblocking_sem);
-    errno = 0;
+#endif
+    CROSS_PLATFORM_RESET_ERROR();
 }
 
 void ChannelTest::WriteDataInit(ssize_t offset, ssize_t len)
@@ -79,11 +101,11 @@ void ChannelTest::WriterChannelOpen()
     pirate_channel_param_t temp_param;
 
     rv = pirate_unparse_channel_param(&Writer.param, desc, sizeof(desc) - 1);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_GT(rv, 0);
 
     rv = pirate_parse_channel_param(desc, &temp_param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, memcmp(&Writer.param, &temp_param, sizeof(pirate_channel_param_t)));
 
@@ -92,13 +114,17 @@ void ChannelTest::WriterChannelOpen()
         flags |= O_NONBLOCK;
     }
     Writer.gd = pirate_open_param(&Writer.param, flags);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_GE(Writer.gd, 0);
 
     WriterChannelPostOpen();
 
+#ifdef _WIN32
+    EnterSynchronizationBarrier(&barrier, 0);
+#else
     rv = pthread_barrier_wait(&barrier);
     ASSERT_TRUE(rv == 0 || rv == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
 }
 
 void ChannelTest::ReaderChannelOpen()
@@ -108,11 +134,11 @@ void ChannelTest::ReaderChannelOpen()
     pirate_channel_param_t temp_param;
 
     rv = pirate_unparse_channel_param(&Reader.param, desc, sizeof(desc) - 1);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_GT(rv, 0);
 
     rv = pirate_parse_channel_param(desc, &temp_param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(0, memcmp(&Reader.param, &temp_param, sizeof(pirate_channel_param_t)));
 
@@ -121,13 +147,17 @@ void ChannelTest::ReaderChannelOpen()
         flags |= O_NONBLOCK;
     }
     Reader.gd = pirate_open_param(&Reader.param, flags);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_GE(Reader.gd, 0);
 
     ReaderChannelPostOpen();
 
+#ifdef _WIN32
+    EnterSynchronizationBarrier(&barrier, 0);
+#else
     rv = pthread_barrier_wait(&barrier);
     ASSERT_TRUE(rv == 0 || rv == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
 }
 
 void ChannelTest::WriterChannelClose()
@@ -137,7 +167,7 @@ void ChannelTest::WriterChannelClose()
     WriterChannelPreClose();
 
     rv = pirate_close(Writer.gd);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
 }
 
@@ -148,7 +178,7 @@ void ChannelTest::ReaderChannelClose()
     ReaderChannelPreClose();
     
     rv = pirate_close(Reader.gd);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
 }
 
@@ -178,21 +208,29 @@ void ChannelTest::Run()
 
 void ChannelTest::RunTestCase()
 {
-    int rv;
-    pthread_t WriterId, ReaderId;
-    void *WriterStatus, *ReaderStatus;
-
     if (!child_open)
     {
         int rv, gd[2] = {-1, -1};
         rv = pirate_pipe_param(gd, &Writer.param, O_RDWR);
-        ASSERT_EQ(0, errno);
+        ASSERT_CROSS_PLATFORM_NO_ERROR();
         ASSERT_EQ(0, rv);
         ASSERT_GE(gd[0], 0);
         ASSERT_GE(gd[1], 0);
         Reader.gd = gd[0];
         Writer.gd = gd[1];
     }
+
+#ifdef _WIN32
+    HANDLE  hThreadArray[2];
+    hThreadArray[0] = CreateThread(NULL, 0, ChannelTest::ReaderThreadS, this, 0, NULL);
+    hThreadArray[1] = CreateThread(NULL, 0, ChannelTest::WriterThreadS, this, 0, NULL);
+    WaitForMultipleObjects(2, hThreadArray, TRUE, INFINITE);
+    CloseHandle(hThreadArray[0]);
+    CloseHandle(hThreadArray[1]);
+#else
+    int rv;
+    pthread_t WriterId, ReaderId;
+    void* WriterStatus, * ReaderStatus;
 
     rv = pthread_create(&ReaderId, NULL, ChannelTest::ReaderThreadS, this);
     ASSERT_EQ(0, rv);
@@ -205,17 +243,28 @@ void ChannelTest::RunTestCase()
 
     rv = pthread_join(WriterId, &WriterStatus);
     ASSERT_EQ(0, rv);
+#endif
 }
 
+#ifdef _WIN32
+DWORD WINAPI ChannelTest::WriterThreadS(LPVOID param)
+#else
 void *ChannelTest::WriterThreadS(void *param)
+#endif
 {
+    CROSS_PLATFORM_RESET_ERROR();
     ChannelTest *inst = static_cast<ChannelTest*>(param);
     inst->WriterTest();
     return NULL;
 }
 
-void *ChannelTest::ReaderThreadS(void *param)
+#ifdef _WIN32
+DWORD WINAPI ChannelTest::ReaderThreadS(LPVOID param)
+#else
+void* ChannelTest::ReaderThreadS(void* param)
+#endif
 {
+    CROSS_PLATFORM_RESET_ERROR();
     ChannelTest *inst = static_cast<ChannelTest*>(param);
     inst->ReaderTest();
     return NULL;
@@ -233,7 +282,6 @@ void ChannelTest::WriterTest()
 
     for (size_t i = 0; i < len_size; i++)
     {
-        int sts;
         ssize_t rv;
         ssize_t wl = len_arr[i].writer;
 
@@ -242,20 +290,29 @@ void ChannelTest::WriterTest()
 
         rv = pirate_write(Writer.gd, Writer.buf, wl);
         EXPECT_EQ(wl, rv);
-        EXPECT_EQ(0, errno);
+        ASSERT_CROSS_PLATFORM_NO_ERROR();
 
         if (nonblocking_IO)
         {
+#ifdef _WIN32
+            BOOL rv_sem = ReleaseSemaphore(nonblocking_sem, 1, NULL);
+            EXPECT_NE(0, rv_sem);
+#else
             rv = sem_post(&nonblocking_sem);
             EXPECT_EQ(0, errno);
             EXPECT_EQ(0, rv);
+#endif
         }
 
         stats_wr.packets++;
         stats_wr.bytes += wl;
 
-        sts = pthread_barrier_wait(&barrier);
+#ifdef _WIN32
+        EnterSynchronizationBarrier(&barrier, 0);
+#else
+        int sts = pthread_barrier_wait(&barrier);
         EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
     }
 
     WriterChannelClose();
@@ -272,7 +329,6 @@ void ChannelTest::ReaderTest()
 
     for (size_t i = 0; i < len_size; i++)
     {
-        int sts;
         ssize_t rv;
         ssize_t rl = len_arr[i].reader;
         ssize_t exp = MIN(len_arr[i].reader, len_arr[i].writer);
@@ -281,28 +337,41 @@ void ChannelTest::ReaderTest()
 
         if (nonblocking_IO)
         {
+#ifdef _WIN32
+            DWORD rv_wait = WaitForSingleObject(nonblocking_sem, INFINITE);
+            EXPECT_EQ(WAIT_OBJECT_0, rv_wait);
+#else
             rv = sem_wait(&nonblocking_sem);
             EXPECT_EQ(0, errno);
             EXPECT_EQ(0, rv);
+#endif
         }
 
         uint8_t *buf = Reader.buf;
         rv = pirate_read(Reader.gd, buf, rl);
-        EXPECT_EQ(0, errno);
+        ASSERT_CROSS_PLATFORM_NO_ERROR();
         EXPECT_EQ(rv, exp);
         EXPECT_TRUE(0 == std::memcmp(Writer.buf, Reader.buf, exp));
 
         stats_rd.packets++;
         stats_rd.bytes += exp;
 
-        sts = pthread_barrier_wait(&barrier);
+#ifdef _WIN32
+        EnterSynchronizationBarrier(&barrier, 0);
+#else
+        int sts = pthread_barrier_wait(&barrier);
         EXPECT_TRUE(sts == 0 || sts == PTHREAD_BARRIER_SERIAL_THREAD);
+#endif
     }
 
     if (nonblocking_IO)
     {
         ssize_t rv = pirate_read(Reader.gd, Reader.buf, 1);
+#ifdef _WIN32
+        EXPECT_EQ(GetLastError(), WSAEWOULDBLOCK);
+#else
         EXPECT_TRUE((errno == EAGAIN) || (errno == EWOULDBLOCK));
+#endif
         EXPECT_EQ(rv, -1);
         errno = 0;
     }
@@ -328,14 +397,14 @@ void HalfClosedTest::WriterTest()
 
 void ClosedWriterTest::RunTestCase()
 {
-    int rv;
+    ssize_t rv;
 
     ChannelTest::RunTestCase();
 
     WriterChannelClose();
 
     rv = pirate_read(Reader.gd, Reader.buf, buf_size);
-    ASSERT_EQ(errno, 0);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(rv, 0);
 
     ReaderChannelClose();
@@ -343,11 +412,13 @@ void ClosedWriterTest::RunTestCase()
 
 void ClosedReaderTest::RunTestCase()
 {
-    int rv;
-    struct sigaction new_action, prev_action;
+    ssize_t nbytes;
 
     ChannelTest::RunTestCase();
 
+#ifndef _WIN32
+    int rv;
+    struct sigaction new_action, prev_action;
     memset(&new_action, 0, sizeof(new_action));
     new_action.sa_handler = SIG_IGN;
     new_action.sa_flags = 0;
@@ -355,20 +426,23 @@ void ClosedReaderTest::RunTestCase()
     rv = sigaction(SIGPIPE, &new_action, &prev_action);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
+#endif
 
     ReaderChannelClose();
 
     WriteDataInit(0, buf_size);
-    rv = pirate_write(Writer.gd, Writer.buf, buf_size);
+    nbytes = pirate_write(Writer.gd, Writer.buf, buf_size);
     ASSERT_EQ(errno, EPIPE);
-    ASSERT_EQ(rv, -1);
+    ASSERT_EQ(nbytes, -1);
     errno = 0;
 
     WriterChannelClose();
 
+#ifndef _WIN32
     rv = sigaction(SIGPIPE, &prev_action, NULL);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
+#endif
 }
 
 

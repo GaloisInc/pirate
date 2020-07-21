@@ -107,6 +107,41 @@ jobs:
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
+  windows-build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: googletest
+      shell: powershell
+      run: |
+        mkdir ~/googletest
+        cd ~/googletest
+        Invoke-WebRequest -Uri https://github.com/google/googletest/archive/release-1.10.0.tar.gz -MaximumRedirection 10 -OutFile release-1.10.0.tar.gz
+        tar -x -z -f release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --config Release --target install
+    - name: build libpirate
+      run: |
+        mkdir build
+        cd build
+        cmake -DGTEST_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest.lib" `
+          -DGTEST_MAIN_LIBRARY="C:\\Program Files (x86)\\googletest-distribution\\lib\\gtest_main.lib" `
+          -DGTEST_INCLUDE_DIR="C:\\Program Files (x86)\\googletest-distribution\\include" `
+          -DGAPS_DISABLE=ON `
+          -DPIRATE_UNIT_TEST=ON `
+          -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON `
+          -DPIRATE_LAUNCHER=OFF `
+          -DPIRATE_GETOPT=OFF `
+          ..
+        cmake --build . --config Release
+    - name: libpirate tests
+      timeout-minutes: 5
+      run: |
+        cd build/libpirate/Release
+        ./gaps_channels_test.exe
   shmem:
     runs-on: ubuntu-latest
     steps:

@@ -480,9 +480,8 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 // from the buffer starting at buf to the gaps descriptor
 // gd.
 //
-// On success, the number of bytes written is returned
-// (zero indicates nothing was written). On error,
-// -1 is returned, and errno is set appropriately.
+// On success, the number of bytes written is returned.
+// On error, -1 is returned, and errno is set appropriately.
 
 ssize_t pirate_write(int gd, const void *buf, size_t count);
 

@@ -13,8 +13,13 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#ifdef _WIN32
+#include "windows/libpirate.h"
+#else
 #include "libpirate.h"
+#endif
 #include "channel_test.hpp"
+#include "cross_platform_test.hpp"
 
 extern "C" {
     uint16_t pirate_ge_eth_crc16(const uint8_t *data, uint16_t len);
@@ -48,25 +53,25 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, message_id);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
@@ -76,8 +81,8 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u,mtu=%u", name, addr, port, message_id, mtu);
     rv  = pirate_parse_channel_param(opt, &param);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
     ASSERT_EQ(GE_ETH, param.channel_type);
     ASSERT_STREQ(addr, ge_eth_param->addr);
     ASSERT_EQ(port, ge_eth_param->port);
@@ -93,7 +98,7 @@ public:
         pirate_ge_eth_param_t *param = &Reader.param.channel.ge_eth;
 
         pirate_init_channel_param(GE_ETH, &Reader.param);
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_TCP_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
         param->port = 0x4745;
         param->message_id = 0x5F475243;
         unsigned mtu = GetParam();
