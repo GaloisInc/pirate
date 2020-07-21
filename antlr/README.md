@@ -87,22 +87,22 @@ generates the following C code,
 #include <string.h>
 
 
-struct position {
+struct Position {
     double x __attribute__((aligned(8)));
     double y __attribute__((aligned(8)));
     double z __attribute__((aligned(8)));
 };
 
-struct position_wire {
+struct Position_wire {
     unsigned char x[8] __attribute__((aligned(8)));
     unsigned char y[8] __attribute__((aligned(8)));
     unsigned char z[8] __attribute__((aligned(8)));
 };
 
-static_assert(sizeof(struct position) == sizeof(struct position_wire),
-    "size of struct position not equal to wire protocol struct");
+static_assert(sizeof(struct Position) == sizeof(struct Position_wire),
+    "size of struct Position not equal to wire protocol struct");
 
-void encode_position(struct position* input, struct position_wire* output) {
+void encode_position(struct Position* input, struct Position_wire* output) {
     uint64_t field_x;
     uint64_t field_y;
     uint64_t field_z;
@@ -117,7 +117,7 @@ void encode_position(struct position* input, struct position_wire* output) {
     memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void decode_position(struct position_wire* input, struct position* output) {
+void decode_position(struct Position_wire* input, struct Position* output) {
     uint64_t field_x;
     uint64_t field_y;
     uint64_t field_z;
@@ -136,6 +136,9 @@ void decode_position(struct position_wire* input, struct position* output) {
 or the following C++ code,
 
 ```
+#ifndef _PNT_IDL_CODEGEN_H
+#define _PNT_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -144,22 +147,22 @@ or the following C++ code,
 
 #include <endian.h>
 
-namespace pnt {
+namespace PNT {
 
-    struct position {
+    struct Position {
         double x __attribute__((aligned(8)));
         double y __attribute__((aligned(8)));
         double z __attribute__((aligned(8)));
     };
 
-    struct position_wire {
+    struct Position_wire {
         unsigned char x[8] __attribute__((aligned(8)));
         unsigned char y[8] __attribute__((aligned(8)));
         unsigned char z[8] __attribute__((aligned(8)));
     };
 
-    static_assert(sizeof(struct position) == sizeof(struct position_wire),
-        "size of struct position not equal to wire protocol struct");
+    static_assert(sizeof(struct Position) == sizeof(struct Position_wire),
+        "size of struct Position not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -173,11 +176,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
     template<>
-    struct Serialization<struct pnt::position> {
-        static void toBuffer(struct pnt::position const& val, std::vector<char>& buf) {
-            buf.resize(sizeof(struct pnt::position));
-            struct pnt::position_wire* output = (struct pnt::position_wire*) buf.data();
-            const struct pnt::position* input = &val;
+    struct Serialization<struct PNT::Position> {
+        static void toBuffer(struct PNT::Position const& val, std::vector<char>& buf) {
+            buf.resize(sizeof(struct PNT::Position));
+            struct PNT::Position_wire* output = (struct PNT::Position_wire*) buf.data();
+            const struct PNT::Position* input = &val;
             uint64_t field_x;
             uint64_t field_y;
             uint64_t field_z;
@@ -192,14 +195,14 @@ namespace pirate {
             memcpy(&output->z, &field_z, sizeof(uint64_t));
         }
 
-        static struct pnt::position fromBuffer(std::vector<char> const& buf) {
-            struct pnt::position retval;
-            const struct pnt::position_wire* input = (const struct pnt::position_wire*) buf.data();
-            struct pnt::position* output = &retval;
-            if (buf.size() != sizeof(struct pnt::position)) {
+        static struct PNT::Position fromBuffer(std::vector<char> const& buf) {
+            struct PNT::Position retval;
+            const struct PNT::Position_wire* input = (const struct PNT::Position_wire*) buf.data();
+            struct PNT::Position* output = &retval;
+            if (buf.size() != sizeof(struct PNT::Position)) {
                 static const std::string error_msg =
-                    std::string("pirate::Serialization::fromBuffer() for pnt::position type did not receive a buffer of size ") +
-                    std::to_string(sizeof(struct pnt::position));
+                    std::string("pirate::Serialization::fromBuffer() for PNT::Position type did not receive a buffer of size ") +
+                    std::to_string(sizeof(struct PNT::Position));
                 throw std::length_error(error_msg);
             }
             uint64_t field_x;
@@ -218,6 +221,7 @@ namespace pirate {
         }
     };
 }
+#endif // _PNT_IDL_CODEGEN_H
 ```
 
 ### Tests

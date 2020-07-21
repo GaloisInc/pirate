@@ -19,8 +19,6 @@
 #include "UnionTypeSpec.hpp"
 #include "ModuleDecl.hpp"
 
-#include <algorithm>
-
 antlrcpp::Any CDRBuildTypes::aggregateResult(antlrcpp::Any aggregate, const antlrcpp::Any &nextResult) {
   if (aggregate.isNotNull() && nextResult.isNotNull()) {
     throw std::runtime_error("unexpected aggregation");
@@ -35,7 +33,6 @@ antlrcpp::Any CDRBuildTypes::aggregateResult(antlrcpp::Any aggregate, const antl
 
 antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
   std::string parent = namespacePrefix.get(ctx);
   std::string newNamespace = parent + identifier + "::";
   TypeSpec *typeSpec = new ModuleDecl(parent, identifier);
@@ -235,7 +232,6 @@ antlrcpp::Any CDRBuildTypes::visitType_decl(IDLParser::Type_declContext *ctx) {
 
 antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
   std::string parent = namespacePrefix.get(ctx);
   TypeSpec *typeSpec = new StructTypeSpec(parent, identifier);
   StructTypeSpec *structSpec = dynamic_cast<StructTypeSpec*>(typeSpec);
@@ -267,7 +263,6 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
 
 antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  transform(identifier.begin(), identifier.end(), identifier.begin(), ::tolower);
   TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
   std::string parent = namespacePrefix.get(ctx);
   TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType);
