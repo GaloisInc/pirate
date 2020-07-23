@@ -40,16 +40,15 @@ static void increment_nonce(unsigned char *n, const size_t nlen) {
  * primitive by the TweetNaCl library https://tweetnacl.cr.yp.to
  **/
 
-void encrypt1(char *input, size_t len, char *output) {
-    crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce1, key1);
-    increment_nonce(nonce1, NONCE_BYTES);
+void encrypt(char *input, size_t len, char *output, int type) {
+    if ((type % 2) == 0) {
+        crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce1, key1);
+        increment_nonce(nonce1, NONCE_BYTES);
+    } else {
+        crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce2, key2);
+        increment_nonce(nonce2, NONCE_BYTES);
+    }
 }
-
-void encrypt2(char *input, size_t len, char *output) {
-    crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce2, key2);
-    increment_nonce(nonce2, NONCE_BYTES);
-}
-
 
 int main() {
     char input[80 + DELTA_ZERO_BYTES] = {0};
@@ -69,8 +68,8 @@ int main() {
     // Execute 100_000 iterations to identify any race conditions
     // in concurrent implementations of the challenge problem.
     for (int i = 0; i < 100000; i++) {
-        encrypt1(input, mlen, output + DELTA_ZERO_BYTES);
-        encrypt2(output, mlen, input + DELTA_ZERO_BYTES);
+        encrypt(input, mlen, output + DELTA_ZERO_BYTES, 0);
+        encrypt(output, mlen, input + DELTA_ZERO_BYTES, 1);
     }
 
     base64_encode(encoded, input + ZERO_BYTES, mlen - ZERO_BYTES);
