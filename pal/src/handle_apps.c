@@ -125,7 +125,7 @@ static int handle_event(struct epoll_event *event,
             error("Received request for resource named %s of unknown type %s "
                     "from %s", name, type, app->name);
 
-        else if(handle(&env, app, rsc))
+        else if(handle(&env, rsc))
             error("Handler failed for resource named %s of type %s requested "
                     "by %s", name, type, app->name);
 

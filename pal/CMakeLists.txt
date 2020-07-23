@@ -41,9 +41,9 @@ install(DIRECTORY ${CYAML_INSTALL_DIR}/lib/ DESTINATION lib
 
 if(PAL_UNIT_TEST)
     add_executable(pal_unit_test
-        test/unit/main.cpp test/unit/yaml.cpp
+        test/unit/main.cpp test/unit/yaml.cpp test/unit/handlers.cpp
         test/unit/pal.cpp test/unit/envelope.cpp
-        src/yaml.c src/log.c
+        src/yaml.c src/log.c src/handlers.c
         lib/pal/pal.c lib/pal/envelope.c)
     target_link_libraries(pal_unit_test
         gtest libcyaml_shared pirate)

@@ -18,8 +18,7 @@
  * Otherwise, -1 should be returned, in which case `env` will not be
  * inspected.
  */
-typedef int (resource_handler_t)(pal_env_t *env,
-        const struct app *app, const struct resource *rsc);
+typedef int (resource_handler_t)(pal_env_t *env, const struct resource *rsc);
 
 struct handler_table_entry {
     const char *type;

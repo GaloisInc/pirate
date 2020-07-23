@@ -35,7 +35,7 @@ struct session {
     uint32_t sess_dst_id;
     uint32_t *sess_messages;
     uint32_t sess_messages_count;
-    uint32_t sess_id;
+    uint32_t sess_id; // This cannot currently be set in libpirate. Remove it?
 };
 
 struct rsc_contents {

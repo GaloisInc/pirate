@@ -4,6 +4,7 @@
 
 #include "handlers.h"
 
+// TODO: Smarter handler lookup, potentially.
 resource_handler_t *lookup_handler(const char *type)
 {
     size_t i;
@@ -18,8 +19,7 @@ resource_handler_t *lookup_handler(const char *type)
     return NULL;
 }
 
-int cstring_resource_handler(pal_env_t *env,
-        const struct app *app, const struct resource *rsc)
+int cstring_resource_handler(pal_env_t *env, const struct resource *rsc)
 {
     const char *s = rsc->r_contents.cc_string_value;
 
@@ -32,8 +32,7 @@ int cstring_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int int64_resource_handler(pal_env_t *env,
-        const struct app *app, const struct resource *rsc)
+int int64_resource_handler(pal_env_t *env, const struct resource *rsc)
 {
     const int64_t *n = rsc->r_contents.cc_integer_value;
 
@@ -46,8 +45,7 @@ int int64_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int bool_resource_handler(pal_env_t *env,
-        const struct app *app, const struct resource *rsc)
+int bool_resource_handler(pal_env_t *env, const struct resource *rsc)
 {
     const bool *b = rsc->r_contents.cc_boolean_value;
 
@@ -60,8 +58,7 @@ int bool_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int file_resource_handler(pal_env_t *env,
-        const struct app *app, const struct resource *rsc)
+int file_resource_handler(pal_env_t *env, const struct resource *rsc)
 {
     const char *path = rsc->r_contents.cc_file_path;
     const int *flags = rsc->r_contents.cc_file_flags;
@@ -78,8 +75,7 @@ int file_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int pirate_channel_resource_handler(pal_env_t *env,
-        const struct app *app, const struct resource *rsc)
+int pirate_channel_resource_handler(pal_env_t *env, const struct resource *rsc)
 {
     pirate_channel_param_t params = {0};
 

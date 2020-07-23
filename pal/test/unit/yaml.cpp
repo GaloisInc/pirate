@@ -11,17 +11,19 @@ static struct top_level *load_yaml_string(const char *yaml)
     struct top_level *tlp = nullptr;
 
     if((fname = tempnam("/tmp", "pal")) == nullptr)
-        return nullptr;
+        ;
     else if((fp = fopen(fname, "w")) == nullptr)
-        return nullptr;
+        ;
     else if(fputs(yaml, fp) == EOF)
-        return nullptr;
+        ;
     else if(fclose(fp) != 0)
-        return nullptr;
+        ;
     else if((tlp = load_yaml(fname)) == nullptr)
-        return nullptr;
-    else if(unlink(fname) != 0)
-        return nullptr;
+        ;
+    else if(unlink(fname) != 0) {
+        free_yaml(tlp);
+        tlp = nullptr;
+    }
 
     return tlp;
 }

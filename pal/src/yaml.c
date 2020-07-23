@@ -95,6 +95,17 @@ static const cyaml_strval_t open_flags_strings[] = {
     {"O_TRUNC",     O_TRUNC},
 };
 
+static const cyaml_strval_t baud_strings[] = {
+    {"B4800",   B4800},
+    {"B9600",   B9600},
+    {"B19200",  B19200},
+    {"B38400",  B38400},
+    {"B57600",  B57600},
+    {"B115200", B115200},
+    {"B230400", B230400},
+    {"B460800", B460800},
+};
+
 // FIXME: Make this pluggable
 static const cyaml_schema_field_t rsc_contents_field_schema[] = {
 
@@ -125,8 +136,9 @@ static const cyaml_schema_field_t rsc_contents_field_schema[] = {
             struct rsc_contents, cc_packet_count),
     CYAML_FIELD_UINT("region", CYAML_FLAG_OPTIONAL,
             struct rsc_contents, cc_region),
-    CYAML_FIELD_UINT("baud", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_baud),
+    CYAML_FIELD_ENUM("baud", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_baud,
+            baud_strings, CYAML_ARRAY_LEN(baud_strings)),
     CYAML_FIELD_MAPPING_PTR("session",
             CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
             struct rsc_contents, cc_session, session_field_schema),
