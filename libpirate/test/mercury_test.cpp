@@ -106,6 +106,31 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 }
 
+TEST(ChannelMercuryTest, UnparseChannelParam)
+{
+    char *output;
+    int rv;
+    pirate_channel_param_t param;
+
+    rv = pirate_parse_channel_param("mercury,0,1,2,3", &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    output = (char*) calloc(16, sizeof(char));
+    rv = pirate_unparse_channel_param(&param, output, 16);
+    ASSERT_EQ(15, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("mercury,0,1,2,3", output);
+    free(output);
+
+    output = (char*) calloc(4, sizeof(char));
+    rv = pirate_unparse_channel_param(&param, output, 4);
+    ASSERT_EQ(15, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("mer", output);
+    free(output);
+}
+
 TEST(ChannelMercuryTest, DefaultSession) {
     int rv = 0;
     int rchannel, wchannel;

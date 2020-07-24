@@ -301,7 +301,7 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
 
     for (uint32_t i = 0; i < param->session.message_count; ++i) {
         wr += wr_sz;
-        len -= wr_sz;
+        len = MAX(len - wr_sz, 0);
         wr_sz = snprintf(wr, len, ",%u", param->session.messages[i]);
         ret_sz += wr_sz;
     }
