@@ -1,0 +1,122 @@
+{
+	"scopeName": "pirate-pragma-c.injection",
+	"injectionSelector": "L:meta.preprocessor.pragma.c",
+	"patterns": [
+		{ "include": "#pirate-enclave" },
+		{ "include": "#pirate-capability" }
+	],
+	"repository": {
+		"pirate-enclave": {
+			"begin": "\\bpirate enclave\\b",
+			"end": "$",
+			"name": "entity.other.attribute-name.pragma.preprocessor.c",
+			"patterns": [
+				{ "include": "#enclave-declare" }
+			]
+		},
+		"enclave-declare": {
+			"begin": "\\bdeclare\\s*",
+			"beginCaptures": {
+				"0": {
+					"name" : "entity.other.attribute-name.pragma.preprocessor.c"
+				}
+			},
+			"end": "$",
+			"patterns": [
+				{ "include": "#enclave-declare-name-parens" }
+			]
+		},
+		"enclave-declare-name-parens": {
+			"begin": "\\(",
+			"end": "\\)",
+			"name": "punctuation.definition.parameters.end.preprocessor.c",
+			"patterns": [
+				{ "include": "#enclave-declare-name" }
+			]
+		},
+		"enclave-declare-name": {
+			"match": "(\\p{Alnum}+)",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.c"
+				}
+			}
+		},
+		"pirate-capability": {
+			"begin": "\\bpirate capability\\b",
+			"end": "$",
+			"name": "entity.other.attribute-name.pragma.preprocessor.c",
+			"patterns": [
+				{ "include": "#capability-declare" },
+				{ "include": "#capability-push" },
+				{ "include": "#capability-pop" }
+			]
+		},
+		"capability-declare": {
+			"begin": "\\bdeclare",
+			"beginCaptures": {
+				"0": {
+					"name" : "entity.other.attribute-name.pragma.preprocessor.c"
+				}
+			},
+			"end": "$",
+			"patterns": [
+				{ "include": "#capability-declare-name-group" }
+			]
+		},
+		"capability-declare-name-group": {
+			"begin": "\\(",
+			"beginCaptures": {
+			},
+			"end": "\\)",
+			"name": "punctuation.definition.parameters.end.preprocessor.c",
+			"patterns": [
+				{ "include": "#capability-declare-identifier" }
+			]
+		},
+		"capability-declare-identifier": {
+			"match": "(\\p{Alnum}+),\\s*(\\p{Alnum}+)|(\\p{Alnum}+)",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.c"
+				},
+				"2": {
+					"name": "entity.name.function.preprocessor.c"
+				},
+				"3": {
+					"name": "entity.name.function.preprocessor.c"
+				}
+			}
+		},
+		"capability-push": {
+			"begin": "\\bpush",
+			"beginCaptures": {
+				"0": {
+					"name" : "entity.other.attribute-name.pragma.preprocessor.c"
+				}
+			},
+			"end": "$",
+			"patterns": [
+				{ "include": "#capability-push-parens" }
+			]
+		},
+		"capability-push-parens": {
+			"begin": "\\(",
+			"beginCaptures": {
+			},
+			"end": "\\)",
+			"name": "punctuation.definition.parameters.end.preprocessor.c",
+			"patterns": [
+				{ "include": "#capability-push-list" }
+			]
+		},
+		"capability-push-list": {
+			"match": "(\\p{Alnum}+)(,\\s*\\p{Alnum}+)*",
+			"name": "entity.name.function.preprocessor.c"
+		},
+		"capability-pop": {
+			"match": "pop",
+			"name": "entity.other.attribute-name.pragma.preprocessor.c"
+		}
+	}
+}
