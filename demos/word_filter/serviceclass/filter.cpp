@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -35,14 +36,27 @@ namespace {
 // Serialization library
 ////////////////////////////////////////////////////////////////////////
 
+template<int N>
+struct FixedString {
+    FixedString(std::string str) : str(str) {}
+    std::string str;
+};
+
 template<typename T> struct Serialize {};
-template<> struct Serialize<std::string> {
-    static std::string fromBuffer(std::vector<char> const& buffer) {
-        return std::string(buffer.begin(), buffer.end());
+
+template<int N>
+struct Serialize<FixedString<N>> {
+    static constexpr size_t size = N;
+    static FixedString<N> fromBuffer(std::vector<char> const& buffer) {
+        auto start = std::begin(buffer);
+        auto len   = std::min(size, buffer.size());
+        auto end   = std::find(start, start+len, 0);
+        return std::string(std::begin(buffer), end);
     }
-    static void toBuffer(std::vector<char> & buffer, std::string const& str) {
+    static void toBuffer(std::vector<char> & buffer, FixedString<N> const& str) {
         buffer.clear();
-        buffer.insert(buffer.end(), str.begin(), str.end());
+        buffer.insert(buffer.end(), str.str.begin(), str.str.end());
+        buffer.resize(size);
     }
 };
 
@@ -50,74 +64,42 @@ template<> struct Serialize<std::string> {
 // Bi-directional Service library
 ////////////////////////////////////////////////////////////////////////
 
-template<typename Derived, typename T, typename U>
+template<typename Derived, typename Request, typename Response>
 class Service {
     int readChan;
     int writeChan;
 
-    void write_all(char const* buf, size_t count) {
-      size_t sofar = 0;
-      while (sofar < count) {
-        ssize_t result = pirate_write(writeChan, buf + sofar, count - sofar);
-        if (result < 0) {
-          perror("pirate_write");
-          exit(EXIT_FAILURE);
-        }
-        sofar += result;
-      }
-    }
-
-    void read_all(char * buf, size_t count) {
-      size_t sofar = 0;
-      while (sofar < count) {
-        ssize_t result = pirate_read(readChan, buf + sofar, count - sofar);
-        if (result < 0) {
-          perror("pirate_read");
-          exit(EXIT_FAILURE);
-        }
-        sofar += result;
-      }
-    }
-
-    void transmit(char const* msg, size_t n) {
-        write_all((char const*)&n, sizeof n);
-        write_all(msg, n);
-    }
-
-    void receive(std::vector<char> &buffer)
-    {
-      size_t n;
-      read_all((char *)&n, sizeof n);
-      buffer.resize(n);
-      read_all(buffer.data(), n);
-    }
-
-    inline U interface(T t) {
-	    return static_cast<Derived*>(this)->impl(t);
+    inline Response interface(Request t) {
+        return static_cast<Derived*>(this)->impl(t);
     }
 
 public:
     void setHandles(int read, int write) { readChan = read; writeChan = write; }
 
-    U call(T t) {
+    Response call(Request t) const {
         std::vector<char> buffer;
-        Serialize<T>::toBuffer(buffer, t);
-        transmit(buffer.data(), buffer.size());
+        Serialize<Request>::toBuffer(buffer, t);
+        pirate_write(writeChan, buffer.data(), buffer.size());
+
         buffer.clear();
-        receive(buffer);
-        return Serialize<U>::fromBuffer(buffer);
+        buffer.resize(80);
+	pirate_read(readChan, buffer.data(), buffer.size());
+
+        return Serialize<Response>::fromBuffer(buffer);
     }
 
     int event_loop() {
         std::vector<char> buffer;
         for (;;) {
             buffer.clear();
-            receive(buffer);
-            U req = Serialize<T>::fromBuffer(buffer);
+            buffer.resize(80);
+            pirate_read(readChan, buffer.data(), buffer.size());
+            auto req = Serialize<Request>::fromBuffer(buffer);
+
             auto res = interface(req);
             buffer.clear();
-            Serialize<U>::toBuffer(buffer, res);
-            transmit(buffer.data(), buffer.size());
+            Serialize<Response>::toBuffer(buffer, res);
+            pirate_write(writeChan, buffer.data(), buffer.size());
         }
     }
 };
@@ -147,9 +129,11 @@ void censor(std::string &msg)
   }
 }
 
-struct CensorService : public Service<CensorService, std::string, std::string> {
-    std::string impl(std::string str) {
-        censor(str);
+using Req = FixedString<80>;
+using Rsp = FixedString<80>;
+struct CensorService : public Service<CensorService, Req, Rsp> {
+    Rsp impl(Req str) {
+        censor(str.str);
         return str;
     }
 } service; // __attribute__((pirate_resource(...)))
@@ -174,7 +158,7 @@ __attribute__((pirate_enclave_main("filter_ui_sc")))
         std::getline(std::cin, line);
         if (!std::cin) { break; }
 
-        line = service.call(line);
+        line = service.call({line}).str;
 
         std::cout << "Response> " << line << std::endl;
   }
