@@ -176,7 +176,7 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
     char mtu_str[32];
 
     mtu_str[0] = 0;
-    if ((param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU)) {
+    if (param->mtu != 0) {
         snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
     }
     return snprintf(desc, len, "ge_eth,%s,%u,%u%s", param->addr,

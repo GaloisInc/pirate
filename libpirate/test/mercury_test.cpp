@@ -30,6 +30,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     pirate_channel_param_t expParam, rdParam;
     char opt[256];
     const char *name = "mercury";
+    const uint32_t mtu = 42;
     const uint32_t level = 1;
     const uint32_t src_id = 2;
     const uint32_t dst_id = 3;
@@ -66,11 +67,22 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.mtu = 0;
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
+    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,mtu=%u", name, level, src_id, dst_id, mtu);
+    rv = pirate_parse_channel_param(opt, &rdParam);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    expParam.channel.mercury.session.level = level;
+    expParam.channel.mercury.session.source_id = src_id;
+    expParam.channel.mercury.session.destination_id = dst_id;
+    expParam.channel.mercury.mtu = mtu;
+    EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
+
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u", name, level, src_id,
             dst_id, msg_ids[0]);
     rv = pirate_parse_channel_param(opt, &rdParam);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    expParam.channel.mercury.mtu = 0;
     expParam.channel.mercury.session.message_count = 1;
     expParam.channel.mercury.session.messages[0] = msg_ids[0];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
