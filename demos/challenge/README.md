@@ -1,0 +1,74 @@
+# Challenge Problem
+
+This project contains an example application that has been implemented using
+several different system architectures. The example application accepts user
+input from standard input, encrypts the input data, encrypts the output
+from the previous step, and prints on standard output a base-64
+representation of the doubly-encrypted data.
+
+```
+$ echo 'hello world' | ./challenge_baseline
+A3Mp6Uy2RxpHwPtY
+```
+
+Assume that each encryption
+implementation uses a separate encryption algorithm that is provided by
+a separate cryptographic library implementation. For simplicity both
+encryptions are performed with the same encryption algorithm provided by
+the same encryption library. The two encryption steps uses different
+secret keys.
+
+The security architecture of this application consists of
+two encryption enclave and one central enclave. Each encryption
+enclave contains a secret key that should not be leaked to
+the other enclave.
+
+## System architectures
+
+### Monolithic application
+
+This is the baseline implementation. The encryption enclaves are encapsulated
+inside functions. The central enclave is a single-threaded, single-process
+application that invokes the encryption functions. The monolithic
+application is implemented by
+[challenge_baseline.c](/demos/challenge/challenge_baseline.c).
+
+### Producer-consumer communication
+
+This is a partioned version of the baseline implementation where the
+three enclaves are communicating using a producer-consumer model.
+This is a one-to-one communication pattern. Each communication channel
+has one reader and one writer.
+
+### Publish-subscribe communication
+
+This is a partioned version of the baseline implementation where the
+three enclaves are communicating using a publish-subscribe model.
+This is a many-to-many communication pattern. Each communication channel
+has one or more publishers and one or more subscribers.
+
+### Multithreaded application
+
+Each security enclave is running as a separate thread. The primary thread
+and the security threads use synchronization primitives (semaphores)
+to coordinate their operation. The multithreaded
+application is implemented by
+[challenge_multithreaded.c](/demos/challenge/challenge_multithreaded.c).
+
+### Remote procedure call computation
+
+This is a service-oriented architecture. The encryption domains
+provide a remote produce call that can be invoked by the primary
+domain.
+
+### Asynchronous computation
+
+This is an event-driven architecture.
+
+### Monolithic application w/ spaghetti code
+
+This is a degenerate version of the baseline implementation. The two
+encryption enclaves have been combined in a single function call. Either
+static analysis or manual refactoring will be necessary to partition the
+security enclaves. The spaghetti application is implemented by
+[challenge_spaghetti.c](/demos/challenge/challenge_spaghetti.c).
