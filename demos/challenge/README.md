@@ -11,12 +11,11 @@ $ echo 'hello world' | ./challenge_baseline
 A3Mp6Uy2RxpHwPtY
 ```
 
-Assume that each encryption
-implementation uses a separate encryption algorithm that is provided by
-a separate cryptographic library implementation. For simplicity both
-encryptions are performed with the same encryption algorithm provided by
-the same encryption library. The two encryption steps uses different
-secret keys.
+Assume that each encryption step uses a separate encryption algorithm
+that is provided by a separate cryptographic library implementation. For
+simplicity both encryption steps are performed with the same encryption
+algorithm provided by the same encryption library. The two encryption steps
+uses different secret keys.
 
 The security architecture of this application consists of
 two encryption enclave and one central enclave. Each encryption
