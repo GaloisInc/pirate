@@ -1,7 +1,7 @@
 # Challenge Problem
 
 This project contains an example application that has been implemented using
-several different system architectures. The example application accepts user
+several different system architectures. The application accepts user
 input from standard input, encrypts the input data, encrypts the output
 from the previous step, and prints on standard output a base-64
 representation of the doubly-encrypted data.
