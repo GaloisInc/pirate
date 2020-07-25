@@ -38,7 +38,13 @@ application is implemented by
 This is a partioned version of the baseline implementation where the
 three enclaves are communicating using a producer-consumer model.
 This is a one-to-one communication pattern. Each communication channel
-has one reader and one writer.
+has one reader and one writer. The producer-consumer application
+is implemented by
+[challenge_socket_main.c](/demos/challenge/challenge_socket_main.c),
+[challenge_socket_encrypt1.c](/demos/challenge/challenge_socket_encrypt1.c),
+and
+[challenge_socket_encrypt2.c](/demos/challenge/challenge_socket_encrypt2.c).
+
 
 ### Publish-subscribe communication
 
