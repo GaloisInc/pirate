@@ -20,7 +20,7 @@ uses different secret keys.
 The security architecture of this application consists of
 two encryption enclave and one central enclave. Each encryption
 enclave contains a secret key that should not be leaked to
-the other enclave.
+the other enclaves.
 
 ## System architectures
 
