@@ -285,15 +285,23 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     int wr_sz = 0;
     int ret_sz = 0;
 
-    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u", 
-                        param->session.level, 
+    char mtu_str[32];
+
+    mtu_str[0] = 0;
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+
+    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u%s",
+                        param->session.level,
                         param->session.source_id,
-                        param->session.destination_id);
+                        param->session.destination_id,
+                        mtu_str);
     ret_sz += wr_sz;
 
     for (uint32_t i = 0; i < param->session.message_count; ++i) {
         wr += wr_sz;
-        len -= wr_sz;
+        len = MAX(len - wr_sz, 0);
         wr_sz = snprintf(wr, len, ",%u", param->session.messages[i]);
         ret_sz += wr_sz;
     }
