@@ -8,7 +8,7 @@ representation of the doubly-encrypted data.
 
 ```
 $ echo 'hello world' | ./challenge_baseline
-A3Mp6Uy2RxpHwPtY
+n1BdFyP0DDskAa0AzxXjmpJkydCjtxzgxIirrYiseoWwK93nymQPDCwyck0=
 ```
 
 Assume that each encryption step uses a separate encryption algorithm
