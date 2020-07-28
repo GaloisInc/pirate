@@ -7,8 +7,8 @@ from the previous step, and prints on standard output a base-64
 representation of the doubly-encrypted data.
 
 ```
-$ echo 'hello world' | ./challenge_baseline
-n1BdFyP0DDskAa0AzxXjmpJkydCjtxzgxIirrYiseoWwK93nymQPDCwyck0=
+$ echo 'hello world' | ./challenge_baseline_encrypt
+lr8cuejxb/Y9WA0m6ueaH1Fq1urnobW/8Xc4XJIJFy3YTrGLpUR4Y15eFg==
 ```
 
 Assume that each encryption step uses a separate encryption algorithm
@@ -30,7 +30,7 @@ This is the baseline implementation. The encryption enclaves are encapsulated
 inside functions. The central enclave is a single-threaded, single-process
 application that invokes the encryption functions. The monolithic
 application is implemented by
-[challenge_baseline.c](/demos/challenge/challenge_baseline.c).
+[challenge_baseline_encrypt.c](/demos/challenge/challenge_baseline_encrypt.c).
 
 ### Producer-consumer communication
 

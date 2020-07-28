@@ -17,9 +17,9 @@
 #define NONCE_BYTES crypto_secretbox_NONCEBYTES
 #define ZERO_BYTES crypto_secretbox_ZEROBYTES
 #define BOX_ZERO_BYTES crypto_secretbox_BOXZEROBYTES
-#define DELTA_ZERO_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
+#define DELTA_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
 
-#if DELTA_ZERO_BYTES < 0
+#if DELTA_BYTES < 0
 #error "crypto_secretbox_ZEROBYTES is assumed to be >= crypto_secretbox_BOXZEROBYTES"
 #endif
 
@@ -42,6 +42,8 @@ static void increment_nonce(unsigned char *n, const size_t nlen) {
  *
  * For simplicity they both use crypto_secretbox_xsalsa20poly1305
  * primitive by the TweetNaCl library https://tweetnacl.cr.yp.to
+ * 
+ * TODO: prepend the nonces to the output string
  **/
 
 void encrypt2(char *input, size_t len, char *output) {
@@ -49,35 +51,48 @@ void encrypt2(char *input, size_t len, char *output) {
     increment_nonce(nonce2, NONCE_BYTES);
 }
 
-int main() {
-    char input[80 + DELTA_ZERO_BYTES] = {0};
-    char output[80 + DELTA_ZERO_BYTES] = {0};
+int encrypt2_read, encrypt2_write;
 
+static const int input_size = 80;
+static const int encryption_size = input_size + ZERO_BYTES;
+static const int double_encryption_size = encryption_size + DELTA_BYTES;
+
+int main_encryption(char *buffer1, char *buffer2) {
     ssize_t mlen;
     uint32_t mlen_n;
 
-    int encrypt2_read = reader_open(8082);
-    int encrypt2_write = writer_open(8083);
+    encrypt2_read = reader_open(8082);
+    encrypt2_write = writer_open(8083);
 
     if (encrypt2_read < 0) {
-        perror("reader_open(8080)");
-        exit(1);
+        perror("reader_open(8082)");
+        return -1;
     }
 
     if (encrypt2_write < 0) {
-        perror("writer_open(8081)");
-        exit(1);
+        perror("writer_open(8083)");
+        return -1;
     }
 
-    while (1) {
-        ssize_t rv = recv(encrypt2_read, &mlen_n, sizeof(mlen_n), 0);
-        test_rv(rv, sizeof(mlen_n), "recv(encrypt2_read, &mlen_n...)");
-        mlen = ntohl(mlen_n);
-        rv = recv(encrypt2_read, input, mlen, 0);
-        test_rv(rv, mlen, "recv(encrypt2_read, input...)");
-        encrypt2(input, mlen, output);
-        rv = send(encrypt2_write, output, mlen, 0);
-        test_rv(rv, mlen, "send(encrypt2_write, output...)");
-    }
+    ssize_t rv = recv(encrypt2_read, &mlen_n, sizeof(mlen_n), 0);
+    test_rv(rv, sizeof(mlen_n), "recv(encrypt2_read, &mlen_n...)");
+    mlen = ntohl(mlen_n);
+    rv = recv(encrypt2_read, buffer1, mlen, 0);
+    test_rv(rv, mlen, "recv(encrypt2_read, input...)");
+    encrypt2(buffer1, mlen, buffer2);
+    rv = send(encrypt2_write, buffer2, mlen, 0);
+    test_rv(rv, mlen, "send(encrypt2_write, output...)");
+
     return 0;
+}
+
+int main() {
+    char *buffer1 = calloc(double_encryption_size, 1);
+    char *buffer2 = calloc(double_encryption_size, 1);
+    int rv = main_encryption(buffer1, buffer2);
+    free(buffer1);
+    free(buffer2);
+    close(encrypt2_write);
+    close(encrypt2_read);
+    return rv;
 }

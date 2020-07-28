@@ -87,6 +87,7 @@
 
 #include <stddef.h>
 
+int base64_decode(char *bufplain, const char *bufcoded);
 int base64_encode(char *encoded, const char *string, int len);
 
 #endif /* BASE64_H */

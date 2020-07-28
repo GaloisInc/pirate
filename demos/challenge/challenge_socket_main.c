@@ -16,96 +16,113 @@
 #define NONCE_BYTES crypto_secretbox_NONCEBYTES
 #define ZERO_BYTES crypto_secretbox_ZEROBYTES
 #define BOX_ZERO_BYTES crypto_secretbox_BOXZEROBYTES
-#define DELTA_ZERO_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
+#define DELTA_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
 
-#if DELTA_ZERO_BYTES < 0
+#if DELTA_BYTES < 0
 #error "crypto_secretbox_ZEROBYTES is assumed to be >= crypto_secretbox_BOXZEROBYTES"
 #endif
 
-int main() {
-    char input[80 + DELTA_ZERO_BYTES] = {0};
-    char output[80 + DELTA_ZERO_BYTES] = {0};
-    char encoded[120] = {0};
+static const int input_size = 80;
+static const int encryption_size = input_size + ZERO_BYTES;
+static const int double_encryption_size = encryption_size + DELTA_BYTES;
+static const int base64_size = (((double_encryption_size / 3) + 1) * 4);
 
+int encrypt1_write, encrypt1_read;
+int encrypt2_write, encrypt2_read;
+
+int main_encryption(char *buffer1, char *buffer2, char *encoded) {
     ssize_t mlen;
     uint32_t mlen_n;
-    char* read_offset = input + ZERO_BYTES;
-    const size_t read_length = 80 - ZERO_BYTES;
+    char *newline, *read_offset = buffer1 + ZERO_BYTES;
+    const size_t read_length = input_size;
 
-    int encrypt1_write = writer_open(8080);
-    int encrypt1_read = reader_open(8081);
-    int encrypt2_write = writer_open(8082);
-    int encrypt2_read = reader_open(8083);
+    encrypt1_write = writer_open(8080);
+    encrypt1_read = reader_open(8081);
+    encrypt2_write = writer_open(8082);
+    encrypt2_read = reader_open(8083);
 
     if (encrypt1_write < 0) {
         perror("writer_open(8080)");
-        exit(1);
+        return -1;
     }
 
     if (encrypt1_read < 0) {
         perror("reader_open(8081)");
-        exit(1);
+        return -1;
     }
 
     if (encrypt2_write < 0) {
         perror("writer_open(8082)");
-        exit(1);
+        return -1;
     }
 
     if (encrypt2_read < 0) {
         perror("reader_open(8083)");
-        exit(1);
+        return -1;
     }
 
     char *success = fgets(read_offset, read_length, stdin);
     if (success == NULL) {
-        exit(1);
+        return -1;
+    }
+    // strip trailing newline
+    newline = strrchr(read_offset, '\n');
+    if (newline != NULL) {
+        *newline = 0;
     }
     mlen = strnlen(read_offset, read_length) + ZERO_BYTES;
     mlen_n = htonl(mlen);
 
-    // Execute 100_000 iterations to identify any race conditions
-    // in concurrent implementations of the challenge problem.
-    for (int i = 0; i < 100000; i++) {
-        ssize_t rv = send(encrypt1_write, &mlen_n, sizeof(mlen_n), 0);
-        if (rv != sizeof(mlen_n)) {
-            perror("send(encrypt1_write...)");
-            exit(1);
-        }
-        rv = send(encrypt1_write, input, mlen, 0);
-        if (rv != mlen) {
-            perror("send(encrypt1_write...)");
-            exit(1);
-        }
-        rv = recv(encrypt1_read, output + DELTA_ZERO_BYTES, mlen, 0);
-        if (rv != mlen) {
-            perror("recv(encrypt1_read...)");
-            exit(1);
-        }
-        rv = send(encrypt2_write, &mlen_n, sizeof(mlen_n), 0);
-        if (rv != sizeof(mlen_n)) {
-            perror("send(encrypt2_write...)");
-            exit(1);
-        }
-        rv = send(encrypt2_write, output, mlen, 0);
-        if (rv != mlen) {
-            perror("send(encrypt2_write...)");
-            exit(1);
-        }
-        rv = recv(encrypt2_read, input + DELTA_ZERO_BYTES, mlen, 0);
-        if (rv != mlen) {
-            perror("recv(encrypt2_read...)");
-            exit(1);
-        }
+    ssize_t rv = send(encrypt1_write, &mlen_n, sizeof(mlen_n), 0);
+    if (rv != sizeof(mlen_n)) {
+        perror("send(encrypt1_write...)");
+        return -1;
+    }
+    rv = send(encrypt1_write, buffer1, mlen, 0);
+    if (rv != mlen) {
+        perror("send(encrypt1_write...)");
+        return -1;
+    }
+    rv = recv(encrypt1_read, buffer2 + DELTA_BYTES, mlen, 0);
+    if (rv != mlen) {
+        perror("recv(encrypt1_read...)");
+        return -1;
+    }
+    mlen += DELTA_BYTES;
+    mlen_n = htonl(mlen);
+    rv = send(encrypt2_write, &mlen_n, sizeof(mlen_n), 0);
+    if (rv != sizeof(mlen_n)) {
+        perror("send(encrypt2_write...)");
+        return -1;
+    }
+    rv = send(encrypt2_write, buffer2, mlen, 0);
+    if (rv != mlen) {
+        perror("send(encrypt2_write...)");
+        return -1;
+    }
+    rv = recv(encrypt2_read, buffer1, mlen, 0);
+    if (rv != mlen) {
+        perror("recv(encrypt2_read...)");
+        return -1;
     }
 
-    base64_encode(encoded, input + ZERO_BYTES, mlen - ZERO_BYTES);
+    base64_encode(encoded, buffer1 + BOX_ZERO_BYTES, mlen - BOX_ZERO_BYTES);
     printf("%s\n", encoded);
 
+    return 0;
+}
+
+int main() {
+    char *buffer1 = calloc(double_encryption_size, 1);
+    char *buffer2 = calloc(double_encryption_size, 1);
+    char *encoded = calloc(base64_size, 1);
+    int rv = main_encryption(buffer1, buffer2, encoded);
+    free(buffer1);
+    free(buffer2);
+    free(encoded);
     close(encrypt1_write);
     close(encrypt1_read);
     close(encrypt2_write);
     close(encrypt2_read);
-
-    return 0;
+    return rv;
 }

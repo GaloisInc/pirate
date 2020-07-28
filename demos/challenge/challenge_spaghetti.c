@@ -10,9 +10,9 @@
 #define NONCE_BYTES crypto_secretbox_NONCEBYTES
 #define ZERO_BYTES crypto_secretbox_ZEROBYTES
 #define BOX_ZERO_BYTES crypto_secretbox_BOXZEROBYTES
-#define DELTA_ZERO_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
+#define DELTA_BYTES (ZERO_BYTES - BOX_ZERO_BYTES)
 
-#if DELTA_ZERO_BYTES < 0
+#if DELTA_BYTES < 0
 #error "crypto_secretbox_ZEROBYTES is assumed to be >= crypto_secretbox_BOXZEROBYTES"
 #endif
 
@@ -38,42 +38,63 @@ static void increment_nonce(unsigned char *n, const size_t nlen) {
  * 
  * For simplicity they both use crypto_secretbox_xsalsa20poly1305
  * primitive by the TweetNaCl library https://tweetnacl.cr.yp.to
+ * 
+ * TODO: prepend the nonces to the output string
  **/
 
-void encrypt(char *input, size_t len, char *output, int type) {
+int encrypt(char *input, size_t len, char *output, int type) {
+    int rv;
     if ((type % 2) == 0) {
-        crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce1, key1);
+        rv = crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce1, key1);
         increment_nonce(nonce1, NONCE_BYTES);
     } else {
-        crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce2, key2);
+        rv = crypto_secretbox((unsigned char*) output, (unsigned char*) input, len, nonce2, key2);
         increment_nonce(nonce2, NONCE_BYTES);
     }
+    return rv;
 }
 
-int main() {
-    char input[80 + DELTA_ZERO_BYTES] = {0};
-    char output[80 + DELTA_ZERO_BYTES] = {0};
-    char encoded[120] = {0};
+static const int input_size = 80;
+static const int encryption_size = input_size + ZERO_BYTES;
+static const int double_encryption_size = encryption_size + DELTA_BYTES;
+static const int base64_size = (((double_encryption_size / 3) + 1) * 4);
 
+int main_encryption(char *buffer1, char *buffer2, char *encoded) {
     size_t mlen;
-    char* read_offset = input + ZERO_BYTES;
-    const size_t read_length = 80 - ZERO_BYTES;
+    char *newline, *read_offset = buffer1 + ZERO_BYTES;
+    const size_t read_length = input_size;
 
     char *success = fgets(read_offset, read_length, stdin);
     if (success == NULL) {
-        exit(1);
+        return -1;
+    }
+    // strip trailing newline
+    newline = strrchr(read_offset, '\n');
+    if (newline != NULL) {
+        *newline = 0;
     }
     mlen = strnlen(read_offset, read_length) + ZERO_BYTES;
 
-    // Execute 100_000 iterations to identify any race conditions
-    // in concurrent implementations of the challenge problem.
-    for (int i = 0; i < 100000; i++) {
-        encrypt(input, mlen, output + DELTA_ZERO_BYTES, 0);
-        encrypt(output, mlen, input + DELTA_ZERO_BYTES, 1);
+    if (encrypt(buffer1, mlen, buffer2 + DELTA_BYTES, 0) < 0) {
+        return -1;
+    }
+    mlen += DELTA_BYTES;
+    if (encrypt(buffer2, mlen, buffer1, 1) < 0) {
+        return -1;
     }
 
-    base64_encode(encoded, input + ZERO_BYTES, mlen - ZERO_BYTES);
+    base64_encode(encoded, buffer1 + BOX_ZERO_BYTES, mlen - BOX_ZERO_BYTES);
     printf("%s\n", encoded);
-
     return 0;
+}
+
+int main() {
+    char *buffer1 = calloc(double_encryption_size, 1);
+    char *buffer2 = calloc(double_encryption_size, 1);
+    char *encoded = calloc(base64_size, 1);
+    int rv = main_encryption(buffer1, buffer2, encoded);
+    free(buffer1);
+    free(buffer2);
+    free(encoded);
+    return rv;
 }
