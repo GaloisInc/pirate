@@ -22,6 +22,7 @@ option(RESOURCE_DEMOS "Enable compilation of resource and pal demos" OFF)
 option(GAPS_BENCH "Enable compilation of GAPS benchmark applications" OFF)
 option(PIRATE_LAUNCHER "Enable the PIRATE launcher" ON)
 option(PIRATE_GETOPT "Enable PIRATE getopt library" ON)
+option(OBJECT_MODEL "Enable object model exploration" OFF)
 option(BUILD_ALL "Enable PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH" OFF)
 
 if(BUILD_ALL)
@@ -34,6 +35,7 @@ if(BUILD_ALL)
     SET(PNT_DEMO ON BOOL)
     SET(RESOURCE_DEMOS ON BOOL)
     SET(GAPS_BENCH ON BOOL)
+    SET(OBJECT_MODEL ON BOOL)
 endif(BUILD_ALL)
 
 # Common build options
