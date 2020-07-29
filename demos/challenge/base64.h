@@ -87,7 +87,15 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int base64_decode(char *bufplain, const char *bufcoded);
 int base64_encode(char *encoded, const char *string, int len);
+
+#ifdef __cplusplus
+}
+#endif /* extern "C" */
 
 #endif /* BASE64_H */
