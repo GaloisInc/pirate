@@ -51,6 +51,11 @@ This is a partioned version of the baseline implementation where the
 three enclaves are communicating using a publish-subscribe model.
 This is a many-to-many communication pattern. Each communication channel
 has one or more publishers and one or more subscribers.
+The publish-subscribe application is implemented by
+[challenge_pubsub_main.c](/demos/challenge/challenge_pubsub_main.c),
+[challenge_pubsub_encrypt1.c](/demos/challenge/challenge_pubsub_encrypt1.c),
+and
+[challenge_pubsub_encrypt2.c](/demos/challenge/challenge_pubsub_encrypt2.c).
 
 ### Multithreaded application
 
