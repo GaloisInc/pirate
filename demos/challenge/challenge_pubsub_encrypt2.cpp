@@ -24,7 +24,6 @@
 
 #include "tweetnacl.h"
 #include "base64.h"
-#include "challenge_socket_common.h"
 
 using namespace activemq::core;
 using namespace cms;

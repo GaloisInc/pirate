@@ -7,6 +7,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 include(FindPackageHandleStandardArgs)
 
+find_package(PkgConfig REQUIRED)
+
 # Build flags
 set(BUILD_FLAGS -Werror -Wall -Wextra -Wpedantic)
 
@@ -47,6 +49,20 @@ endif (ACTIVEMQ_FOUND)
 add_executable(challenge_multithreaded challenge_multithreaded.c ${COMMON_SRC})
 target_compile_options(challenge_multithreaded PRIVATE ${BUILD_FLAGS})
 target_link_libraries(challenge_multithreaded pthread)
+
+pkg_check_modules(PROTOBUF_PKG IMPORTED_TARGET protobuf)
+pkg_check_modules(GRPC_PKG IMPORTED_TARGET grpc++)
+if (PROTOBUF_PKG_FOUND AND GRPC_PKG_FOUND)
+    add_executable(challenge_rpc_main challenge_rpc_main.cpp challenge_rpc.grpc.pb.cc ${COMMON_SRC})
+    target_compile_options(challenge_rpc_main PRIVATE ${BUILD_FLAGS})
+    target_link_libraries(challenge_rpc_main PkgConfig::PROTOBUF_PKG PkgConfig::GRPC_PKG pthread)
+    add_executable(challenge_rpc_encrypt1 challenge_rpc_encrypt1.cpp challenge_rpc.grpc.pb.cc ${COMMON_SRC})
+    target_compile_options(challenge_rpc_encrypt1 PRIVATE ${BUILD_FLAGS})
+    target_link_libraries(challenge_rpc_encrypt1 PkgConfig::PROTOBUF_PKG PkgConfig::GRPC_PKG pthread)
+    add_executable(challenge_rpc_encrypt2 challenge_rpc_encrypt2.cpp challenge_rpc.grpc.pb.cc ${COMMON_SRC})
+    target_compile_options(challenge_rpc_encrypt2 PRIVATE ${BUILD_FLAGS})
+    target_link_libraries(challenge_rpc_encrypt2 PkgConfig::PROTOBUF_PKG PkgConfig::GRPC_PKG pthread)
+endif (PROTOBUF_PKG_FOUND AND GRPC_PKG_FOUND)
 
 add_executable(challenge_spaghetti challenge_spaghetti.c ${COMMON_SRC})
 target_compile_options(challenge_spaghetti PRIVATE ${BUILD_FLAGS})

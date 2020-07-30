@@ -50,7 +50,8 @@ and
 This is a partioned version of the baseline implementation where the
 three enclaves are communicating using a publish-subscribe model.
 This is a many-to-many communication pattern. Each communication channel
-has one or more publishers and one or more subscribers.
+has one or more publishers and one or more subscribers. The
+implementation uses the [ActiveMQ](https://activemq.apache.org/) framework.
 The publish-subscribe application is implemented by
 [challenge_pubsub_main.cpp](/demos/challenge/challenge_pubsub_main.cpp),
 [challenge_pubsub_encrypt1.cpp](/demos/challenge/challenge_pubsub_encrypt1.cpp),
@@ -69,7 +70,12 @@ application is implemented by
 
 This is a service-oriented architecture. The encryption domains
 provide a remote produce call that can be invoked by the primary
-domain.
+domain. The implementation uses the [gRPC](https://grpc.io/) framework.
+The remove procedure call application is implemented by
+[challenge_rpc_main.cpp](/demos/challenge/challenge_rpc_main.cpp),
+[challenge_rpc_encrypt1.cpp](/demos/challenge/challenge_rpc_encrypt1.cpp),
+and
+[challenge_rpc_encrypt2.cpp](/demos/challenge/challenge_rpc_encrypt2.cpp).
 
 ### Asynchronous computation
 
