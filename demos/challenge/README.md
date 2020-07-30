@@ -79,7 +79,11 @@ and
 
 ### Asynchronous computation
 
-This is an event-driven architecture.
+This is an event-driven architecture. The encryption domains
+are invoked as two asynchronous tasks that are chained together.
+The implementation uses the [asyncplusplus](https://github.com/Amanieu/asyncplusplus) library.
+The asynchronous application is implemented by
+[challenge_async.cpp](/demos/challenge/challenge_async.cpp).
 
 ### Monolithic application w/ spaghetti code
 
