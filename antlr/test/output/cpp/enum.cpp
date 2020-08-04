@@ -1,3 +1,6 @@
+#ifndef _ENUMTYPE_IDL_CODEGEN_H
+#define _ENUMTYPE_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -6,7 +9,7 @@
 
 #include <endian.h>
 
-namespace enumtype {
+namespace EnumType {
 
 	enum class DayOfWeek : uint32_t {
 		Monday,
@@ -16,17 +19,17 @@ namespace enumtype {
 		Friday
 	};
 
-	struct week_interval {
+	struct Week_Interval {
 		DayOfWeek begin __attribute__((aligned(4)));
 		DayOfWeek end __attribute__((aligned(4)));
 	};
 
-	struct week_interval_wire {
+	struct Week_Interval_wire {
 		unsigned char begin[4] __attribute__((aligned(4)));
 		unsigned char end[4] __attribute__((aligned(4)));
 	};
 
-	static_assert(sizeof(struct week_interval) == sizeof(struct week_interval_wire), "size of struct week_interval not equal to wire protocol struct");
+	static_assert(sizeof(struct Week_Interval) == sizeof(struct Week_Interval_wire), "size of struct Week_Interval not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -40,11 +43,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct enumtype::week_interval> {
-		static void toBuffer(struct enumtype::week_interval const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct enumtype::week_interval));
-			struct enumtype::week_interval_wire* output = (struct enumtype::week_interval_wire*) buf.data();
-			const struct enumtype::week_interval* input = &val;
+	struct Serialization<struct EnumType::Week_Interval> {
+		static void toBuffer(struct EnumType::Week_Interval const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct EnumType::Week_Interval));
+			struct EnumType::Week_Interval_wire* output = (struct EnumType::Week_Interval_wire*) buf.data();
+			const struct EnumType::Week_Interval* input = &val;
 			uint32_t field_begin;
 			uint32_t field_end;
 			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
@@ -55,14 +58,14 @@ namespace pirate {
 			memcpy(&output->end, &field_end, sizeof(uint32_t));
 		}
 
-		static struct enumtype::week_interval fromBuffer(std::vector<char> const& buf) {
-			struct enumtype::week_interval retval;
-			const struct enumtype::week_interval_wire* input = (const struct enumtype::week_interval_wire*) buf.data();
-			struct enumtype::week_interval* output = &retval;
-			if (buf.size() != sizeof(struct enumtype::week_interval)) {
+		static struct EnumType::Week_Interval fromBuffer(std::vector<char> const& buf) {
+			struct EnumType::Week_Interval retval;
+			const struct EnumType::Week_Interval_wire* input = (const struct EnumType::Week_Interval_wire*) buf.data();
+			struct EnumType::Week_Interval* output = &retval;
+			if (buf.size() != sizeof(struct EnumType::Week_Interval)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for enumtype::week_interval type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct enumtype::week_interval));
+					std::string("pirate::Serialization::fromBuffer() for EnumType::Week_Interval type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct EnumType::Week_Interval));
 				throw std::length_error(error_msg);
 			}
 			uint32_t field_begin;
@@ -77,3 +80,5 @@ namespace pirate {
 		}
 	};
 }
+
+#endif // _ENUMTYPE_IDL_CODEGEN_H

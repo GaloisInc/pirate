@@ -208,10 +208,12 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
 }
 
 void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
+    std::string funcname = identifier;
+    transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     ostream << std::endl;
     ostream << "int" << " ";
     ostream << "validate";
-    ostream << "_" << identifier << "(";
+    ostream << "_" << funcname << "(";
     ostream << "const" << " " << "struct" << " " << identifier << "*" << " " << "input";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -228,10 +230,12 @@ void StructTypeSpec::cDeclareAnnotationValidate(std::ostream &ostream) {
 }
 
 void StructTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
+    std::string funcname = identifier;
+    transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     ostream << std::endl;
     ostream << "void" << " ";
     ostream << "transform";
-    ostream << "_" << identifier << "(";
+    ostream << "_" << funcname << "(";
     ostream << "struct" << " " << identifier << "*" << " " << "input";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;

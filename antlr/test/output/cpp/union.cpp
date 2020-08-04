@@ -1,3 +1,6 @@
+#ifndef _UNIONTYPE_IDL_CODEGEN_H
+#define _UNIONTYPE_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -6,9 +9,9 @@
 
 #include <endian.h>
 
-namespace uniontype {
+namespace UnionType {
 
-	struct union_example {
+	struct Union_Example {
 		int16_t tag __attribute__((aligned(2)));
 		union {
 			uint8_t a __attribute__((aligned(1)));
@@ -17,7 +20,7 @@ namespace uniontype {
 		} data;
 	};
 
-	struct union_example_wire {
+	struct Union_Example_wire {
 		unsigned char tag[2];
 		union {
 			unsigned char a[1] __attribute__((aligned(1)));
@@ -26,7 +29,7 @@ namespace uniontype {
 		} data;
 	};
 
-	static_assert(sizeof(struct union_example) == sizeof(struct union_example_wire), "size of union_example not equal to wire protocol size"
+	static_assert(sizeof(struct Union_Example) == sizeof(struct Union_Example_wire), "size of Union_Example not equal to wire protocol size"
 	);
 }
 
@@ -41,11 +44,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct uniontype::union_example> {
-		static void toBuffer(struct uniontype::union_example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct uniontype::union_example));
-			struct uniontype::union_example_wire* output = (struct uniontype::union_example_wire*) buf.data();
-			const struct uniontype::union_example* input = &val;
+	struct Serialization<struct UnionType::Union_Example> {
+		static void toBuffer(struct UnionType::Union_Example const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct UnionType::Union_Example));
+			struct UnionType::Union_Example_wire* output = (struct UnionType::Union_Example_wire*) buf.data();
+			const struct UnionType::Union_Example* input = &val;
 			uint16_t tag;
 			uint8_t data_a;
 			uint32_t data_b;
@@ -73,14 +76,14 @@ namespace pirate {
 			}
 		}
 
-		static struct uniontype::union_example fromBuffer(std::vector<char> const& buf) {
-			struct uniontype::union_example retval;
-			const struct uniontype::union_example_wire* input = (const struct uniontype::union_example_wire*) buf.data();
-			struct uniontype::union_example* output = &retval;
-			if (buf.size() != sizeof(struct uniontype::union_example)) {
+		static struct UnionType::Union_Example fromBuffer(std::vector<char> const& buf) {
+			struct UnionType::Union_Example retval;
+			const struct UnionType::Union_Example_wire* input = (const struct UnionType::Union_Example_wire*) buf.data();
+			struct UnionType::Union_Example* output = &retval;
+			if (buf.size() != sizeof(struct UnionType::Union_Example)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for uniontype::union_example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct uniontype::union_example));
+					std::string("pirate::Serialization::fromBuffer() for UnionType::Union_Example type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct UnionType::Union_Example));
 				throw std::length_error(error_msg);
 			}
 			uint16_t tag;
@@ -112,3 +115,5 @@ namespace pirate {
 		}
 	};
 }
+
+#endif // _UNIONTYPE_IDL_CODEGEN_H

@@ -23,6 +23,7 @@ option(RESOURCE_DEMOS "Enable compilation of resource and pal demos" OFF)
 option(GAPS_BENCH "Enable compilation of GAPS benchmark applications" OFF)
 option(PIRATE_LAUNCHER "Enable the PIRATE launcher" ON)
 option(PIRATE_GETOPT "Enable PIRATE getopt library" ON)
+option(OBJECT_MODEL "Enable object model exploration" OFF)
 option(BUILD_ALL "Enable PIRATE_SHMEM_FEATURE, PIRATE_UNIT_TEST, GAPS_DEMOS, and GAPS_BENCH" OFF)
 
 if(BUILD_ALL)
@@ -36,6 +37,7 @@ if(BUILD_ALL)
     SET(PNT_DEMO ON BOOL)
     SET(RESOURCE_DEMOS ON BOOL)
     SET(GAPS_BENCH ON BOOL)
+    SET(OBJECT_MODEL ON BOOL)
 endif(BUILD_ALL)
 
 # Download googletest library, a la
@@ -62,7 +64,11 @@ if(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
 endif(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
 
 # Common build options
-set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(PIRATE_C_FLAGS /W3 /MT)
+else()
+    set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
@@ -111,4 +117,3 @@ endif(PIRATE_GETOPT)
 if (GAPS_DEMOS OR CHANNEL_DEMO OR PNT_DEMO OR RESOURCE_DEMOS)
     add_subdirectory(demos)
 endif(GAPS_DEMOS OR CHANNEL_DEMO OR PNT_DEMO OR RESOURCE_DEMOS)
-

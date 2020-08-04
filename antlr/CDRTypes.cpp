@@ -169,11 +169,13 @@ Declarator::~Declarator() {
 }
 
 void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+    std::string funcname = identifier;
+    transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     switch (functionType) {
         case CDRFunc::SERIALIZE:
             ostream << "void" << " ";
             ostream << "encode";
-            ostream << "_" << identifier << "(";
+            ostream << "_" << funcname << "(";
             ostream << "struct" << " " << identifier << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "_wire" << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;
@@ -181,7 +183,7 @@ void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::stri
         case CDRFunc::DESERIALIZE:
             ostream << "void" << " ";
             ostream << "decode";
-            ostream << "_" << identifier << "(";
+            ostream << "_" << funcname << "(";
             ostream << "struct" << " " << identifier << "_wire" << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;

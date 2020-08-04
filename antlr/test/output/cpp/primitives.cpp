@@ -1,3 +1,6 @@
+#ifndef _PRIMITIVES_IDL_CODEGEN_H
+#define _PRIMITIVES_IDL_CODEGEN_H
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -6,9 +9,9 @@
 
 #include <endian.h>
 
-namespace primitives {
+namespace Primitives {
 
-	struct primitives {
+	struct Primitives {
 		float float_val __attribute__((aligned(4)));
 		double double_val __attribute__((aligned(8)));
 		int16_t short_val __attribute__((aligned(2)));
@@ -30,7 +33,7 @@ namespace primitives {
 		uint8_t uint8_val __attribute__((aligned(1)));
 	};
 
-	struct primitives_wire {
+	struct Primitives_wire {
 		unsigned char float_val[4] __attribute__((aligned(4)));
 		unsigned char double_val[8] __attribute__((aligned(8)));
 		unsigned char short_val[2] __attribute__((aligned(2)));
@@ -52,7 +55,7 @@ namespace primitives {
 		unsigned char uint8_val[1] __attribute__((aligned(1)));
 	};
 
-	static_assert(sizeof(struct primitives) == sizeof(struct primitives_wire), "size of struct primitives not equal to wire protocol struct");
+	static_assert(sizeof(struct Primitives) == sizeof(struct Primitives_wire), "size of struct Primitives not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -66,11 +69,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct primitives::primitives> {
-		static void toBuffer(struct primitives::primitives const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct primitives::primitives));
-			struct primitives::primitives_wire* output = (struct primitives::primitives_wire*) buf.data();
-			const struct primitives::primitives* input = &val;
+	struct Serialization<struct Primitives::Primitives> {
+		static void toBuffer(struct Primitives::Primitives const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Primitives::Primitives));
+			struct Primitives::Primitives_wire* output = (struct Primitives::Primitives_wire*) buf.data();
+			const struct Primitives::Primitives* input = &val;
 			uint32_t field_float_val;
 			uint64_t field_double_val;
 			uint16_t field_short_val;
@@ -144,14 +147,14 @@ namespace pirate {
 			memcpy(&output->uint8_val, &field_uint8_val, sizeof(uint8_t));
 		}
 
-		static struct primitives::primitives fromBuffer(std::vector<char> const& buf) {
-			struct primitives::primitives retval;
-			const struct primitives::primitives_wire* input = (const struct primitives::primitives_wire*) buf.data();
-			struct primitives::primitives* output = &retval;
-			if (buf.size() != sizeof(struct primitives::primitives)) {
+		static struct Primitives::Primitives fromBuffer(std::vector<char> const& buf) {
+			struct Primitives::Primitives retval;
+			const struct Primitives::Primitives_wire* input = (const struct Primitives::Primitives_wire*) buf.data();
+			struct Primitives::Primitives* output = &retval;
+			if (buf.size() != sizeof(struct Primitives::Primitives)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for primitives::primitives type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct primitives::primitives));
+					std::string("pirate::Serialization::fromBuffer() for Primitives::Primitives type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Primitives::Primitives));
 				throw std::length_error(error_msg);
 			}
 			uint32_t field_float_val;
@@ -229,3 +232,5 @@ namespace pirate {
 		}
 	};
 }
+
+#endif // _PRIMITIVES_IDL_CODEGEN_H

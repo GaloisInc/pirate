@@ -30,6 +30,7 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     pirate_channel_param_t expParam, rdParam;
     char opt[256];
     const char *name = "mercury";
+    const uint32_t mtu = 42;
     const uint32_t level = 1;
     const uint32_t src_id = 2;
     const uint32_t dst_id = 3;
@@ -66,11 +67,22 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.mtu = 0;
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
 
+    snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,mtu=%u", name, level, src_id, dst_id, mtu);
+    rv = pirate_parse_channel_param(opt, &rdParam);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(0, rv);
+    expParam.channel.mercury.session.level = level;
+    expParam.channel.mercury.session.source_id = src_id;
+    expParam.channel.mercury.session.destination_id = dst_id;
+    expParam.channel.mercury.mtu = mtu;
+    EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
+
     snprintf(opt, sizeof(opt) - 1, "%s,%u,%u,%u,%u", name, level, src_id,
             dst_id, msg_ids[0]);
     rv = pirate_parse_channel_param(opt, &rdParam);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(0, rv);
+    expParam.channel.mercury.mtu = 0;
     expParam.channel.mercury.session.message_count = 1;
     expParam.channel.mercury.session.messages[0] = msg_ids[0];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
@@ -92,6 +104,31 @@ TEST(ChannelMercuryTest, ConfigurationParser) {
     expParam.channel.mercury.session.message_count = 3;
     expParam.channel.mercury.session.messages[2] = msg_ids[2];
     EXPECT_TRUE(0 == std::memcmp(&expParam, &rdParam, sizeof(rdParam)));
+}
+
+TEST(ChannelMercuryTest, UnparseChannelParam)
+{
+    char *output;
+    int rv;
+    pirate_channel_param_t param;
+
+    rv = pirate_parse_channel_param("mercury,0,1,2,3", &param);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, errno);
+
+    output = (char*) calloc(16, sizeof(char));
+    rv = pirate_unparse_channel_param(&param, output, 16);
+    ASSERT_EQ(15, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("mercury,0,1,2,3", output);
+    free(output);
+
+    output = (char*) calloc(4, sizeof(char));
+    rv = pirate_unparse_channel_param(&param, output, 4);
+    ASSERT_EQ(15, rv);
+    ASSERT_EQ(0, errno);
+    ASSERT_STREQ("mer", output);
+    free(output);
 }
 
 TEST(ChannelMercuryTest, DefaultSession) {
