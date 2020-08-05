@@ -52,6 +52,7 @@ typedef int pirate_atomic_int;
 #include "serial.h"
 #include "mercury.h"
 #include "ge_eth.h"
+#include "multiplex.h"
 #include "pirate_common.h"
 #include "channel_funcs.h"
 
@@ -69,6 +70,7 @@ typedef union {
     serial_ctx         serial;
     mercury_ctx        mercury;
     ge_eth_ctx         ge_eth;
+    multiplex_ctx      multiplex;
 } pirate_channel_ctx_t;
 
 typedef struct {
@@ -100,7 +102,8 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_UIO_CHANNEL_FUNCS,
     PIRATE_SERIAL_CHANNEL_FUNCS,
     PIRATE_MERCURY_CHANNEL_FUNCS,
-    PIRATE_GE_ETH_CHANNEL_FUNCS
+    PIRATE_GE_ETH_CHANNEL_FUNCS,
+    PIRATE_MULTIPLEX_CHANNEL_FUNCS
 };
 
 int pirate_close_channel(pirate_channel_t *channel);
@@ -272,6 +275,8 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         param->channel_type = MERCURY;
     } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
         param->channel_type = GE_ETH;
+    } else if (strncmp("ge_eth", opt, strlen("multiplex")) == 0) {
+        param->channel_type = MULTIPLEX;
     }
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {

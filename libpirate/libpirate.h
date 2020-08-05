@@ -130,6 +130,8 @@ typedef enum {
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
 
+    MULTIPLEX,
+
    // Number of GAPS channel types
     PIRATE_CHANNEL_TYPE_COUNT
 } channel_enum_t;
@@ -252,6 +254,11 @@ typedef struct {
     uint32_t mtu;
 } pirate_ge_eth_param_t;
 
+#define PIRATE_MULTIPLEX_NUM_CHANNELS 16
+typedef struct {
+    char unused;
+} pirate_multiplex_param_t;
+
 typedef struct {
     channel_enum_t channel_type;
     uint8_t listener;
@@ -272,6 +279,7 @@ typedef struct {
         pirate_serial_param_t           serial;
         pirate_mercury_param_t          mercury;
         pirate_ge_eth_param_t           ge_eth;
+        pirate_multiplex_param_t        multiplex;
     } channel;
 } pirate_channel_param_t;
 
@@ -416,6 +424,8 @@ int pirate_open_parse(const char *param, int flags);
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
+
+int pirate_multiplex_add(int multiplex_gd, int gd);
 
 // Returns 1 if the channel type supports the
 // pirate_pipe_param() and pirate_pipe_parse()
