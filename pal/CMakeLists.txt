@@ -40,6 +40,9 @@ install(DIRECTORY ${CYAML_INSTALL_DIR}/lib/ DESTINATION lib
     USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "libcyaml.so*")
 
 if(PAL_UNIT_TEST)
+    find_package(GTest REQUIRED)
+    include_directories(${GTEST_INCLUDE_DIR})
+
     add_executable(pal_unit_test
         test/unit/main.cpp test/unit/yaml.cpp test/unit/handlers.cpp
         test/unit/pal.cpp test/unit/envelope.cpp
@@ -47,9 +50,8 @@ if(PAL_UNIT_TEST)
         lib/pal/pal.c lib/pal/envelope.c)
     target_link_libraries(pal_unit_test
         ${GTEST_LIBRARY} libcyaml_shared pirate)
-    message("<><><> GTEST_INCLUDE_DIR = ${GTEST_INCLUDE_DIR}")
     target_include_directories(pal_unit_test PRIVATE
-        ${GTEST_INCLUDE_DIR} ${CYAML_INSTALL_DIR}/include include src)
+        ${CYAML_INSTALL_DIR}/include include src)
     target_compile_options(pal_unit_test PRIVATE
         SHELL:-Wall SHELL:-Werror)
     target_link_options(pal_unit_test PRIVATE
