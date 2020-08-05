@@ -93,6 +93,10 @@ jobs:
         cd build/libpirate
         ./gaps_channels_test
         make valgrind valgrind-cxx
+    - name: pal tests
+      run: |
+        cd build/pal
+        ./pal_unit_test
     - name: build benchmarks
       run: |
         cd build
