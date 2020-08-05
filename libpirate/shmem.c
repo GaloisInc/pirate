@@ -456,7 +456,8 @@ static uint32_t shmem_buffer_do_write(const pirate_shmem_param_t *param, shmem_b
     return writer;
 }
 
-ssize_t shmem_buffer_write_mtu(const void *_param) {
+ssize_t shmem_buffer_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

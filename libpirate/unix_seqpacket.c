@@ -254,7 +254,8 @@ ssize_t pirate_unix_seqpacket_read(const void *_param, void *_ctx, void *buf, si
     return recv(ctx->sock, buf, count, 0);
 }
 
-ssize_t pirate_unix_seqpacket_write_mtu(const void *_param) {
+ssize_t pirate_unix_seqpacket_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_unix_seqpacket_param_t *param = (const pirate_unix_seqpacket_param_t *)_param;
     return param->mtu;
 }
@@ -262,7 +263,7 @@ ssize_t pirate_unix_seqpacket_write_mtu(const void *_param) {
 ssize_t pirate_unix_seqpacket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_unix_seqpacket_param_t *param = (const pirate_unix_seqpacket_param_t *)_param;
     unix_seqpacket_ctx *ctx = (unix_seqpacket_ctx *)_ctx;
-    size_t write_mtu = pirate_unix_seqpacket_write_mtu(param);
+    size_t write_mtu = pirate_unix_seqpacket_write_mtu(param, ctx);
 
     if (ctx->sock <= 0) {
         errno = EBADF;

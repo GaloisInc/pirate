@@ -281,7 +281,8 @@ ssize_t pirate_tcp_socket_read(const void *_param, void *_ctx, void *buf, size_t
     return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_tcp_socket_write_mtu(const void *_param) {
+ssize_t pirate_tcp_socket_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_tcp_socket_param_t *param = (const pirate_tcp_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -296,6 +297,6 @@ ssize_t pirate_tcp_socket_write_mtu(const void *_param) {
 
 ssize_t pirate_tcp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_tcp_socket_param_t *param = (const pirate_tcp_socket_param_t *)_param;
-    ssize_t mtu = pirate_tcp_socket_write_mtu(param);
+    ssize_t mtu = pirate_tcp_socket_write_mtu(param, _ctx);
     return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }

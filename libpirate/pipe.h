@@ -32,7 +32,7 @@ int pirate_pipe_open(void *_param, void *_ctx);
 int pirate_pipe_close(void *_ctx);
 ssize_t pirate_pipe_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_pipe_write(const void *_param, void *_ctx, const void *buf, size_t count);
-ssize_t pirate_pipe_write_mtu(const void *_param);
+ssize_t pirate_pipe_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_PIPE_CHANNEL_FUNCS { pirate_pipe_parse_param, pirate_pipe_get_channel_description, pirate_pipe_open, pirate_pipe_close, pirate_pipe_read, pirate_pipe_write, pirate_pipe_write_mtu }
 

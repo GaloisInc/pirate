@@ -82,15 +82,36 @@ ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t 
     return 0;
 }
 
-ssize_t pirate_multiplex_write_mtu(const void *_param) {
-    return 0;
+ssize_t pirate_multiplex_write_mtu(const void *_param, void *_ctx) {
+    (void) _param;
+    multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
+    ssize_t rv = 0;
+    if (ctx == NULL) {
+        errno = ENOSYS;
+        return -1;
+    }
+    for (int i = 0; i < ctx->count; i++) {
+        ssize_t local = pirate_write_mtu(ctx->gds[i]);
+        if (local < 0) {
+            return local;
+        } else if (rv == 0) {
+            rv = local;
+        } else if ((local > 0) && (local < rv)) {
+            rv = local;
+        }
+    }
+    return rv;
 }
 
 ssize_t pirate_multiplex_write(const void *_param, void *_ctx, const void *buf, size_t count) {
-    (void) _param;
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
+    size_t mtu = pirate_multiplex_write_mtu(_param, ctx);
     if (!ctx->count) {
         errno = ENXIO;
+        return -1;
+    }
+    if ((mtu > 0) && (count > mtu)) {
+        errno = EMSGSIZE;
         return -1;
     }
     for (int i = 0; i < ctx->count; i++) {

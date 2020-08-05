@@ -40,6 +40,7 @@ typedef int pirate_atomic_int;
 #endif
 
 #include "libpirate.h"
+#include "libpirate_internal.h"
 #include "device.h"
 #include "pipe.h"
 #include "unix_socket.h"
@@ -392,7 +393,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    mtu = pirate_write_mtu(param);
+    mtu = pirate_write_mtu_param_quiet(param);
     if (mtu < 0) {
         return -1;
     }
@@ -517,7 +518,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    mtu = pirate_write_mtu(param);
+    mtu = pirate_write_mtu_param_quiet(param);
     if (mtu < 0) {
         return -1;
     }
@@ -735,7 +736,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return rv;
 }
 
-ssize_t pirate_write_mtu(const pirate_channel_param_t *param) {
+ssize_t pirate_write_mtu_param(const pirate_channel_param_t *param) {
     pirate_write_mtu_t write_mtu_func;
     if (pirate_channel_type_valid(param->channel_type) != 0) {
         return -1;
@@ -748,5 +749,39 @@ ssize_t pirate_write_mtu(const pirate_channel_param_t *param) {
         return -1;
     }
 
-    return write_mtu_func(&param->channel);
+    return write_mtu_func(&param->channel, NULL);
+}
+
+ssize_t pirate_write_mtu_param_quiet(const pirate_channel_param_t *param) {
+    ssize_t rv = pirate_write_mtu_param(param);
+    if ((rv < 0) && (errno == ENOSYS)) {
+        errno = 0;
+        rv = 0;
+    }
+    return rv;
+}
+
+ssize_t pirate_write_mtu(int gd) {
+    pirate_channel_t *channel = NULL;
+    pirate_channel_param_t *param = NULL;
+    pirate_write_mtu_t write_mtu_func;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    param = &channel->param;
+
+    if (pirate_channel_type_valid(param->channel_type) != 0) {
+        return -1;
+    }
+
+    write_mtu_func = gaps_channel_funcs[param->channel_type].write_mtu;
+
+    if (write_mtu_func == NULL) {
+        errno = ESOCKTNOSUPPORT;
+        return -1;
+    }
+
+    return write_mtu_func(&param->channel, &channel->ctx);
 }

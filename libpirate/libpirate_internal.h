@@ -22,6 +22,7 @@ extern "C" {
 
 void pirate_reset_gd();
 void pirate_reset_stats();
+ssize_t pirate_write_mtu_param_quiet(const pirate_channel_param_t *param);
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,7 @@ int pirate_mercury_open(void *_param, void *_ctx);
 int pirate_mercury_close(void *_ctx);
 ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, size_t count);
-ssize_t pirate_mercury_write_mtu(const void *_param);
+ssize_t pirate_mercury_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_MERCURY_CHANNEL_FUNCS { pirate_mercury_parse_param, pirate_mercury_get_channel_description, pirate_mercury_open, pirate_mercury_close, pirate_mercury_read, pirate_mercury_write, pirate_mercury_write_mtu }
 

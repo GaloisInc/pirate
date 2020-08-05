@@ -231,7 +231,8 @@ ssize_t pirate_udp_socket_read(const void *_param, void *_ctx, void *buf, size_t
     return recv(ctx->sock, buf, count, 0);
 }
 
-ssize_t pirate_udp_socket_write_mtu(const void *_param) {
+ssize_t pirate_udp_socket_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     pirate_udp_socket_param_t *param = (pirate_udp_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -254,7 +255,7 @@ ssize_t pirate_udp_socket_write(const void *_param, void *_ctx, const void *buf,
     udp_socket_ctx *ctx = (udp_socket_ctx *)_ctx;
     int err;
     ssize_t rv;
-    size_t write_mtu = pirate_udp_socket_write_mtu(param);
+    size_t write_mtu = pirate_udp_socket_write_mtu(param, ctx);
 
     if (ctx->sock <= 0) {
         errno = EBADF;

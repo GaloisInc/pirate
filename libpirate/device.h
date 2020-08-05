@@ -31,7 +31,7 @@ int pirate_device_open(void *_param, void *_ctx);
 int pirate_device_close(void *_ctx);
 ssize_t pirate_device_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_device_write(const void *_param, void *_ctx, const void *buf, size_t count);
-ssize_t pirate_device_write_mtu(const void *_param);
+ssize_t pirate_device_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_DEVICE_CHANNEL_FUNCS { pirate_device_parse_param, pirate_device_get_channel_description, pirate_device_open, pirate_device_close, pirate_device_read, pirate_device_write, pirate_device_write_mtu }
 

@@ -510,6 +510,19 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 
 ssize_t pirate_write(int gd, const void *buf, size_t count);
 
+// pirate_write_mtu_param() returns the maximum data length
+// that can be send in a call to pirate_write() for
+// the given channel parameters. A value of 0 indicates no maximum length.
+
+// If the channel type cannot compute the mtu as a function
+// of the channel parameters, then errno is set to ENOSYS.
+// The MULTIPLEX channel type returns ENOSYS. For these channel
+// types use pirate_write_mtu() to determine the mtu size.
+//
+// On success, the mtu is returned. On error,
+// -1 is returned, and errno is set appropriately.
+
+ssize_t pirate_write_mtu_param(const pirate_channel_param_t *param);
 
 // pirate_write_mtu() returns the maximum data length
 // that can be send in a call to pirate_write() for
@@ -518,7 +531,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // On success, the mtu is returned. On error,
 // -1 is returned, and errno is set appropriately.
 
-ssize_t pirate_write_mtu(const pirate_channel_param_t *param);
+ssize_t pirate_write_mtu(int gd);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //

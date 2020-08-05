@@ -32,7 +32,7 @@ int pirate_multiplex_open(void *_param, void *_ctx);
 int pirate_multiplex_close(void *_ctx);
 ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_multiplex_write(const void *_param, void *_ctx, const void *buf, size_t count);
-ssize_t pirate_multiplex_write_mtu(const void *_param);
+ssize_t pirate_multiplex_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_MULTIPLEX_CHANNEL_FUNCS { pirate_multiplex_parse_param, pirate_multiplex_get_channel_description, pirate_multiplex_open, pirate_multiplex_close, pirate_multiplex_read, pirate_multiplex_write, pirate_multiplex_write_mtu }
 

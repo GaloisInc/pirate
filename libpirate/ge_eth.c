@@ -314,7 +314,8 @@ ssize_t pirate_ge_eth_read(const void *_param, void *_ctx, void *buf, size_t cou
     return ge_message_unpack(ctx->buf, buf, count, &hdr);
 }
 
-ssize_t pirate_ge_eth_write_mtu(const void *_param) {
+ssize_t pirate_ge_eth_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

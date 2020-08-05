@@ -213,7 +213,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (pirate_write_mtu(param) < 0) {
+    if (pirate_write_mtu_param_quiet(param) < 0) {
         return -1;
     }
 
@@ -393,7 +393,7 @@ SSIZE_T pirate_write(int gd, const void *buf, size_t count) {
     return rv;
 }
 
-SSIZE_T pirate_write_mtu(const pirate_channel_param_t *param) {
+SSIZE_T pirate_write_mtu_param(const pirate_channel_param_t *param) {
     pirate_write_mtu_t write_mtu_func;
     if (pirate_channel_type_valid(param->channel_type) != 0) {
         return -1;
@@ -407,4 +407,8 @@ SSIZE_T pirate_write_mtu(const pirate_channel_param_t *param) {
     }
 
     return write_mtu_func(&param->channel);
+}
+
+SSIZE_T pirate_write_mtu_param_quiet(const pirate_channel_param_t *param) {
+    return pirate_write_mtu_param(param);
 }

@@ -22,7 +22,7 @@ typedef int (*pirate_open_t)(void *_param, void *ctx);
 typedef int (*pirate_close_t)(void *_ctx);
 typedef ssize_t (*pirate_read_t)(const void *_param, void *_ctx, void *buf, size_t count);
 typedef ssize_t (*pirate_write_t)(const void *_param, void *_ctx, const void *buf, size_t count);
-typedef ssize_t (*pirate_write_mtu_t)(const void *_param);
+typedef ssize_t (*pirate_write_mtu_t)(const void *_param, void *_ctx);
 
 typedef struct {
     pirate_parse_param_t parse_param;

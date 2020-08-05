@@ -254,7 +254,8 @@ ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, size_t cou
     return count;
 }
 
-ssize_t pirate_serial_write_mtu(const void *_param) {
+ssize_t pirate_serial_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_serial_param_t *param = (const pirate_serial_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -273,7 +274,7 @@ ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *buf, siz
     pirate_header_t header;
     header.count = htonl(count);
     ssize_t rv;
-    size_t mtu = pirate_serial_write_mtu(param);
+    size_t mtu = pirate_serial_write_mtu(param, ctx);
 
     if ((mtu > 0) && (count > mtu)) {
         errno = EMSGSIZE;

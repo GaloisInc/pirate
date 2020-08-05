@@ -30,7 +30,7 @@ int pirate_tcp_socket_open(void *_param, void *_ctx);
 int pirate_tcp_socket_close(void *_ctx);
 ssize_t pirate_tcp_socket_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_tcp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count);
-ssize_t pirate_tcp_socket_write_mtu(const void *_param);
+ssize_t pirate_tcp_socket_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_TCP_SOCKET_CHANNEL_FUNCS { pirate_tcp_socket_parse_param, pirate_tcp_socket_get_channel_description, pirate_tcp_socket_open, pirate_tcp_socket_close, pirate_tcp_socket_read, pirate_tcp_socket_write, pirate_tcp_socket_write_mtu }
 
