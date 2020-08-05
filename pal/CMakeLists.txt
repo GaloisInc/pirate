@@ -47,6 +47,7 @@ if(PAL_UNIT_TEST)
         lib/pal/pal.c lib/pal/envelope.c)
     target_link_libraries(pal_unit_test
         ${GTEST_LIBRARY} libcyaml_shared pirate)
+    message("<><><> GTEST_INCLUDE_DIR = ${GTEST_INCLUDE_DIR}")
     target_include_directories(pal_unit_test PRIVATE
         ${GTEST_INCLUDE_DIR} ${CYAML_INSTALL_DIR}/include include src)
     target_compile_options(pal_unit_test PRIVATE

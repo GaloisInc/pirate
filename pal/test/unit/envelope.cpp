@@ -1,7 +1,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "pal/pal.h"
 #include "pal/envelope.h"

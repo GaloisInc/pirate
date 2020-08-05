@@ -1,6 +1,6 @@
 #include <sys/types.h>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 extern "C" {
 #include "yaml.h"

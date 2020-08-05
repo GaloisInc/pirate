@@ -1,7 +1,7 @@
 #include <fcntl.h>
 #include <cstring>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 extern "C" {
 #include "handlers.h"
