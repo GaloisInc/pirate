@@ -69,7 +69,7 @@ jobs:
         cd build-pal
         CFLAGS="-I$GITHUB_WORKSPACE/dist/libpirate/include" \
           LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
-          cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal -DPAL_UNIT_TEST ../pal
+          cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal -DPAL_UNIT_TEST=ON ../pal
         make install
     - name: Make launcher artifact
       uses: actions/upload-artifact@v1
