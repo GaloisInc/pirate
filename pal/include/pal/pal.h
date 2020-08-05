@@ -30,20 +30,20 @@ typedef bool    pal_boolean    __attribute__((pirate_resource_type("boolean")));
 typedef int     pal_file       __attribute__((pirate_resource_type("file")));
 typedef int     pirate_channel __attribute__((pirate_resource_type("pirate_channel")));
 
-#if defined(NO_DECLARE_DUMMIES) && !defined(_DUMMIES_DECLARED)
+#ifndef _DUMMIES_DECLARED
 #define _DUMMIES_DECLARED 1
-struct pirate_resource _dummy_pirate_res_string[0]
+static struct pirate_resource _dummy_pirate_res_string[0]
     __attribute__((used, section(".pirate.res.string")));
-struct pirate_resource _dummy_pirate_res_integer[0]
+static struct pirate_resource _dummy_pirate_res_integer[0]
     __attribute__((used, section(".pirate.res.integer")));
-struct pirate_resource _dummy_pirate_res_boolean[0]
+static struct pirate_resource _dummy_pirate_res_boolean[0]
     __attribute__((used, section(".pirate.res.boolean")));
-struct pirate_resource _dummy_pirate_res_file[0]
+static struct pirate_resource _dummy_pirate_res_file[0]
     __attribute__((used, section(".pirate.res.file")));
-struct pirate_resource _dummy_pirate_res_pirate_channel[0]
+static struct pirate_resource _dummy_pirate_res_pirate_channel[0]
     __attribute__((used, section(".pirate.res.pirate_channel")));
 // ^ FIXME: Remove this once it's taken care of in clang
-#endif // NO_DECLARE_DUMMIES
+#endif // _DUMMIES_DECLARED
 
 #endif // __GAPS__
 
