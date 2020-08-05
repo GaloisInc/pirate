@@ -61,6 +61,7 @@ if(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
     add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
         ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
         EXCLUDE_FROM_ALL)
+    enable_testing()
 endif(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
 
 # Common build options

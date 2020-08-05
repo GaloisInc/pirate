@@ -15,7 +15,7 @@ static void run_handler(pal_env_t *env, const struct resource *rsc)
     resource_handler_t *handle;
 
     ASSERT_NE(handle = lookup_handler(rsc->r_type), nullptr);
-    ASSERT_EQ(handle(env, rsc), PAL_ERR_SUCCESS);
+    ASSERT_EQ(handle(env, rsc), 0);
 }
 
 static char *get_string_iter_data(pal_env_iterator_t iter)
@@ -63,6 +63,23 @@ TEST(handlers, cstring_resource_handler)
     pal_free_env(&env);
 }
 
+TEST(handlers, cstring_resource_handler_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_string";
+    rsc.r_type = (char *)"string";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
+
+    pal_free_env(&env);
+}
+
 TEST(handlers, int64_resource_handler)
 {
     int64_t value = 9001;
@@ -88,6 +105,23 @@ TEST(handlers, int64_resource_handler)
         EXPECT_EQ(*(int64_t *)pal_env_iterator_data(start), value);
         ASSERT_EQ(pal_env_iterator_next(start), end);
     }
+
+    pal_free_env(&env);
+}
+
+TEST(handlers, int64_resource_handler_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_integer";
+    rsc.r_type = (char *)"integer";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -121,6 +155,23 @@ TEST(handlers, bool_resource_handler)
     pal_free_env(&env);
 }
 
+TEST(handlers, bool_resource_handler_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_boolean";
+    rsc.r_type = (char *)"boolean";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
+
+    pal_free_env(&env);
+}
+
 TEST(handlers, file_resource_handler_required_args)
 {
     pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
@@ -132,13 +183,29 @@ TEST(handlers, file_resource_handler_required_args)
         rsc.r_ids = nullptr;
         rsc.r_ids_count = 0;
         rsc.r_contents.cc_file_path = (char *)"/dev/null";
-        rsc.r_contents.cc_file_flags = nullptr;
 
         run_handler(&env, &rsc);
     }
 
     ASSERT_EQ(env.fds_count, 1);
     EXPECT_NE(fcntl(env.fds[0], F_GETFL), -1);
+
+    pal_free_env(&env);
+}
+
+TEST(handlers, file_resource_handler_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_file";
+    rsc.r_type = (char *)"file";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -162,6 +229,23 @@ TEST(handlers, file_resource_handler_optional_args)
 
     ASSERT_EQ(env.fds_count, 1);
     EXPECT_NE(fcntl(env.fds[0], F_GETFL), -1);
+
+    pal_free_env(&env);
+}
+
+TEST(handlers, pirate_channel_resource_handler_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -190,6 +274,26 @@ TEST(handlers, pirate_channel_resource_handler_device_required_args)
         EXPECT_STREQ(get_string_iter_data(start), "device,/foo/bar");
         ASSERT_EQ(pal_env_iterator_next(start), end);
     }
+
+    pal_free_env(&env);
+}
+
+// FIXME: `pirate_unparse_channel_param` should probably fail here, but
+// returns "device,"
+TEST(handlers, DISABLED_pirate_channel_resource_handler_device_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = DEVICE;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -253,6 +357,26 @@ TEST(handlers, pirate_channel_resource_handler_pipe_required_args)
     pal_free_env(&env);
 }
 
+// FIXME: `pirate_unparse_channel_param` should probably fail here, but
+// returns "pipe,"
+TEST(handlers, DISABLED_pirate_channel_resource_handler_pipe_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = PIPE;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
+
+    pal_free_env(&env);
+}
+
 TEST(handlers, pirate_channel_resource_handler_pipe_optional_args)
 {
     pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
@@ -308,6 +432,26 @@ TEST(handlers, pirate_channel_resource_handler_unix_socket_required_args)
         ASSERT_STREQ(get_string_iter_data(start), "unix_socket,/foo/bar");
         ASSERT_EQ(pal_env_iterator_next(start), end);
     }
+
+    pal_free_env(&env);
+}
+
+// FIXME: `pirate_unparse_channel_param` should probably fail here, but
+// returns "unix_socket,"
+TEST(handlers, DISABLED_pirate_channel_resource_handler_unix_socket_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = UNIX_SOCKET;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -373,6 +517,26 @@ TEST(handlers, pirate_channel_resource_handler_tcp_socket_required_args)
     pal_free_env(&env);
 }
 
+// FIXME: `pirate_unparse_channel_param` should probably fail here, but
+// returns "tcp_socket,,0"
+TEST(handlers, DISABLED_pirate_channel_resource_handler_tcp_socket_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = TCP_SOCKET;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
+
+    pal_free_env(&env);
+}
+
 TEST(handlers, pirate_channel_resource_handler_tcp_socket_optional_args)
 {
     pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
@@ -431,6 +595,26 @@ TEST(handlers, pirate_channel_resource_handler_udp_socket_required_args)
         EXPECT_STREQ(get_string_iter_data(start), "udp_socket,10.0.0.1,9004");
         ASSERT_EQ(pal_env_iterator_next(start), end);
     }
+
+    pal_free_env(&env);
+}
+
+// FIXME: `pirate_unparse_channel_param` should probably fail here, but
+// returns "udp_socket,,0"
+TEST(handlers, DISABLED_pirate_channel_resource_handler_udp_socket_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = UDP_SOCKET;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
 
     pal_free_env(&env);
 }
@@ -653,7 +837,7 @@ TEST(handlers, DISABLED_pirate_channel_resource_handler_uio_optional_args)
     pal_free_env(&env);
 }
 
-TEST(handlers, pirate_channel_resource_handler_serial_optional_args)
+TEST(handlers, pirate_channel_resource_handler_serial_required_args)
 {
     pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
 
@@ -682,7 +866,25 @@ TEST(handlers, pirate_channel_resource_handler_serial_optional_args)
     pal_free_env(&env);
 }
 
-TEST(handlers, pirate_channel_resource_handler_serial_required_args)
+TEST(handlers, pirate_channel_resource_handler_udp_socket_missing_args)
+{
+    struct resource rsc = {0};
+    rsc.r_name = (char *)"my_channel";
+    rsc.r_type = (char *)"pirate_channel";
+    rsc.r_ids = nullptr;
+    rsc.r_ids_count = 0;
+    rsc.r_contents.cc_channel_type = SERIAL;
+
+    pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
+    resource_handler_t *handle;
+
+    ASSERT_NE(handle = lookup_handler(rsc.r_type), nullptr);
+    ASSERT_EQ(handle(&env, &rsc), -1);
+
+    pal_free_env(&env);
+}
+
+TEST(handlers, pirate_channel_resource_handler_serial_optional_args)
 {
     pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
 

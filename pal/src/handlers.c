@@ -210,8 +210,7 @@ int pirate_channel_resource_handler(pal_env_t *env, const struct resource *rsc)
                     = rsc->r_contents.cc_message_id;
             break;
         default:
-            fatal("Pirate channel %s has unknown channel type: %d",
-                    rsc->r_name, params.channel_type);
+            return -1;
     }
 
     size_t pstr_len = pirate_unparse_channel_param(&params, NULL, 0);

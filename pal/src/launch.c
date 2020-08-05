@@ -106,8 +106,6 @@ static int set_cloexec(int fd)
     return 0;
 }
 
-#define PERROR(_op) error("Failed to %s: %s", _op, strerror(errno))
-
 int launch(struct app *app, char *cfg_path,
         struct enclave *enc, char **envp)
 {
@@ -121,7 +119,7 @@ int launch(struct app *app, char *cfg_path,
 
     // Open pipe to child
     if(socketpair(AF_LOCAL, SOCK_STREAM, 0, fds)) {
-        PERROR("create pipe");
+        perror("Failed to create pipe");
         return -1;
     }
     app->pipe_fd = fds[PARENT_END];
@@ -137,9 +135,9 @@ int launch(struct app *app, char *cfg_path,
     app->name = enc->enc_name;
 
     if(set_cloexec(fds[PARENT_END]))
-        PERROR("set FD_CLOEXEC on pipe");
+        perror("Failed to set FD_CLOEXEC on pipe");
     else if(posix_spawn(&app->pid, path, NULL, NULL, new_argv, new_envp))
-        PERROR("spawn process");
+        perror("Failed to spawn process");
 
     close(fds[CHILD_END]);
     return 0;
