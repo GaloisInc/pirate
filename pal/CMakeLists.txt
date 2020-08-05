@@ -46,9 +46,9 @@ if(PAL_UNIT_TEST)
         src/yaml.c src/log.c src/handlers.c
         lib/pal/pal.c lib/pal/envelope.c)
     target_link_libraries(pal_unit_test
-        gtest libcyaml_shared pirate)
+        ${GTEST_LIBRARY} libcyaml_shared pirate)
     target_include_directories(pal_unit_test PRIVATE
-        ${CYAML_INSTALL_DIR}/include include src)
+        ${GTEST_INCLUDE_DIR} ${CYAML_INSTALL_DIR}/include include src)
     target_compile_options(pal_unit_test PRIVATE
         SHELL:-Wall SHELL:-Werror)
     target_link_options(pal_unit_test PRIVATE

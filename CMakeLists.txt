@@ -42,19 +42,18 @@ endif(BUILD_ALL)
 
 # Download googletest library, a la
 # https://github.com/google/googletest/blob/master/googletest/README.md
-
 if(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
     # Download and unpack googletest at configure time
     configure_file(googletest.CMakeLists.txt.in googletest-download/CMakeLists.txt)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
     if(result)
         message(FATAL_ERROR "CMake step for googletest failed: ${result}")
     endif(result)
     execute_process(COMMAND ${CMAKE_COMMAND} --build .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
     if(result)
         message(FATAL_ERROR "Build step for googletest failed: ${result}")
     endif(result)
@@ -62,6 +61,10 @@ if(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
         ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
         EXCLUDE_FROM_ALL)
     enable_testing()
+
+    set(GTEST_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/googletest-src/googletest/include)
+    set(GTEST_LIBRARY gtest)
+    set(GTEST_MAIN_LIBRARY gtest_main)
 endif(PIRATE_UNIT_TEST OR PAL_UNIT_TEST)
 
 # Common build options
