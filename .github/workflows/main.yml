@@ -69,7 +69,7 @@ jobs:
         cd build-pal
         CFLAGS="-I$GITHUB_WORKSPACE/dist/libpirate/include" \
           LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
-          cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal ../pal
+          cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal -DPAL_UNIT_TEST ../pal
         make install
     - name: Make launcher artifact
       uses: actions/upload-artifact@v1
@@ -95,7 +95,7 @@ jobs:
         make valgrind valgrind-cxx
     - name: pal tests
       run: |
-        cd build/pal
+        cd build-pal
         ./pal_unit_test
     - name: build benchmarks
       run: |
