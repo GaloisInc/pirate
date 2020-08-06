@@ -22,6 +22,7 @@
 #define ATOMIC_INC(PTR) InterlockedExchangeAdd(PTR, 1)
 
 #include "libpirate.h"
+#include "libpirate_internal.h"
 #include "udp_socket.h"
 #include "ge_eth.h"
 #include "pirate_common.h"
