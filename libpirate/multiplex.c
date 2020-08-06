@@ -53,6 +53,22 @@ int pirate_multiplex_close(void *_ctx) {
     return rv;
 }
 
+int pirate_multiplex_multiplex_add(void *_ctx, int gd) {
+    multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
+    if (ctx->count == PIRATE_MULTIPLEX_NUM_CHANNELS) {
+        errno = EMLINK;
+        return -1;
+    }
+    int fd = pirate_get_fd(gd);
+    if (fd < 0) {
+        return -1;
+    }
+    ctx->gds[ctx->count] = gd;
+    ctx->fds[ctx->count] = fd;
+    ctx->count++;
+    return 0;
+}
+
 ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t count) {
     (void) _param;
     struct pollfd fds[PIRATE_MULTIPLEX_NUM_CHANNELS];
@@ -66,6 +82,7 @@ ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t 
     for (int i = 0; i < ctx->count; i++) {
         fds[i].fd = ctx->fds[i];
         fds[i].events = POLLIN;
+        fds[i].revents = 0;
     }
     int rv = poll(fds, ctx->count, timeout);
     if (rv == 0) {
@@ -82,6 +99,11 @@ ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t 
     return 0;
 }
 
+// the write mtu of the multiplex channel is computed
+// from the write mtu of its component channels.
+// If all write mtus are zero then the multiplex write
+// mtu is zero. Otherwise the multiplex write mtu is
+// the smallest component write mtu that is non-zero.
 ssize_t pirate_multiplex_write_mtu(const void *_param, void *_ctx) {
     (void) _param;
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
@@ -90,13 +112,17 @@ ssize_t pirate_multiplex_write_mtu(const void *_param, void *_ctx) {
         errno = ENOSYS;
         return -1;
     }
+    if (!ctx->count) {
+        errno = ENXIO;
+        return -1;
+    }
     for (int i = 0; i < ctx->count; i++) {
         ssize_t local = pirate_write_mtu(ctx->gds[i]);
         if (local < 0) {
             return local;
-        } else if (rv == 0) {
-            rv = local;
-        } else if ((local > 0) && (local < rv)) {
+        } else if (local == 0) {
+            continue;
+        } else if ((rv == 0) || (local < rv)) {
             rv = local;
         }
     }
@@ -116,7 +142,7 @@ ssize_t pirate_multiplex_write(const void *_param, void *_ctx, const void *buf, 
     }
     for (int i = 0; i < ctx->count; i++) {
         int rv = pirate_write(ctx->gds[i], buf, count);
-        if (rv <= 0) {
+        if (rv < 0) {
             return rv;
         }
     }

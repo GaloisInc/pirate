@@ -425,6 +425,14 @@ int pirate_open_parse(const char *param, int flags);
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
+// Adds a gaps channel as a subcomponent of the multiplex
+// gaps channel. multiplex_gd must be a gaps channel
+// of type "multiplex". Both gaps channels must be opened
+// with equal flags argument.
+
+// The return value is a unique gaps descriptor, or -1 if an
+// error occurred (in which case, errno is set appropriately).
+
 int pirate_multiplex_add(int multiplex_gd, int gd);
 
 // Returns 1 if the channel type supports the

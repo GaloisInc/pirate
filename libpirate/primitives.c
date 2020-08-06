@@ -276,7 +276,7 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         param->channel_type = MERCURY;
     } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
         param->channel_type = GE_ETH;
-    } else if (strncmp("ge_eth", opt, strlen("multiplex")) == 0) {
+    } else if (strncmp("multiplex", opt, strlen("multiplex")) == 0) {
         param->channel_type = MULTIPLEX;
     }
 
@@ -485,6 +485,7 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     case UDP_SOCKET:
     case GE_ETH:
     case UNIX_SEQPACKET:
+    case MULTIPLEX:
         return 1;
     case PIPE:
         return ((mtu > 0) && (mtu <= (PIPE_BUF - sizeof(pirate_header_t))));
@@ -605,6 +606,30 @@ int pirate_get_fd(int gd) {
         errno = ENODEV;
         return -1;
     }
+}
+
+int pirate_multiplex_add(int multiplex_gd, int gd) {
+    pirate_channel_t *multiplex_channel, *channel;
+
+    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
+        return -1;
+    }
+
+    if (multiplex_channel->param.channel_type != MULTIPLEX) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    if (multiplex_channel->ctx.common.flags != channel->ctx.common.flags) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return pirate_multiplex_multiplex_add(&multiplex_channel->ctx, gd);
 }
 
 int pirate_close(int gd) {
