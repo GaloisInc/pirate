@@ -29,7 +29,7 @@ extern "C" {
 
 #define PIRATE_LEN_NAME 64
 #define PIRATE_NUM_ENCLAVES 16
-#define PIRATE_NUM_CHANNELS 16
+#define PIRATE_NUM_CHANNELS 64
 #define PIRATE_IOV_MAX 16
 
 #define PIRATE_DEFAULT_MIN_TX 512
@@ -425,6 +425,23 @@ int pirate_open_parse(const char *param, int flags);
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
+typedef enum {
+
+    MULTIPLEX_INVALID,
+
+    MULTIPLEX_EXACTLY_ONE,
+
+    MULTIPLEX_ONE_OR_MORE,
+
+    MULTIPLEX_MANY
+
+} multiplex_enum_t;
+
+// Returns 1 if the channel type supports the
+// O_NONBLOCK flag to pirate_open(). Otherwise return 0.
+
+multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type);
+
 // Adds a gaps channel as a subcomponent of the multiplex
 // gaps channel. multiplex_gd must be a gaps channel
 // of type "multiplex". Both gaps channels must be opened
@@ -434,6 +451,10 @@ int pirate_open_param(pirate_channel_param_t *param, int flags);
 // error occurred (in which case, errno is set appropriately).
 
 int pirate_multiplex_add(int multiplex_gd, int gd);
+
+int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count);
+
+int pirate_multiplex_open_parse(int multiplex_gd, const char *param, int flags, size_t count);
 
 // Returns 1 if the channel type supports the
 // pirate_pipe_param() and pirate_pipe_parse()

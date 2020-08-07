@@ -608,6 +608,30 @@ int pirate_get_fd(int gd) {
     }
 }
 
+multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type) {
+    switch (channel_type) {
+        case DEVICE:
+        case PIPE:
+        case SHMEM:
+        case UDP_SHMEM:
+        case UIO_DEVICE:
+        case SERIAL:
+        case MERCURY:
+            return MULTIPLEX_EXACTLY_ONE;
+        case UNIX_SOCKET:
+        case UNIX_SEQPACKET:
+        case TCP_SOCKET:
+            return MULTIPLEX_ONE_OR_MORE;
+        case UDP_SOCKET:
+        case GE_ETH:
+            return MULTIPLEX_MANY;
+        case INVALID:
+        case MULTIPLEX:
+        default:
+            return MULTIPLEX_INVALID;
+    }
+}
+
 int pirate_multiplex_add(int multiplex_gd, int gd) {
     pirate_channel_t *multiplex_channel, *channel;
 
@@ -630,6 +654,93 @@ int pirate_multiplex_add(int multiplex_gd, int gd) {
     }
 
     return pirate_multiplex_multiplex_add(&multiplex_channel->ctx, gd);
+}
+
+int pirate_multiplex_count(int multiplex_gd) {
+    pirate_channel_t *multiplex_channel;
+
+    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
+        return -1;
+    }
+
+    if (multiplex_channel->param.channel_type != MULTIPLEX) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return multiplex_channel->ctx.multiplex.count;
+}
+
+int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count) {
+    pirate_channel_t *multiplex_channel;
+    int access = flags & O_ACCMODE;
+    multiplex_enum_t multiplex_type;
+
+    if (count == 0) {
+        errno = EINVAL;
+        return -1;
+    } else if ((access == O_WRONLY) && (count > 1)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
+        return -1;
+    }
+
+    if (multiplex_channel->param.channel_type != MULTIPLEX) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (multiplex_channel->ctx.common.flags != flags) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    multiplex_type = pirate_multiplex_channel_type(param->channel_type);
+
+    if (multiplex_type == MULTIPLEX_INVALID) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if ((multiplex_type == MULTIPLEX_EXACTLY_ONE) && (count > 1)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (multiplex_type == MULTIPLEX_MANY) {
+        count = 1;
+    }
+
+    if ((next_gd + count) > PIRATE_NUM_CHANNELS) {
+        errno = EMFILE;
+        return -1;
+    }
+
+    for (size_t i = 0; i < count ; i++) {
+        int gd = pirate_open_param(param, flags);
+        if (gd < 0) {
+            return gd;
+        }
+        int rv = pirate_multiplex_add(multiplex_gd, gd);
+        if (rv < 0) {
+            return rv;
+        }
+    }
+
+    return 0;
+}
+
+int pirate_multiplex_open_parse(int multiplex_gd, const char *param, int flags, size_t count) {
+   pirate_channel_param_t vals;
+
+    if (pirate_parse_channel_param(param, &vals) < 0) {
+        return -1;
+    }
+
+    return pirate_multiplex_open_param(multiplex_gd, &vals, flags, count);
 }
 
 int pirate_close(int gd) {
