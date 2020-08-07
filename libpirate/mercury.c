@@ -309,7 +309,8 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     return ret_sz;
 }
 
-int pirate_mercury_open(void *_param, void *_ctx) {
+int pirate_mercury_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     const uint32_t cfg_len = sizeof(uint32_t);

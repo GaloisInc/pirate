@@ -32,8 +32,9 @@ int pirate_multiplex_get_channel_description(const void *_param, char *desc, int
     return snprintf(desc, len, "multiplex");
 }
 
-int pirate_multiplex_open(void *_param, void *_ctx) {
+int pirate_multiplex_open(void *_param, void *_ctx, int *server_fdp) {
     (void) _param;
+    (void) server_fdp;
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
     ctx->count = 0;
     memset(ctx->fds, 0, sizeof(ctx->fds));

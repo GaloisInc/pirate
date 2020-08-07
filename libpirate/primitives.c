@@ -380,7 +380,7 @@ void pirate_reset_stats() {
     memset(gaps_stats, 0, sizeof(gaps_stats));
 }
 
-static int pirate_open(pirate_channel_t *channel) {
+static int pirate_open(pirate_channel_t *channel, int *server_fdp) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
     int access = channel->ctx.common.flags & O_ACCMODE;
@@ -413,7 +413,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    return open_func(&param->channel, ctx);
+    return open_func(&param->channel, ctx, server_fdp);
 }
 
 static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
@@ -425,8 +425,7 @@ static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access
     }
 }
 
-// gaps descriptors must be opened from smallest to largest
-int pirate_open_param(pirate_channel_param_t *param, int flags) {
+static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, int *server_fdp) {
     pirate_channel_t channel;
     int access = flags & O_ACCMODE;
 
@@ -445,7 +444,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     memcpy(&channel.param, param, sizeof(pirate_channel_param_t));
     channel.ctx.common.flags = flags;
 
-    if (pirate_open(&channel) < 0) {
+    if (pirate_open(&channel, server_fdp) < 0) {
         return -1;
     }
 
@@ -459,6 +458,11 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
     pirate_yield_setup(gd, param, access);
     return gd;
+}
+
+// gaps descriptors must be opened from smallest to largest
+int pirate_open_param(pirate_channel_param_t *param, int flags) {
+    return pirate_open_param_helper(param, flags, NULL);
 }
 
 int pirate_open_parse(const char *param, int flags) {
@@ -674,6 +678,7 @@ int pirate_multiplex_count(int multiplex_gd) {
 int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count) {
     pirate_channel_t *multiplex_channel;
     int access = flags & O_ACCMODE;
+    int server_fd = 0;
     multiplex_enum_t multiplex_type;
 
     if (count == 0) {
@@ -720,7 +725,7 @@ int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param,
     }
 
     for (size_t i = 0; i < count ; i++) {
-        int gd = pirate_open_param(param, flags);
+        int gd = pirate_open_param_helper(param, flags, &server_fd);
         if (gd < 0) {
             return gd;
         }
@@ -728,6 +733,12 @@ int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param,
         if (rv < 0) {
             return rv;
         }
+    }
+
+    if (server_fd != 0) {
+        int err = errno;
+        close(server_fd);
+        errno = err;
     }
 
     return 0;

@@ -132,7 +132,8 @@ static shmem_buffer_t *uio_buffer_init(unsigned short region, int fd) {
     return uio_buffer;
 }
 
-int pirate_internal_uio_open(void *_param, void *_ctx) {
+int pirate_internal_uio_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_uio_param_t *param = (pirate_uio_param_t *)_param;
     uio_ctx *ctx = (uio_ctx *)_ctx;
     int err;

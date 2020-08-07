@@ -286,7 +286,8 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(void *_param, void *_ctx) {
+int udp_shmem_buffer_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_udp_shmem_param_t *param = (pirate_udp_shmem_param_t *)_param;
     udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
     int err;
