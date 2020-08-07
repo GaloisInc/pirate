@@ -76,13 +76,13 @@ Purpose
 --------
 
 Within the context of PIRATE, Program Dependence Graphs will aid in the task
-of *conflict identification*. Conflicts are defined as program points that
-contain dependencies (data or control) from *more than one* domain, or
-enclave. As a motivating example, we can think of two different domains:
-orange and green. Each of these domains has a different responsibility. The
-orange domain could be responsible for retrieving GPS coordinates and the
-green domain could be responsible for filtering them. A monolithic
-application that achieves this task could look like the following:
+of *intraprocedural conflict identification*. Conflicts are defined as
+program points that contain dependencies (data or control) from *more than
+one* domain, or enclave. As a motivating example, we can think of two
+different domains: orange and green. Each of these domains has a different
+responsibility. The orange domain could be responsible for retrieving GPS
+coordinates and the green domain could be responsible for filtering them. A
+monolithic application that achieves this task could look like the following:
 
 .. code-block:: c
     :emphasize-lines: 4
@@ -105,13 +105,13 @@ program:
 The data dependencies are marked in black (note: there are no control
 dependencies because the program has a flat structure). ``S4`` is
 data-dependent on ``S1`` because of the ``gps`` parameter and is
-data-dependent on ``S2`` because of the hidden ``this`` parameter (``filter``).
-In order to find conflicts the enclave annotations need to be *propagated* to
-the correspondingly dependent nodes. In this example, both the orange and
-green domains are propagated to ``S4`` from ``S1`` and ``S2`` respectively.
-This is done by following the incoming edges in the PDG (in this example,
-they represent the data dependencies). These domain propagations are shown
-using colored, dotted arrows in the above diagram.
+data-dependent on ``S2`` because of the hidden ``this`` parameter
+(``filter``). In order to find conflicts the enclave annotations need to be
+*propagated* to the correspondingly dependent nodes. In this example, both
+the orange and green domains are propagated to ``S4`` from ``S1`` and ``S2``
+respectively. This is done by following the incoming edges in the PDG (in
+this example, they represent the data dependencies). These domain
+propagations are shown using colored, dotted arrows in the above diagram.
 
 Because a conflict was identified in the above program, it is not trivially
 partitionable. The call to ``filter`` will need to be translated to an
@@ -120,11 +120,30 @@ run orthogonally. The strategy for performing the domain isolation is
 separate from the use of the PDG for *identifying* conflicts, so it will not
 be covered in this document.
 
-Prior Work
------------
-
 Implementation
 ---------------
+
+The implementation of the Program Dependence Graph used for enclave conflict
+identification will draw inspiration from the existing Data Dependence Graph
+implementation in LLVM-10 found here:
+https://llvm.org/docs/DependenceGraphs/index.html. This implementation using
+the builder design pattern to isolate the construction of the DDG from its
+functionality and form. The above documentation shows UML diagrams
+demonstrating the architecture of the ``DataDependenceGraph`` class. This
+architecture will be extended to include implementations for both the
+``ControlDependenceGraph`` and the ``ProgramDependenceGraph`` classes. The idea is
+that the ``ControlDependenceGraph`` and ``DataDependenceGraph`` can be built
+independently and can both be used in the construction of the
+``ProgramDependenceGraph``. Both the new ``ProgramDependenceGraph`` and
+``ControlDependenceGraph`` classes will use builder patterns akin to those used
+by the ``DataDependenceGraph`` class, and functionality will be extended where
+necessary to allow for control dependency edges.
+
+CDG
+++++
+
+PDG
+++++
 
 References
 -----------
