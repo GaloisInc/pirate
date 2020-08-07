@@ -1,0 +1,11 @@
+digraph g {
+    node [fontname = "calibri"]
+    S1 [fontcolor = darkorange3, color = darkorange3]
+    S2 [fontcolor = darkgreen, color = darkgreen]
+
+    S3 -> S1
+    S4 -> {S2, S1}
+
+    S1 -> {S3, S4} [style=dotted, color=darkorange3]
+    S2 -> S4 [style=dotted, color=darkgreen]
+}
