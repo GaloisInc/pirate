@@ -8,42 +8,65 @@ Introduction
 A Program Dependence Graph (PDG) is a *program representation* that conveys
 both data and control dependencies. In a PDG, nodes are usually instructions
 and edges between these nodes indicate some form of dependence. Edges can
-represent a data dependence, control dependence, or call dependence. One way
-to build a PDG is to build a Control Dependence Graph (CDG) and a Dependence
-Graph (DDG) independently. The CDG captures the control dependencies within
-the program, while the DDG captures the data dependencies. Combining these
-two graphs yields the PDG. Recent research has leveraged PDGs to aid in
+represent a data dependence, control dependence, or call dependence. A PDG
+can be built by building the Control Dependence Graph (CDG) and Dependence
+Graph (DDG) independently, and then combining the results. The CDG captures
+the control dependencies within the program while the DDG captures the data
+dependencies. Recent research has leveraged PDGs to aid in
 *program slicing*, which is the process of "slicing" an existing (usually
 monolithic) program into separate partitions. Slices of a program can be
 identified by disjoint partitions in the PDG. If a partition *A* of a PDG is
 disjoint from another partition *B*, then the instructions contained within
 should not have any control or data dependencies. This means they can run
-orthogonally, or alternatively, in their own PIRATE enclaves. Program
+orthogonally, or alternatively phrased, in their own PIRATE enclaves. Program
 Dependence Graphs have other applications, such as finding program
 dependencies for the sake of parallelization or optimization of code.
 
-Control Dependence
-+++++++++++++++++++
+Control Dependence Graph
++++++++++++++++++++++++++
 
-The following code exceprt shows a control dependence between statement ``S1``
-and statement ``S2``. Statement ``S2`` is *control dependent* on statement ``S1``
-because ``S2`` will only execute if ``S1`` is false.
+The following code exceprt shows a control dependence between statement
+``S1`` and statement ``S2``. Statement ``S2`` is *control dependent* on
+statement ``S1`` because ``S2`` will only execute if ``S1`` is false.
 
 .. code-block:: language
 
     S1      if x > 2 goto L1 
     S2      y := 3 
     S3  L1: z := y + 1
-
-Alternately phrased, ``S1`` is *not* post-dominated by ``S2``, meaning there is a
-path from ``S1`` to the end of the program that does not involve ``S2``. This
-fact will be leveraged when implmenting the construction of the CDG. A simple
-way to find the basic blocks that are control dependent on some block ``B1`` is
-to traverse all successive basic blocks of ``B1`` and mark them if they do
+    
+Alternately phrased, ``S1`` is *not* post-dominated by ``S2``, meaning there
+is a path from ``S1`` to the end of the program that does not involve ``S2``.
+This fact will be leveraged when implmenting the construction of the CDG. A
+simple way to find the basic blocks that are control dependent on some block
+``B1`` is to traverse all successive basic blocks of ``B1`` and mark them if
+they do
 *not* post-dominate block ``B1``.
+Though control flow dependencies can be expressed at the basic block
+granularity, the nodes of the CDG will be instructions. This is because the
+resulting PDG will have instructions as nodes, and control flow queries will
+likely be made over instructions rather than basic blocks. Any algorithm used
+for constructing a CDG using basic blocks can be trivially extended to use
+instructions instead. The process simply involves adding edges from the
+terminator instruction (typically an if-condition predicate) of the "from"
+block to all instructions in the "to" block.
 
-Data Dependence
-++++++++++++++++
+An edge in the CDG from vertex *u* to vertex *v* indicates that *u*
+**influences** *v*, or that *v* is control dependent on *u*. As an example, a
+segment of code and the corresponding CDG are provided below:
+.. code-block:: c
+
+    S1      x = 10
+    S2      if (x == 10)
+    S3          x = x + 1;
+    S4      else 
+    S5          x = x - 1;
+
+.. image:: cdg_example.png
+    :align: center
+
+Data Dependence Graph
+++++++++++++++++++++++
 
 Fundamentally, a data dependence exists between two instructions when one
 instruction uses some piece of data that was modified by the other. The
@@ -57,7 +80,8 @@ following excerpt shows a naive data dependence between statements ``S1`` and
 
 More complicated data dependence relationships exist in languages that
 contain pointers (C and C++ for example). For instance, a slightly more
-involved data dependence exists between ``S3`` and ``S4`` in the following code:
+involved data dependence exists between ``S3`` and ``S4`` in the following
+code:
 
 .. code-block:: c
 
@@ -78,14 +102,13 @@ Purpose
 Within the context of PIRATE, Program Dependence Graphs will aid in the task
 of *intraprocedural conflict identification*. Conflicts are defined as
 program points that contain dependencies (data or control) from *more than
-one* domain, or enclave. As a motivating example, we can think of two
+one* domain. As a motivating example, we can think of two
 different domains: orange and green. Each of these domains has a different
 responsibility. The orange domain could be responsible for retrieving GPS
 coordinates and the green domain could be responsible for filtering them. A
 monolithic application that achieves this task could look like the following:
 
 .. code-block:: c
-    :emphasize-lines: 4
 
     S1      GPS * gps = new GPS();           __pirate_enclave(orange)
     S2      Filter * filter = new Filter();  __pirate_enclave(green)
@@ -94,7 +117,7 @@ monolithic application that achieves this task could look like the following:
 
 Here, the ``redact`` method takes two parameters: a reference to a ``Filter``
 object and a reference to a ``gps`` object. Since these two objects originate
-from different enclaves as marked by the ``__pirate_enclave`` attributes a
+from different enclaves (as marked by the ``__pirate_enclave`` attributes) a
 conflict exists. This conflict can be found by using a Program Dependence
 Graph. The following diagram shows the Program Dependence Graph of the above
 program:
@@ -123,73 +146,67 @@ be covered in this document.
 Implementation
 ---------------
 
-The implementation of the Program Dependence Graph used for enclave conflict
-identification will draw inspiration from the existing Data Dependence Graph
-implementation in LLVM-10 found here:
-https://llvm.org/docs/DependenceGraphs/index.html. This implementation using
-the builder design pattern to isolate the construction of the DDG from its
-functionality and form. The above documentation shows UML diagrams
-demonstrating the architecture of the ``DataDependenceGraph`` class. This
-architecture will be extended to include implementations for both the
-``ControlDependenceGraph`` and the ``ProgramDependenceGraph`` classes. The
-idea is that the ``ControlDependenceGraph`` and ``DataDependenceGraph`` can
-be built independently and can both be used in the construction of the
-``ProgramDependenceGraph``. Both the new ``ProgramDependenceGraph`` and
-``ControlDependenceGraph`` classes will use builder patterns akin to those
-used by the ``DataDependenceGraph`` class, and functionality will be extended
-where necessary to allow for control dependency edges.
+Currently, LLVM-10 has an implementation for a Data Dependence Graph, but not
+for a Control Dependence Graph or a Program Dependence Graph. Thus, the
+current analysis infrastructure needs to be extended to ultimately support
+the Program Dependence Graph. As of now, there are two options that should be
+discussed for achieving this goal.
 
-Control Dependence Graph (CDG)
-+++++++++++++++++++++++++++++++
+Option #1
++++++++++++
 
-Though control flow dependencies can be expressed at the basic block
-granularity, the nodes of the CDG will be instructions. This is because the
-resulting PDG will have instructions as nodes, and control flow queries will
-likely be made over instructions rather than basic blocks. Any algorithm used
-for constructing a CDG using basic blocks can be trivially extended to use
-instructions instead. The process simply involves adding edges from the
-terminator instruction (typically an if-condition predicate) of the "from"
-block to all instructions in the "to" block. Intuitively, all edges in the
-CDG will represent control dependencies.
+The current LLVM documentation
+(https://llvm.org/docs/DependenceGraphs/index.html) shows an architecture
+where the ``ProgramDependenceGraph`` is built using the builder design
+pattern using the pre-existing ``DependenceGraphBuilder`` class. The
+structure of this class can be seen here:
+https://www.llvm.org/doxygen/classllvm_1_1AbstractDependenceGraphBuilder.html#details.
+The important function of this class is ``populate()``, which makes calls to
+the dependence graph construction algorithm. This function currently calls
+both ``createDefUseEdges()`` and ``createMemoryDependencyEdges()`` which are
+great for data dependency graphs, but do not make any reference to adding
+control edges needed for the CDG and PDG. Thus, option #1 will involve
+extending this function to include a ``createControlEdges()`` function.
 
-The construction of the CDG will use the post-dominator tree analysis that
-exists in LLVM. The algorithm will leverage the previously stated fact that
-an instruction ``S2`` is control dependent on another instruction ``S1`` if
-there is an execution path from ``S1`` to the end of the program that does
-not involve ``S2``. Alternatively, this can be phrased as "``S1`` is not
-post-dominated by ``S2``". Thus, the post-dominance tree analysis will be
-used to identify post-dominators of some instruction ``S1``. If ``S2`` does
-not post-dominate ``S1`` an edge will be added *from* ``S1`` *to* ``S2``,
-indicated a control dependence relation.
-
-As an example, a segment of code and the corresponding CDG are provided
-below:
-
-.. code-block:: c
-
-    S1      x = 10
-    S2      if (x == 10)
-    S3          x = x + 1;
-    S4      else 
-    S5          x = x - 1;
-
-.. image:: cdg_example.png
+.. image:: controledges
     :align: center
 
-Within LLVM-10, the CDG will live in a new file ``llvm/Analysis/CDG.h``. The
-CDG itself will be represented by a class ``ControlDependenceGraph``, which
-will be modeled off of the existing ``DataDependenceGraph``. A UML diagram
-showing the class architecture is shown below:
+This function would implement the post-dominanator tree algorithm mentioned
+in the *Control Dependence Graph* section.
 
-The ``CDGNode`` class will represent LLVM IR instructions, and the
-``CDGEdge`` class will represent control dependencies between them. The graph
-will be constructed using a new builder ``CDGBuilder`` which will rely on the
-post-dominance tree analysis as mentioned above. The CDG will be constructed
-as an LLVM analysis pass (https://llvm.org/docs/Passes.html) and will need to
-run after the post-dominance tree is constructed.
+Ultimately, this option **will not involve** a separate
+``ControlDependenceGraph`` class; instead, the UML diagram outlined in
+https://llvm.org/docs/DependenceGraphs/index.html will be obeyed. A
+``ProgramDependenceGraph`` class will be created, along with a ``PDGBuilder``
+class that creates *both* data and control edges. One important caveat is
+that the Program Dependence Graph should be *interprocedural* in the end.
+This means a separate pass will need to run over the LLVM module to connect
+function call sites to their constructed PDG. The strategy for linking call
+sites with the formal PDG is still under development.
 
-Program Dependence Graph
-+++++++++++++++++++++++++
+Option #2
+++++++++++
+
+The second option involves a slightly different class architecture than
+option #1. Instead of the UML diagram shown above in the official LLVM
+documentation (where only ``ProgramDependenceGraph`` and
+``DataDependenceGraph`` exist) this option will implement
+``ControlDependenceGraph`` using the current
+builder pattern. The UML diagram for this option will look something like the
+following:
+
+.. image:: option2_uml.png
+    :align: center
+
+This option differs from the first in that the ``ProgramDependenceGraph``
+would *not* be built using the current builder pattern. Only the CDG and DDG
+would be built using ``CDGBuilder`` and ``DDGBuilder`` respectively. The
+``ProgramDependenceGraph`` class would simply be constructed using an
+inter-procedural analysis pass that builds the CDG and DDG for each function,
+and then constructs its own graph based on the union of the two. Importantly,
+the current ``DependenceGraphBuilder`` in LLVM (linked above) does not seem
+to support this paradigm well, as it looks like all graphs build using the
+``DependenceGraphBuilder`` class were intended to have data dependencies.
 
 References
 -----------
