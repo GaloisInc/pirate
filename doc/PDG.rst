@@ -25,7 +25,7 @@ dependencies for the sake of parallelization or optimization of code.
 Control Dependence Graph
 +++++++++++++++++++++++++
 
-The following code exceprt shows a control dependence between statement
+The following code excerpt shows a control dependence between statement
 ``S1`` and statement ``S2``. Statement ``S2`` is *control dependent* on
 statement ``S1`` because ``S2`` will only execute if ``S1`` is false.
 
