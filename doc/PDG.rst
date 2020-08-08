@@ -54,6 +54,7 @@ block to all instructions in the "to" block.
 An edge in the CDG from vertex *u* to vertex *v* indicates that *u*
 **influences** *v*, or that *v* is control dependent on *u*. As an example, a
 segment of code and the corresponding CDG are provided below:
+
 .. code-block:: c
 
     S1      x = 10
