@@ -26,7 +26,7 @@ typedef struct {
     int fds[PIRATE_MULTIPLEX_NUM_CHANNELS];
 } multiplex_ctx;
 
-int pirate_multiplex_multiplex_add(void *_ctx, int gd);
+int pirate_multiplex_add(void *_ctx, int gd);
 int pirate_multiplex_parse_param(char *str, void *_param);
 int pirate_multiplex_get_channel_description(const void *_param, char *desc, int len);
 int pirate_multiplex_open(void *_param, void *_ctx, int *server_fdp);

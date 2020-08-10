@@ -636,30 +636,6 @@ multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type) {
     }
 }
 
-int pirate_multiplex_add(int multiplex_gd, int gd) {
-    pirate_channel_t *multiplex_channel, *channel;
-
-    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
-        return -1;
-    }
-
-    if (multiplex_channel->param.channel_type != MULTIPLEX) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if ((channel = pirate_get_channel(gd)) == NULL) {
-        return -1;
-    }
-
-    if (multiplex_channel->ctx.common.flags != channel->ctx.common.flags) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    return pirate_multiplex_multiplex_add(&multiplex_channel->ctx, gd);
-}
-
 int pirate_multiplex_count(int multiplex_gd) {
     pirate_channel_t *multiplex_channel;
 
@@ -729,7 +705,7 @@ int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param,
         if (gd < 0) {
             return gd;
         }
-        int rv = pirate_multiplex_add(multiplex_gd, gd);
+        int rv = pirate_multiplex_add(&multiplex_channel->ctx, gd);
         if (rv < 0) {
             return rv;
         }

@@ -54,7 +54,7 @@ int pirate_multiplex_close(void *_ctx) {
     return rv;
 }
 
-int pirate_multiplex_multiplex_add(void *_ctx, int gd) {
+int pirate_multiplex_add(void *_ctx, int gd) {
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
     if (ctx->count == PIRATE_MULTIPLEX_NUM_CHANNELS) {
         errno = EMLINK;
