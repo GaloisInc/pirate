@@ -287,8 +287,7 @@ SSIZE_T pirate_udp_socket_read(const void *_param, void *_ctx, void *buf, size_t
     return rv;
 }
 
-SSIZE_T pirate_udp_socket_write_mtu(const void *_param, void *_ctx) {
-    (void) _ctx;
+SSIZE_T pirate_udp_socket_write_mtu(const void *_param) {
     pirate_udp_socket_param_t *param = (pirate_udp_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
