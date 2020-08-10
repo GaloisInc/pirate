@@ -214,7 +214,7 @@ static int pirate_open(pirate_channel_t *channel) {
         return -1;
     }
 
-    if (pirate_write_mtu_estimate(param) < 0) {
+    if (pirate_write_mtu(param) < 0) {
         return -1;
     }
 

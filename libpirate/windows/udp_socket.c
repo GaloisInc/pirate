@@ -310,7 +310,7 @@ SSIZE_T pirate_udp_socket_write(const void *_param, void *_ctx, const void *buf,
     udp_socket_ctx *ctx = (udp_socket_ctx *)_ctx;
     int err;
     SSIZE_T rv;
-    size_t write_mtu = pirate_udp_socket_write_mtu(param, ctx);
+    size_t write_mtu = pirate_udp_socket_write_mtu(param);
 
     if (ctx->sock == INVALID_SOCKET) {
         SetLastError(WSAEBADF);
