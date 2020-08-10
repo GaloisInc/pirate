@@ -110,8 +110,7 @@ ssize_t pirate_multiplex_write_mtu(const void *_param, void *_ctx) {
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
     ssize_t rv = 0;
     if (ctx == NULL) {
-        errno = ENOSYS;
-        return -1;
+        return 0;
     }
     if (!ctx->count) {
         errno = ENXIO;

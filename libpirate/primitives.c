@@ -393,7 +393,7 @@ static int pirate_open(pirate_channel_t *channel, int *server_fdp) {
         return -1;
     }
 
-    mtu = pirate_write_mtu_param_quiet(param);
+    mtu = pirate_write_mtu_estimate(param);
     if (mtu < 0) {
         return -1;
     }
@@ -523,7 +523,7 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    mtu = pirate_write_mtu_param_quiet(param);
+    mtu = pirate_write_mtu_estimate(param);
     if (mtu < 0) {
         return -1;
     }
@@ -859,7 +859,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     return rv;
 }
 
-ssize_t pirate_write_mtu_param(const pirate_channel_param_t *param) {
+ssize_t pirate_write_mtu_estimate(const pirate_channel_param_t *param) {
     pirate_write_mtu_t write_mtu_func;
     if (pirate_channel_type_valid(param->channel_type) != 0) {
         return -1;
@@ -873,15 +873,6 @@ ssize_t pirate_write_mtu_param(const pirate_channel_param_t *param) {
     }
 
     return write_mtu_func(&param->channel, NULL);
-}
-
-ssize_t pirate_write_mtu_param_quiet(const pirate_channel_param_t *param) {
-    ssize_t rv = pirate_write_mtu_param(param);
-    if ((rv < 0) && (errno == ENOSYS)) {
-        errno = 0;
-        rv = 0;
-    }
-    return rv;
 }
 
 ssize_t pirate_write_mtu(int gd) {
