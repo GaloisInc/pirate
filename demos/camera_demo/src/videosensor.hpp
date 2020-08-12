@@ -10,7 +10,7 @@ class VideoSensor
 {
 public:
     VideoSensor(const ProcessFrameCallback& processFrameCallback,
-            std::string devicePath = "/dev/video0",
+            std::string& devicePath,
             bool hFlip = true, bool vFlip = true,
             unsigned imgWidth = DEFAULT_IMAGE_WIDTH,
             unsigned imgHeight = DEFAULT_IMAGE_HEIGHT);
@@ -20,8 +20,8 @@ public:
     virtual void term();
 
     virtual int captureEnable(bool enable);
-    static constexpr unsigned DEFAULT_IMAGE_WIDTH = 3280;
-    static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 2464;
+    static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
+    static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
 private:
     const ProcessFrameCallback& mProcessFrameCallback;
     

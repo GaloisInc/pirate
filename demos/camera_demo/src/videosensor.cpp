@@ -14,7 +14,7 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
-        std::string devicePath, bool hFlip, bool vFlip,
+        std::string& devicePath, bool hFlip, bool vFlip,
         unsigned imgWidth, unsigned imgHeight) :
     mProcessFrameCallback(processFrameCallback),
     mDevicePath(devicePath),
@@ -87,7 +87,7 @@ int VideoSensor::captureEnable(bool enable)
     {
         struct v4l2_buffer buf;
         
-        for (int i = 0; i < BUFFER_COUNT; i++)
+        for (unsigned i = 0; i < BUFFER_COUNT; i++)
         {
             std::memset(&buf, 0, sizeof(buf));
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -129,7 +129,7 @@ int VideoSensor::ioctlWait(int fd, unsigned long req, void * arg)
         if ((ret == -1) && (errno == EINTR))
         {
             retry = 1;
-            errno = ret;
+            errno = err;
         }
     } while (retry);
 
@@ -226,28 +226,36 @@ int VideoSensor::initVideoDevice()
         }
     }
 
-    // Flip settings
-    struct v4l2_control ctrl =
+    // Horizontal flip
+    if (mFlipHorizontal)
     {
-        .id = V4L2_CID_VFLIP,
-        .value = mFlipHorizontal
-    };
+        struct v4l2_control ctrl;
+        std::memset(&ctrl, 0, sizeof(ctrl));
+        ctrl.id = V4L2_CID_HFLIP;
+        ctrl.value = 1;
 
-    rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
-    if (rv != 0)
-    {
-        std::perror("V4L2: failed to set camera vertical flip mode");
-        return -1;
+        rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+        if (rv != 0)
+        {
+            std::perror("V4L2: failed to set camera horizontal flip mode");
+            return -1;
+        }
     }
 
-    ctrl.id = V4L2_CID_HFLIP;
-    ctrl.value = mFlipVertical;
-
-    rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
-    if (rv != 0)
+    // Vertical flip
+    if (mFlipVertical)
     {
-        std::perror("V4L2: failed to set camera horizontal flip mode");
-        return -1;
+        struct v4l2_control ctrl;
+        std::memset(&ctrl, 0, sizeof(ctrl));
+        ctrl.id = V4L2_CID_VFLIP;
+        ctrl.value = 1;
+
+        rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+        if (rv != 0)
+        {
+            std::perror("V4L2: failed to set camera vertical flip mode");
+            return -1;
+        }
     }
 
     // Configure image format
@@ -321,7 +329,7 @@ int VideoSensor::initCaptureBuffers()
         return -1;
     }
 
-    for (int i = 0; i < mRequestBuffers.count; i++)
+    for (unsigned i = 0; i < mRequestBuffers.count; i++)
     {
         struct v4l2_buffer buf;
         std::memset(&buf, 0, sizeof(buf));
@@ -353,7 +361,7 @@ int VideoSensor::initCaptureBuffers()
 int VideoSensor::releaseCaptureBuffers()
 {
     // Unmap
-    for (int i = 0; i < BUFFER_COUNT; i++)
+    for (unsigned i = 0; i < BUFFER_COUNT; i++)
     {
         VideoBuffer * buf = &mBuffers[i];
         if ((buf->mStart != nullptr) || (buf->mStart != MAP_FAILED))
@@ -378,11 +386,9 @@ void VideoSensor::pollThread()
         FD_ZERO(&fds);
         FD_SET(mFd, &fds);
 
-        struct timeval tv = 
-        {
-            .tv_sec = 2,
-            .tv_usec = 0
-        };
+        struct timeval tv;
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
 
         rv = select(mFd + 1, &fds, NULL, NULL, &tv);
         if (rv == -1)

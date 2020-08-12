@@ -139,7 +139,7 @@ void FreespaceOrientationInput::term()
 int FreespaceOrientationInput::setSensorPeriod(FreespaceDeviceId deviceId,
         unsigned periodUs)
 {
-    for (int i = 0; i < SENSOR_NAMES.size(); ++i)
+    for (unsigned i = 0; i < SENSOR_NAMES.size(); ++i)
     {   
         // Set the period
         struct freespace_message m;
@@ -280,7 +280,7 @@ int FreespaceOrientationInput::printDeviceInfo(FreespaceDeviceId deviceId)
 int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
 {
     std::cout << "Sensors:\n";
-    for (int sensor = 0; sensor < SENSOR_NAMES.size(); sensor++)
+    for (unsigned sensor = 0; sensor < SENSOR_NAMES.size(); sensor++)
     {
         struct freespace_message m;
         std::memset(&m, 0, sizeof(m));

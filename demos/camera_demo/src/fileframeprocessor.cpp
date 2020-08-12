@@ -3,10 +3,9 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
-#include <filesystem>
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(std::string outputPath, bool verbose) :
+FileFrameProcessor::FileFrameProcessor(std::string& outputPath, bool verbose) :
     mOutputDirectory(outputPath),
     mVerbose(verbose) 
 {
@@ -51,8 +50,10 @@ int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
         return -1;
     }
 
-    std::cout << ss.str() << std::endl;
-
+    if (mVerbose)
+    {
+        std::cout << ss.str() << std::endl;
+    }
 
     return 0;
 }

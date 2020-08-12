@@ -6,7 +6,7 @@
 class FileFrameProcessor : public FrameProcessor
 {
 public:
-    FileFrameProcessor(std::string outputPath = "/tmp", bool verbose = false);
+    FileFrameProcessor(std::string& outputPath, bool verbose = false);
     virtual ~FileFrameProcessor();
 
     virtual int init();

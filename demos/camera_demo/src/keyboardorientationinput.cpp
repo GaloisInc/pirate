@@ -79,11 +79,9 @@ void KeyboardOrientationInput::pollThread()
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
         
-        struct timeval timeout = 
-        {
-            .tv_sec = 0,
-            .tv_usec = 100000
-        };
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 100000;
 
         int rv = select(1, &fdSet, NULL, NULL, &timeout);
 

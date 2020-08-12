@@ -10,8 +10,9 @@ public:
     OrientationInput(   AngularPosition<float>::UpdateCallback updateCallback,
                         float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT, 
                         float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT) :
-        mUpdateCallback(updateCallback),
-        AngularPosition(angPosMin, angPosMax)
+        AngularPosition(angPosMin, angPosMax),
+        mUpdateCallback(updateCallback)
+        
     {
 
     }
