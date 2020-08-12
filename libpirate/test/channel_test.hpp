@@ -13,12 +13,24 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#pragma once
+
 #include <cstring>
 #include <errno.h>
 #include <stdint.h>
-#include <semaphore.h>
 #include <sys/types.h>
+
+#ifdef _WIN32
+#include "windows_port.hpp"
+#else
+#include <semaphore.h>
+#endif
+
 #include <gtest/gtest.h>
+
+#ifndef GTEST_IS_THREADSAFE
+#error "GTest must be threadsafe"
+#endif
 
 namespace GAPS
 {
@@ -48,6 +60,8 @@ protected:
     virtual void WriterTest();
     virtual void ReaderTest();
 
+    void BarrierWait();
+
     void Run();
     virtual void RunTestCase();
 
@@ -69,18 +83,23 @@ protected:
         ssize_t writer;
     };
 
-    static const size_t len_size = 9;
+    static const size_t len_size = 12;
     static const size_t buf_size = 32;
 
     struct len_pair len_arr[len_size] = {
+        {0, 0}, {0, 1}, {1, 0},
         {1, 1}, {1, 2}, {2, 1},
         {8, 8}, {8, 16}, {16, 8},
         {1, 32}, {32, 1}, {32, 32}};
 
     // Reader writer synchronization
+#ifdef _WIN32
+    SYNCHRONIZATION_BARRIER barrier;
+    HANDLE nonblocking_sem;
+#else
     pthread_barrier_t barrier;
-
     sem_t nonblocking_sem;
+#endif
 
     // If true the producer and consumer
     // open the channel.
@@ -92,15 +111,22 @@ protected:
     // use non-blocking I/O
     bool nonblocking_IO;
 
+    bool nonblocking_IO_attempt;
+
     // Channel statistics
     struct {
-        uint32_t bytes;
-        uint32_t packets;
+        size_t bytes;
+        size_t packets;
     } stats_wr, stats_rd;
 public:
     ChannelTest();
-    static void *WriterThreadS(void *param);
-    static void *ReaderThreadS(void *param);
+#ifdef _WIN32
+    static DWORD WINAPI WriterThreadS(LPVOID param);
+    static DWORD WINAPI ReaderThreadS(LPVOID param);
+#else
+    static void* WriterThreadS(void* param);
+    static void* ReaderThreadS(void* param);
+#endif
 };
 
 class HalfClosedTest : public ChannelTest
