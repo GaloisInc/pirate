@@ -22,7 +22,6 @@ VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
     mFlipVertical(vFlip),
     mImageWidth(imgWidth),
     mImageHeight(imgHeight),
-    mFrameSize((imgWidth * imgHeight) << 1),
     mFd(-1),
     mPollThread(nullptr),
     mPoll(false)

@@ -30,7 +30,6 @@ private:
     const bool mFlipVertical;
     unsigned mImageWidth;
     unsigned mImageHeight;
-    unsigned mFrameSize;
 
     static constexpr unsigned BUFFER_COUNT = 4;
     
