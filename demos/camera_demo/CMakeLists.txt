@@ -38,3 +38,7 @@ endif (PIGPIO_LIB)
 add_executable(${TGT_CAMERA_DEMO} ${SRCS})
 target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
 target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FALGS})
+
+# Scripts
+set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
+configure_file(${SCRIPTS_DIR}/camera_demo.sh ${PROJECT_BINARY_DIR} COPYONLY)
