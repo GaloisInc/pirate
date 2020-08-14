@@ -1,6 +1,7 @@
 #pragma once
 
 #include "orientationoutput.hpp"
+#include "piservoorientationoutput.hpp"
 
 class OrientationOutputCreator
 {
@@ -14,7 +15,7 @@ public:
     {
         switch (outputType)
         {
-#if 0
+#ifdef PIGPIO_PRESENT
             case PiServo:
                 return new PiServoOrientationOutput(PI_SERVO_PIN, angPosLimit);
 #endif

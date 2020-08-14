@@ -74,7 +74,7 @@ bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
 {
     OrientationOutput::setAngularPosition(angularPosition);
     int rv = gpioServo(mServoPin, angleToServo(getAngularPosition()));
-    
+
     if (rv < 0)
     {
         std::perror("Failed to set servo position");
