@@ -15,13 +15,16 @@
 
 VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
         std::string& devicePath, bool hFlip, bool vFlip,
-        unsigned imgWidth, unsigned imgHeight) :
+        unsigned imgWidth, unsigned imgHeight,
+        unsigned frameRateNumerator, unsigned frameRateDenominator) :
     mProcessFrameCallback(processFrameCallback),
     mDevicePath(devicePath),
     mFlipHorizontal(hFlip),
     mFlipVertical(vFlip),
     mImageWidth(imgWidth),
     mImageHeight(imgHeight),
+    mFrameRateNumerator(frameRateNumerator),
+    mFrameRateDenominator(frameRateDenominator),
     mFd(-1),
     mPollThread(nullptr),
     mPoll(false)
@@ -255,6 +258,33 @@ int VideoSensor::initVideoDevice()
             std::perror("V4L2: failed to set camera vertical flip mode");
             return -1;
         }
+    }
+
+    // Frame rate
+    if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
+    {
+        struct v4l2_streamparm streamparm;
+        std::memset(&streamparm, 0, sizeof(streamparm));
+        streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
+        if (rv != 0)
+        {
+            std::perror("Failed to get stream parameters");
+            return -1;
+        }
+
+        streamparm.parm.capture.timeperframe.numerator = mFrameRateNumerator;
+        streamparm.parm.capture.timeperframe.denominator = mFrameRateDenominator;
+        rv = ioctlWait(mFd, VIDIOC_S_PARM, &streamparm);
+        if (rv != 0)
+        {
+            std::perror("Failed to set stream parameters");
+            return -1;
+        }
+    }
+    else
+    {
+        std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
     }
 
     // Configure image format

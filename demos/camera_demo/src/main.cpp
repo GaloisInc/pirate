@@ -20,6 +20,8 @@ struct Options
         mImageHeight(480),
         mImageHorizontalFlip(false),
         mImageVerticalFlip(false),
+        mFrameRateNumerator(1),
+        mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),
         mOutputType(OrientationOutputCreator::PiServo),
         mInputType(OrientationInputCreator::Freespace),
@@ -34,6 +36,8 @@ struct Options
     unsigned mImageHeight;
     bool mImageHorizontalFlip;
     bool mImageVerticalFlip;
+    unsigned mFrameRateNumerator;
+    unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
     OrientationOutputCreator::OutputType mOutputType;
     OrientationInputCreator::InputType mInputType;
@@ -47,6 +51,7 @@ static struct argp_option options[] =
     { "width",        'W', "pixels",      0, "image width",                       0 },
     { "height",       'H', "pixels",      0, "image height",                      0 },
     { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
+    { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 }, 
     { "out_dir",      'O', "path",        0, "image output directory",            0 },
     { "pos_our",      'o', "servo|print", 0, "angular position output",           0 },
     { "pos_in",       'i', "acc|kbd",     0, "position input",                    0 },
@@ -59,6 +64,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
     Options * opt = static_cast<Options *>(state->input);
     std::istringstream ss(arg != NULL ? arg : "");
+    char delim;
 
     switch (key)
     {
@@ -85,10 +91,19 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_usage(state);
                 argp_error(state, "invalid -f argument '%s'", arg);
             }
 
+            break;
+
+        case 'r':
+            ss >> opt->mFrameRateNumerator;
+            ss >> delim;
+            ss >> opt->mFrameRateDenominator;
+            if ((opt->mFrameRateNumerator == 0) || (opt->mFrameRateDenominator == 0))
+            {
+                argp_error(state, "invalid -r argument '%s'", arg);
+            }
             break;
 
         case 'O':
@@ -174,7 +189,8 @@ int main(int argc, char *argv[])
             frameProcessor->getProcessFrameCallback(),
             options.mVideoDevice, 
             options.mImageHorizontalFlip, options.mImageVerticalFlip,
-            options.mImageWidth, options.mImageHeight);
+            options.mImageWidth, options.mImageHeight,
+            options.mFrameRateNumerator, options.mFrameRateDenominator);
 
     rv = orientationOutput->init();
     if (rv != 0)

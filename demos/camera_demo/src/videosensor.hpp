@@ -13,7 +13,9 @@ public:
             std::string& devicePath,
             bool hFlip = true, bool vFlip = true,
             unsigned imgWidth = DEFAULT_IMAGE_WIDTH,
-            unsigned imgHeight = DEFAULT_IMAGE_HEIGHT);
+            unsigned imgHeight = DEFAULT_IMAGE_HEIGHT,
+            unsigned frameRateNumerator = DEFAULT_FRAME_RATE_NUMERATOR,
+            unsigned frameRateDenominator = DEFAULT_FRAME_RATE_DENOMINATOR);
     virtual ~VideoSensor();
 
     virtual int init();
@@ -22,6 +24,8 @@ public:
     virtual int captureEnable(bool enable);
     static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
     static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
+    static constexpr unsigned DEFAULT_FRAME_RATE_NUMERATOR = 1;
+    static constexpr unsigned DEFAULT_FRAME_RATE_DENOMINATOR = 1;
 private:
     const ProcessFrameCallback& mProcessFrameCallback;
     
@@ -30,6 +34,8 @@ private:
     const bool mFlipVertical;
     unsigned mImageWidth;
     unsigned mImageHeight;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
 
     static constexpr unsigned BUFFER_COUNT = 4;
     
