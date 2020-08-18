@@ -97,34 +97,54 @@ int pirate_tcp_socket_get_channel_description(const void *_param, char *desc, in
         buffer_size_str, min_tx_str, mtu_str);
 }
 
-static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
+static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, int *server_fdp) {
     int err, rv;
     int server_fd;
     struct sockaddr_in addr;
     struct linger lo;
 
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        return server_fd;
-    }
+    if ((server_fdp != NULL) && (*server_fdp > 0)) {
+        server_fd = *server_fdp;
+    } else {
+        server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd < 0) {
+            return server_fd;
+        }
 
-    memset(&addr, 0, sizeof(struct sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(param->addr);
-    addr.sin_port = htons(param->port);
+        memset(&addr, 0, sizeof(struct sockaddr_in));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(param->addr);
+        addr.sin_port = htons(param->port);
 
-    int enable = 1;
-    rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-    if (rv < 0) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-        return rv;
-    }
+        int enable = 1;
+        rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+        if (rv < 0) {
+            err = errno;
+            close(server_fd);
+            errno = err;
+            return rv;
+        }
 
-    if (param->buffer_size > 0) {
-        rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &param->buffer_size,
+        if (param->buffer_size > 0) {
+            rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &param->buffer_size,
                         sizeof(param->buffer_size));
+            if (rv < 0) {
+                err = errno;
+                close(server_fd);
+                errno = err;
+                return rv;
+            }
+        }
+
+        rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+        if (rv < 0) {
+            err = errno;
+            close(server_fd);
+            errno = err;
+            return rv;
+        }
+
+        rv = listen(server_fd, 0);
         if (rv < 0) {
             err = errno;
             close(server_fd);
@@ -133,28 +153,13 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         }
     }
 
-    rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-        return rv;
-    }
-
-    rv = listen(server_fd, 0);
-    if (rv < 0) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-        return rv;
-    }
-
     ctx->sock = accept(server_fd, NULL, NULL);
 
     if (ctx->sock < 0) {
         err = errno;
         close(server_fd);
         errno = err;
+        if (server_fdp != NULL) *server_fdp = 0;
         return ctx->sock;
     }
 
@@ -166,10 +171,15 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         close(ctx->sock);
         close(server_fd);
         errno = err;
+        if (server_fdp != NULL) *server_fdp = 0;
         return rv;
     }
 
-    close(server_fd);
+    if (server_fdp == NULL) {
+        close(server_fd);
+    } else if (*server_fdp == 0) {
+        *server_fdp = server_fd;
+    }
     return 0;
 }
 
@@ -225,7 +235,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     return -1;
 }
 
-int pirate_tcp_socket_open(void *_param, void *_ctx) {
+int pirate_tcp_socket_open(void *_param, void *_ctx, int *server_fdp) {
     pirate_tcp_socket_param_t *param = (pirate_tcp_socket_param_t *)_param;
     tcp_socket_ctx *ctx = (tcp_socket_ctx *)_ctx;
     int rv = -1;
@@ -237,7 +247,7 @@ int pirate_tcp_socket_open(void *_param, void *_ctx) {
         return -1;
     }
     if (access == O_RDONLY) {
-        rv = tcp_socket_reader_open(param, ctx);
+        rv = tcp_socket_reader_open(param, ctx, server_fdp);
     } else {
         rv = tcp_socket_writer_open(param, ctx);
     }
@@ -281,7 +291,8 @@ ssize_t pirate_tcp_socket_read(const void *_param, void *_ctx, void *buf, size_t
     return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_tcp_socket_write_mtu(const void *_param) {
+ssize_t pirate_tcp_socket_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_tcp_socket_param_t *param = (const pirate_tcp_socket_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -296,6 +307,6 @@ ssize_t pirate_tcp_socket_write_mtu(const void *_param) {
 
 ssize_t pirate_tcp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_tcp_socket_param_t *param = (const pirate_tcp_socket_param_t *)_param;
-    ssize_t mtu = pirate_tcp_socket_write_mtu(param);
+    ssize_t mtu = pirate_tcp_socket_write_mtu(param, _ctx);
     return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }

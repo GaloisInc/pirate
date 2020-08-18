@@ -408,3 +408,7 @@ SSIZE_T pirate_write_mtu(const pirate_channel_param_t *param) {
 
     return write_mtu_func(&param->channel);
 }
+
+SSIZE_T pirate_write_mtu_estimate(const pirate_channel_param_t *param) {
+    return pirate_write_mtu(param);
+}

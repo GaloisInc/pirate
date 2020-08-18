@@ -81,7 +81,8 @@ int pirate_device_get_channel_description(const void *_param, char *desc, int le
     return snprintf(desc, len, "device,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
-int pirate_device_open(void *_param, void *_ctx) {
+int pirate_device_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_device_param_t *param = (pirate_device_param_t *)_param;
     device_ctx *ctx = (device_ctx *)_ctx;
     pirate_device_init_param(param);
@@ -125,7 +126,8 @@ ssize_t pirate_device_read(const void *_param, void *_ctx, void *buf, size_t cou
     return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_device_write_mtu(const void *_param) {
+ssize_t pirate_device_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_device_param_t *param = (const pirate_device_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -140,6 +142,6 @@ ssize_t pirate_device_write_mtu(const void *_param) {
 
 ssize_t pirate_device_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_device_param_t *param = (const pirate_device_param_t *)_param;
-    ssize_t mtu = pirate_device_write_mtu(param);
+    ssize_t mtu = pirate_device_write_mtu(param, _ctx);
     return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }

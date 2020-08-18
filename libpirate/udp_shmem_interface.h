@@ -28,11 +28,11 @@ typedef struct {
 
 int udp_shmem_buffer_parse_param(char *str, void *_param);
 int udp_shmem_buffer_get_channel_description(const void *_param, char *desc, int len);
-int udp_shmem_buffer_open(void *_param, void *_ctx);
+int udp_shmem_buffer_open(void *_param, void *_ctx, int *server_fdp);
 int udp_shmem_buffer_close(void *_ctx);
 ssize_t udp_shmem_buffer_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t udp_shmem_buffer_write(const void *_param, void *_ctx, const void *buf,  size_t count);
-ssize_t udp_shmem_buffer_write_mtu(const void *_param);
+ssize_t udp_shmem_buffer_write_mtu(const void *_param, void *_ctx);
 
 #define PIRATE_UDP_SHMEM_CHANNEL_FUNCS { udp_shmem_buffer_parse_param, udp_shmem_buffer_get_channel_description, udp_shmem_buffer_open, udp_shmem_buffer_close, udp_shmem_buffer_read, udp_shmem_buffer_write, udp_shmem_buffer_write_mtu }
 
