@@ -167,10 +167,10 @@ static int reader_run_perf_test(reader_t *reader) {
         ++reader->counts[*msg_idx];
     }
 
-    snprintf(prefix, sizeof(prefix) - 1, "perf_%u_%u_%zu", 
+    snprintf(prefix, sizeof(prefix) - 1, "perf_%u_%u_%llu", 
         reader->common.data.perf.len,
         reader->common.data.perf.count,
-        reader->common.data.delay_ns);
+        (unsigned long long)reader->common.data.delay_ns);
 
     if (bin_save(prefix, reader->common.data.out_dir, reader->counts, 
                     reader->common.data.perf.count) != 0) {
