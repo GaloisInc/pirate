@@ -45,13 +45,13 @@ struct Options
     bool mVerbose;
 };
 
-static struct argp_option options[] = 
+static struct argp_option options[] =
 {
     { "video_device", 'd', "device",      0, "video device",                      0 },
     { "width",        'W', "pixels",      0, "image width",                       0 },
     { "height",       'H', "pixels",      0, "image height",                      0 },
     { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
-    { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 }, 
+    { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 },
     { "out_dir",      'O', "path",        0, "image output directory",            0 },
     { "pos_our",      'o', "servo|print", 0, "angular position output",           0 },
     { "pos_in",       'i', "acc|kbd",     0, "position input",                    0 },
@@ -150,7 +150,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'v':
             opt->mVerbose = true;
-            break; 
+            break;
     }
 
     return 0;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     parseArgs(argc, argv, &options);
 
     OrientationOutput * orientationOutput = OrientationOutputCreator::get(
-        options.mOutputType, options.mAngularPositionLimit);
+        options.mOutputType, options.mAngularPositionLimit, options.mVerbose);
 
     OrientationInput * orientationInput = OrientationInputCreator::get(
         options.mInputType, orientationOutput->getUpdateCallback(),
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
         options.mImageOutputDirectory, options.mVerbose);
     VideoSensor * videoSensor = new VideoSensor(
             frameProcessor->getProcessFrameCallback(),
-            options.mVideoDevice, 
+            options.mVideoDevice,
             options.mImageHorizontalFlip, options.mImageVerticalFlip,
             options.mImageWidth, options.mImageHeight,
             options.mFrameRateNumerator, options.mFrameRateDenominator);
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     {
         std::this_thread::sleep_for(std::chrono::seconds(1  ));
     }
-    
+
     rv = videoSensor->captureEnable(false);
     if (rv != 0)
     {
@@ -238,6 +238,6 @@ int main(int argc, char *argv[])
     delete orientationInput;
     delete frameProcessor;
     delete videoSensor;
-    
+
     return 0;
 }

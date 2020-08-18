@@ -6,8 +6,8 @@
 #include "piservoorientationoutput.hpp"
 
 PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, float angLimit,
-        bool gpioLibInit) :
-    OrientationOutput(angLimit),
+        bool verbose, bool gpioLibInit) :
+    OrientationOutput(angLimit, verbose),
     mServoPin(servoPin),
     mGpioLibInit(gpioLibInit)
 
@@ -53,7 +53,7 @@ int PiServoOrientationOutput::init()
     if (rv != 0)
     {
         std::perror("Failed to set the initial servo position");
-        return -1;        
+        return -1;
     }
 
     return 0;
@@ -86,8 +86,8 @@ bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
 
 int PiServoOrientationOutput::angleToServo(float angle)
 {
-    static const float slope = 
-        (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) / 
+    static const float slope =
+        (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
         (2 * SERVO_ANGLE_LIMIT);
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
     return slope * angle + off;

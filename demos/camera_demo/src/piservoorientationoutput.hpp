@@ -6,7 +6,7 @@ class PiServoOrientationOutput : public OrientationOutput
 {
 public:
     PiServoOrientationOutput(int servoPin, float angLimit = DEFAULT_ANGLE_LIMIT,
-            bool gpioLibInit = true);
+            bool verbose = false, bool gpioLibInit = true);
     virtual ~PiServoOrientationOutput();
 
     virtual int init() override;
