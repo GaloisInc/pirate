@@ -11,6 +11,8 @@ set(BUILD_FALGS -std=c++11 ${PIRATE_C_FLAGS})
 # Libraries
 find_library(FREESPACE_LIB freespace)
 find_library(PIGPIO_LIB pigpio)
+find_library(JPEG_LIB jpeg)
+find_library(X11_LIB X11)
 set(LIBS pthread)
 
 # Source files
@@ -34,6 +36,12 @@ if (PIGPIO_LIB)
     set(LIBS ${PIGPIO_LIB} ${LIBS})
     set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
 endif (PIGPIO_LIB)
+
+if (JPEG_LIB AND X11_LIB)
+    set(BUILD_FALGS -DXWIN_PRESENT=1 ${BUILD_FALGS})
+    set(LIBS ${JPEG_LIB} ${X11_LIB} ${LIBS})
+    set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
+endif (JPEG_LIB AND X11_LIB)
 
 add_executable(${TGT_CAMERA_DEMO} ${SRCS})
 target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})

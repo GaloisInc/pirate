@@ -8,7 +8,7 @@
 #include <functional>
 #include "orientationinputcreator.hpp"
 #include "orientationoutputcreator.hpp"
-#include "fileframeprocessor.hpp"
+#include "frameprocessorcreator.hpp"
 #include "videosensor.hpp"
 
 // Command-line options
@@ -25,6 +25,7 @@ struct Options
         mImageOutputDirectory("/tmp"),
         mOutputType(OrientationOutputCreator::PiServo),
         mInputType(OrientationInputCreator::Freespace),
+        mProcessorType(FrameProcessorCreator::Filesystem),
         mAngularPositionLimit(45.0),
         mVerbose(false)
     {
@@ -41,6 +42,7 @@ struct Options
     std::string mImageOutputDirectory;
     OrientationOutputCreator::OutputType mOutputType;
     OrientationInputCreator::InputType mInputType;
+    FrameProcessorCreator::FrameProcessorType mProcessorType;
     float mAngularPositionLimit;
     bool mVerbose;
 };
@@ -56,6 +58,7 @@ static struct argp_option options[] =
     { "pos_our",      'o', "servo|print", 0, "angular position output",           0 },
     { "pos_in",       'i', "acc|kbd",     0, "position input",                    0 },
     { "pos_lim",      'l', "val",         0, "angular position bound",            0 },
+    { "processor",    'p', "fs|xwin",     0, "frame processor",                   0 },
     { "verbose",      'v', NULL,          0, "verbose output",                    0 },
     { NULL,           0,   NULL,          0, NULL,                                0 },
 };
@@ -144,6 +147,23 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
             break;
 
+        case 'p':
+            if (ss.str() == "fs")
+            {
+                opt->mProcessorType = FrameProcessorCreator::Filesystem;
+            }
+            else if (ss.str() == "xwin")
+            {
+                opt->mProcessorType = FrameProcessorCreator::XWindows;
+            }
+            else
+            {
+                argp_usage(state);
+                argp_error(state, "invalid -p argument '%s'", arg);
+            }
+
+            break;
+
         case 'l':
             ss >> opt->mAngularPositionLimit;
             break;
@@ -183,8 +203,10 @@ int main(int argc, char *argv[])
         options.mInputType, orientationOutput->getUpdateCallback(),
         -options.mAngularPositionLimit, options.mAngularPositionLimit);
 
-    FrameProcessor * frameProcessor = new FileFrameProcessor(
+    FrameProcessor * frameProcessor = FrameProcessorCreator::get(
+        options.mProcessorType, options.mImageWidth, options.mImageHeight,
         options.mImageOutputDirectory, options.mVerbose);
+
     VideoSensor * videoSensor = new VideoSensor(
             frameProcessor->getProcessFrameCallback(),
             options.mVideoDevice,
