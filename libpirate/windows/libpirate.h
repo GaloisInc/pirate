@@ -259,7 +259,7 @@ SSIZE_T pirate_write(int gd, const void *buf, size_t count);
 
 // pirate_write_mtu() returns the maximum data length
 // that can be send in a call to pirate_write() for
-// the given channel. A value of 0 indicates no maximum length.
+// the given channel parameters. A value of 0 indicates no maximum length.
 //
 // On success, the mtu is returned. On error,
 // -1 is returned, and GetLastError() is set appropriately.

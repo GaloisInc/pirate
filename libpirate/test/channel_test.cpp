@@ -188,7 +188,7 @@ void ChannelTest::Run()
     ChannelInit();
     ASSERT_NE(INVALID, Reader.param.channel_type);
     ASSERT_EQ(Reader.param.channel_type, Writer.param.channel_type);
-    ssize_t mtu = pirate_write_mtu(&Writer.param);
+    ssize_t mtu = pirate_write_mtu_estimate(&Writer.param);
     ASSERT_GE(mtu, 0);
     for(int child = 0; child <= 1; child++)
     {

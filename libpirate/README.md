@@ -40,8 +40,11 @@ channels.
 | serial         | Y | | | |
 | mercury        | Y | | | |
 | ge_eth         | Y | Y | Y | Y |
+| multiplex      | Y | Y <sup>&#8224;&#8224;</sup> | | |
 
 &#8224; pipe support nonblocking IO when mtu &#8804; 4096
+
+&#8224;&#8224; multiplex support nonblocking IO when all subchannels are nonblocking
 
 ## Usage
 
