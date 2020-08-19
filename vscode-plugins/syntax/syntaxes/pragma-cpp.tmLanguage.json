@@ -1,0 +1,190 @@
+{
+	"scopeName": "pirate-pragma-cpp.injection",
+	"injectionSelector": "L:meta.preprocessor.pragma.cpp",
+	"patterns": [
+		{
+			"include": "#pirate-enclave"
+		},
+		{
+			"include": "#pirate-capability"
+		}
+	],
+	"repository": {
+		"pirate-enclave": {
+			"begin": "\\bpirate enclave\\s+",
+			"beginCaptures": {
+				"0": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				}
+			},
+			"end": "$",
+			"patterns": [
+				{
+					"include": "#pirate-enclave-declare"
+				},
+				{
+					"include": "#pirate-enclave-capability"
+				}
+			]
+		},
+		"pirate-enclave-capability": {
+			"begin": "(capability\\s*)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.definition.parameters.begin.preprocessor.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": "punctuation.definition.parameters.end.preprocessor.cpp"
+			},
+			"patterns": [
+				{
+					"include": "#pirate-enclave-capability-ident-pair"
+				}
+			]
+		},
+		"pirate-enclave-capability-ident-pair": {
+			"match": "(\\p{Word}+)(,)\\s*(\\p{Word}+)",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				},
+				"3": {
+					"name": "entity.name.function.preprocessor.cpp"
+				}
+			}
+		},
+		"pirate-enclave-declare": {
+			"begin": "(declare\\s*)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.definition.parameters.begin.preprocessor.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": "punctuation.definition.parameters.end.preprocessor.cpp"
+			},
+			"patterns": [
+				{
+					"include": "#pirate-enclave-declare-name"
+				}
+			]
+		},
+		"pirate-enclave-declare-name": {
+			"match": "\\p{Word}+",
+			"captures": {
+				"0": {
+					"name": "entity.name.function.preprocessor.cpp"
+				}
+			}
+		},
+		"pirate-capability": {
+			"begin": "\\bpirate capability\\s+",
+			"beginCaptures": {
+				"0": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				}
+			},
+			"end": "$",
+			"patterns": [
+				{
+					"include": "#pirate-capability-declare"
+				},
+				{
+					"include": "#pirate-capability-push"
+				},
+				{
+					"include": "#pirate-capability-pop"
+				}
+			]
+		},
+		"pirate-capability-declare": {
+			"begin": "(declare\\s*)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.definition.parameters.begin.preprocessor.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": "punctuation.definition.parameters.end.preprocessor.cpp"
+			},
+			"patterns": [
+				{
+					"include": "#pirate-capability-declare-ident"
+				}
+			]
+		},
+		"pirate-capability-declare-ident": {
+			"match": "(\\p{Word}+)(,)\\s*(\\p{Word}+)|(\\p{Word}+)",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.separator.delimiter.comma.cpp"
+				},
+				"3": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"4": {
+					"name": "entity.name.function.preprocessor.cpp"
+				}
+			}
+		},
+		"pirate-capability-push": {
+			"begin": "(\\bpush\\s*)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.definition.parameters.begin.preprocessor.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.parameters.end.preprocessor.cpp"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#pirate-capability-push-list"
+				}
+			]
+		},
+		"pirate-capability-push-list": {
+			"match": "(\\p{Word}+)((,)\\s*\\p{Word}+)*",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"3": {
+					"name": "punctuation.separator.delimiter.comma.cpp"
+				}
+			}
+		},
+		"pirate-capability-pop": {
+			"match": "pop",
+			"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+		}
+	}
+}
