@@ -8,20 +8,19 @@
 
 class FrameProcessorCreator {
 public:
-    enum FrameProcessorType { Filesystem, XWindows };
-
     static FrameProcessor * get(FrameProcessorType processorType,
-        unsigned width, unsigned height, std::string outdir, bool verbose)
+        VideoType videoType, unsigned width, unsigned height,
+        bool monochrome, std::string outdir, bool verbose)
     {
         switch (processorType)
         {
 #if XWIN_PRESENT
             case XWindows:
-                return new XWinFrameProcessor(width, height);
+                return new XWinFrameProcessor(videoType, width, height, monochrome);
 #endif
             case Filesystem:
             default:
-                return new FileFrameProcessor(outdir, verbose);
+                return new FileFrameProcessor(videoType, outdir, verbose);
         }
     }
 };

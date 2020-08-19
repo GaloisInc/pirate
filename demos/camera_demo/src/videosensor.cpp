@@ -14,11 +14,12 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
-        std::string& devicePath, bool hFlip, bool vFlip,
+        std::string& devicePath, VideoType videoType, bool hFlip, bool vFlip,
         unsigned imgWidth, unsigned imgHeight,
         unsigned frameRateNumerator, unsigned frameRateDenominator) :
     mProcessFrameCallback(processFrameCallback),
     mDevicePath(devicePath),
+    mVideoType(videoType),
     mFlipHorizontal(hFlip),
     mFlipVertical(vFlip),
     mImageWidth(imgWidth),
@@ -301,7 +302,17 @@ int VideoSensor::initVideoDevice()
 
     mFormat.fmt.pix.width = mImageWidth;
     mFormat.fmt.pix.height = mImageHeight;
-    mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
+    switch (mVideoType) {
+        case JPEG:
+            mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
+            break;
+        case YUYV:
+            mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+            break;
+        default:
+            std::cout << "Unknown video type " << mVideoType << std::endl;
+            return -1;
+    }
     rv = ioctlWait(mFd, VIDIOC_S_FMT, &mFormat);
     if (rv < 0)
     {
@@ -374,7 +385,7 @@ int VideoSensor::initCaptureBuffers()
         }
 
         mBuffers[i].mLength = buf.length;
-        mBuffers[i].mStart = (char *)mmap(NULL, buf.length,
+        mBuffers[i].mStart = (unsigned char *)mmap(NULL, buf.length,
                 PROT_READ | PROT_WRITE, MAP_SHARED, mFd, buf.m.offset);
         if (mBuffers[i].mStart == MAP_FAILED)
         {

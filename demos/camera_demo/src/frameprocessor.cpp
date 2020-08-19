@@ -1,7 +1,8 @@
 #include "frameprocessor.hpp"
 
-FrameProcessor::FrameProcessor() :
+FrameProcessor::FrameProcessor(VideoType videoType) :
     mIndex(0),
+    mVideoType(videoType),
     mProcessFrameCallback(std::bind(&FrameProcessor::process, this, 
                 std::placeholders::_1, std::placeholders::_2))
 {

@@ -5,7 +5,8 @@
 #include <iostream>
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(std::string& outputPath, bool verbose) :
+FileFrameProcessor::FileFrameProcessor(VideoType videoType, std::string& outputPath, bool verbose) :
+    FrameProcessor(videoType),
     mOutputDirectory(outputPath),
     mVerbose(verbose) 
 {
@@ -32,7 +33,18 @@ int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
     // Save the image file
     std::stringstream ss;
     ss << mOutputDirectory << "/capture_" 
-       << std::setfill('0') << std::setw(4) << mIndex << ".jpg";
+       << std::setfill('0') << std::setw(4) << mIndex;
+    switch (mVideoType) {
+        case JPEG:
+            ss << ".jpg";
+            break;
+        case YUYV:
+            ss << ".raw";
+            break;
+        default:
+            std::cout << "Unknown video type " << mVideoType << std::endl;
+            return -1;
+    }
     
     std::ofstream out(ss.str(), std::ios::out | std::ios::binary);
     if (!out)
@@ -41,7 +53,7 @@ int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
         return -1;   
     }
 
-    out.write(data, length);
+    out.write((const char*) data, length);
     out.close();
 
     if (!out.good())

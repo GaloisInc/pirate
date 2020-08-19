@@ -10,49 +10,16 @@
 #include "orientationoutputcreator.hpp"
 #include "frameprocessorcreator.hpp"
 #include "videosensor.hpp"
-
-// Command-line options
-struct Options
-{
-    Options() :
-        mVideoDevice("/dev/video0"),
-        mImageWidth(640),
-        mImageHeight(480),
-        mImageHorizontalFlip(false),
-        mImageVerticalFlip(false),
-        mFrameRateNumerator(1),
-        mFrameRateDenominator(1),
-        mImageOutputDirectory("/tmp"),
-        mOutputType(OrientationOutputCreator::PiServo),
-        mInputType(OrientationInputCreator::Freespace),
-        mProcessorType(FrameProcessorCreator::Filesystem),
-        mAngularPositionLimit(45.0),
-        mVerbose(false)
-    {
-
-    }
-
-    std::string mVideoDevice;
-    unsigned mImageWidth;
-    unsigned mImageHeight;
-    bool mImageHorizontalFlip;
-    bool mImageVerticalFlip;
-    unsigned mFrameRateNumerator;
-    unsigned mFrameRateDenominator;
-    std::string mImageOutputDirectory;
-    OrientationOutputCreator::OutputType mOutputType;
-    OrientationInputCreator::InputType mInputType;
-    FrameProcessorCreator::FrameProcessorType mProcessorType;
-    float mAngularPositionLimit;
-    bool mVerbose;
-};
+#include "options.hpp"
 
 static struct argp_option options[] =
 {
     { "video_device", 'd', "device",      0, "video device",                      0 },
+    { "video_type",   't', "jpeg|yuyv",   0, "video type",                        0 },
     { "width",        'W', "pixels",      0, "image width",                       0 },
     { "height",       'H', "pixels",      0, "image height",                      0 },
     { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
+    { "monochrome",   'm', NULL,          0, "monochrome image filter",           0 },
     { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 },
     { "out_dir",      'O', "path",        0, "image output directory",            0 },
     { "pos_our",      'o', "servo|print", 0, "angular position output",           0 },
@@ -73,6 +40,22 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
     {
         case 'd':
             ss >> opt->mVideoDevice;
+            break;
+
+        case 't':
+            if (ss.str() == "jpeg")
+            {
+                opt->mVideoType = JPEG;
+            }
+            else if (ss.str() == "yuyv")
+            {
+                opt->mVideoType = YUYV;
+            }
+            else
+            {
+                argp_usage(state);
+                argp_error(state, "invalid -t argument '%s'", arg);
+            }
             break;
 
         case 'W':
@@ -116,56 +99,57 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
         case 'o':
             if (ss.str() == "servo")
             {
-                opt->mOutputType = OrientationOutputCreator::PiServo;
+                opt->mOutputType = PiServo;
             }
             else if (ss.str() == "print")
             {
-                opt->mOutputType = OrientationOutputCreator::Print;
+                opt->mOutputType = Print;
             }
             else
             {
                 argp_usage(state);
                 argp_error(state, "invalid -o argument '%s'", arg);
             }
-
             break;
 
         case 'i':
             if (ss.str() == "acc")
             {
-                opt->mInputType = OrientationInputCreator::Freespace;
+                opt->mInputType = Freespace;
             }
             else if (ss.str() == "kbd")
             {
-                opt->mInputType = OrientationInputCreator::Keyboard;
+                opt->mInputType = Keyboard;
             }
             else
             {
                 argp_usage(state);
                 argp_error(state, "invalid -i argument '%s'", arg);
             }
-
             break;
 
         case 'p':
             if (ss.str() == "fs")
             {
-                opt->mProcessorType = FrameProcessorCreator::Filesystem;
+                opt->mProcessorType = Filesystem;
             }
             else if (ss.str() == "xwin")
             {
-                opt->mProcessorType = FrameProcessorCreator::XWindows;
+                opt->mProcessorType = XWindows;
             }
             else
             {
                 argp_usage(state);
                 argp_error(state, "invalid -p argument '%s'", arg);
             }
-
             break;
 
         case 'l':
             ss >> opt->mAngularPositionLimit;
+            break;
+
+        case 'm':
+            opt->mImageMonochrome = true;
             break;
 
         case 'v':
@@ -204,12 +188,14 @@ int main(int argc, char *argv[])
         -options.mAngularPositionLimit, options.mAngularPositionLimit);
 
     FrameProcessor * frameProcessor = FrameProcessorCreator::get(
-        options.mProcessorType, options.mImageWidth, options.mImageHeight,
-        options.mImageOutputDirectory, options.mVerbose);
+        options.mProcessorType, options.mVideoType,
+        options.mImageWidth, options.mImageHeight,
+        options.mImageMonochrome, options.mImageOutputDirectory, options.mVerbose);
 
     VideoSensor * videoSensor = new VideoSensor(
             frameProcessor->getProcessFrameCallback(),
             options.mVideoDevice,
+            options.mVideoType,
             options.mImageHorizontalFlip, options.mImageVerticalFlip,
             options.mImageWidth, options.mImageHeight,
             options.mFrameRateNumerator, options.mFrameRateDenominator);
