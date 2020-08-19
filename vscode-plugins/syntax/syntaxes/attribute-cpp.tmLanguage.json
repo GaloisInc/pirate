@@ -1,71 +1,113 @@
 {
 	"scopeName": "pirate-attribute-cpp.injection",
 	"injectionSelector": "L:source.cpp",
-	"patterns": [{ "include": "#capability-attr" }],
+	"patterns": [
+		{
+			"include": "#capability-attr"
+		}
+	],
 	"repository": {
 		"capability-attr": {
-			"begin": "__attribute__(\\(\\()",
+			"begin": "(__attribute__)(\\(\\()",
 			"beginCaptures": {
-				"1": { "name": "punctuation.section.attribute.begin.cpp" }
+				"1": {
+					"name": "support.other.attribute.cpp"
+				},
+				"2": {
+					"name": "punctuation.section.attribute.begin.cpp"
+				}
 			},
 			"end": "\\)\\)$",
 			"endCaptures": {
-				"0": { "name": "punctuation.section.attribute.end.cpp" }
+				"0": {
+					"name": "punctuation.section.attribute.end.cpp"
+				}
 			},
-			"name": "support.other.attribute.cpp",
 			"patterns": [
-				{ "include": "#pirate-capability" }
+				{
+					"include": "#attribute-pirate-capability"
+				},
+				{
+					"include": "#attribute-pirate-enclave-main"
+				},
+				{
+					"include": "#attribute-pirate-enclave-only"
+				}
 			]
 		},
-		"pirate-enclave-only": {
-			"begin": "pirate_enclave_only(\\()",
+		"attribute-pirate-enclave-main": {
+			"begin": "(pirate_enclave_main)(\\()",
 			"beginCaptures": {
-				"1": { "name": "punctuation.section.attribute.begin.cpp" }
-			},
-			"end": "\\)",
-			"endCaptures": {
-				"0": { "name": "punctuation.section.attribute.end.cpp" }
-			},
-			"name": "entity.name.function.preprocessor.cpp",
-			"patterns": [
-				{ "include": "#ident" }
-			]
-		},
-		"pirate-enclave-main": {
-			"begin": "pirate_enclave_main(\\()",
-			"beginCaptures": {
-				"1": { "name": "punctuation.section.attribute.begin.cpp" }
-			},
-			"end": "\\)",
-			"endCaptures": {
-				"0": { "name": "punctuation.section.attribute.end.cpp" }
-			},
-			"name": "entity.name.function.preprocessor.cpp",
-			"patterns": [
-				{ "include": "#ident" }
-			]
-		},
-		"pirate-capability": {
-			"begin": "pirate_capability(\\()",
-			"beginCaptures": {
-				"1": { "name": "punctuation.section.attribute.begin.cpp" }
-			},
-			"end": "\\)",
-			"endCaptures": {
-				"0": { "name": "punctuation.section.attribute.end.cpp" }
-			},
-			"name": "entity.name.function.preprocessor.cpp",
-			"patterns": [
-				{ "include": "#ident" }
-			]
-		},
-    "ident": {
-      "match": "(\\p{Alnum}+)",
-			"captures": {
 				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.section.attribute.begin.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.attribute.end.cpp"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#quoted-ident"
+				}
+			]
+		},
+		"attribute-pirate-enclave-only": {
+			"begin": "(pirate_enclave_only)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.section.attribute.begin.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.attribute.end.cpp"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#quoted-ident"
+				}
+			]
+		},
+		"attribute-pirate-capability": {
+			"begin": "(pirate_capability)(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.name.function.preprocessor.cpp"
+				},
+				"2": {
+					"name": "punctuation.section.attribute.begin.cpp"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.section.attribute.end.cpp"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#quoted-ident"
+				}
+			]
+		},
+		"quoted-ident": {
+			"match": "\"\\p{Word}+\"",
+			"captures": {
+				"0": {
 					"name": "entity.name.function.preprocessor.cpp"
 				}
 			}
-    }
+		}
 	}
 }

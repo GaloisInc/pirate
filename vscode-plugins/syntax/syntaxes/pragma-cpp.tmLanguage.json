@@ -136,7 +136,7 @@
 					"name": "entity.name.function.preprocessor.cpp"
 				},
 				"2": {
-					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+					"name": "punctuation.separator.delimiter.comma.cpp"
 				},
 				"3": {
 					"name": "entity.name.function.preprocessor.cpp"
@@ -178,7 +178,7 @@
 					"name": "entity.name.function.preprocessor.cpp"
 				},
 				"3": {
-					"name": "entity.other.attribute-name.pragma.preprocessor.cpp"
+					"name": "punctuation.separator.delimiter.comma.cpp"
 				}
 			}
 		},
