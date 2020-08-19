@@ -144,6 +144,23 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
 
+        case 'p':
+            if (ss.str() == "fs")
+            {
+                opt->mProcessorType = FrameProcessorCreator::Filesystem;
+            }
+            else if (ss.str() == "xwin")
+            {
+                opt->mProcessorType = FrameProcessorCreator::XWindows;
+            }
+            else
+            {
+                argp_usage(state);
+                argp_error(state, "invalid -p argument '%s'", arg);
+            }
+
+            break;
+
         case 'l':
             ss >> opt->mAngularPositionLimit;
             break;

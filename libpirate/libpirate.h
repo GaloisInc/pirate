@@ -29,7 +29,7 @@ extern "C" {
 
 #define PIRATE_LEN_NAME 64
 #define PIRATE_NUM_ENCLAVES 16
-#define PIRATE_NUM_CHANNELS 16
+#define PIRATE_NUM_CHANNELS 64
 #define PIRATE_IOV_MAX 16
 
 #define PIRATE_DEFAULT_MIN_TX 512
@@ -129,6 +129,13 @@ typedef enum {
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
+
+    // The gaps channel that multiplexes over one
+    // or more component gaps channels. A write-only multiplex
+    // channel will send one request to each of its
+    // component channels. A read-only multiplex channel
+    // will poll its component channels for data.
+    MULTIPLEX,
 
    // Number of GAPS channel types
     PIRATE_CHANNEL_TYPE_COUNT
@@ -252,6 +259,11 @@ typedef struct {
     uint32_t mtu;
 } pirate_ge_eth_param_t;
 
+#define PIRATE_MULTIPLEX_NUM_CHANNELS 16
+typedef struct {
+    char unused;
+} pirate_multiplex_param_t;
+
 typedef struct {
     channel_enum_t channel_type;
     uint8_t listener;
@@ -272,6 +284,7 @@ typedef struct {
         pirate_serial_param_t           serial;
         pirate_mercury_param_t          mercury;
         pirate_ge_eth_param_t           ge_eth;
+        pirate_multiplex_param_t        multiplex;
     } channel;
 } pirate_channel_param_t;
 
@@ -397,11 +410,11 @@ int pirate_get_channel_description(int gd, char *str, int len);
 //
 // Channels must be opened in the same order across all
 // processes.
-
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
+//
+// The return value is a unique gaps descriptor, or -1 if an
+// error occurred (in which case, errno is set appropriately).
 
 int pirate_open_parse(const char *param, int flags);
 
@@ -409,13 +422,77 @@ int pirate_open_parse(const char *param, int flags);
 //
 // Channels must be opened in the same order across all
 // processes.
-
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
+//
+// The return value is a unique gaps descriptor, or -1 if an
+// error occurred (in which case, errno is set appropriately).
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
+
+typedef enum {
+    // Channel type cannot be used as a component of a multiplex channel.
+    // Examples: multiplex channel.
+    MULTIPLEX_INVALID,
+    // Channel type associates exactly one producer and one consumer.
+    // Examples: unix pipe, mercury device.
+    MULTIPLEX_EXACTLY_ONE,
+    // Channel type associates one consumer with one or more producers.
+    // A separate file descriptor is opened for each incoming producer
+    // connection.
+    // Examples: tcp socket, unix socket.
+    MULTIPLEX_ONE_OR_MORE,
+    // Channel type associates one consumer with one or more producers.
+    // A single file descriptor is opened for all incoming producer
+    // conections.
+    // Examples: udp socket, ge ethernet channel.
+    MULTIPLEX_MANY
+} multiplex_enum_t;
+
+// Returns the multiplex type associated with the input channel type.
+
+multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type);
+
+// Opens the gaps channel specified by the parameter value and
+// associates the gaps channel as a component of the multiplex
+// channel. The count argument is the number of expected
+// connections.
+//
+// The following conditions must be satisfied or an errno of
+// EINVAL will be returned:
+//
+//  - mutiplex_gd must refer to a valid gaps channel of multiplex channel type
+//  - count must be nonzero
+//  - the flags argument must equal the flags of the multiplex channel
+//  - if the access mode of flags is O_WRONLY then count must be one
+//  - if the multiplex type of the new channel is MULTIPLEX_EXACTLY_ONE
+//    then count must be one
+//
+// The return value is 0 on success, or -1 if an
+// error occurred (in which case, errno is set appropriately).
+
+int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count);
+
+
+// Opens the gaps channel specified by the parameter string and
+// associates the gaps channel as a component of the multiplex
+// channel. The count argument is the number of expected
+// connections.
+//
+// The following conditions must be satisfied or an errno of
+// EINVAL will be returned:
+//
+//  - mutiplex_gd must refer to a valid gaps channel of multiplex channel type
+//  - count must be nonzero
+//  - the flags argument must equal the flags of the multiplex channel
+//  - if the access mode of flags is O_WRONLY then count must be one
+//  - if the multiplex type of the new channel is MULTIPLEX_EXACTLY_ONE
+//    then count must be one
+//
+// The return value is 0 on success, or -1 if an
+// error occurred (in which case, errno is set appropriately).
+
+int pirate_multiplex_open_parse(int multiplex_gd, const char *param, int flags, size_t count);
 
 // Returns 1 if the channel type supports the
 // pirate_pipe_param() and pirate_pipe_parse()
@@ -500,7 +577,6 @@ ssize_t pirate_read(int gd, void *buf, size_t count);
 
 ssize_t pirate_write(int gd, const void *buf, size_t count);
 
-
 // pirate_write_mtu() returns the maximum data length
 // that can be send in a call to pirate_write() for
 // the given channel. A value of 0 indicates no maximum length.
@@ -508,7 +584,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count);
 // On success, the mtu is returned. On error,
 // -1 is returned, and errno is set appropriately.
 
-ssize_t pirate_write_mtu(const pirate_channel_param_t *param);
+ssize_t pirate_write_mtu(int gd);
 
 // Closes the gaps channel specified by the gaps descriptor.
 //

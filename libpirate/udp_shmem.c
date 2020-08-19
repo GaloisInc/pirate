@@ -286,7 +286,8 @@ error:
     return NULL;
 }
 
-int udp_shmem_buffer_open(void *_param, void *_ctx) {
+int udp_shmem_buffer_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_udp_shmem_param_t *param = (pirate_udp_shmem_param_t *)_param;
     udp_shmem_ctx *ctx = (udp_shmem_ctx *)_ctx;
     int err;
@@ -491,7 +492,8 @@ ssize_t udp_shmem_buffer_read(const void *_param, void *_ctx, void *buffer, size
     return count;
 }
 
-ssize_t udp_shmem_buffer_write_mtu(const void *_param) {
+ssize_t udp_shmem_buffer_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_udp_shmem_param_t *param = (const pirate_udp_shmem_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

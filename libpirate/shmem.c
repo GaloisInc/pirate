@@ -244,7 +244,8 @@ int shmem_buffer_get_channel_description(const void *_param, char *desc, int len
     return snprintf(desc, len, "shmem,%s%s%s", param->path, buffer_size_str, max_tx_str);
 }
 
-int shmem_buffer_open(void *_param, void *_ctx) {
+int shmem_buffer_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_shmem_param_t *param = (pirate_shmem_param_t *)_param;
     shmem_ctx *ctx = (shmem_ctx *)_ctx;
     int err;
@@ -456,7 +457,8 @@ static uint32_t shmem_buffer_do_write(const pirate_shmem_param_t *param, shmem_b
     return writer;
 }
 
-ssize_t shmem_buffer_write_mtu(const void *_param) {
+ssize_t shmem_buffer_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_shmem_param_t *param = (const pirate_shmem_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

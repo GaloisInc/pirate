@@ -16,11 +16,15 @@
 #ifndef __PIRATE_INTERNAL_PRIMITIVES_H
 #define __PIRATE_INTERNAL_PRIMITIVES_H
 
+#include <BaseTsd.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void pirate_reset_gd();
+SSIZE_T pirate_write_mtu_estimate(const pirate_channel_param_t *param);
 
 #ifdef __cplusplus
 }

@@ -129,7 +129,8 @@ int pirate_serial_get_channel_description(const void *_param, char *desc, int le
     return snprintf(desc, len, "serial,%s%s%s%s", param->path, baud_str, mtu_str, max_tx_str);
 }
 
-int pirate_serial_open(void *_param, void *_ctx) {
+int pirate_serial_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_serial_param_t *param = (pirate_serial_param_t *)_param;
     serial_ctx *ctx = (serial_ctx *)_ctx;
     struct termios attr;
@@ -254,7 +255,8 @@ ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, size_t cou
     return count;
 }
 
-ssize_t pirate_serial_write_mtu(const void *_param) {
+ssize_t pirate_serial_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_serial_param_t *param = (const pirate_serial_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -273,7 +275,7 @@ ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *buf, siz
     pirate_header_t header;
     header.count = htonl(count);
     ssize_t rv;
-    size_t mtu = pirate_serial_write_mtu(param);
+    size_t mtu = pirate_serial_write_mtu(param, ctx);
 
     if ((mtu > 0) && (count > mtu)) {
         errno = EMSGSIZE;
