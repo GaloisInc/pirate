@@ -83,7 +83,8 @@ int pirate_pipe_get_channel_description(const void *_param, char *desc, int len)
     return snprintf(desc, len, "pipe,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
-int pirate_pipe_open(void *_param, void *_ctx) {
+int pirate_pipe_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
     pipe_ctx *ctx = (pipe_ctx *)_ctx;
     int nonblock = ctx->flags & O_NONBLOCK;
@@ -188,7 +189,8 @@ ssize_t pirate_pipe_read(const void *_param, void *_ctx, void *buf, size_t count
     return pirate_stream_read((common_ctx*) _ctx, param->min_tx, buf, count);
 }
 
-ssize_t pirate_pipe_write_mtu(const void *_param) {
+ssize_t pirate_pipe_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
@@ -203,6 +205,6 @@ ssize_t pirate_pipe_write_mtu(const void *_param) {
 
 ssize_t pirate_pipe_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_pipe_param_t *param = (const pirate_pipe_param_t *)_param;
-    ssize_t mtu = pirate_pipe_write_mtu(param);
+    ssize_t mtu = pirate_pipe_write_mtu(param, _ctx);
     return pirate_stream_write((common_ctx*)_ctx, param->min_tx, mtu, buf, count);
 }

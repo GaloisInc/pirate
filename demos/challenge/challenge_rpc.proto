@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+service Encrypt1 {
+    rpc Encrypt (google.protobuf.BytesValue) returns (google.protobuf.BytesValue) {}
+}
+
+service Encrypt2 {
+    rpc Encrypt (google.protobuf.BytesValue) returns (google.protobuf.BytesValue) {}
+}
+

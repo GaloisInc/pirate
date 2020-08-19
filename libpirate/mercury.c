@@ -285,15 +285,23 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     int wr_sz = 0;
     int ret_sz = 0;
 
-    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u", 
-                        param->session.level, 
+    char mtu_str[32];
+
+    mtu_str[0] = 0;
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+
+    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u%s",
+                        param->session.level,
                         param->session.source_id,
-                        param->session.destination_id);
+                        param->session.destination_id,
+                        mtu_str);
     ret_sz += wr_sz;
 
     for (uint32_t i = 0; i < param->session.message_count; ++i) {
         wr += wr_sz;
-        len -= wr_sz;
+        len = MAX(len - wr_sz, 0);
         wr_sz = snprintf(wr, len, ",%u", param->session.messages[i]);
         ret_sz += wr_sz;
     }
@@ -301,7 +309,8 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     return ret_sz;
 }
 
-int pirate_mercury_open(void *_param, void *_ctx) {
+int pirate_mercury_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     const uint32_t cfg_len = sizeof(uint32_t);
@@ -463,7 +472,8 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
     return mercury_message_unpack(ctx->buf, (size_t) rd_len, buf, count, param);
 }
 
-ssize_t pirate_mercury_write_mtu(const void *_param) {
+ssize_t pirate_mercury_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

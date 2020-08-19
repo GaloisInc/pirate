@@ -176,7 +176,7 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
     char mtu_str[32];
 
     mtu_str[0] = 0;
-    if ((param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU)) {
+    if (param->mtu != 0) {
         snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
     }
     return snprintf(desc, len, "ge_eth,%s,%u,%u%s", param->addr,
@@ -246,7 +246,8 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     return 0;
 }
 
-int pirate_ge_eth_open(void *_param, void *_ctx) {
+int pirate_ge_eth_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_ge_eth_param_t *param = (pirate_ge_eth_param_t *)_param;
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     int rv = -1;
@@ -314,7 +315,8 @@ ssize_t pirate_ge_eth_read(const void *_param, void *_ctx, void *buf, size_t cou
     return ge_message_unpack(ctx->buf, buf, count, &hdr);
 }
 
-ssize_t pirate_ge_eth_write_mtu(const void *_param) {
+ssize_t pirate_ge_eth_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_ge_eth_param_t *param = (const pirate_ge_eth_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {

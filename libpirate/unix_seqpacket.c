@@ -90,49 +90,53 @@ int pirate_unix_seqpacket_get_channel_description(const void *_param, char *desc
         buffer_size_str, min_tx_str, mtu_str);
 }
 
-static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix_seqpacket_ctx *ctx) {
+static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix_seqpacket_ctx *ctx, int *server_fdp) {
     int server_fd;
     int err, rv;
     struct sockaddr_un addr;
     int nonblock = ctx->flags & O_NONBLOCK;
 
-    server_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-    if (server_fd < 0) {
-        return server_fd;
-    }
+    if ((server_fdp != NULL) && (*server_fdp > 0)) {
+        server_fd = *server_fdp;
+    } else {
+        server_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+        if (server_fd < 0) {
+            return server_fd;
+        }
 
-    memset(&addr, 0, sizeof(struct sockaddr_un));
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, param->path, sizeof(addr.sun_path) - 1);
+        memset(&addr, 0, sizeof(struct sockaddr_un));
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, param->path, sizeof(addr.sun_path) - 1);
 
-    if (param->buffer_size > 0) {
-        rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
-                        sizeof(param->buffer_size));
+        if (param->buffer_size > 0) {
+            rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
+                            sizeof(param->buffer_size));
+            if (rv < 0) {
+                err = errno;
+                close(server_fd);
+                errno = err;
+                return rv;
+            }
+        }
+        err = errno;
+        unlink(param->path);
+        // ignore unlink error if file does not exist
+        errno = err;
+        rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
         if (rv < 0) {
             err = errno;
             close(server_fd);
             errno = err;
             return rv;
         }
-    }
-    err = errno;
-    unlink(param->path);
-    // ignore unlink error if file does not exist
-    errno = err;
-    rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
-    if (rv < 0) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-        return rv;
-    }
 
-    rv = listen(server_fd, 0);
-    if (rv < 0) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-        return rv;
+        rv = listen(server_fd, 0);
+        if (rv < 0) {
+            err = errno;
+            close(server_fd);
+            errno = err;
+            return rv;
+        }
     }
 
     ctx->sock = accept4(server_fd, NULL, NULL, nonblock);
@@ -141,10 +145,15 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
         err = errno;
         close(server_fd);
         errno = err;
+        if (server_fdp != NULL) *server_fdp = 0;
         return ctx->sock;
     }
 
-    close(server_fd);
+    if (server_fdp == NULL) {
+        close(server_fd);
+    } else if (*server_fdp == 0) {
+        *server_fdp = server_fd;
+    }
     return 0;
 }
 
@@ -199,7 +208,8 @@ static int unix_seqpacket_writer_open(pirate_unix_seqpacket_param_t *param, unix
     return -1;
 }
 
-int pirate_unix_seqpacket_open(void *_param, void *_ctx) {
+int pirate_unix_seqpacket_open(void *_param, void *_ctx, int *server_fdp) {
+    (void) server_fdp;
     pirate_unix_seqpacket_param_t *param = (pirate_unix_seqpacket_param_t *)_param;
     unix_seqpacket_ctx *ctx = (unix_seqpacket_ctx *)_ctx;
     int rv = -1;
@@ -212,7 +222,7 @@ int pirate_unix_seqpacket_open(void *_param, void *_ctx) {
         return -1;
     }
     if (access == O_RDONLY) {
-        rv = unix_seqpacket_reader_open(param, ctx);
+        rv = unix_seqpacket_reader_open(param, ctx, server_fdp);
     } else {
         rv = unix_seqpacket_writer_open(param, ctx);
     }
@@ -254,7 +264,8 @@ ssize_t pirate_unix_seqpacket_read(const void *_param, void *_ctx, void *buf, si
     return recv(ctx->sock, buf, count, 0);
 }
 
-ssize_t pirate_unix_seqpacket_write_mtu(const void *_param) {
+ssize_t pirate_unix_seqpacket_write_mtu(const void *_param, void *_ctx) {
+    (void) _ctx;
     const pirate_unix_seqpacket_param_t *param = (const pirate_unix_seqpacket_param_t *)_param;
     return param->mtu;
 }
@@ -262,7 +273,7 @@ ssize_t pirate_unix_seqpacket_write_mtu(const void *_param) {
 ssize_t pirate_unix_seqpacket_write(const void *_param, void *_ctx, const void *buf, size_t count) {
     const pirate_unix_seqpacket_param_t *param = (const pirate_unix_seqpacket_param_t *)_param;
     unix_seqpacket_ctx *ctx = (unix_seqpacket_ctx *)_ctx;
-    size_t write_mtu = pirate_unix_seqpacket_write_mtu(param);
+    size_t write_mtu = pirate_unix_seqpacket_write_mtu(param, ctx);
 
     if (ctx->sock <= 0) {
         errno = EBADF;
