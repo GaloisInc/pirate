@@ -58,6 +58,12 @@ int VideoSensor::init()
         return -1;
     }
 
+    rv = captureEnable();
+    if (rv != 0)
+    {
+        return -1;
+    }
+
     // Start the capture thread
     mPoll = true;
     mPollThread = new std::thread(&VideoSensor::pollThread, this);
@@ -77,42 +83,56 @@ void VideoSensor::term()
             mPollThread = nullptr;
         }
     }
-    captureEnable(false);
+    captureDisable();
     uninitVideoDevice();
     closeVideoDevice();
 }
 
-int VideoSensor::captureEnable(bool enable)
+int VideoSensor::captureEnable()
 {
     int rv;
 
-    if (enable)
-    {
-        struct v4l2_buffer buf;
+    struct v4l2_buffer buf;
         
-        for (unsigned i = 0; i < BUFFER_COUNT; i++)
-        {
-            std::memset(&buf, 0, sizeof(buf));
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
-            buf.index = i;
+    for (unsigned i = 0; i < BUFFER_COUNT; i++)
+    {
+        std::memset(&buf, 0, sizeof(buf));
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = i;
 
-            rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
-            if (rv != 0)
-            {
-                std::perror("Failed to queue the buffer");
-                return -1;
-            }
+        rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
+        if (rv != 0)
+        {
+            std::perror("Failed to queue the buffer");
+            return -1;
         }
     }
 
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    int cmd = enable ? VIDIOC_STREAMON : VIDIOC_STREAMOFF;
+    int cmd = VIDIOC_STREAMON;
 
     rv = ioctlWait(mFd, cmd, &type);
     if (rv != 0)
     {
-        std::perror("Failed to set video ON/OFF mode");
+        std::perror("Failed to set video ON mode");
+        return -1;
+    }
+
+    return 0;
+}
+
+int VideoSensor::captureDisable()
+{
+    int rv;
+
+    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int cmd = VIDIOC_STREAMOFF;
+
+    rv = ioctlWait(mFd, cmd, &type);
+    if (rv != 0)
+    {
+        std::perror("Failed to set video OFF mode");
         return -1;
     }
 

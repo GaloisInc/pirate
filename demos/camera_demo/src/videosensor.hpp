@@ -23,7 +23,8 @@ public:
     virtual int init();
     virtual void term();
 
-    virtual int captureEnable(bool enable);
+    virtual int captureEnable();
+    virtual int captureDisable();
     static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
     static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
     static constexpr unsigned DEFAULT_FRAME_RATE_NUMERATOR = 1;

@@ -1,11 +1,16 @@
 
 #include <argp.h>
+#include <atomic>
 #include <chrono>
-#include <thread>
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <functional>
+#include <iostream>
+#include <signal.h>
+#include <sstream>
+#include <string>
+#include <sys/signalfd.h>
+#include <thread>
+#include <unistd.h>
+
 #include "orientationinputcreator.hpp"
 #include "orientationoutputcreator.hpp"
 #include "frameprocessorcreator.hpp"
@@ -29,6 +34,8 @@ static struct argp_option options[] =
     { "verbose",      'v', NULL,          0, "verbose output",                    0 },
     { NULL,           0,   NULL,          0, NULL,                                0 },
 };
+
+static std::atomic<bool> interrupted(false);
 
 static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
@@ -160,6 +167,23 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
     return 0;
 }
 
+static int waitInterrupt(void* arg) {
+    (void) arg;
+    sigset_t set;
+    struct signalfd_siginfo unused;
+    int fd;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+
+    fd = signalfd(-1, &set, 0);
+    read(fd, &unused, sizeof(unused));
+
+    interrupted = true;
+    return 0;
+}
+
 static void parseArgs(int argc, char * argv[], Options * opt)
 {
     struct argp argp;
@@ -178,6 +202,13 @@ int main(int argc, char *argv[])
 {
     int rv;
     Options options;
+    sigset_t set;
+    std::thread *signalThread;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+
     parseArgs(argc, argv, &options);
 
     OrientationOutput * orientationOutput = OrientationOutputCreator::get(
@@ -225,27 +256,20 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rv = videoSensor->captureEnable(true);
-    if (rv != 0)
+    signalThread = new std::thread(waitInterrupt, nullptr);
+
+    while (!interrupted)
     {
-        return -1;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1  ));
-    }
+    signalThread->join();
 
-    rv = videoSensor->captureEnable(false);
-    if (rv != 0)
-    {
-        return -1;
-    }
-
-    delete orientationOutput;
-    delete orientationInput;
-    delete frameProcessor;
+    delete signalThread;
     delete videoSensor;
+    delete frameProcessor;
+    delete orientationInput;
+    delete orientationOutput;
 
     return 0;
 }
