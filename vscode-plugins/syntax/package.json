@@ -1,0 +1,37 @@
+{
+    "name": "pirate-syntax",
+    "displayName": "Pirate Syntax",
+    "description": "Syntax highlighting for Pirate annotations",
+    "version": "0.0.1",
+    "publisher": "Galois, Inc.",
+    "engines": {
+        "vscode": "^1.44.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "grammars": [
+            {
+                "injectTo": ["source.c"],
+                "scopeName": "pirate-pragma-c.injection",
+                "path": "./syntaxes/pragma-c.tmLanguage.json"
+            },
+            {
+                "injectTo": ["source.c"],
+                "scopeName": "pirate-attribute-c.injection",
+                "path": "./syntaxes/attribute-c.tmLanguage.json"
+            },
+            {
+                "injectTo": ["source.cpp"],
+                "scopeName": "pirate-pragma-cpp.injection",
+                "path": "./syntaxes/pragma-cpp.tmLanguage.json"
+            },
+            {
+                "injectTo": ["source.cpp"],
+                "scopeName": "pirate-attribute-cpp.injection",
+                "path": "./syntaxes/attribute-cpp.tmLanguage.json"
+            }
+        ]
+    }
+}
