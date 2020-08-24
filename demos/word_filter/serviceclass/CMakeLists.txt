@@ -20,7 +20,7 @@ set(BUILD_FLAGS "-Wall" "-Wextra" "-Wpedantic" "-O2" "-Wno-zero-length-array")
 set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections")
 
 # Source files
-SET(SRCS "filter.cpp")
+SET(SRCS filter.cpp bidirservice.hpp fixedstring.hpp serialize.hpp)
 
 function(add_gaps_target TGT OUT_DIR)
     add_executable(${TGT} ${SRCS})
