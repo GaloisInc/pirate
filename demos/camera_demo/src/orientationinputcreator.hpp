@@ -7,10 +7,10 @@
 #include "freespaceorientationinput.hpp"
 #endif
 
+#include "options.hpp"
+
 class OrientationInputCreator {
 public:
-    enum InputType { Freespace, Keyboard };
-
     static OrientationInput * get(InputType inputType, 
             AngularPosition<float>::UpdateCallback angPosUpdateCallback,
             float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,

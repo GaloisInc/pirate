@@ -7,7 +7,7 @@
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
-    XWinFrameProcessor(unsigned width, unsigned height);
+    XWinFrameProcessor(VideoType videoType, unsigned width, unsigned height, bool monochrome);
     virtual ~XWinFrameProcessor();
 
     virtual int init();
@@ -17,18 +17,20 @@ public:
 private:
     unsigned       mImageWidth;
     unsigned       mImageHeight;
+    bool           mMonochrome;
     Display*       mDisplay;
     Window         mWindow;
     XImage*        mImage;
-    char*          mImageBuffer;
-    unsigned char* mJpegBuffer;
-    unsigned char* mJpegBufferRow;
+    unsigned char* mImageBuffer;
+    unsigned char* mTempImageBuffer;
+    unsigned char* mTempImageBufferRow;
     GC             mContext;
     XGCValues      mContextVals;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
-    void convertJpeg(FrameBuffer buf, size_t len);
+    int convertJpeg(FrameBuffer buf, size_t len);
+    int convertYuyv(FrameBuffer buf, size_t len);
     void renderImage();
 };
 

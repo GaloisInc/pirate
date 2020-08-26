@@ -9,8 +9,6 @@ private:
     static constexpr int PI_SERVO_PIN = 27;
 
 public:
-    enum OutputType { PiServo, Print };
-
     static OrientationOutput * get(OutputType outputType, float angPosLimit,
         bool verbose)
     {

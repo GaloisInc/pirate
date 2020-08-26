@@ -14,11 +14,12 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
-        std::string& devicePath, bool hFlip, bool vFlip,
+        std::string& devicePath, VideoType videoType, bool hFlip, bool vFlip,
         unsigned imgWidth, unsigned imgHeight,
         unsigned frameRateNumerator, unsigned frameRateDenominator) :
     mProcessFrameCallback(processFrameCallback),
     mDevicePath(devicePath),
+    mVideoType(videoType),
     mFlipHorizontal(hFlip),
     mFlipVertical(vFlip),
     mImageWidth(imgWidth),
@@ -57,6 +58,12 @@ int VideoSensor::init()
         return -1;
     }
 
+    rv = captureEnable();
+    if (rv != 0)
+    {
+        return -1;
+    }
+
     // Start the capture thread
     mPoll = true;
     mPollThread = new std::thread(&VideoSensor::pollThread, this);
@@ -76,42 +83,56 @@ void VideoSensor::term()
             mPollThread = nullptr;
         }
     }
-    captureEnable(false);
+    captureDisable();
     uninitVideoDevice();
     closeVideoDevice();
 }
 
-int VideoSensor::captureEnable(bool enable)
+int VideoSensor::captureEnable()
 {
     int rv;
 
-    if (enable)
-    {
-        struct v4l2_buffer buf;
+    struct v4l2_buffer buf;
         
-        for (unsigned i = 0; i < BUFFER_COUNT; i++)
-        {
-            std::memset(&buf, 0, sizeof(buf));
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
-            buf.index = i;
+    for (unsigned i = 0; i < BUFFER_COUNT; i++)
+    {
+        std::memset(&buf, 0, sizeof(buf));
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = i;
 
-            rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
-            if (rv != 0)
-            {
-                std::perror("Failed to queue the buffer");
-                return -1;
-            }
+        rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
+        if (rv != 0)
+        {
+            std::perror("Failed to queue the buffer");
+            return -1;
         }
     }
 
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    int cmd = enable ? VIDIOC_STREAMON : VIDIOC_STREAMOFF;
+    int cmd = VIDIOC_STREAMON;
 
     rv = ioctlWait(mFd, cmd, &type);
     if (rv != 0)
     {
-        std::perror("Failed to set video ON/OFF mode");
+        std::perror("Failed to set video ON mode");
+        return -1;
+    }
+
+    return 0;
+}
+
+int VideoSensor::captureDisable()
+{
+    int rv;
+
+    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int cmd = VIDIOC_STREAMOFF;
+
+    rv = ioctlWait(mFd, cmd, &type);
+    if (rv != 0)
+    {
+        std::perror("Failed to set video OFF mode");
         return -1;
     }
 
@@ -301,7 +322,17 @@ int VideoSensor::initVideoDevice()
 
     mFormat.fmt.pix.width = mImageWidth;
     mFormat.fmt.pix.height = mImageHeight;
-    mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
+    switch (mVideoType) {
+        case JPEG:
+            mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
+            break;
+        case YUYV:
+            mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+            break;
+        default:
+            std::cout << "Unknown video type " << mVideoType << std::endl;
+            return -1;
+    }
     rv = ioctlWait(mFd, VIDIOC_S_FMT, &mFormat);
     if (rv < 0)
     {
@@ -374,7 +405,7 @@ int VideoSensor::initCaptureBuffers()
         }
 
         mBuffers[i].mLength = buf.length;
-        mBuffers[i].mStart = (char *)mmap(NULL, buf.length,
+        mBuffers[i].mStart = (unsigned char *)mmap(NULL, buf.length,
                 PROT_READ | PROT_WRITE, MAP_SHARED, mFd, buf.m.offset);
         if (mBuffers[i].mStart == MAP_FAILED)
         {

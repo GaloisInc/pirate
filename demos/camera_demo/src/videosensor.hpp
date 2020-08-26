@@ -5,12 +5,14 @@
 #include <thread>
 #include <linux/videodev2.h>
 #include "frameprocessor.hpp"
+#include "options.hpp"
 
 class VideoSensor
 {
 public:
     VideoSensor(const ProcessFrameCallback& processFrameCallback,
             std::string& devicePath,
+            VideoType videoType = DEFAULT_VIDEO_TYPE,
             bool hFlip = true, bool vFlip = true,
             unsigned imgWidth = DEFAULT_IMAGE_WIDTH,
             unsigned imgHeight = DEFAULT_IMAGE_HEIGHT,
@@ -21,15 +23,18 @@ public:
     virtual int init();
     virtual void term();
 
-    virtual int captureEnable(bool enable);
+    virtual int captureEnable();
+    virtual int captureDisable();
     static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
     static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
     static constexpr unsigned DEFAULT_FRAME_RATE_NUMERATOR = 1;
     static constexpr unsigned DEFAULT_FRAME_RATE_DENOMINATOR = 1;
+    static constexpr VideoType DEFAULT_VIDEO_TYPE = JPEG;
 private:
     const ProcessFrameCallback& mProcessFrameCallback;
     
     const std::string mDevicePath;
+    const VideoType mVideoType;
     const bool mFlipHorizontal;
     const bool mFlipVertical;
     unsigned mImageWidth;
@@ -48,7 +53,7 @@ private:
     {
         VideoBuffer() : mStart(nullptr), mLength(0) {}
 
-        char * mStart;
+        unsigned char * mStart;
         size_t mLength;
     };
 
