@@ -242,7 +242,7 @@ void FreespaceOrientationInput::pollThread()
             continue;
         }
 
-        angularPosition = weightedFilter(slope * (-1.0) * acc.y + offset);
+        angularPosition = weightedFilter(slope * acc.y + offset);
         setAngularPosition(rint(angularPosition));
     }
 

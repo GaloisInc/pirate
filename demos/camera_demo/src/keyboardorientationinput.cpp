@@ -109,10 +109,10 @@ void KeyboardOrientationInput::pollThread()
         switch (c)
         {
             case LEFT:
-                angularPosition += mAngIncrement;
+                angularPosition -= mAngIncrement;
                 break;
             case RIGHT:
-                angularPosition -= mAngIncrement;
+                angularPosition += mAngIncrement;
                 break;
             default:
                 continue;
