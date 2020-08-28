@@ -18,11 +18,6 @@ public:
 
     virtual int captureEnable();
     virtual int captureDisable();
-    static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
-    static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
-    static constexpr unsigned DEFAULT_FRAME_RATE_NUMERATOR = 1;
-    static constexpr unsigned DEFAULT_FRAME_RATE_DENOMINATOR = 1;
-    static constexpr VideoType DEFAULT_VIDEO_TYPE = JPEG;
 private:
     const ProcessFrameCallback& mProcessFrameCallback;
     
