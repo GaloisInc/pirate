@@ -11,13 +11,7 @@ class VideoSensor
 {
 public:
     VideoSensor(const ProcessFrameCallback& processFrameCallback,
-            std::string& devicePath,
-            VideoType videoType = DEFAULT_VIDEO_TYPE,
-            bool hFlip = true, bool vFlip = true,
-            unsigned imgWidth = DEFAULT_IMAGE_WIDTH,
-            unsigned imgHeight = DEFAULT_IMAGE_HEIGHT,
-            unsigned frameRateNumerator = DEFAULT_FRAME_RATE_NUMERATOR,
-            unsigned frameRateDenominator = DEFAULT_FRAME_RATE_DENOMINATOR);
+            const Options& options);
     virtual ~VideoSensor();
 
     virtual int init();

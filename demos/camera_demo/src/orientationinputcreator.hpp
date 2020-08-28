@@ -11,24 +11,24 @@
 
 class OrientationInputCreator {
 public:
-    static OrientationInput * get(InputType inputType, 
+    static OrientationInput * get(
             AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-            float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
-            float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT
-            )
+            Options& options)
     {
-        switch (inputType)
+        switch (options.mInputType)
         {
 #if FREESPACE_PRESENT
             case Freespace:
                 std::cout << "Freespace is here" << std::endl;
                 return new FreespaceOrientationInput(angPosUpdateCallback,
-                            angPosMin, angPosMax);
+                            -options.mAngularPositionLimit,
+                            options.mAngularPositionLimit);
 #endif
             case Keyboard:
             default:
                 return new KeyboardOrientationInput(angPosUpdateCallback,
-                            angPosMin, angPosMax);
+                            -options.mAngularPositionLimit,
+                            options.mAngularPositionLimit);
         }
     }
 };

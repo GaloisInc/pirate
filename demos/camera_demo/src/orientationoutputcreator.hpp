@@ -1,5 +1,6 @@
 #pragma once
 
+#include "options.hpp"
 #include "orientationoutput.hpp"
 #include "piservoorientationoutput.hpp"
 
@@ -9,19 +10,18 @@ private:
     static constexpr int PI_SERVO_PIN = 27;
 
 public:
-    static OrientationOutput * get(OutputType outputType, float angPosLimit,
-        bool verbose)
+    static OrientationOutput * get(Options& options)
     {
-        switch (outputType)
+        switch (options.mOutputType)
         {
 #ifdef PIGPIO_PRESENT
             case PiServo:
-                return new PiServoOrientationOutput(PI_SERVO_PIN, angPosLimit,
-                    verbose);
+                return new PiServoOrientationOutput(PI_SERVO_PIN,
+                    options.mAngularPositionLimit, options.mVerbose);
 #endif
             case Print:
             default:
-                return new OrientationOutput(angPosLimit, verbose);
+                return new OrientationOutput(options.mAngularPositionLimit, options.mVerbose);
         }
 
     }

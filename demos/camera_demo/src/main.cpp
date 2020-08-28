@@ -211,25 +211,16 @@ int main(int argc, char *argv[])
 
     parseArgs(argc, argv, &options);
 
-    OrientationOutput * orientationOutput = OrientationOutputCreator::get(
-        options.mOutputType, options.mAngularPositionLimit, options.mVerbose);
+    OrientationOutput * orientationOutput = OrientationOutputCreator::get(options);
 
     OrientationInput * orientationInput = OrientationInputCreator::get(
-        options.mInputType, orientationOutput->getUpdateCallback(),
-        -options.mAngularPositionLimit, options.mAngularPositionLimit);
+        orientationOutput->getUpdateCallback(), options);
 
-    FrameProcessor * frameProcessor = FrameProcessorCreator::get(
-        options.mProcessorType, options.mVideoType,
-        options.mImageWidth, options.mImageHeight,
-        options.mImageMonochrome, options.mImageOutputDirectory, options.mVerbose);
+    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options);
 
     VideoSensor * videoSensor = new VideoSensor(
             frameProcessor->getProcessFrameCallback(),
-            options.mVideoDevice,
-            options.mVideoType,
-            options.mImageHorizontalFlip, options.mImageVerticalFlip,
-            options.mImageWidth, options.mImageHeight,
-            options.mFrameRateNumerator, options.mFrameRateDenominator);
+            options);
 
     rv = orientationOutput->init();
     if (rv != 0)

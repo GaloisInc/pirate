@@ -1,5 +1,7 @@
 #pragma once
 
+#include "options.hpp"
+
 #include "fileframeprocessor.hpp"
 
 #if XWIN_PRESENT
@@ -8,19 +10,20 @@
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(FrameProcessorType processorType,
-        VideoType videoType, unsigned width, unsigned height,
-        bool monochrome, std::string outdir, bool verbose)
+    static FrameProcessor * get(Options& options)
     {
-        switch (processorType)
+        switch (options.mProcessorType)
         {
 #if XWIN_PRESENT
             case XWindows:
-                return new XWinFrameProcessor(videoType, width, height, monochrome);
+                return new XWinFrameProcessor(options.mVideoType,
+                   options.mImageWidth, options.mImageHeight,
+                   options.mImageMonochrome);
 #endif
             case Filesystem:
             default:
-                return new FileFrameProcessor(videoType, outdir, verbose);
+                return new FileFrameProcessor(options.mVideoType,
+                    options.mImageOutputDirectory, options.mVerbose);
         }
     }
 };

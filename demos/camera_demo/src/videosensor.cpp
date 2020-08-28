@@ -11,21 +11,21 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+
+#include "options.hpp"
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
-        std::string& devicePath, VideoType videoType, bool hFlip, bool vFlip,
-        unsigned imgWidth, unsigned imgHeight,
-        unsigned frameRateNumerator, unsigned frameRateDenominator) :
+        const Options& options) :
     mProcessFrameCallback(processFrameCallback),
-    mDevicePath(devicePath),
-    mVideoType(videoType),
-    mFlipHorizontal(hFlip),
-    mFlipVertical(vFlip),
-    mImageWidth(imgWidth),
-    mImageHeight(imgHeight),
-    mFrameRateNumerator(frameRateNumerator),
-    mFrameRateDenominator(frameRateDenominator),
+    mDevicePath(options.mVideoDevice),
+    mVideoType(options.mVideoType),
+    mFlipHorizontal(options.mImageHorizontalFlip),
+    mFlipVertical(options.mImageVerticalFlip),
+    mImageWidth(options.mImageWidth),
+    mImageHeight(options.mImageHeight),
+    mFrameRateNumerator(options.mFrameRateNumerator),
+    mFrameRateDenominator(options.mFrameRateDenominator),
     mFd(-1),
     mPollThread(nullptr),
     mPoll(false)
