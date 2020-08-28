@@ -18,6 +18,7 @@ struct Options
         mImageHorizontalFlip(false),
         mImageVerticalFlip(false),
         mImageMonochrome(false),
+        mImageSlidingWindow(false),
         mFrameRateNumerator(1),
         mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),
@@ -37,6 +38,7 @@ struct Options
     bool mImageHorizontalFlip;
     bool mImageVerticalFlip;
     bool mImageMonochrome;
+    bool mImageSlidingWindow;
     unsigned mFrameRateNumerator;
     unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;

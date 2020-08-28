@@ -15,8 +15,7 @@
 #include "options.hpp"
 #include "videosensor.hpp"
 
-VideoSensor::VideoSensor(const ProcessFrameCallback& processFrameCallback,
-        const Options& options) :
+VideoSensor::VideoSensor(const Options& options, const ProcessFrameCallback& processFrameCallback) :
     mProcessFrameCallback(processFrameCallback),
     mDevicePath(options.mVideoDevice),
     mVideoType(options.mVideoType),

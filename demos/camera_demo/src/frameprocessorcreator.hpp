@@ -2,6 +2,7 @@
 
 #include "options.hpp"
 
+#include "orientationoutput.hpp"
 #include "fileframeprocessor.hpp"
 
 #if XWIN_PRESENT
@@ -10,15 +11,14 @@
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(Options& options)
+    static FrameProcessor * get(const Options& options, OrientationOutput* orientationOutput)
     {
+        (void) orientationOutput;
         switch (options.mProcessorType)
         {
 #if XWIN_PRESENT
             case XWindows:
-                return new XWinFrameProcessor(options.mVideoType,
-                   options.mImageWidth, options.mImageHeight,
-                   options.mImageMonochrome);
+                return new XWinFrameProcessor(options, orientationOutput);
 #endif
             case Filesystem:
             default:

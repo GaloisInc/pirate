@@ -11,15 +11,16 @@
 
 class OrientationInputCreator {
 public:
-    static OrientationInput * get(
-            AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-            Options& options)
+    static OrientationInput * get(const Options& options,
+            AngularPosition<float>::UpdateCallback angPosUpdateCallback)
     {
         switch (options.mInputType)
         {
 #if FREESPACE_PRESENT
             case Freespace:
-                std::cout << "Freespace is here" << std::endl;
+                if (options.mVerbose) {
+                    std::cout << "Freespace is here" << std::endl;
+                }
                 return new FreespaceOrientationInput(angPosUpdateCallback,
                             -options.mAngularPositionLimit,
                             options.mAngularPositionLimit);

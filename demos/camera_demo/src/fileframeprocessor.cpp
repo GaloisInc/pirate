@@ -5,7 +5,7 @@
 #include <iostream>
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(VideoType videoType, std::string& outputPath, bool verbose) :
+FileFrameProcessor::FileFrameProcessor(VideoType videoType, const std::string& outputPath, bool verbose) :
     FrameProcessor(videoType),
     mOutputDirectory(outputPath),
     mVerbose(verbose) 

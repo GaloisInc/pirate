@@ -10,7 +10,7 @@ private:
     static constexpr int PI_SERVO_PIN = 27;
 
 public:
-    static OrientationOutput * get(Options& options)
+    static OrientationOutput * get(const Options& options)
     {
         switch (options.mOutputType)
         {

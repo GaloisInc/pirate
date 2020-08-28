@@ -48,7 +48,6 @@ public:
     static constexpr T DEFAULT_ANG_POS_LIMIT = 90;
 
     using UpdateCallback = std::function<bool(T)>;
-protected:
     const T mAngularPositionMin;
     const T mAngularPositionMax;
 private:

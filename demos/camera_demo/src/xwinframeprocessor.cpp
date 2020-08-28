@@ -171,6 +171,29 @@ int XWinFrameProcessor::convertYuyv(FrameBuffer buf, size_t len) {
     return 0;
 }
 
+void XWinFrameProcessor::slidingWindow() {
+    int x, y, k;
+
+    float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
+    float position = mOrientationOutput->getAngularPosition();
+    float percent = (position - mOrientationOutput->mAngularPositionMin) / range;
+    unsigned int center = mImageWidth * percent;
+    // min can go negative
+    int min = (center - mImageWidth / 4);
+    int max = (center + mImageWidth / 4);
+
+    for(k = y = 0; y < (int) mImageHeight; y++) {
+	    for(x = 0; x < (int) mImageWidth; x++) {
+            if ((x < min) || (x > max)) {
+                mImageBuffer[k+0]=0;
+                mImageBuffer[k+1]=0;
+                mImageBuffer[k+2]=0;
+            }
+            k+=4;
+        }
+    }
+}
+
 void XWinFrameProcessor::renderImage() {
     int err;
 
@@ -180,11 +203,12 @@ void XWinFrameProcessor::renderImage() {
     errno = err;
 }
 
-XWinFrameProcessor::XWinFrameProcessor(VideoType videoType,
-    unsigned width, unsigned height, bool monochrome) :
-    FrameProcessor(videoType),
-    mImageWidth(width), mImageHeight(height),
-    mMonochrome(monochrome)
+XWinFrameProcessor::XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput) :
+    FrameProcessor(options.mVideoType),
+    mOrientationOutput(orientationOutput),
+    mImageWidth(options.mImageWidth), mImageHeight(options.mImageHeight),
+    mMonochrome(options.mImageMonochrome),
+    mImageSlidingWindow(options.mImageSlidingWindow)
 {
 
 }
@@ -220,6 +244,9 @@ int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
     }
     if (rv) {
         return rv;
+    }
+    if (mImageSlidingWindow) {
+        slidingWindow();
     }
     renderImage();
     return 0;

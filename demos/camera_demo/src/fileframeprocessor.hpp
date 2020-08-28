@@ -6,7 +6,7 @@
 class FileFrameProcessor : public FrameProcessor
 {
 public:
-    FileFrameProcessor(VideoType videoType, std::string& outputPath, bool verbose = false);
+    FileFrameProcessor(VideoType videoType, const std::string& outputPath, bool verbose = false);
     virtual ~FileFrameProcessor();
 
     virtual int init();

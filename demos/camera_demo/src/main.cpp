@@ -25,9 +25,10 @@ static struct argp_option options[] =
     { "height",       'H', "pixels",      0, "image height",                      0 },
     { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
     { "monochrome",   'm', NULL,          0, "monochrome image filter",           0 },
+    { "sliding",      's', NULL,          0, "sliding window image filter",       0 },
     { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 },
     { "out_dir",      'O', "path",        0, "image output directory",            0 },
-    { "pos_our",      'o', "servo|print", 0, "angular position output",           0 },
+    { "pos_out",      'o', "servo|print", 0, "angular position output",           0 },
     { "pos_in",       'i', "acc|kbd",     0, "position input",                    0 },
     { "pos_lim",      'l', "val",         0, "angular position bound",            0 },
     { "processor",    'p', "fs|xwin",     0, "frame processor",                   0 },
@@ -159,6 +160,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mImageMonochrome = true;
             break;
 
+        case 's':
+            opt->mImageSlidingWindow = true;
+            break;
+
         case 'v':
             opt->mVerbose = true;
             break;
@@ -213,14 +218,12 @@ int main(int argc, char *argv[])
 
     OrientationOutput * orientationOutput = OrientationOutputCreator::get(options);
 
-    OrientationInput * orientationInput = OrientationInputCreator::get(
-        orientationOutput->getUpdateCallback(), options);
+    OrientationInput * orientationInput = OrientationInputCreator::get(options,
+        orientationOutput->getUpdateCallback());
 
-    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options);
+    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options, orientationOutput);
 
-    VideoSensor * videoSensor = new VideoSensor(
-            frameProcessor->getProcessFrameCallback(),
-            options);
+    VideoSensor * videoSensor = new VideoSensor(options, frameProcessor->getProcessFrameCallback());
 
     rv = orientationOutput->init();
     if (rv != 0)

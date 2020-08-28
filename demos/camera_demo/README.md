@@ -44,19 +44,32 @@ Input sources
 Usage: camera_demo [OPTION...]
 Embedded application based on camera, position input and position driver
 
--d, --video_device=device  video device
--f, --flip=v|h             horizontal or vertical image flip
--H, --height=pixels        image height
--i, --pos_in=acc|kbd       position input
--l, --pos_lim=val          angular position bound
--o, --pos_our=servo|print  angular position output
--O, --out_dir=path         image output directory
--r, --framerate=num/den    frame rate fraction
--v, --verbose              verbose output
--W, --width=pixels         image width
--?, --help                 Give this help list
-    --usage                Give a short usage message
+  -d, --video_device=device  video device
+  -f, --flip=v|h             horizontal or vertical image flip
+  -H, --height=pixels        image height
+  -i, --pos_in=acc|kbd       position input
+  -l, --pos_lim=val          angular position bound
+  -m, --monochrome           monochrome image filter
+  -o, --pos_out=servo|print  angular position output
+  -O, --out_dir=path         image output directory
+  -p, --processor=fs|xwin    frame processor
+  -r, --framerate=num/den    frame rate fraction
+  -s, --sliding              sliding window image filter
+  -t, --video_type=jpeg|yuyv video type
+  -v, --verbose              verbose output
+  -W, --width=pixels         image width
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
 ```
+
+Example usage:
+
+```
+ ./demos/camera_demo/camera_demo --pos_in kbd --processor xwin --verbose
+```
+
+Uses the left and right arrow keys on the keyboard for input
+and displays to an XWindow screen for output.
 
 ## Raspberry Pi Setup
 A Raspberry Pi of any revision should work. This setup has been tested on
@@ -113,7 +126,7 @@ MAC Address: B8:27:EB:E8:2C:F1 (Raspberry Pi Foundation)
 ```
 
 #### SSH Into the Device and Change the Default Password
-* Default username **pi**libx11-dev
+* Default username **pi**
 * Default password **raspberry**
 ```
 $ ssh pi@<ip_address>
@@ -142,17 +155,6 @@ sudo apt install git cmake clang libssl-dev libjpeg-dev libx11-dev libpigpio-dev
 ```
 
 #### Clone and Build Dependencies
-
-##### Google Tests
-```
-$ git clone https://github.com/google/googletest.git
-$ cd googletest
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-$ sudo make install
-```
 
 ### Freespace Library
 ```
@@ -183,5 +185,5 @@ $ ./update_udev_rules.sh
 $ cd pirate
 $ mkdir build
 $ cd build
-$ cmake -DGAPS_DISABLE=ON -DPIRATE_UNIT_TEST=ON -DGAPS_DEMOS=ON -DPIRATE_LAUNCHER=OFF ..
+$ cmake -DGAPS_DISABLE=ON -DCAMERA_DEMO=ON -DPIRATE_LAUNCHER=OFF ..
 ```

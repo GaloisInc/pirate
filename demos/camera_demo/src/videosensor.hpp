@@ -10,8 +10,7 @@
 class VideoSensor
 {
 public:
-    VideoSensor(const ProcessFrameCallback& processFrameCallback,
-            const Options& options);
+    VideoSensor(const Options& options, const ProcessFrameCallback& processFrameCallback);
     virtual ~VideoSensor();
 
     virtual int init();
