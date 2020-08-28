@@ -177,7 +177,7 @@ void XWinFrameProcessor::slidingWindow() {
     float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
     float position = mOrientationOutput->getAngularPosition();
     float percent = (position - mOrientationOutput->mAngularPositionMin) / range;
-    unsigned int center = mImageWidth * percent;
+    int center = mImageWidth * percent;
     // min can go negative
     int min = (center - mImageWidth / 4);
     int max = (center + mImageWidth / 4);
