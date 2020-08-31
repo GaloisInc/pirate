@@ -193,28 +193,33 @@ void XWinFrameProcessor::slidingWindow() {
     }
 }
 
-int XWinFrameProcessor::computeTrackingRGB() {
+void XWinFrameProcessor::computeTrackingRGB(int* x_pos, int *y_pos) {
     unsigned int x, y, k;
     unsigned int count = 0;
-    unsigned int sum = 0;
-    int rv = -1;
+    unsigned int x_sum = 0, y_sum = 0;
+    *x_pos = -1;
+    *y_pos = -1;
 
     for(k = y = 0; y < mImageHeight; y++) {
 	    for(x = 0; x < mImageWidth; x++, k += 4) {
-            int b = (mImageBuffer[k+0] - mImageTrackingRGB[2]) * (mImageBuffer[k+0] - mImageTrackingRGB[2]);
-            int g = (mImageBuffer[k+1] - mImageTrackingRGB[1]) * (mImageBuffer[k+1] - mImageTrackingRGB[1]);
-            int r = (mImageBuffer[k+2] - mImageTrackingRGB[0]) * (mImageBuffer[k+2] - mImageTrackingRGB[0]);
-            int delta = b + g + r;
+            // reference https://www.compuphase.com/cmetric.htm
+            int64_t rmean = (((int64_t) mImageBuffer[k+2]) + ((int64_t) mImageTrackingRGB[0])) / 2;
+            int64_t r = ((int64_t) mImageBuffer[k+2]) - ((int64_t) mImageTrackingRGB[0]);
+            int64_t g = ((int64_t) mImageBuffer[k+1]) - ((int64_t) mImageTrackingRGB[1]);
+            int64_t b = ((int64_t) mImageBuffer[k+0]) - ((int64_t) mImageTrackingRGB[2]);
+            int64_t delta = (((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8);
             if (delta < 512) {
+                // TODO: weighted average based on color similarity?
                 count++;
-                sum += x;
+                x_sum += x;
+                y_sum += y;
             }
         }
     }
-    if (count > 128) {
-        rv = sum / count;
+    if (count > 64) {
+        *x_pos = x_sum / count;
+        *y_pos = y_sum / count;
     }
-    return rv;
 }
 
 void XWinFrameProcessor::renderImage() {
@@ -260,6 +265,8 @@ void XWinFrameProcessor::term()
 void XWinFrameProcessor::trackRGB() {
     int center = mImageWidth / 2;
     int delta;
+    int x_position, y_position;
+    int tolerance = mImageWidth / 10; // 10% tolerance
 
     mImageTrackingFrameCount++;
     int inputAngle = mOrientationInput->getAngularPosition();
@@ -268,20 +275,20 @@ void XWinFrameProcessor::trackRGB() {
         // motor is currently moving
         return;
     }
-    int objectPosition = computeTrackingRGB();
-    if (objectPosition < 0) {
+    computeTrackingRGB(&x_position, &y_position);
+    if ((x_position < 0) || (y_position < 0)) {
         // object not found
         return;
     }
     if (mImageSlidingWindow) {
         float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
         float percent = (outputAngle - mOrientationOutput->mAngularPositionMin) / range;
-        center = mImageWidth * percent;        
+        center = mImageWidth * percent;
     }
-    delta = objectPosition - center;
-    if (delta > 64) {
+    delta = x_position - center;
+    if (delta > tolerance) {
         mOrientationInput->setAngularPosition(inputAngle + 1);
-    } else if (delta < -64) {
+    } else if (delta < -tolerance) {
         mOrientationInput->setAngularPosition(inputAngle - 1);
     }
 }

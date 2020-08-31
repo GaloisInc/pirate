@@ -40,7 +40,7 @@ private:
     void xwinDisplayTerminate();
     int convertJpeg(FrameBuffer buf, size_t len);
     int convertYuyv(FrameBuffer buf, size_t len);
-    int computeTrackingRGB();
+    void computeTrackingRGB(int* x_pos, int *y_pos);
     void trackRGB();
     void slidingWindow();
     void renderImage();
