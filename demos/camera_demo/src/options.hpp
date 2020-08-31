@@ -19,6 +19,7 @@ struct Options
         mImageVerticalFlip(false),
         mImageMonochrome(false),
         mImageSlidingWindow(false),
+        mImageTrackingRGB{0x30, 0x22, 0x5D},
         mFrameRateNumerator(1),
         mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),
@@ -39,6 +40,7 @@ struct Options
     bool mImageVerticalFlip;
     bool mImageMonochrome;
     bool mImageSlidingWindow;
+    unsigned char mImageTrackingRGB[3];
     unsigned mFrameRateNumerator;
     unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;

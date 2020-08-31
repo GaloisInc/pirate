@@ -183,15 +183,38 @@ void XWinFrameProcessor::slidingWindow() {
     int max = (center + mImageWidth / 4);
 
     for(k = y = 0; y < (int) mImageHeight; y++) {
-	    for(x = 0; x < (int) mImageWidth; x++) {
+	    for(x = 0; x < (int) mImageWidth; x++, k += 4) {
             if ((x < min) || (x > max)) {
                 mImageBuffer[k+0]=0;
                 mImageBuffer[k+1]=0;
                 mImageBuffer[k+2]=0;
             }
-            k+=4;
         }
     }
+}
+
+int XWinFrameProcessor::computeTrackingRGB() {
+    unsigned int x, y, k;
+    unsigned int count = 0;
+    unsigned int sum = 0;
+    int rv = -1;
+
+    for(k = y = 0; y < mImageHeight; y++) {
+	    for(x = 0; x < mImageWidth; x++, k += 4) {
+            int b = (mImageBuffer[k+0] - mImageTrackingRGB[2]) * (mImageBuffer[k+0] - mImageTrackingRGB[2]);
+            int g = (mImageBuffer[k+1] - mImageTrackingRGB[1]) * (mImageBuffer[k+1] - mImageTrackingRGB[1]);
+            int r = (mImageBuffer[k+2] - mImageTrackingRGB[0]) * (mImageBuffer[k+2] - mImageTrackingRGB[0]);
+            int delta = b + g + r;
+            if (delta < 512) {
+                count++;
+                sum += x;
+            }
+        }
+    }
+    if (count > 128) {
+        rv = sum / count;
+    }
+    return rv;
 }
 
 void XWinFrameProcessor::renderImage() {
@@ -203,14 +226,20 @@ void XWinFrameProcessor::renderImage() {
     errno = err;
 }
 
-XWinFrameProcessor::XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput) :
+XWinFrameProcessor::XWinFrameProcessor(const Options& options,
+    OrientationInput* orientationInput, OrientationOutput const* orientationOutput) :
+
     FrameProcessor(options.mVideoType),
+    mOrientationInput(orientationInput),
     mOrientationOutput(orientationOutput),
     mImageWidth(options.mImageWidth), mImageHeight(options.mImageHeight),
     mMonochrome(options.mImageMonochrome),
-    mImageSlidingWindow(options.mImageSlidingWindow)
+    mImageSlidingWindow(options.mImageSlidingWindow),
+    mImageTrackingFrameCount(0)
 {
-
+    mImageTrackingRGB[0] = options.mImageTrackingRGB[0];
+    mImageTrackingRGB[1] = options.mImageTrackingRGB[1];
+    mImageTrackingRGB[2] = options.mImageTrackingRGB[2];    
 }
 
 XWinFrameProcessor::~XWinFrameProcessor()
@@ -226,6 +255,35 @@ int XWinFrameProcessor::init()
 void XWinFrameProcessor::term()
 {
     xwinDisplayTerminate();
+}
+
+void XWinFrameProcessor::trackRGB() {
+    int center = mImageWidth / 2;
+    int delta;
+
+    mImageTrackingFrameCount++;
+    int inputAngle = mOrientationInput->getAngularPosition();
+    int outputAngle = mOrientationOutput->getAngularPosition();
+    if (inputAngle != outputAngle) {
+        // motor is currently moving
+        return;
+    }
+    int objectPosition = computeTrackingRGB();
+    if (objectPosition < 0) {
+        // object not found
+        return;
+    }
+    if (mImageSlidingWindow) {
+        float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
+        float percent = (outputAngle - mOrientationOutput->mAngularPositionMin) / range;
+        center = mImageWidth * percent;        
+    }
+    delta = objectPosition - center;
+    if (delta > 64) {
+        mOrientationInput->setAngularPosition(inputAngle + 1);
+    } else if (delta < -64) {
+        mOrientationInput->setAngularPosition(inputAngle - 1);
+    }
 }
 
 int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
@@ -245,6 +303,7 @@ int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
     if (rv) {
         return rv;
     }
+    trackRGB();
     if (mImageSlidingWindow) {
         slidingWindow();
     }

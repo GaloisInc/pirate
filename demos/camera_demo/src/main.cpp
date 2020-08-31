@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
     OrientationInput * orientationInput = OrientationInputCreator::get(options,
         orientationOutput->getUpdateCallback());
 
-    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options, orientationOutput);
+    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options, orientationInput, orientationOutput);
 
     VideoSensor * videoSensor = new VideoSensor(options, frameProcessor->getProcessFrameCallback());
 
