@@ -22,7 +22,7 @@ struct Options
         mImageMonochrome(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
-        mImageTrackingRGB{0x43, 0x1c, 0x77},
+        mImageTrackingRGB{0, 0, 0},
         mFrameRateNumerator(1),
         mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),

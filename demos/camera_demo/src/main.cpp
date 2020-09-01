@@ -119,7 +119,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_usage(state);
                 argp_error(state, "invalid -o argument '%s'", arg);
             }
             break;
@@ -135,7 +134,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_usage(state);
                 argp_error(state, "invalid -i argument '%s'", arg);
             }
             break;
@@ -151,7 +149,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_usage(state);
                 argp_error(state, "invalid -p argument '%s'", arg);
             }
             break;
@@ -168,10 +165,34 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mImageSlidingWindow = true;
             break;
 
-        case 'c':
+        case 'c': {
+            std::string argval = ss.str();
             opt->mImageTracking = true;
+            if (argval.length() != 6)
+            {
+                argp_error(state, "invalid length of -c argument '%s'", arg);
+            }
+            for (size_t i = 0; i < 6; i++)
+            {
+                size_t idx = i / 2;
+                size_t shift = ((i + 1) % 2);
+                char c = argval[i];
+                int val = -1;
+                if ((c >= '0') && (c <= '9')) {
+                    val = c - '0';
+                } else if (c >= 'a' && c <= 'f') {
+                    val = c - 'a' + 10;
+                } else if (c >= 'A' && c <= 'F') {
+                    val = c - 'A' + 10;
+                }
+                if (val < 0) {
+                    argp_error(state, "invalid RRGGBB -c argument '%s'", arg);
+                } else {
+                    opt->mImageTrackingRGB[idx] += (val) << (shift ? 4 : 0);
+                }
+            }
             break;
-
+        }
         case 'v':
             opt->mVerbose = true;
             break;
