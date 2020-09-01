@@ -3,6 +3,7 @@
 #include <string>
 #include <X11/Xlib.h>
 
+#include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
 #include "orientationinput.hpp"
@@ -11,37 +12,34 @@
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
-    XWinFrameProcessor(const Options& options, OrientationInput* orientationInput, OrientationOutput const* orientationOutput);
+    XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput, ImageConvert* imageConvert);
     virtual ~XWinFrameProcessor();
 
-    virtual int init();
-    virtual void term();
-    virtual int processFrame(FrameBuffer data, size_t length);
+    virtual int init() override;
+    virtual void term() override;
+
+protected:
+    virtual int processFrame(FrameBuffer data, size_t length) override;
+    virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 private:
-    OrientationInput*        mOrientationInput;
     OrientationOutput const* mOrientationOutput;
-    unsigned                 mImageWidth;
-    unsigned                 mImageHeight;
+    ImageConvert*            mImageConvert;
     bool                     mMonochrome;
     bool                     mImageSlidingWindow;
-    unsigned char            mImageTrackingRGB[3];
-    uint64_t                 mImageTrackingFrameCount;
     Display*                 mDisplay;
     Window                   mWindow;
     XImage*                  mImage;
     unsigned char*           mImageBuffer;
-    unsigned char*           mTempImageBuffer;
-    unsigned char*           mTempImageBufferRow;
+    unsigned char*           mRGBXImageBuffer;
+    unsigned char*           mYUYVImageBuffer;
     GC                       mContext;
     XGCValues                mContextVals;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
-    int convertJpeg(FrameBuffer buf, size_t len);
-    int convertYuyv(FrameBuffer buf, size_t len);
-    void computeTrackingRGB(int* x_pos, int *y_pos);
-    void trackRGB();
+    int convertJpeg(FrameBuffer data, size_t len);
+    int convertYuyv(FrameBuffer data, size_t len);
     void slidingWindow();
     void renderImage();
 };

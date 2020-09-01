@@ -12,7 +12,6 @@ public:
                         float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT) :
         AngularPosition(angPosMin, angPosMax),
         mUpdateCallback(updateCallback)
-        
     {
 
     }

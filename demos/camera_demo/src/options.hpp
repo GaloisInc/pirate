@@ -2,10 +2,12 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV };
+enum VideoType { JPEG, YUYV, RGBX };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows };
 enum OutputType { PiServo, Print };
+
+using FrameBuffer = const unsigned char *;
 
 // Command-line options
 struct Options
@@ -19,7 +21,8 @@ struct Options
         mImageVerticalFlip(false),
         mImageMonochrome(false),
         mImageSlidingWindow(false),
-        mImageTrackingRGB{0x30, 0x22, 0x5D},
+        mImageTracking(false),
+        mImageTrackingRGB{0x43, 0x1c, 0x77},
         mFrameRateNumerator(1),
         mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),
@@ -40,6 +43,7 @@ struct Options
     bool mImageVerticalFlip;
     bool mImageMonochrome;
     bool mImageSlidingWindow;
+    bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mFrameRateNumerator;
     unsigned mFrameRateDenominator;

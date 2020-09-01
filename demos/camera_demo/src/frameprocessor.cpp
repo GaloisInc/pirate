@@ -1,10 +1,10 @@
 #include "frameprocessor.hpp"
 
-FrameProcessor::FrameProcessor(VideoType videoType) :
-    mIndex(0),
+FrameProcessor::FrameProcessor(VideoType videoType, unsigned width, unsigned height) :
     mVideoType(videoType),
-    mProcessFrameCallback(std::bind(&FrameProcessor::process, this, 
-                std::placeholders::_1, std::placeholders::_2))
+    mImageWidth(width),
+    mImageHeight(height),
+    mIndex(0)
 {
 
 }
@@ -12,11 +12,6 @@ FrameProcessor::FrameProcessor(VideoType videoType) :
 FrameProcessor::~FrameProcessor()
 {
 
-}
-
-const ProcessFrameCallback& FrameProcessor::getProcessFrameCallback()
-{
-    return mProcessFrameCallback;
 }
 
 int FrameProcessor::process(FrameBuffer data, size_t length)

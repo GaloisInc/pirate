@@ -15,8 +15,9 @@
 #include "options.hpp"
 #include "videosensor.hpp"
 
-VideoSensor::VideoSensor(const Options& options, const ProcessFrameCallback& processFrameCallback) :
-    mProcessFrameCallback(processFrameCallback),
+VideoSensor::VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, ImageConvert* imageConvert) :
+    mFrameProcessors(frameProcessors),
+    mImageConvert(imageConvert),
     mDevicePath(options.mVideoDevice),
     mVideoType(options.mVideoType),
     mFlipHorizontal(options.mImageHorizontalFlip),
@@ -437,6 +438,8 @@ int VideoSensor::releaseCaptureBuffers()
 
 void VideoSensor::pollThread()
 {
+    unsigned frameNumber = 0;
+
     while (mPoll)
     {
         int rv = 0;
@@ -475,8 +478,42 @@ void VideoSensor::pollThread()
         }
 
         // Process the frame
-        mProcessFrameCallback(mBuffers[buf.index].mStart, buf.bytesused);
-    
+        frameNumber++;
+        for (size_t i = 0; i < mFrameProcessors.size(); i++)
+        {
+            FrameProcessor* current = mFrameProcessors[i];
+            if (current->mVideoType == mVideoType)
+            {
+                current->process(mBuffers[buf.index].mStart, buf.bytesused);
+            }
+            else
+            {
+                unsigned char* convertedBuffer = nullptr;
+                size_t convertedLength = ImageConvert::expectedBytes(mImageWidth, mImageHeight, current->mVideoType);
+                for (size_t j = 0; j < i; j++)
+                {
+                    FrameProcessor* prev = mFrameProcessors[j];
+                    convertedBuffer = prev->getFrame(frameNumber, current->mVideoType);
+                    if (convertedBuffer != nullptr)
+                    {
+                        break;
+                    }
+                }
+                if ((convertedBuffer == nullptr) &&
+                    (convertedBuffer = mImageConvert->getBuffer(current->mVideoType)) != nullptr)
+                {
+                    mImageConvert->convert(mBuffers[buf.index].mStart,
+                        buf.bytesused,
+                        mVideoType,
+                        convertedBuffer,
+                        current->mVideoType);
+                }
+                if (convertedBuffer != nullptr)
+                {
+                    current->process(convertedBuffer, convertedLength);
+                }
+            }
+        }
         // Queue the buffer
         rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
         if (rv != 0)

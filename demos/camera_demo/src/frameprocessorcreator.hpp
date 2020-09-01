@@ -12,20 +12,19 @@
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(const Options& options, OrientationInput* orientationInput, OrientationOutput const* orientationOutput)
+    static FrameProcessor * get(const Options& options, OrientationOutput const* orientationOutput, ImageConvert* imageConvert)
     {
-        (void) orientationInput;
         (void) orientationOutput;
+        (void) imageConvert;
         switch (options.mProcessorType)
         {
 #if XWIN_PRESENT
             case XWindows:
-                return new XWinFrameProcessor(options, orientationInput, orientationOutput);
+                return new XWinFrameProcessor(options, orientationOutput, imageConvert);
 #endif
             case Filesystem:
             default:
-                return new FileFrameProcessor(options.mVideoType,
-                    options.mImageOutputDirectory, options.mVerbose);
+                return new FileFrameProcessor(options);
         }
     }
 };

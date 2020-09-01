@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
 set(TGT_CAMERA_DEMO camera_demo)
@@ -18,11 +19,13 @@ set(LIBS pthread)
 # Source files
 set(SRCS 
     src/main.cpp
+    src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
     src/videosensor.cpp
+    src/colortracking.cpp
 )
 
 if (FREESPACE_LIB)

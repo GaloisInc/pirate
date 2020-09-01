@@ -5,10 +5,10 @@
 #include <iostream>
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(VideoType videoType, const std::string& outputPath, bool verbose) :
-    FrameProcessor(videoType),
-    mOutputDirectory(outputPath),
-    mVerbose(verbose) 
+FileFrameProcessor::FileFrameProcessor(const Options& options) :
+    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+    mOutputDirectory(options.mImageOutputDirectory),
+    mVerbose(options.mVerbose)
 {
 
 }
@@ -28,10 +28,17 @@ void FileFrameProcessor::term()
 
 }
 
+unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType) {
+    (void) index;
+    (void) videoType;
+    return nullptr;
+}
+
 int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
 {
     // Save the image file
     std::stringstream ss;
+
     ss << mOutputDirectory << "/capture_" 
        << std::setfill('0') << std::setw(4) << mIndex;
     switch (mVideoType) {

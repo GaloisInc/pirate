@@ -9,11 +9,14 @@
 #include <string>
 #include <sys/signalfd.h>
 #include <thread>
+#include <vector>
 #include <unistd.h>
 
 #include "orientationinputcreator.hpp"
 #include "orientationoutputcreator.hpp"
 #include "frameprocessorcreator.hpp"
+#include "imageconvert.hpp"
+#include "colortracking.hpp"
 #include "videosensor.hpp"
 #include "options.hpp"
 
@@ -26,6 +29,7 @@ static struct argp_option options[] =
     { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
     { "monochrome",   'm', NULL,          0, "monochrome image filter",           0 },
     { "sliding",      's', NULL,          0, "sliding window image filter",       0 },
+    { "color_track",  'c', "RRGGBB",      0, "color tracking (RGB hex)",          0 },
     { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 },
     { "out_dir",      'O', "path",        0, "image output directory",            0 },
     { "pos_out",      'o', "servo|print", 0, "angular position output",           0 },
@@ -33,7 +37,7 @@ static struct argp_option options[] =
     { "pos_lim",      'l', "val",         0, "angular position bound",            0 },
     { "processor",    'p', "fs|xwin",     0, "frame processor",                   0 },
     { "verbose",      'v', NULL,          0, "verbose output",                    0 },
-    { NULL,           0,   NULL,          0, NULL,                                0 },
+    { NULL,            0 , NULL,          0, NULL,                                0 },
 };
 
 static std::atomic<bool> interrupted(false);
@@ -164,6 +168,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mImageSlidingWindow = true;
             break;
 
+        case 'c':
+            opt->mImageTracking = true;
+            break;
+
         case 'v':
             opt->mVerbose = true;
             break;
@@ -209,6 +217,7 @@ int main(int argc, char *argv[])
     Options options;
     sigset_t set;
     std::thread *signalThread;
+    std::vector<FrameProcessor*> frameProcessors;
 
     sigemptyset(&set);
     sigaddset(&set, SIGINT);
@@ -216,14 +225,27 @@ int main(int argc, char *argv[])
 
     parseArgs(argc, argv, &options);
 
-    OrientationOutput * orientationOutput = OrientationOutputCreator::get(options);
+    ImageConvert imageConvert(options.mImageWidth, options.mImageHeight);
+    OrientationOutput *orientationOutput;
+    OrientationInput *orientationInput;
+    ColorTracking *colorTracking = nullptr;
 
-    OrientationInput * orientationInput = OrientationInputCreator::get(options,
-        orientationOutput->getUpdateCallback());
+    orientationOutput = OrientationOutputCreator::get(options);
 
-    FrameProcessor * frameProcessor = FrameProcessorCreator::get(options, orientationInput, orientationOutput);
+    if (options.mImageTracking) {
+        colorTracking = new ColorTracking(options, orientationOutput->getUpdateCallback());
+        orientationInput = colorTracking;
+    } else {
+        orientationInput = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
+    }
 
-    VideoSensor * videoSensor = new VideoSensor(options, frameProcessor->getProcessFrameCallback());
+    FrameProcessor *frameProcessor = FrameProcessorCreator::get(options, orientationOutput, &imageConvert);
+    frameProcessors.push_back(frameProcessor);
+    if (options.mImageTracking) {
+        frameProcessors.push_back(colorTracking);
+    }
+
+    VideoSensor *videoSensor = new VideoSensor(options, frameProcessors, &imageConvert);
 
     rv = orientationOutput->init();
     if (rv != 0)
@@ -261,8 +283,12 @@ int main(int argc, char *argv[])
 
     delete signalThread;
     delete videoSensor;
-    delete frameProcessor;
-    delete orientationInput;
+    for (FrameProcessor* frameProcessor : frameProcessors) {
+        delete frameProcessor;
+    }
+    if (orientationInput != colorTracking) {
+        delete orientationInput;
+    }
     delete orientationOutput;
 
     return 0;

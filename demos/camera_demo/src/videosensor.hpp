@@ -3,14 +3,17 @@
 #include <stdint.h>
 #include <string>
 #include <thread>
+#include <vector>
 #include <linux/videodev2.h>
+
+#include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
 
 class VideoSensor
 {
 public:
-    VideoSensor(const Options& options, const ProcessFrameCallback& processFrameCallback);
+    VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, ImageConvert* imageConvert);
     virtual ~VideoSensor();
 
     virtual int init();
@@ -19,7 +22,8 @@ public:
     virtual int captureEnable();
     virtual int captureDisable();
 private:
-    const ProcessFrameCallback& mProcessFrameCallback;
+    const std::vector<FrameProcessor*>& mFrameProcessors;
+    ImageConvert* mImageConvert;
     
     const std::string mDevicePath;
     const VideoType mVideoType;
