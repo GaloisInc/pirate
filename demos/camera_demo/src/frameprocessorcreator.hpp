@@ -12,7 +12,9 @@
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(const Options& options, OrientationOutput const* orientationOutput, ImageConvert* imageConvert)
+    static FrameProcessor * get(const Options& options,
+        OrientationOutput const* orientationOutput,
+        const ImageConvert& imageConvert)
     {
         (void) orientationOutput;
         (void) imageConvert;

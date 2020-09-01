@@ -12,7 +12,7 @@
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
-    XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput, ImageConvert* imageConvert);
+    XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput, const ImageConvert& imageConvert);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
@@ -24,7 +24,7 @@ protected:
 
 private:
     OrientationOutput const* mOrientationOutput;
-    ImageConvert*            mImageConvert;
+    const ImageConvert&      mImageConvert;
     bool                     mMonochrome;
     bool                     mImageSlidingWindow;
     Display*                 mDisplay;

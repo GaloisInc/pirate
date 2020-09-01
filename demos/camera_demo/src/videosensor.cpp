@@ -15,7 +15,9 @@
 #include "options.hpp"
 #include "videosensor.hpp"
 
-VideoSensor::VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, ImageConvert* imageConvert) :
+VideoSensor::VideoSensor(const Options& options,
+        const std::vector<FrameProcessor*>& frameProcessors,
+        const ImageConvert& imageConvert) :
     mFrameProcessors(frameProcessors),
     mImageConvert(imageConvert),
     mDevicePath(options.mVideoDevice),
@@ -490,6 +492,8 @@ void VideoSensor::pollThread()
             {
                 unsigned char* convertedBuffer = nullptr;
                 size_t convertedLength = ImageConvert::expectedBytes(mImageWidth, mImageHeight, current->mVideoType);
+                // check whether the image has already been converted
+                // in a previous frame processor
                 for (size_t j = 0; j < i; j++)
                 {
                     FrameProcessor* prev = mFrameProcessors[j];
@@ -499,10 +503,11 @@ void VideoSensor::pollThread()
                         break;
                     }
                 }
+                // otherwise attempt to convert the image
                 if ((convertedBuffer == nullptr) &&
-                    (convertedBuffer = mImageConvert->getBuffer(current->mVideoType)) != nullptr)
+                    (convertedBuffer = mImageConvert.getBuffer(current->mVideoType)) != nullptr)
                 {
-                    mImageConvert->convert(mBuffers[buf.index].mStart,
+                    mImageConvert.convert(mBuffers[buf.index].mStart,
                         buf.bytesused,
                         mVideoType,
                         convertedBuffer,

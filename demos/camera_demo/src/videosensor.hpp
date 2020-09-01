@@ -13,7 +13,7 @@
 class VideoSensor
 {
 public:
-    VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, ImageConvert* imageConvert);
+    VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
     virtual int init();
@@ -23,7 +23,7 @@ public:
     virtual int captureDisable();
 private:
     const std::vector<FrameProcessor*>& mFrameProcessors;
-    ImageConvert* mImageConvert;
+    const ImageConvert& mImageConvert;
     
     const std::string mDevicePath;
     const VideoType mVideoType;

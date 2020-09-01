@@ -239,13 +239,13 @@ int main(int argc, char *argv[])
         orientationInput = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
     }
 
-    FrameProcessor *frameProcessor = FrameProcessorCreator::get(options, orientationOutput, &imageConvert);
+    FrameProcessor *frameProcessor = FrameProcessorCreator::get(options, orientationOutput, imageConvert);
     frameProcessors.push_back(frameProcessor);
     if (options.mImageTracking) {
         frameProcessors.push_back(colorTracking);
     }
 
-    VideoSensor *videoSensor = new VideoSensor(options, frameProcessors, &imageConvert);
+    VideoSensor *videoSensor = new VideoSensor(options, frameProcessors, imageConvert);
 
     rv = orientationOutput->init();
     if (rv != 0)

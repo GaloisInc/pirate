@@ -21,7 +21,7 @@ ImageConvert::~ImageConvert() {
     free(mRGBXBuffer);
 }
 
-unsigned char* ImageConvert::getBuffer(VideoType videoType) {
+unsigned char* ImageConvert::getBuffer(VideoType videoType) const {
     if (videoType == RGBX) {
         return mRGBXBuffer;
     } else {
@@ -42,7 +42,7 @@ size_t ImageConvert::expectedBytes(unsigned width, unsigned height, VideoType vi
     }
 }
 
-int ImageConvert::convertJpegToRGBX(FrameBuffer src, size_t srcLength, unsigned char* dst) {
+int ImageConvert::convertJpegToRGBX(FrameBuffer src, size_t srcLength, unsigned char* dst) const {
     int i, width, depth;
     unsigned x, y, z, k;
 
@@ -104,7 +104,7 @@ static inline unsigned char clamp(int input) {
     }
 }
 
-int ImageConvert::convertYUYVToRGBX(FrameBuffer srcBuffer, unsigned char* dstBuffer) {
+int ImageConvert::convertYUYVToRGBX(FrameBuffer srcBuffer, unsigned char* dstBuffer) const {
     int c, d, e;
     size_t length = mImageWidth * mImageHeight * 2;
 
@@ -132,7 +132,7 @@ int ImageConvert::convertYUYVToRGBX(FrameBuffer srcBuffer, unsigned char* dstBuf
     return 0;
 }
 
-int ImageConvert::convert(FrameBuffer src, size_t srcLength, VideoType srcType, unsigned char* dst, VideoType dstType) {
+int ImageConvert::convert(FrameBuffer src, size_t srcLength, VideoType srcType, unsigned char* dst, VideoType dstType) const {
     switch (dstType) {
         case RGBX:
             switch (srcType) {

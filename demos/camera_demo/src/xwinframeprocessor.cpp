@@ -98,7 +98,7 @@ void XWinFrameProcessor::renderImage() {
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
     OrientationOutput const* orientationOutput,
-    ImageConvert* imageConvert) :
+    const ImageConvert& imageConvert) :
 
     FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
     mOrientationOutput(orientationOutput),
@@ -132,14 +132,14 @@ int XWinFrameProcessor::convertYuyv(FrameBuffer data, size_t length) {
                 mYUYVImageBuffer[src] = 128;
             }
         }
-        return mImageConvert->convert(mYUYVImageBuffer, length, YUYV, mImageBuffer, RGBX);
+        return mImageConvert.convert(mYUYVImageBuffer, length, YUYV, mImageBuffer, RGBX);
     } else {
-        return mImageConvert->convert(data, length, YUYV, mImageBuffer, RGBX);
+        return mImageConvert.convert(data, length, YUYV, mImageBuffer, RGBX);
     }
 }
 
 int XWinFrameProcessor::convertJpeg(FrameBuffer data, size_t length) {
-    return mImageConvert->convert(data, length, JPEG, mImageBuffer, RGBX);
+    return mImageConvert.convert(data, length, JPEG, mImageBuffer, RGBX);
 }
 
 int XWinFrameProcessor::process(FrameBuffer data, size_t length)
