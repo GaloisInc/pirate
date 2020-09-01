@@ -12,7 +12,7 @@ public:
 
     virtual int init() = 0;
     virtual void term() = 0;
-    int process(FrameBuffer data, size_t length);
+    int processFrame(FrameBuffer data, size_t length);
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) = 0;
 
     const VideoType mVideoType;
@@ -20,7 +20,7 @@ public:
     const unsigned  mImageHeight;
 
 protected:
-    unsigned     mIndex;
-    virtual int processFrame(FrameBuffer data, size_t length) = 0;
+    unsigned    mIndex;
+    virtual int process(FrameBuffer data, size_t length) = 0;
 
 };

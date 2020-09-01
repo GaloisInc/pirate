@@ -34,7 +34,7 @@ unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType)
     return nullptr;
 }
 
-int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
+int FileFrameProcessor::process(FrameBuffer data, size_t length)
 {
     // Save the image file
     std::stringstream ss;

@@ -484,7 +484,7 @@ void VideoSensor::pollThread()
             FrameProcessor* current = mFrameProcessors[i];
             if (current->mVideoType == mVideoType)
             {
-                current->process(mBuffers[buf.index].mStart, buf.bytesused);
+                current->processFrame(mBuffers[buf.index].mStart, buf.bytesused);
             }
             else
             {
@@ -510,7 +510,7 @@ void VideoSensor::pollThread()
                 }
                 if (convertedBuffer != nullptr)
                 {
-                    current->process(convertedBuffer, convertedLength);
+                    current->processFrame(convertedBuffer, convertedLength);
                 }
             }
         }

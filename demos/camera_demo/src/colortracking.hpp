@@ -24,7 +24,7 @@ private:
     void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
 
 protected:
-    virtual int processFrame(FrameBuffer data, size_t length) override;
+    virtual int process(FrameBuffer data, size_t length) override;
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 };

@@ -142,7 +142,7 @@ int XWinFrameProcessor::convertJpeg(FrameBuffer data, size_t length) {
     return mImageConvert->convert(data, length, JPEG, mImageBuffer, RGBX);
 }
 
-int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
+int XWinFrameProcessor::process(FrameBuffer data, size_t length)
 {
     int rv;
     switch (mVideoType) {

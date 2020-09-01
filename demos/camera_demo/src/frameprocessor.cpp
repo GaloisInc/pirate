@@ -14,9 +14,9 @@ FrameProcessor::~FrameProcessor()
 
 }
 
-int FrameProcessor::process(FrameBuffer data, size_t length)
+int FrameProcessor::processFrame(FrameBuffer data, size_t length)
 {
     mIndex++;
-    return processFrame(data, length);
+    return process(data, length);
 }
 

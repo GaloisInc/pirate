@@ -62,7 +62,7 @@ void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
     }
 }
 
-int ColorTracking::processFrame(FrameBuffer data, size_t length) {
+int ColorTracking::process(FrameBuffer data, size_t length) {
     int center, delta;
     int x_position, y_position;
     int tolerance = mImageWidth / 10; // 10% tolerance

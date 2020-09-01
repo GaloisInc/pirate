@@ -13,7 +13,7 @@ public:
     virtual void term() override;
 
 protected:
-    virtual int processFrame(FrameBuffer data, size_t length) override;
+    virtual int process(FrameBuffer data, size_t length) override;
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 private:
