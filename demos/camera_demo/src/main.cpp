@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
     std::thread *signalThread;
     std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
 
+    // block SIGINT for all threads except for the signalThread
     sigemptyset(&set);
     sigaddset(&set, SIGINT);
     pthread_sigmask(SIG_BLOCK, &set, NULL);

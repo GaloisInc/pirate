@@ -90,5 +90,6 @@ int PiServoOrientationOutput::angleToServo(float angle)
         (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
         (2 * SERVO_ANGLE_LIMIT);
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
-    return slope * angle + off;
+    // Fip the sign. The camera is mounted upside-down.
+    return -1.0 * slope * angle + off;
 }
