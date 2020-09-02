@@ -23,12 +23,15 @@ struct Options
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
+        mImageTrackingThreshold(2048),
         mFrameRateNumerator(1),
         mFrameRateDenominator(1),
         mImageOutputDirectory("/tmp"),
+        mImageOutputMaxFiles(100),
         mOutputType(PiServo),
         mInputType(Freespace),
-        mProcessorType(Filesystem),
+        mFilesystemProcessor(false),
+        mXWinProcessor(false),
         mAngularPositionLimit(45.0),
         mVerbose(false)
     {
@@ -45,12 +48,15 @@ struct Options
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
+    unsigned mImageTrackingThreshold;
     unsigned mFrameRateNumerator;
     unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
+    unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
     InputType mInputType;
-    FrameProcessorType mProcessorType;
+    bool mFilesystemProcessor;
+    bool mXWinProcessor;
     float mAngularPositionLimit;
     bool mVerbose;
 };

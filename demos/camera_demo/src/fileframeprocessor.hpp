@@ -17,7 +17,10 @@ protected:
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 private:
+    std::string buildFilename(unsigned index);
+
     const std::string mOutputDirectory;
+    const unsigned mImageOutputMaxFiles;
     const bool mVerbose;
 };
 

@@ -44,20 +44,31 @@ Input sources
 Usage: camera_demo [OPTION...]
 Embedded application based on camera, position input and position driver
 
+ video options:
   -d, --video_device=device  video device
   -f, --flip=v|h             horizontal or vertical image flip
   -H, --height=pixels        image height
+  -r, --framerate=num/den    frame rate fraction
+  -t, --video_type=jpeg|yuyv video type
+  -W, --width=pixels         image width
+
+ frame processor options:
+  -c, --color_track=RRGGBB   color tracking (RGB hex) frame processor
+  -F, --filesystem           filesystem frame processor
+  -m, --monochrome           monochrome image filter
+  -M, --out_count=val        image output maximum file count
+  -O, --out_dir=path         image output directory
+  -s, --sliding              sliding window image filter
+  -T, --threshold=val        color tracking threshold
+  -X, --xwindows             xwindows frame processor
+
+ input/output options:
   -i, --pos_in=acc|kbd       position input
   -l, --pos_lim=val          angular position bound
-  -m, --monochrome           monochrome image filter
   -o, --pos_out=servo|print  angular position output
-  -O, --out_dir=path         image output directory
-  -p, --processor=fs|xwin    frame processor
-  -r, --framerate=num/den    frame rate fraction
-  -s, --sliding              sliding window image filter
-  -t, --video_type=jpeg|yuyv video type
+
   -v, --verbose              verbose output
-  -W, --width=pixels         image width
+
   -?, --help                 Give this help list
       --usage                Give a short usage message
 ```
@@ -65,13 +76,26 @@ Embedded application based on camera, position input and position driver
 Example usage:
 
 ```
- ./demos/camera_demo/camera_demo --pos_in kbd --processor xwin --verbose
+ ./demos/camera_demo/camera_demo --pos_in kbd --xwindows --sliding --verbose
 ```
 
 Uses the left and right arrow keys on the keyboard for input
-and displays to an XWindow screen for output.
+and displays to an XWindow screen for output. The sliding window
+filter is applied. The sliding window is controlled by the keyboard.
+
+Additional constraints:
+
+The `--monochrome` filter only works on `yuyv` image types.
+It is an example of a filter that is applied on the raw camera data.
+
+The `--threshold` option applies to the `--color_track` frame processor.
+
+The `--sliding` filter only works on the `--xwindows` frame processor.
+
+The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
 
 ## Raspberry Pi Setup
+
 A Raspberry Pi of any revision should work. This setup has been tested on
 Raspberry Pi 3 Model B+
 

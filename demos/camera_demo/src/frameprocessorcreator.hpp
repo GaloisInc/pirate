@@ -12,13 +12,14 @@
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(const Options& options,
+    static FrameProcessor * get(FrameProcessorType processorType,
+        const Options& options,
         std::shared_ptr<OrientationOutput> orientationOutput,
         const ImageConvert& imageConvert)
     {
         (void) orientationOutput;
         (void) imageConvert;
-        switch (options.mProcessorType)
+        switch (processorType)
         {
 #if XWIN_PRESENT
             case XWindows:

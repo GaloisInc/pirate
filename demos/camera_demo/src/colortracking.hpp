@@ -17,9 +17,11 @@ public:
     virtual void term() override;
 
 private:
+    const bool           mVerbose;
     const float          mAngIncrement;
     const bool           mImageSlidingWindow;
     const unsigned char  mImageTrackingRGB[3];
+    const unsigned       mImageTrackingThreshold;
 
     void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
 

@@ -24,22 +24,28 @@
 
 static struct argp_option options[] =
 {
-    { "video_device", 'd', "device",      0, "video device",                      0 },
-    { "video_type",   't', "jpeg|yuyv",   0, "video type",                        0 },
-    { "width",        'W', "pixels",      0, "image width",                       0 },
-    { "height",       'H', "pixels",      0, "image height",                      0 },
-    { "flip",         'f', "v|h",         0, "horizontal or vertical image flip", 0 },
-    { "monochrome",   'm', NULL,          0, "monochrome image filter",           0 },
-    { "sliding",      's', NULL,          0, "sliding window image filter",       0 },
-    { "color_track",  'c', "RRGGBB",      0, "color tracking (RGB hex)",          0 },
-    { "framerate",    'r', "num/den",     0, "frame rate fraction",               0 },
-    { "out_dir",      'O', "path",        0, "image output directory",            0 },
-    { "pos_out",      'o', "servo|print", 0, "angular position output",           0 },
-    { "pos_in",       'i', "acc|kbd",     0, "position input",                    0 },
-    { "pos_lim",      'l', "val",         0, "angular position bound",            0 },
-    { "processor",    'p', "fs|xwin",     0, "frame processor",                   0 },
-    { "verbose",      'v', NULL,          0, "verbose output",                    0 },
-    { NULL,            0 , NULL,          0, NULL,                                0 },
+    { 0,              0,   0,             0, "video options:",                           1 },
+    { "video_device", 'd', "device",      0, "video device",                             0 },
+    { "video_type",   't', "jpeg|yuyv",   0, "video type",                               0 },
+    { "width",        'W', "pixels",      0, "image width",                              0 },
+    { "height",       'H', "pixels",      0, "image height",                             0 },
+    { "flip",         'f', "v|h",         0, "horizontal or vertical image flip",        0 },
+    { "framerate",    'r', "num/den",     0, "frame rate fraction",                      0 },
+    { 0,              0,   0,             0, "frame processor options:",                 2 },
+    { "color_track",  'c', "RRGGBB",      0, "color tracking (RGB hex) frame processor", 0 },
+    { "threshold",    'T', "val",         0, "color tracking threshold",                 0 },
+    { "xwindows",     'X', NULL,          0, "xwindows frame processor",                 0 },
+    { "filesystem",   'F', NULL,          0, "filesystem frame processor",               0 },
+    { "out_dir",      'O', "path",        0, "image output directory",                   0 },
+    { "out_count",    'M', "val",         0, "image output maximum file count",          0 },
+    { "monochrome",   'm', NULL,          0, "monochrome image filter",                  0 },
+    { "sliding",      's', NULL,          0, "sliding window image filter",              0 },
+    { 0,              0,   0,             0, "input/output options:",                    3 },
+    { "pos_in",       'i', "acc|kbd",     0, "position input",                           0 },
+    { "pos_out",      'o', "servo|print", 0, "angular position output",                  0 },
+    { "pos_lim",      'l', "val",         0, "angular position bound",                   0 },
+    { "verbose",      'v', NULL,          0, "verbose output",                           4 },
+    { NULL,            0 , NULL,          0, NULL,                                       0 },
 };
 
 static std::atomic<bool> interrupted(false);
@@ -110,6 +116,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             ss >> opt->mImageOutputDirectory;
             break;
 
+        case 'M':
+            ss >> opt->mImageOutputMaxFiles;
+            break;
+
         case 'o':
             if (ss.str() == "servo")
             {
@@ -140,19 +150,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
 
-        case 'p':
-            if (ss.str() == "fs")
-            {
-                opt->mProcessorType = Filesystem;
-            }
-            else if (ss.str() == "xwin")
-            {
-                opt->mProcessorType = XWindows;
-            }
-            else
-            {
-                argp_error(state, "invalid -p argument '%s'", arg);
-            }
+        case 'X':
+            opt->mXWinProcessor = true;
+            break;
+
+        case 'F':
+            opt->mFilesystemProcessor = true;
             break;
 
         case 'l':
@@ -195,6 +198,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
         }
+
+        case 'T':
+            ss >> opt->mImageTrackingThreshold;
+            break;
+
         case 'v':
             opt->mVerbose = true;
             break;
@@ -264,9 +272,18 @@ int main(int argc, char *argv[])
         orientationInput = std::shared_ptr<OrientationInput>(oi);
     }
 
-    FrameProcessor *fp = FrameProcessorCreator::get(options, orientationOutput, imageConvert);
-    std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
-    frameProcessors.push_back(frameProcessor);
+    if (options.mFilesystemProcessor) {
+        FrameProcessor *fp = FrameProcessorCreator::get(Filesystem, options, orientationOutput, imageConvert);
+        std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
+        frameProcessors.push_back(frameProcessor);
+    }
+
+    if (options.mXWinProcessor) {
+        FrameProcessor *fp = FrameProcessorCreator::get(XWindows, options, orientationOutput, imageConvert);
+        std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
+        frameProcessors.push_back(frameProcessor);
+    }
+
     if (options.mImageTracking) {
         // Add color tracking to the end of frame processors.
         // Take advantage of any RGB conversion in previous
@@ -288,10 +305,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rv = frameProcessor->init();
-    if (rv != 0)
-    {
-        return -1;
+    for (auto frameProcessor : frameProcessors) {
+        rv = frameProcessor->init();
+        if (rv != 0)
+        {
+            return -1;
+        }
     }
 
     rv = videoSensor->init();

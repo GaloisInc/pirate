@@ -1,4 +1,6 @@
 
+#include <iostream>
+
 #include "colortracking.hpp"
 
 ColorTracking::ColorTracking(
@@ -6,9 +8,11 @@ ColorTracking::ColorTracking(
         AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
     OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
     FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
+    mVerbose(options.mVerbose),
     mAngIncrement(1.0),
     mImageSlidingWindow(options.mImageSlidingWindow),
-    mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]}
+    mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
+    mImageTrackingThreshold(options.mImageTrackingThreshold)
 {
 }
 
@@ -47,14 +51,17 @@ void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
             int64_t r = ((int64_t) data[k+2]) - ((int64_t) mImageTrackingRGB[0]);
             int64_t g = ((int64_t) data[k+1]) - ((int64_t) mImageTrackingRGB[1]);
             int64_t b = ((int64_t) data[k+0]) - ((int64_t) mImageTrackingRGB[2]);
-            int64_t delta = (((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8);
-            if (delta < 2048) {
+            uint64_t delta = (((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8);
+            if (delta < mImageTrackingThreshold) {
                 // TODO: weighted average based on color similarity?
                 count++;
                 x_sum += x;
                 y_sum += y;
             }
         }
+    }
+    if (mVerbose) {
+        std::cout << count << " pixels match color threshold" << std::endl;
     }
     if (count > 64) {
         *x_pos = x_sum / count;

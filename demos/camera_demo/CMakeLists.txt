@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
-set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
 set(TGT_CAMERA_DEMO camera_demo)
