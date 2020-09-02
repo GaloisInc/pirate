@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <X11/Xlib.h>
 
@@ -12,7 +13,7 @@
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
-    XWinFrameProcessor(const Options& options, OrientationOutput const* orientationOutput, const ImageConvert& imageConvert);
+    XWinFrameProcessor(const Options& options, std::shared_ptr<OrientationOutput> orientationOutput, const ImageConvert& imageConvert);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
@@ -23,18 +24,18 @@ protected:
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 private:
-    OrientationOutput const* mOrientationOutput;
-    const ImageConvert&      mImageConvert;
-    bool                     mMonochrome;
-    bool                     mImageSlidingWindow;
-    Display*                 mDisplay;
-    Window                   mWindow;
-    XImage*                  mImage;
-    unsigned char*           mImageBuffer;
-    unsigned char*           mRGBXImageBuffer;
-    unsigned char*           mYUYVImageBuffer;
-    GC                       mContext;
-    XGCValues                mContextVals;
+    std::shared_ptr<OrientationOutput> mOrientationOutput;
+    const ImageConvert&                mImageConvert;
+    bool                               mMonochrome;
+    bool                               mImageSlidingWindow;
+    Display*                           mDisplay;
+    Window                             mWindow;
+    XImage*                            mImage;
+    unsigned char*                     mImageBuffer;
+    unsigned char*                     mRGBXImageBuffer;
+    unsigned char*                     mYUYVImageBuffer;
+    GC                                 mContext;
+    XGCValues                          mContextVals;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();

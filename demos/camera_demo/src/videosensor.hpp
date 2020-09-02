@@ -1,9 +1,11 @@
 #pragma once
 
-#include <stdint.h>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <stdint.h>
 #include <linux/videodev2.h>
 
 #include "imageconvert.hpp"
@@ -13,7 +15,7 @@
 class VideoSensor
 {
 public:
-    VideoSensor(const Options& options, const std::vector<FrameProcessor*>& frameProcessors, const ImageConvert& imageConvert);
+    VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
     virtual int init();
@@ -22,7 +24,7 @@ public:
     virtual int captureEnable();
     virtual int captureDisable();
 private:
-    const std::vector<FrameProcessor*>& mFrameProcessors;
+    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     const ImageConvert& mImageConvert;
     
     const std::string mDevicePath;

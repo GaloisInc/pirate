@@ -13,7 +13,7 @@
 class FrameProcessorCreator {
 public:
     static FrameProcessor * get(const Options& options,
-        OrientationOutput const* orientationOutput,
+        std::shared_ptr<OrientationOutput> orientationOutput,
         const ImageConvert& imageConvert)
     {
         (void) orientationOutput;

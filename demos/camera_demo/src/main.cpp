@@ -1,15 +1,17 @@
 
-#include <argp.h>
 #include <atomic>
 #include <chrono>
 #include <functional>
 #include <iostream>
-#include <signal.h>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <sys/signalfd.h>
 #include <thread>
 #include <vector>
+
+#include <argp.h>
+#include <signal.h>
+#include <sys/signalfd.h>
 #include <unistd.h>
 
 #include "orientationinputcreator.hpp"
@@ -238,7 +240,7 @@ int main(int argc, char *argv[])
     Options options;
     sigset_t set;
     std::thread *signalThread;
-    std::vector<FrameProcessor*> frameProcessors;
+    std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
 
     sigemptyset(&set);
     sigaddset(&set, SIGINT);
@@ -247,22 +249,27 @@ int main(int argc, char *argv[])
     parseArgs(argc, argv, &options);
 
     ImageConvert imageConvert(options.mImageWidth, options.mImageHeight);
-    OrientationOutput *orientationOutput;
-    OrientationInput *orientationInput;
-    ColorTracking *colorTracking = nullptr;
+    std::shared_ptr<OrientationOutput> orientationOutput;
+    std::shared_ptr<OrientationInput> orientationInput;
+    std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
-    orientationOutput = OrientationOutputCreator::get(options);
+    orientationOutput = std::shared_ptr<OrientationOutput>(OrientationOutputCreator::get(options));
 
     if (options.mImageTracking) {
-        colorTracking = new ColorTracking(options, orientationOutput->getUpdateCallback());
+        colorTracking = std::make_shared<ColorTracking>(options, orientationOutput->getUpdateCallback());
         orientationInput = colorTracking;
     } else {
-        orientationInput = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
+        OrientationInput* oi = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
+        orientationInput = std::shared_ptr<OrientationInput>(oi);
     }
 
-    FrameProcessor *frameProcessor = FrameProcessorCreator::get(options, orientationOutput, imageConvert);
+    FrameProcessor *fp = FrameProcessorCreator::get(options, orientationOutput, imageConvert);
+    std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
     frameProcessors.push_back(frameProcessor);
     if (options.mImageTracking) {
+        // Add color tracking to the end of frame processors.
+        // Take advantage of any RGB conversion in previous
+        // frame processors.
         frameProcessors.push_back(colorTracking);
     }
 
@@ -304,13 +311,9 @@ int main(int argc, char *argv[])
 
     delete signalThread;
     delete videoSensor;
-    for (FrameProcessor* frameProcessor : frameProcessors) {
-        delete frameProcessor;
-    }
-    if (orientationInput != colorTracking) {
-        delete orientationInput;
-    }
-    delete orientationOutput;
+    frameProcessors.clear();
+    orientationInput = nullptr;
+    orientationOutput = nullptr;
 
     return 0;
 }

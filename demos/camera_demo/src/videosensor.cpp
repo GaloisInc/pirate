@@ -16,7 +16,7 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const Options& options,
-        const std::vector<FrameProcessor*>& frameProcessors,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const ImageConvert& imageConvert) :
     mFrameProcessors(frameProcessors),
     mImageConvert(imageConvert),
@@ -483,7 +483,7 @@ void VideoSensor::pollThread()
         frameNumber++;
         for (size_t i = 0; i < mFrameProcessors.size(); i++)
         {
-            FrameProcessor* current = mFrameProcessors[i];
+            auto current = mFrameProcessors[i];
             if (current->mVideoType == mVideoType)
             {
                 current->processFrame(mBuffers[buf.index].mStart, buf.bytesused);
@@ -496,7 +496,7 @@ void VideoSensor::pollThread()
                 // in a previous frame processor
                 for (size_t j = 0; j < i; j++)
                 {
-                    FrameProcessor* prev = mFrameProcessors[j];
+                    auto prev = mFrameProcessors[j];
                     convertedBuffer = prev->getFrame(frameNumber, current->mVideoType);
                     if (convertedBuffer != nullptr)
                     {

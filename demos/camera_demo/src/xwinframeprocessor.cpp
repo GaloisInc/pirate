@@ -97,7 +97,7 @@ void XWinFrameProcessor::renderImage() {
 }
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    OrientationOutput const* orientationOutput,
+    std::shared_ptr<OrientationOutput> orientationOutput,
     const ImageConvert& imageConvert) :
 
     FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
