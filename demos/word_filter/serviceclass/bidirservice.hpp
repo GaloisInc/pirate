@@ -20,32 +20,41 @@ class BidirService {
     }
 
 public:
-    void setHandles(int read, int write) { readChan = read; writeChan = write; }
+    void setHandles(int read, int write);
+    Response operator()(Request t) const;
+    int event_loop();
+};
 
-    Response operator()(Request t) const {
-        std::vector<char> buffer;
-        Serialize<Request>::toBuffer(buffer, t);
-        pirate_write(writeChan, buffer.data(), buffer.size());
+template<typename Derived, typename Request, typename Response>
+void BidirService<Derived, Request, Response>::setHandles(int read, int write) {
+    readChan = read;
+    writeChan = write;
+}
 
+template<typename Derived, typename Request, typename Response>
+int BidirService<Derived, Request, Response>::event_loop() {
+    std::vector<char> buffer;
+    for (;;) {
         buffer.clear();
         buffer.resize(80);
-	pirate_read(readChan, buffer.data(), buffer.size());
+        pirate_read(readChan, buffer.data(), buffer.size());
+        auto req = Serialize<Request>::fromBuffer(buffer);
 
-        return Serialize<Response>::fromBuffer(buffer);
+        auto res = interface(req);
+        buffer.clear();
+        Serialize<Response>::toBuffer(buffer, res);
+        pirate_write(writeChan, buffer.data(), buffer.size());
     }
+}
+template<typename Derived, typename Request, typename Response>
+Response BidirService<Derived, Request, Response>::operator()(Request t) const {
+    std::vector<char> buffer;
+    Serialize<Request>::toBuffer(buffer, t);
+    pirate_write(writeChan, buffer.data(), buffer.size());
 
-    int event_loop() {
-        std::vector<char> buffer;
-        for (;;) {
-            buffer.clear();
-            buffer.resize(80);
-            pirate_read(readChan, buffer.data(), buffer.size());
-            auto req = Serialize<Request>::fromBuffer(buffer);
+    buffer.clear();
+    buffer.resize(80);
+    pirate_read(readChan, buffer.data(), buffer.size());
 
-            auto res = interface(req);
-            buffer.clear();
-            Serialize<Response>::toBuffer(buffer, res);
-            pirate_write(writeChan, buffer.data(), buffer.size());
-        }
-    }
-};
+    return Serialize<Response>::fromBuffer(buffer);
+}
