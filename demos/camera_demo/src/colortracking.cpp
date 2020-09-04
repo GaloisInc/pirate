@@ -1,0 +1,115 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
+#include <iostream>
+
+#include "colortracking.hpp"
+
+ColorTracking::ColorTracking(
+        const Options& options,
+        AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
+    OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
+    FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
+    mVerbose(options.mVerbose),
+    mAngIncrement(1.0),
+    mImageSlidingWindow(options.mImageSlidingWindow),
+    mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
+    mImageTrackingThreshold(options.mImageTrackingThreshold)
+{
+}
+
+ColorTracking::~ColorTracking()
+{
+    term();
+}
+
+int ColorTracking::init()
+{
+    return 0;
+}
+
+void ColorTracking::term()
+{
+
+}
+
+unsigned char* ColorTracking::getFrame(unsigned index, VideoType videoType) {
+    (void) index;
+    (void) videoType;
+    return nullptr;
+}
+
+void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
+    unsigned int x, y, k;
+    unsigned int count = 0;
+    unsigned int x_sum = 0, y_sum = 0;
+    *x_pos = -1;
+    *y_pos = -1;
+
+    for(k = y = 0; y < mImageHeight; y++) {
+	    for(x = 0; x < mImageWidth; x++, k += 4) {
+            // reference https://www.compuphase.com/cmetric.htm
+            int64_t rmean = (((int64_t) data[k+2]) + ((int64_t) mImageTrackingRGB[0])) / 2;
+            int64_t r = ((int64_t) data[k+2]) - ((int64_t) mImageTrackingRGB[0]);
+            int64_t g = ((int64_t) data[k+1]) - ((int64_t) mImageTrackingRGB[1]);
+            int64_t b = ((int64_t) data[k+0]) - ((int64_t) mImageTrackingRGB[2]);
+            uint64_t delta = (((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8);
+            if (delta < mImageTrackingThreshold) {
+                // TODO: weighted average based on color similarity?
+                count++;
+                x_sum += x;
+                y_sum += y;
+            }
+        }
+    }
+    if (mVerbose) {
+        std::cout << count << " pixels match color threshold" << std::endl;
+    }
+    if (count > 64) {
+        *x_pos = x_sum / count;
+        *y_pos = y_sum / count;
+    }
+}
+
+int ColorTracking::process(FrameBuffer data, size_t length) {
+    int center, delta;
+    int x_position, y_position;
+    int tolerance = mImageWidth / 10; // 10% tolerance
+
+    if (length != (mImageWidth * mImageHeight * 4)) {
+        return -1;
+    }
+
+    computeTracking(&x_position, &y_position, data);
+    if ((x_position < 0) || (y_position < 0)) {
+        // object not found
+        return 0;
+    }
+    float angularPosition = getAngularPosition();
+    if (mImageSlidingWindow) {
+        float range = mAngularPositionMax - mAngularPositionMin;
+        float percent = (angularPosition - mAngularPositionMin) / range;
+        center = mImageWidth * percent;
+    } else {
+        center = mImageWidth / 2;
+    }
+    delta = x_position - center;
+    if (delta > tolerance) {
+        setAngularPosition(angularPosition + mAngIncrement);
+    } else if (delta < -tolerance) {
+        setAngularPosition(angularPosition - mAngIncrement);
+    }
+    return 1;
+}

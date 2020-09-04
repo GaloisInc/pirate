@@ -15,27 +15,33 @@
 
 #pragma once
 
-#include <string>
-#include "frameprocessor.hpp"
+#include <thread>
 
-class FileFrameProcessor : public FrameProcessor
+#include "orientationinput.hpp"
+#include "frameprocessor.hpp"
+#include "options.hpp"
+
+class ColorTracking : public OrientationInput, public FrameProcessor
 {
 public:
-    FileFrameProcessor(const Options& options);
-    virtual ~FileFrameProcessor();
+    ColorTracking(const Options& options,
+        AngularPosition<float>::UpdateCallback angPosUpdateCallback);
+    virtual ~ColorTracking();
 
     virtual int init() override;
     virtual void term() override;
+
+private:
+    const bool           mVerbose;
+    const float          mAngIncrement;
+    const bool           mImageSlidingWindow;
+    const unsigned char  mImageTrackingRGB[3];
+    const unsigned       mImageTrackingThreshold;
+
+    void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
 
 protected:
     virtual int process(FrameBuffer data, size_t length) override;
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
-private:
-    std::string buildFilename(unsigned index);
-
-    const std::string mOutputDirectory;
-    const unsigned mImageOutputMaxFiles;
-    const bool mVerbose;
 };
-

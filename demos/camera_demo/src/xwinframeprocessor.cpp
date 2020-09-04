@@ -1,5 +1,19 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <cerrno>
-#include <climits>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -9,7 +23,6 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <jpeglib.h>
 
 int XWinFrameProcessor::xwinDisplayInitialize() {
     mDisplay = XOpenDisplay(nullptr);
@@ -23,18 +36,16 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
         BlackPixel(mDisplay, x_screen), WhitePixel(mDisplay, x_screen));
     mContext = XCreateGC(mDisplay, mWindow, 0, &mContextVals);
     mImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 4, 1);
-    switch (mVideoType) {
-        case JPEG:
-            mTempImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 3, 1);
-            mTempImageBufferRow = (unsigned char*) calloc(mImageWidth * 3, 1);
-            break;
-        case YUYV:
-            mTempImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 2, 1);
-            mTempImageBufferRow = nullptr;
-            break;
-        default:
-            std::cout << "Unknown video type " << mVideoType << std::endl;
-            return -1;
+    if (mImageSlidingWindow) {
+        // copy the image without the sliding window
+        mRGBXImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 4, 1);
+    } else {
+        mRGBXImageBuffer = mImageBuffer;
+    }
+    if (mMonochrome) {
+        mYUYVImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 2, 1);
+    } else {
+        mYUYVImageBuffer = nullptr;
     }
     if (mMonochrome && (mVideoType != YUYV)) {
             std::cout << "Monochrome filter cannot be used with video type " << mVideoType << std::endl;
@@ -53,122 +64,42 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
         XDestroyImage(mImage); // frees mImageBuffer
         XFreeGC(mDisplay, mContext);
         XCloseDisplay(mDisplay);
-        free(mTempImageBuffer);
-        if (mTempImageBufferRow != nullptr) {
-            free(mTempImageBufferRow);
+        if (mImageSlidingWindow) {
+            free(mRGBXImageBuffer);
+        }
+        if (mMonochrome) {
+            free(mYUYVImageBuffer);
         }
     }
     mImage = nullptr;
     mDisplay = nullptr;
     mImageBuffer = nullptr;
-    mTempImageBuffer = nullptr;
-    mTempImageBufferRow = nullptr;
+    mRGBXImageBuffer = nullptr;
+    mYUYVImageBuffer = nullptr;
     mContext = nullptr;
 }
 
-int XWinFrameProcessor::convertJpeg(FrameBuffer buf, size_t len) {
-    int i, width, depth;
-    unsigned x, y, z, k;
+void XWinFrameProcessor::slidingWindow() {
+    int x, y, k;
 
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
+    std::memcpy(mRGBXImageBuffer, mImageBuffer, mImageHeight * mImageWidth * 4);
+    float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
+    float position = mOrientationOutput->getAngularPosition();
+    float percent = (position - mOrientationOutput->mAngularPositionMin) / range;
+    int center = mImageWidth * percent;
+    // min can go negative
+    int min = (center - mImageWidth / 4);
+    int max = (center + mImageWidth / 4);
 
-    JSAMPROW row_pointer[1];
-
-    unsigned long location = 0;
-
-    cinfo.err = jpeg_std_error(&jerr);
-
-    jpeg_create_decompress(&cinfo);
-    jpeg_mem_src(&cinfo, buf, len);
-    jpeg_read_header(&cinfo, 1);
-    cinfo.scale_num = 1;
-    cinfo.scale_denom = 1;
-
-    jpeg_start_decompress(&cinfo);
-    width = cinfo.output_width;
-    depth = cinfo.num_components; //should always be 3
-    if ((cinfo.output_width != mImageWidth) || (cinfo.output_height != mImageHeight)) {
-        std::cout << "Expected " << mImageWidth << " x " << mImageHeight << " resolution"
-        << " and received " << cinfo.output_width << " x " << cinfo.output_height << std::endl;
-        return -1;
-    }
-
-    row_pointer[0] = mTempImageBufferRow;
-
-    while(cinfo.output_scanline < cinfo.output_height) {
-	    jpeg_read_scanlines(&cinfo, row_pointer, 1);
-	    for(i = 0; i < (width * depth); i++) {
-	        mTempImageBuffer[location++] = row_pointer[0][i];
-        }
-    }
-
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
-
-    for(z = k = y = 0; y < mImageHeight; y++) {
-	    for(x = 0; x < mImageWidth; x++) {
-            // for 24 bit depth, organization BGRX
-            mImageBuffer[k+0]=mTempImageBuffer[z+2];
-            mImageBuffer[k+1]=mTempImageBuffer[z+1];
-            mImageBuffer[k+2]=mTempImageBuffer[z+0];
-            k+=4; z+=3;
-        }
-    }
-    return 0;
-}
-
-static inline unsigned char clamp(int input) {
-    if (input > UCHAR_MAX) {
-        return UCHAR_MAX;
-    } else if (input < 0) {
-        return 0;
-    } else {
-        return input;
-    }
-}
-
-int XWinFrameProcessor::convertYuyv(FrameBuffer buf, size_t len) {
-    int c, d, e;
-
-    if (len != (mImageWidth * mImageHeight * 2)) {
-        std::cout << "Expected " << (mImageWidth * mImageHeight * 2) << " bytes"
-            << " and received " << len << " bytes" << std::endl;
-        return -1;
-    }
-
-    std::memcpy(mTempImageBuffer, buf, len);
-
-    if (mMonochrome) {
-        for (size_t src = 0; src < len; src++) {
-            if ((src % 2) == 1) {
-                mTempImageBuffer[src] = 128;
+    for(k = y = 0; y < (int) mImageHeight; y++) {
+	    for(x = 0; x < (int) mImageWidth; x++, k += 4) {
+            if ((x < min) || (x > max)) {
+                mImageBuffer[k+0]=0;
+                mImageBuffer[k+1]=0;
+                mImageBuffer[k+2]=0;
             }
         }
     }
-
-    for (size_t src = 0, dst = 0; src < len; src += 4, dst += 8) {
-        d = (int) mTempImageBuffer[src + 1] - 128;    // d = u - 128;
-        e = (int) mTempImageBuffer[src + 3] - 128;    // e = v - 128;
-        // c = y’ - 16 (for first pixel)
-        c = 298 * ((int) mTempImageBuffer[src] - 16);
-        // B - Blue
-        mImageBuffer[dst] = clamp((c + 516 * d + 128) >> 8);
-        // G -Green
-        mImageBuffer[dst + 1] = clamp((c - 100 * d - 208 * e + 128) >> 8);
-        // R - Red
-        mImageBuffer[dst + 2] = clamp((c + 409 * e + 128) >> 8);
-
-        // c = y’ - 16 (for second pixel)
-        c = 298 * ((int ) mTempImageBuffer[src + 2] - 16);
-        // B - Blue
-        mImageBuffer[dst + 4] = clamp((c + 516 * d + 128) >> 8);
-        // G -Green
-        mImageBuffer[dst + 5] = clamp((c - 100 * d - 208 * e + 128) >> 8);
-        // R - Red
-        mImageBuffer[dst + 6] = clamp((c + 409 * e + 128) >> 8);
-    }
-    return 0;
 }
 
 void XWinFrameProcessor::renderImage() {
@@ -180,11 +111,15 @@ void XWinFrameProcessor::renderImage() {
     errno = err;
 }
 
-XWinFrameProcessor::XWinFrameProcessor(VideoType videoType,
-    unsigned width, unsigned height, bool monochrome) :
-    FrameProcessor(videoType),
-    mImageWidth(width), mImageHeight(height),
-    mMonochrome(monochrome)
+XWinFrameProcessor::XWinFrameProcessor(const Options& options,
+    std::shared_ptr<OrientationOutput> orientationOutput,
+    const ImageConvert& imageConvert) :
+
+    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+    mOrientationOutput(orientationOutput),
+    mImageConvert(imageConvert),
+    mMonochrome(options.mImageMonochrome),
+    mImageSlidingWindow(options.mImageSlidingWindow)
 {
 
 }
@@ -204,7 +139,25 @@ void XWinFrameProcessor::term()
     xwinDisplayTerminate();
 }
 
-int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
+int XWinFrameProcessor::convertYuyv(FrameBuffer data, size_t length) {
+    if (mMonochrome) {
+        memcpy(mYUYVImageBuffer, data, length);
+        for (size_t src = 0; src < length; src++) {
+            if ((src % 2) == 1) {
+                mYUYVImageBuffer[src] = 128;
+            }
+        }
+        return mImageConvert.convert(mYUYVImageBuffer, length, YUYV, mImageBuffer, RGBX);
+    } else {
+        return mImageConvert.convert(data, length, YUYV, mImageBuffer, RGBX);
+    }
+}
+
+int XWinFrameProcessor::convertJpeg(FrameBuffer data, size_t length) {
+    return mImageConvert.convert(data, length, JPEG, mImageBuffer, RGBX);
+}
+
+int XWinFrameProcessor::process(FrameBuffer data, size_t length)
 {
     int rv;
     switch (mVideoType) {
@@ -221,6 +174,20 @@ int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
     if (rv) {
         return rv;
     }
+    if (mImageSlidingWindow) {
+        slidingWindow();
+    }
     renderImage();
     return 0;
+}
+
+unsigned char* XWinFrameProcessor::getFrame(unsigned index, VideoType videoType) {
+    if (index != mIndex) {
+        return nullptr;
+    }
+    if (videoType == RGBX) {
+        return mRGBXImageBuffer;
+    } else {
+        return nullptr;
+    }
 }

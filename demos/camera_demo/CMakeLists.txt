@@ -18,11 +18,13 @@ set(LIBS pthread)
 # Source files
 set(SRCS 
     src/main.cpp
+    src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
     src/videosensor.cpp
+    src/colortracking.cpp
 )
 
 if (FREESPACE_LIB)

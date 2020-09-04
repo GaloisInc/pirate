@@ -19,23 +19,25 @@
 
 #include "options.hpp"
 
-class FrameProcessor
+class ImageConvert
 {
 public:
-    FrameProcessor(VideoType videoType, unsigned width, unsigned height);
-    virtual ~FrameProcessor();
+    ImageConvert(unsigned width, unsigned height);
+    ~ImageConvert();
 
-    virtual int init() = 0;
-    virtual void term() = 0;
-    int processFrame(FrameBuffer data, size_t length);
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) = 0;
+    int convert(FrameBuffer src, size_t srcLength, VideoType srcType, unsigned char* dst, VideoType dstType) const;
+    unsigned char* getBuffer(VideoType videoType) const;
 
-    const VideoType mVideoType;
-    const unsigned  mImageWidth;
-    const unsigned  mImageHeight;
+    static size_t expectedBytes(unsigned width, unsigned height, VideoType videoType);
+private:
 
-protected:
-    unsigned    mIndex;
-    virtual int process(FrameBuffer data, size_t length) = 0;
+    const unsigned mImageWidth;
+    const unsigned mImageHeight;
 
+    unsigned char* mTempJpegBuffer;
+    unsigned char* mTempJpegBufferRow;
+    unsigned char* mRGBXBuffer;
+
+    int convertJpegToRGBX(FrameBuffer src, size_t srcLength, unsigned char* dst) const;
+    int convertYUYVToRGBX(FrameBuffer src, unsigned char* dst) const;
 };
