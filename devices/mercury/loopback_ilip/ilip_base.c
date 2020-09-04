@@ -781,7 +781,7 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
 #if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
         /* fall through */
 #else
-        __attribute__((fallthrough));
+        __attribute__((__fallthrough__));
 #endif
     case 0xeca51756:
         if ( gaps_ilip_verbose_level >= 8 ) {
@@ -832,7 +832,7 @@ static bool gaps_ilip_access_read(struct gaps_ilip_copy_workqueue *cp, struct il
 #if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
         /* fall through */
 #else
-        __attribute__((fallthrough));
+        __attribute__((__fallthrough__));
 #endif
     case 0x67ff90f4:
         if ( gaps_ilip_verbose_level >= 8 ) {
@@ -1041,7 +1041,7 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
 #if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
         /* fall through */
 #else
-        __attribute__((fallthrough));
+        __attribute__((__fallthrough__));
 #endif
     case 0xeca51756:
         if ( gaps_ilip_verbose_level >= 8 ) {
@@ -1091,7 +1091,7 @@ static bool gaps_ilip_access_write(struct gaps_ilip_copy_workqueue *cp, struct i
 #if KERNEL_VERSION(5, 2, 0) >= LINUX_VERSION_CODE
         /* fall through */
 #else
-        __attribute__((fallthrough));
+        __attribute__((__fallthrough__));
 #endif
     case 0x67ff90f4:
         if ( gaps_ilip_verbose_level >= 8 ) {
