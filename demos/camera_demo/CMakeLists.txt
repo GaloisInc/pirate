@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
 set(TGT_CAMERA_DEMO camera_demo)
@@ -13,7 +14,7 @@ find_library(FREESPACE_LIB freespace)
 find_library(PIGPIO_LIB pigpio)
 find_library(JPEG_LIB jpeg)
 find_library(X11_LIB X11)
-set(LIBS pthread)
+set(LIBS pthread avcodec avutil swscale)
 
 # Source files
 set(SRCS 
@@ -25,6 +26,7 @@ set(SRCS
     src/orientationoutput.cpp
     src/videosensor.cpp
     src/colortracking.cpp
+    src/h264streamer.cpp
 )
 
 if (FREESPACE_LIB)

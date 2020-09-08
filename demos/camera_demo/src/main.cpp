@@ -284,6 +284,10 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(frameProcessor);
     }
 
+    FrameProcessor *fp = FrameProcessorCreator::get(H264, options, orientationOutput, imageConvert);
+    std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
+    frameProcessors.push_back(frameProcessor);
+
     if (options.mImageTracking) {
         // Add color tracking to the end of frame processors.
         // Take advantage of any RGB conversion in previous

@@ -4,7 +4,7 @@
 
 enum VideoType { JPEG, YUYV, RGBX };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows };
+enum FrameProcessorType { Filesystem, XWindows, H264 };
 enum OutputType { PiServo, Print };
 
 using FrameBuffer = const unsigned char *;
