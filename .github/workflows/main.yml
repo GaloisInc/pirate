@@ -30,7 +30,7 @@ jobs:
     - name: install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev
+        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
     - name: googletest
       run: |
         mkdir ~/googletest
