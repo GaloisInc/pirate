@@ -26,7 +26,8 @@ public:
 private:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     const ImageConvert& mImageConvert;
-    
+
+    const bool mVerbose;
     const std::string mDevicePath;
     const VideoType mVideoType;
     const bool mFlipHorizontal;

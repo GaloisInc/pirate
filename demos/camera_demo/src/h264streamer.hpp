@@ -16,10 +16,12 @@
 #pragma once
 
 #include <string>
+#include <time.h>
 
 extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libswscale/swscale.h>    
+    #include <libavformat/avformat.h>
 }
 
 #include "frameprocessor.hpp"
@@ -38,11 +40,17 @@ protected:
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 
 private:
+    std::string mH264Url;
     AVCodec *mCodec;
     AVCodecContext *mCodecContext;
     AVFrame *mInputFrame, *mOutputFrame;
     struct SwsContext *mSwsContext;
+    AVFormatContext *mOutputContext;
     AVPacket mPkt;
-    FILE *mTempFile;
-};
+    time_t mSnapshotTime;
+    unsigned mSnapshotIndex;
 
+    static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
+    static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
+    static const int FRAMES_PER_SECOND = 25;
+};

@@ -14,7 +14,7 @@ find_library(FREESPACE_LIB freespace)
 find_library(PIGPIO_LIB pigpio)
 find_library(JPEG_LIB jpeg)
 find_library(X11_LIB X11)
-set(LIBS pthread avcodec avutil swscale)
+set(LIBS pthread avcodec avformat avutil swscale)
 
 # Source files
 set(SRCS 
