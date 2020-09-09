@@ -49,9 +49,11 @@ public:
                 fp = new XWinFrameProcessor(options, orientationOutput, imageConvert);
                 break;
 #endif
+#if FFMPEG_PRESENT
             case H264Stream:
                 fp = new H264Streamer(options);
                 break;
+#endif
             case Filesystem:
                 fp = new FileFrameProcessor(options);
                 break;
