@@ -78,6 +78,7 @@ Example usage:
 
 ```
  ./demos/camera_demo/camera_demo --pos_in kbd --xwindows --sliding --verbose
+<<<<<<< HEAD
 ```
 
 Uses the left and right arrow keys on the keyboard for input
@@ -101,7 +102,24 @@ The following playback settings introduce minimal latency:
 
 ```
 mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
+=======
+>>>>>>> master
 ```
+
+Uses the left and right arrow keys on the keyboard for input
+and displays to an XWindow screen for output. The sliding window
+filter is applied. The sliding window is controlled by the keyboard.
+
+Additional constraints:
+
+The `--monochrome` filter only works on `yuyv` image types.
+It is an example of a filter that is applied on the raw camera data.
+
+The `--threshold` option applies to the `--color_track` frame processor.
+
+The `--sliding` filter only works on the `--xwindows` frame processor.
+
+The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
 
 ## Raspberry Pi Setup
 
@@ -166,7 +184,10 @@ MAC Address: B8:27:EB:E8:2C:F1 (Raspberry Pi Foundation)
 ```
 
 #### SSH Into the Device and Change the Default Password
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 * Default username **pi**
 * Default password **raspberry**
 
