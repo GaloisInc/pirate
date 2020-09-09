@@ -21,12 +21,13 @@
 #include "orientationoutput.hpp"
 #include "fileframeprocessor.hpp"
 
-#include "h264streamer.hpp"
-
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
 #endif
 
+#if FFMPEG_PRESENT
+#include "h264streamer.hpp"
+#endif
 
 class FrameProcessorCreator {
 public:
