@@ -1,9 +1,34 @@
-# libgobject leaks static initialization
-# libtasn1 asn1_array2tree has a memory leak
+# 3rd party libraries leak static initialization
 {
-   third_party_libraries
+   libgobject
    Memcheck:Leak
    ...
+   obj:/usr/*lib*/libgobject*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libglib
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libglib*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libpixman
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libpixman*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libgomp
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libgomp*
+   fun:call_init
    fun:_dl_init
 }
 # See https://trac.ffmpeg.org/ticket/3194
