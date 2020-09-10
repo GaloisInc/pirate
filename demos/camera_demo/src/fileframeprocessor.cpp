@@ -37,8 +37,10 @@ FileFrameProcessor::~FileFrameProcessor()
     term();
 }
 
-int FileFrameProcessor::init()
+int FileFrameProcessor::init(int frameRateNum, int frameRateDiv)
 {
+    (void) frameRateNum;
+    (void) frameRateDiv;
     return 0;
 }
 

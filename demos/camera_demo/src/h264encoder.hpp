@@ -16,7 +16,6 @@
 #pragma once
 
 #include <string>
-#include <time.h>
 
 extern "C" {
     #include <libavcodec/avcodec.h>
@@ -32,7 +31,7 @@ public:
     H264Encoder(const Options& options);
     virtual ~H264Encoder();
 
-    virtual int init() override;
+    virtual int init(int frameRateNum, int frameRateDiv) override;
     virtual void term() override;
 
 protected:
@@ -47,10 +46,7 @@ private:
     struct SwsContext *mSwsContext;
     AVFormatContext *mOutputContext;
     AVPacket mPkt;
-    time_t mSnapshotTime;
-    unsigned mSnapshotIndex;
 
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
-    static const int FRAMES_PER_SECOND = 25;
 };

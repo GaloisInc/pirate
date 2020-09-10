@@ -37,9 +37,7 @@ H264Encoder::H264Encoder(const Options& options) :
     mInputFrame(nullptr),
     mOutputFrame(nullptr),
     mSwsContext(nullptr),
-    mOutputContext(nullptr),
-    mSnapshotTime(0),
-    mSnapshotIndex(0)
+    mOutputContext(nullptr)
 {
 
 }
@@ -49,7 +47,7 @@ H264Encoder::~H264Encoder()
     term();
 }
 
-int H264Encoder::init()
+int H264Encoder::init(int frameRateNum, int frameRateDiv)
 {
     int rv;
 
@@ -78,9 +76,9 @@ int H264Encoder::init()
     mCodecContext->bit_rate = 1000000;
     mCodecContext->width = mImageWidth;
     mCodecContext->height = mImageHeight;
-    /* frames per second */
-    mCodecContext->time_base.num = 1;
-    mCodecContext->time_base.den = FRAMES_PER_SECOND;
+    /* frames per second (inverse) */
+    mCodecContext->time_base.num = frameRateNum;
+    mCodecContext->time_base.den = frameRateDiv;
     mCodecContext->gop_size = 10;
     mCodecContext->pix_fmt = H264_PIXEL_FORMAT;
 
@@ -167,8 +165,6 @@ int H264Encoder::init()
         return 1;
     }
 
-    mSnapshotTime = time(NULL);
-
     return 0;
 }
 
@@ -207,16 +203,6 @@ unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType) {
 int H264Encoder::process(FrameBuffer data, size_t length)
 {
     int rv;
-    time_t currentTime;
-
-    // Drop unnecessary frames
-    currentTime = time(NULL);
-    if (currentTime != mSnapshotTime) {
-        mSnapshotTime = currentTime;
-        mSnapshotIndex = mIndex;
-    } else if ((mIndex - mSnapshotIndex) > FRAMES_PER_SECOND) {
-        return 0;
-    }
 
     av_init_packet(&mPkt);
     mPkt.data = NULL;    // packet data will be allocated by the encoder
