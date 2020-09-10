@@ -95,21 +95,6 @@ The `--sliding` filter only works on the `--xwindows` frame processor.
 
 The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
 
-Uses the left and right arrow keys on the keyboard for input
-and displays to an XWindow screen for output. The sliding window
-filter is applied. The sliding window is controlled by the keyboard.
-
-Additional constraints:
-
-The `--monochrome` filter only works on `yuyv` image types.
-It is an example of a filter that is applied on the raw camera data.
-
-The `--threshold` option applies to the `--color_track` frame processor.
-
-The `--sliding` filter only works on the `--xwindows` frame processor.
-
-The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
-
 ## Playback MPEG-TS streamer
 
 The following playback settings introduce minimal latency:
