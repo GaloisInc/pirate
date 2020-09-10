@@ -174,6 +174,11 @@ int H264Streamer::init()
 
 void H264Streamer::term()
 {
+    if (mOutputContext != nullptr) {
+        av_write_trailer(mOutputContext);
+        avio_close(mOutputContext->pb);
+        avformat_free_context(mOutputContext);
+    }
     if (mSwsContext != nullptr) {
         sws_freeContext(mSwsContext);
     }
@@ -189,6 +194,7 @@ void H264Streamer::term()
         avcodec_close(mCodecContext);
         avcodec_free_context(&mCodecContext);
     }
+    avformat_network_deinit();
 }
 
 unsigned char* H264Streamer::getFrame(unsigned index, VideoType videoType) {

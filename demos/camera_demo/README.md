@@ -78,7 +78,6 @@ Example usage:
 
 ```
  ./demos/camera_demo/camera_demo --pos_in kbd --xwindows --sliding --verbose
-<<<<<<< HEAD
 ```
 
 Uses the left and right arrow keys on the keyboard for input
@@ -102,8 +101,6 @@ The following playback settings introduce minimal latency:
 
 ```
 mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
-=======
->>>>>>> master
 ```
 
 Uses the left and right arrow keys on the keyboard for input
@@ -184,10 +181,7 @@ MAC Address: B8:27:EB:E8:2C:F1 (Raspberry Pi Foundation)
 ```
 
 #### SSH Into the Device and Change the Default Password
-<<<<<<< HEAD
 
-=======
->>>>>>> master
 * Default username **pi**
 * Default password **raspberry**
 

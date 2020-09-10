@@ -1,0 +1,15 @@
+# libgobject leaks static initialization
+# libtasn1 asn1_array2tree has a memory leak
+{
+   third_party_libraries
+   Memcheck:Leak
+   ...
+   fun:_dl_init
+}
+# See https://trac.ffmpeg.org/ticket/3194
+{
+   ffmpeg_network_leak
+   Memcheck:Leak
+   ...
+   fun:avformat_network_init
+}
