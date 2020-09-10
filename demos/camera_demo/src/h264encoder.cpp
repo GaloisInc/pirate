@@ -22,14 +22,14 @@
 
 #include <stdio.h>
 
-#include "h264streamer.hpp"
+#include "h264encoder.hpp"
 
 extern "C" {
     #include <libavutil/imgutils.h>
     #include <libavutil/opt.h>
 }
 
-H264Streamer::H264Streamer(const Options& options) :
+H264Encoder::H264Encoder(const Options& options) :
     FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264Url),
     mCodec(nullptr),
@@ -44,12 +44,12 @@ H264Streamer::H264Streamer(const Options& options) :
 
 }
 
-H264Streamer::~H264Streamer()
+H264Encoder::~H264Encoder()
 {
     term();
 }
 
-int H264Streamer::init()
+int H264Encoder::init()
 {
     int rv;
 
@@ -172,7 +172,7 @@ int H264Streamer::init()
     return 0;
 }
 
-void H264Streamer::term()
+void H264Encoder::term()
 {
     if (mOutputContext != nullptr) {
         av_write_trailer(mOutputContext);
@@ -197,14 +197,14 @@ void H264Streamer::term()
     avformat_network_deinit();
 }
 
-unsigned char* H264Streamer::getFrame(unsigned index, VideoType videoType) {
+unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType) {
     (void) index;
     (void) videoType;
     return nullptr;
 }
 
 
-int H264Streamer::process(FrameBuffer data, size_t length)
+int H264Encoder::process(FrameBuffer data, size_t length)
 {
     int rv;
     time_t currentTime;

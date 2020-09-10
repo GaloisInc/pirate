@@ -36,11 +36,12 @@
 #include "videosensor.hpp"
 #include "options.hpp"
 
-const int OPT_TRACK   = 128;
 const int OPT_THRESH  = 129;
-const int OPT_MAX_OUT = 130;
-const int OPT_MONO    = 131;
-const int OPT_SLIDE   = 132;
+const int OPT_OUT_DIR = 130;
+const int OPT_MAX_OUT = 131;
+const int OPT_MONO    = 132;
+const int OPT_SLIDE   = 133;
+const int OPT_LIMIT   = 134;
 
 static struct argp_option options[] =
 {
@@ -50,21 +51,21 @@ static struct argp_option options[] =
     { "width",        'W',         "pixels",      0, "image width",                              0 },
     { "height",       'H',         "pixels",      0, "image height",                             0 },
     { "flip",         'f',         "v|h",         0, "horizontal or vertical image flip",        0 },
-    { "framerate",    'r',         "num/den",     0, "frame rate fraction",                      0 },
+    { "framerate",    'r',         "num/den",     0, "capture seconds per frame",                0 },
     { 0,              0,           0,             0, "frame processor options:",                 2 },
-    { "color_track",  OPT_TRACK,   "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
+    { "color_track",  'C',         "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
     { "threshold",    OPT_THRESH,  "val",         0, "color tracking threshold",                 0 },
     { "xwindows",     'X',         NULL,          0, "xwindows frame processor",                 0 },
     { "filesystem",   'F',         NULL,          0, "filesystem frame processor",               0 },
-    { "mpeg",         'M',         "url",         0, "MPEG-TS H.264 streamer (host:port)",       0 },
-    { "out_dir",      'O',         "path",        0, "image output directory",                   0 },
+    { "encoder",      'E',         "url",         0, "MPEG-TS H.264 encoder url (host:port)",    0 },
+    { "out_dir",      OPT_OUT_DIR, "path",        0, "image output directory",                   0 },
     { "out_count",    OPT_MAX_OUT, "val",         0, "image output maximum file count",          0 },
     { "monochrome",   OPT_MONO,    NULL,          0, "monochrome image filter",                  0 },
     { "sliding",      OPT_SLIDE,   NULL,          0, "sliding window image filter",              0 },
     { 0,              0,           0,             0, "input/output options:",                    3 },
-    { "pos_in",       'i',         "acc|kbd",     0, "position input",                           0 },
-    { "pos_out",      'o',         "servo|print", 0, "angular position output",                  0 },
-    { "pos_lim",      'l',         "val",         0, "angular position bound",                   0 },
+    { "input",        'i',         "acc|kbd",     0, "position input",                           0 },
+    { "output",       'o',         "servo|print", 0, "angular position output",                  0 },
+    { "output_limit", OPT_LIMIT,   "val",         0, "angular position bound",                   0 },
     { "verbose",      'v',         NULL,          0, "verbose output",                           4 },
     { NULL,            0 ,         NULL,          0, NULL,                                       0 },
 };
@@ -137,7 +138,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
 
-        case 'O':
+        case OPT_OUT_DIR:
             ss >> opt->mImageOutputDirectory;
             break;
 
@@ -184,7 +185,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
 
         case 'M':
-            opt->mH264Streamer = true;
+            opt->mH264Encoder = true;
             ss >> opt->mH264Url;
             if (opt->mH264Url.find(':') == std::string::npos)
             {
@@ -204,7 +205,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
 
-        case 'l':
+        case OPT_LIMIT:
             ss >> opt->mAngularPositionLimit;
             break;
 
@@ -216,7 +217,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mImageSlidingWindow = true;
             break;
 
-        case OPT_TRACK: {
+        case 'C': {
             std::string argval = ss.str();
             opt->mImageTracking = true;
             if (argval.length() != 6)
@@ -326,7 +327,7 @@ int main(int argc, char *argv[])
         FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput, imageConvert);
     }
 
-    if (options.mH264Streamer) {
+    if (options.mH264Encoder) {
         FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput, imageConvert);
     }
 

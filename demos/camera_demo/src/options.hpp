@@ -47,7 +47,7 @@ struct Options
         mInputType(Freespace),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
-        mH264Streamer(false),
+        mH264Encoder(false),
         mH264Url(""),
         mAngularPositionLimit(45.0),
         mVerbose(false)
@@ -74,7 +74,7 @@ struct Options
     InputType mInputType;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
-    bool mH264Streamer;
+    bool mH264Encoder;
     std::string mH264Url;
     float mAngularPositionLimit;
     bool mVerbose;

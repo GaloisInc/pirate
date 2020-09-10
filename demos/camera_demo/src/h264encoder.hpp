@@ -26,11 +26,11 @@ extern "C" {
 
 #include "frameprocessor.hpp"
 
-class H264Streamer : public FrameProcessor
+class H264Encoder : public FrameProcessor
 {
 public:
-    H264Streamer(const Options& options);
-    virtual ~H264Streamer();
+    H264Encoder(const Options& options);
+    virtual ~H264Encoder();
 
     virtual int init() override;
     virtual void term() override;

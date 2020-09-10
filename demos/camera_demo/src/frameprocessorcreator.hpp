@@ -26,7 +26,7 @@
 #endif
 
 #if FFMPEG_PRESENT
-#include "h264streamer.hpp"
+#include "h264encoder.hpp"
 #endif
 
 class FrameProcessorCreator {
@@ -52,7 +52,7 @@ public:
 #endif
 #if FFMPEG_PRESENT
             case H264Stream:
-                fp = new H264Streamer(options);
+                fp = new H264Encoder(options);
                 break;
 #endif
             case Filesystem:

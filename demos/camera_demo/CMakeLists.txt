@@ -45,7 +45,7 @@ endif (FREESPACE_LIB)
 if (FFMPEG_LIBS)
     set(BUILD_FALGS -DFFMPEG_PRESENT=1 ${BUILD_FALGS})
     set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/h264streamer.cpp)
+    set(SRCS ${SRCS} src/h264encoder.cpp)
 endif (FFMPEG_LIBS)
 
 if (PIGPIO_LIB)
