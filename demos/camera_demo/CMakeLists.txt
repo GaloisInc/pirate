@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(TGT_CAMERA_DEMO camera_demo)
 
 # Build flags
-set(BUILD_FALGS -std=c++11 ${PIRATE_C_FLAGS})
+set(BUILD_FALGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
 
 # Libraries
 find_library(FREESPACE_LIB freespace)

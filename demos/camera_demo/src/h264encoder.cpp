@@ -253,6 +253,8 @@ int H264Encoder::processH264(FrameBuffer data, size_t length)
     }
 
     memcpy(mPkt.data, data, length);
+    mPkt.pts = mIndex;
+    mPkt.dts = mIndex;
 
     rv = av_interleaved_write_frame(mOutputContext, &mPkt);
     if (rv) {
