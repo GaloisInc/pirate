@@ -16,15 +16,13 @@ struct FixedString {
 template<int N>
 struct Serialize<FixedString<N>> {
     static constexpr size_t size = N;
-    static FixedString<N> fromBuffer(std::vector<char> const& buffer) {
-        auto start = std::begin(buffer);
-        auto len   = std::min(size, buffer.size());
-        auto end   = std::find(start, start+len, 0);
-        return std::string(std::begin(buffer), end);
+    static FixedString<N> fromBuffer(char const* buffer) {
+        auto end = std::find(buffer, buffer+N, 0);
+        return std::string(buffer, end);
     }
     static void toBuffer(std::vector<char> & buffer, FixedString<N> const& str) {
-        buffer.clear();
-        buffer.insert(buffer.end(), str.str.begin(), str.str.end());
-        buffer.resize(size);
+        std::copy(std::begin(str.str), std::end(str.str), std::back_inserter(buffer));
+        ssize_t zeros = N - static_cast<ssize_t>(str.str.size());
+        std::fill_n(std::back_inserter(buffer), zeros, 0);
     }
 };
