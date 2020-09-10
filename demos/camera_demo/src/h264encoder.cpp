@@ -199,8 +199,7 @@ unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType) {
     return nullptr;
 }
 
-
-int H264Encoder::process(FrameBuffer data, size_t length)
+int H264Encoder::processYUYV(FrameBuffer data, size_t length)
 {
     int rv;
 
@@ -241,5 +240,39 @@ int H264Encoder::process(FrameBuffer data, size_t length)
     }
 
     return 0;
+}
+
+int H264Encoder::processH264(FrameBuffer data, size_t length)
+{
+    int rv;
+
+    rv = av_new_packet(&mPkt, length);
+    if (rv) {
+        std::cout << "av_new_packet error " << rv << std::endl;
+        return rv;
+    }
+
+    memcpy(mPkt.data, data, length);
+
+    rv = av_interleaved_write_frame(mOutputContext, &mPkt);
+    if (rv) {
+        std::cout << "av_interleaved_write_frame error " << rv << std::endl;
+    }
+
+    av_packet_unref(&mPkt);
+    return rv;
+}
+
+int H264Encoder::process(FrameBuffer data, size_t length)
+{
+    switch (mVideoType) {
+        case YUYV:
+            return processYUYV(data, length);
+        case H264:
+            return processH264(data, length);
+        default:
+            std::cout << "Unknown video type " << mVideoType << std::endl;
+            return 1;
+    }
 }
 

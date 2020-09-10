@@ -47,6 +47,9 @@ private:
     AVFormatContext *mOutputContext;
     AVPacket mPkt;
 
+    int processYUYV(FrameBuffer data, size_t length);
+    int processH264(FrameBuffer data, size_t length);
+
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
 };
