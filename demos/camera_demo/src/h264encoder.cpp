@@ -131,7 +131,7 @@ int H264Encoder::init(int frameRateNum, int frameRateDiv)
     mSwsContext = sws_getContext(mImageWidth, mImageHeight, YUYV_PIXEL_FORMAT,
         mImageWidth, mImageHeight, H264_PIXEL_FORMAT,
         0, nullptr, nullptr, nullptr);
-    
+
     if (mSwsContext == nullptr) {
         std::cout << "unable to allocate SwsContext" << std::endl;
         return 1;

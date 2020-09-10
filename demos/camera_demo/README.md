@@ -95,14 +95,6 @@ The `--sliding` filter only works on the `--xwindows` frame processor.
 
 The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
 
-## Playback MPEG-TS streamer
-
-The following playback settings introduce minimal latency:
-
-```
-mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
-```
-
 Uses the left and right arrow keys on the keyboard for input
 and displays to an XWindow screen for output. The sliding window
 filter is applied. The sliding window is controlled by the keyboard.
@@ -117,6 +109,14 @@ The `--threshold` option applies to the `--color_track` frame processor.
 The `--sliding` filter only works on the `--xwindows` frame processor.
 
 The `--out_dir` and `--out_count` options apply to the `--filesystem` frame processor.
+
+## Playback MPEG-TS streamer
+
+The following playback settings introduce minimal latency:
+
+```
+mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
+```
 
 ## Raspberry Pi Setup
 

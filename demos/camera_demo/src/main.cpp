@@ -360,7 +360,8 @@ int main(int argc, char *argv[])
     }
 
     for (auto frameProcessor : frameProcessors) {
-        rv = frameProcessor->init(videoSensor->frameRateNumerator(),
+        rv = frameProcessor->init(
+            videoSensor->frameRateNumerator(),
             videoSensor->frameRateDenominator());
         if (rv != 0)
         {

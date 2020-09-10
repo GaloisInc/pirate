@@ -323,9 +323,6 @@ int VideoSensor::initVideoDevice()
 
         mFrameRateNumerator = streamparm.parm.capture.timeperframe.numerator;
         mFrameRateDenominator = streamparm.parm.capture.timeperframe.denominator;
-        if (mVerbose) {
-            std::cout << "Frame rate is " << mFrameRateNumerator << " / " << mFrameRateDenominator << std::endl;
-        }
     }
     // Set frame rate
     else
@@ -355,6 +352,9 @@ int VideoSensor::initVideoDevice()
         {
             std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
         }
+    }
+    if (mVerbose) {
+        std::cout << "Frame rate is " << mFrameRateNumerator << " / " << mFrameRateDenominator << std::endl;
     }
 
     // Configure image format
