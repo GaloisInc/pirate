@@ -1,6 +1,8 @@
 #pragma once
 
 #include "serialize.hpp"
+#include "request.hpp"
+#include "response.hpp"
 
 #include <libpirate.h>
 
@@ -31,30 +33,31 @@ void BidirService<Derived, Request, Response>::setHandles(int read, int write) {
     writeChan = write;
 }
 
-template<typename Derived, typename Request, typename Response>
-int BidirService<Derived, Request, Response>::event_loop() {
+template<typename Derived, typename Req, typename Res>
+int BidirService<Derived, Req, Res>::event_loop() {
     std::vector<char> buffer;
     for (;;) {
         buffer.clear();
-        buffer.resize(80);
+        buffer.resize(Serialize<Request<Req>>::size);
         pirate_read(readChan, buffer.data(), buffer.size());
-        auto req = Serialize<Request>::fromBuffer(buffer);
+        auto req = deserialize<Request<Req>>(buffer.data());
 
-        auto res = interface(req);
+        auto res = interface(req.content);
+        auto resp = Response<Res>(req.tx_id, res);
         buffer.clear();
-        Serialize<Response>::toBuffer(buffer, res);
+        serialize(buffer, resp);
         pirate_write(writeChan, buffer.data(), buffer.size());
     }
 }
-template<typename Derived, typename Request, typename Response>
-Response BidirService<Derived, Request, Response>::operator()(Request t) const {
+template<typename Derived, typename Req, typename Res>
+Res BidirService<Derived, Req, Res>::operator()(Req t) const {
     std::vector<char> buffer;
-    Serialize<Request>::toBuffer(buffer, t);
+    serialize(buffer, Request<Req>(0, t));
     pirate_write(writeChan, buffer.data(), buffer.size());
 
     buffer.clear();
-    buffer.resize(80);
+    buffer.resize(Serialize<Response<Res>>::size);
     pirate_read(readChan, buffer.data(), buffer.size());
-
-    return Serialize<Response>::fromBuffer(buffer);
+    Res resp = *(deserialize<Response<Res>>(buffer.data()).content);
+    return resp;
 }
