@@ -15,6 +15,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -359,9 +360,14 @@ int VideoSensor::initVideoDevice()
         return -1;
     }
 
+    // Compare in frames per second (not seconds per frame)
+    double expFrameRate = ((double) mFrameRateDenominator) / ((double) mFrameRateNumerator);
+    double obsFrameRate = ((double) streamparm.parm.capture.timeperframe.denominator) /
+        ((double) streamparm.parm.capture.timeperframe.numerator);
+    double delta = fabs(expFrameRate - obsFrameRate);
+
     // Set frame rate
-    if ((mFrameRateNumerator != streamparm.parm.capture.timeperframe.numerator) ||
-        (mFrameRateDenominator != streamparm.parm.capture.timeperframe.denominator))
+    if (delta >= 1.0)
     {
         if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
         {
