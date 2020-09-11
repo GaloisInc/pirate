@@ -60,7 +60,7 @@ VideoSensor::~VideoSensor()
     term();
 }
 
-int VideoSensor::setup()
+int VideoSensor::init()
 {
     int rv;
 
@@ -77,13 +77,6 @@ int VideoSensor::setup()
     {
         return -1;
     }
-
-    return 0;
-}
-
-int VideoSensor::init()
-{
-    int rv;
 
     rv = captureEnable();
     if (rv != 0)
@@ -308,55 +301,6 @@ int VideoSensor::initVideoDevice()
         }
     }
 
-    // Get frame rate
-    if ((mFrameRateNumerator == 1) || (mFrameRateDenominator == 1))
-    {
-        struct v4l2_streamparm streamparm;
-        std::memset(&streamparm, 0, sizeof(streamparm));
-        streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
-        if (rv != 0)
-        {
-            std::perror("Failed to get stream parameters");
-            return -1;
-        }
-
-        mFrameRateNumerator = streamparm.parm.capture.timeperframe.numerator;
-        mFrameRateDenominator = streamparm.parm.capture.timeperframe.denominator;
-    }
-    // Set frame rate
-    else
-    {
-        if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
-        {
-            struct v4l2_streamparm streamparm;
-            std::memset(&streamparm, 0, sizeof(streamparm));
-            streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
-            if (rv != 0)
-            {
-                std::perror("Failed to get stream parameters");
-                return -1;
-            }
-
-            streamparm.parm.capture.timeperframe.numerator = mFrameRateNumerator;
-            streamparm.parm.capture.timeperframe.denominator = mFrameRateDenominator;
-            rv = ioctlWait(mFd, VIDIOC_S_PARM, &streamparm);
-            if (rv != 0)
-            {
-                std::perror("Failed to set stream parameters");
-                return -1;
-            }
-        }
-        else
-        {
-            std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
-        }
-    }
-    if (mVerbose) {
-        std::cout << "Frame rate is " << mFrameRateNumerator << " / " << mFrameRateDenominator << std::endl;
-    }
-
     // Configure image format
     std::memset(&mFormat, 0, sizeof(mFormat));
 
@@ -396,8 +340,48 @@ int VideoSensor::initVideoDevice()
         (mFormat.fmt.pix.height != mImageHeight))
     {
         errno = EINVAL;
-        std::perror("Image resilution is not supported");
+        std::perror("Image resolution is not supported");
         return -1;
+    }
+
+    // Get frame rate
+
+    // Note: the supported frame rate of the camera
+    // can change based on the image format
+
+    struct v4l2_streamparm streamparm;
+    std::memset(&streamparm, 0, sizeof(streamparm));
+    streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
+    if (rv != 0)
+    {
+        std::perror("Failed to get stream parameters");
+        return -1;
+    }
+
+    // Set frame rate
+    if ((mFrameRateNumerator != streamparm.parm.capture.timeperframe.numerator) ||
+        (mFrameRateDenominator != streamparm.parm.capture.timeperframe.denominator))
+    {
+        if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
+        {
+            streamparm.parm.capture.timeperframe.numerator = mFrameRateNumerator;
+            streamparm.parm.capture.timeperframe.denominator = mFrameRateDenominator;
+            rv = ioctlWait(mFd, VIDIOC_S_PARM, &streamparm);
+            if (rv != 0)
+            {
+                std::perror("Failed to set stream parameters");
+                return -1;
+            }
+        }
+        else
+        {
+            std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
+            return -1;
+        }
+    }
+    if (mVerbose) {
+        std::cout << "Frame rate is " << mFrameRateNumerator << " / " << mFrameRateDenominator << std::endl;
     }
 
     // Initialize and allocate capture buffers
@@ -591,12 +575,4 @@ void VideoSensor::pollThread()
             continue;
         }
     }
-}
-
-int VideoSensor::frameRateNumerator() {
-    return mFrameRateNumerator;
-}
-
-int VideoSensor::frameRateDenominator() {
-    return mFrameRateDenominator;
 }

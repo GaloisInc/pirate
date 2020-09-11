@@ -35,13 +35,6 @@ ColorTracking::~ColorTracking()
     term();
 }
 
-int ColorTracking::init(int frameRateNum, int frameRateDiv)
-{
-    (void) frameRateNum;
-    (void) frameRateDiv;
-    return 0;
-}
-
 int ColorTracking::init()
 {
     return 0;

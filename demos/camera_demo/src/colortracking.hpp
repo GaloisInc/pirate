@@ -28,7 +28,6 @@ public:
         AngularPosition<float>::UpdateCallback angPosUpdateCallback);
     virtual ~ColorTracking();
 
-    virtual int init(int frameRateNum, int frameRateDiv) override;
     virtual int init() override;
     virtual void term() override;
 

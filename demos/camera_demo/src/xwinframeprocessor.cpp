@@ -129,10 +129,8 @@ XWinFrameProcessor::~XWinFrameProcessor()
     term();
 }
 
-int XWinFrameProcessor::init(int frameRateNum, int frameRateDiv)
+int XWinFrameProcessor::init()
 {
-    (void) frameRateNum;
-    (void) frameRateDiv;
     return xwinDisplayInitialize();
 }
 

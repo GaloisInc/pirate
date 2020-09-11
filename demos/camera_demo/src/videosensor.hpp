@@ -33,12 +33,9 @@ public:
     VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
-    int setup();     // Sensor setup prior to start capturing
-    int init();      // Start capturing
+    int init();
     void term();
 
-    int frameRateNumerator();
-    int frameRateDenominator();
 private:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     const ImageConvert& mImageConvert;
@@ -50,8 +47,8 @@ private:
     const bool mFlipVertical;
     unsigned mImageWidth;
     unsigned mImageHeight;
-    unsigned mFrameRateNumerator;
-    unsigned mFrameRateDenominator;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
 
     static constexpr unsigned BUFFER_COUNT = 4;
     

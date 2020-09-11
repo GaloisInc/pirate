@@ -25,7 +25,7 @@ public:
     FrameProcessor(VideoType videoType, unsigned width, unsigned height);
     virtual ~FrameProcessor();
 
-    virtual int init(int frameRateNum, int frameRateDiv) = 0;
+    virtual int init() = 0;
     virtual void term() = 0;
     int processFrame(FrameBuffer data, size_t length);
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) = 0;

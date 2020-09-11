@@ -51,7 +51,6 @@ static struct argp_option options[] =
     { "width",        'W',          "pixels",      0, "image width",                              0 },
     { "height",       'H',          "pixels",      0, "image height",                             0 },
     { "flip",         'f',          "v|h",         0, "horizontal or vertical image flip",        0 },
-    { "framerate",    'r',          "sec/f",       0, "capture seconds per frame",                0 },
     { 0,              0,            0,             0, "frame processor options:",                 2 },
     { "color_track",  'C',          "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
     { "threshold",    OPT_THRESH,   "val",         0, "color tracking threshold",                 0 },
@@ -76,7 +75,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
     Options * opt = static_cast<Options *>(state->input);
     std::istringstream ss(arg != NULL ? arg : "");
-    char delim;
 
     switch (key)
     {
@@ -126,16 +124,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
                 argp_error(state, "invalid flip argument '%s'", arg);
             }
 
-            break;
-
-        case 'r':
-            ss >> opt->mFrameRateNumerator;
-            ss >> delim;
-            ss >> opt->mFrameRateDenominator;
-            if ((opt->mFrameRateNumerator == 0) || (opt->mFrameRateDenominator == 0))
-            {
-                argp_error(state, "invalid framerate argument '%s'", arg);
-            }
             break;
 
         case OPT_OUT_DIR:
@@ -352,17 +340,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rv = videoSensor->setup();
-    if (rv != 0)
-    {
-        videoSensor->term();
-        return -1;
-    }
-
     for (auto frameProcessor : frameProcessors) {
-        rv = frameProcessor->init(
-            videoSensor->frameRateNumerator(),
-            videoSensor->frameRateDenominator());
+        rv = frameProcessor->init();
         if (rv != 0)
         {
             return -1;

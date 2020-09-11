@@ -31,7 +31,7 @@ public:
     H264Encoder(const Options& options);
     virtual ~H264Encoder();
 
-    virtual int init(int frameRateNum, int frameRateDiv) override;
+    virtual int init() override;
     virtual void term() override;
 
 protected:
@@ -40,6 +40,8 @@ protected:
 
 private:
     std::string mH264Url;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
     AVCodec *mCodec;
     AVCodecContext *mCodecContext;
     AVFrame *mInputFrame, *mOutputFrame;

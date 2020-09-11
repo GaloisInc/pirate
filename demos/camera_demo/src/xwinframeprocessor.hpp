@@ -31,7 +31,7 @@ public:
     XWinFrameProcessor(const Options& options, std::shared_ptr<OrientationOutput> orientationOutput, const ImageConvert& imageConvert);
     virtual ~XWinFrameProcessor();
 
-    virtual int init(int frameRateNum, int frameRateDiv) override;
+    virtual int init() override;
     virtual void term() override;
 
 protected:

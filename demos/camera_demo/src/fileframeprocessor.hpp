@@ -24,7 +24,7 @@ public:
     FileFrameProcessor(const Options& options);
     virtual ~FileFrameProcessor();
 
-    virtual int init(int frameRateNum, int frameRateDiv) override;
+    virtual int init() override;
     virtual void term() override;
 
 protected:

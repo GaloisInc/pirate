@@ -32,6 +32,8 @@ extern "C" {
 H264Encoder::H264Encoder(const Options& options) :
     FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264Url),
+    mFrameRateNumerator(options.mFrameRateNumerator),
+    mFrameRateDenominator(options.mFrameRateDenominator),
     mCodec(nullptr),
     mCodecContext(nullptr),
     mInputFrame(nullptr),
@@ -47,7 +49,7 @@ H264Encoder::~H264Encoder()
     term();
 }
 
-int H264Encoder::init(int frameRateNum, int frameRateDiv)
+int H264Encoder::init()
 {
     int rv;
 
@@ -77,8 +79,8 @@ int H264Encoder::init(int frameRateNum, int frameRateDiv)
     mCodecContext->width = mImageWidth;
     mCodecContext->height = mImageHeight;
     /* frames per second (inverse) */
-    mCodecContext->time_base.num = frameRateNum;
-    mCodecContext->time_base.den = frameRateDiv;
+    mCodecContext->time_base.num = mFrameRateNumerator;
+    mCodecContext->time_base.den = mFrameRateDenominator;
     mCodecContext->gop_size = 10;
     mCodecContext->pix_fmt = H264_PIXEL_FORMAT;
 

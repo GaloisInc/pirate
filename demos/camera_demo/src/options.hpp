@@ -40,7 +40,7 @@ struct Options
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
         mFrameRateNumerator(1),
-        mFrameRateDenominator(1),
+        mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
         mOutputType(PiServo),
@@ -66,8 +66,8 @@ struct Options
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
-    unsigned mFrameRateNumerator;
-    unsigned mFrameRateDenominator;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
     unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
