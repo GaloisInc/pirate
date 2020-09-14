@@ -1,19 +1,28 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
 set(TGT_CAMERA_DEMO camera_demo)
 
 # Build flags
-set(BUILD_FALGS -std=c++11 ${PIRATE_C_FLAGS})
+set(BUILD_FALGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
 
 # Libraries
 find_library(FREESPACE_LIB freespace)
 find_library(PIGPIO_LIB pigpio)
 find_library(JPEG_LIB jpeg)
 find_library(X11_LIB X11)
+find_library(AVCODEC_LIB avcodec)
+find_library(AVFORMAT_LIB avformat)
+find_library(AVUTIL_LIB avutil)
+find_library(SWSCALE_LIB swscale)
 set(LIBS pthread)
+
+if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
+    set(FFMPEG_LIBS 1)
+endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 
 # Source files
 set(SRCS 
@@ -32,6 +41,12 @@ if (FREESPACE_LIB)
     set(LIBS ${FREESPACE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
 endif (FREESPACE_LIB)
+
+if (FFMPEG_LIBS)
+    set(BUILD_FALGS -DFFMPEG_PRESENT=1 ${BUILD_FALGS})
+    set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
+    set(SRCS ${SRCS} src/h264encoder.cpp)
+endif (FFMPEG_LIBS)
 
 if (PIGPIO_LIB)
     set(BUILD_FALGS -DPIGPIO_PRESENT=1 ${BUILD_FALGS})

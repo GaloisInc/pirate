@@ -17,9 +17,9 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV, RGBX };
+enum VideoType { JPEG, YUYV, H264, RGBX };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows };
+enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
 
 using FrameBuffer = const unsigned char *;
@@ -40,13 +40,15 @@ struct Options
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
         mFrameRateNumerator(1),
-        mFrameRateDenominator(1),
+        mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
         mOutputType(PiServo),
         mInputType(Freespace),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
+        mH264Encoder(false),
+        mH264Url(""),
         mAngularPositionLimit(45.0),
         mVerbose(false)
     {
@@ -64,14 +66,16 @@ struct Options
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
-    unsigned mFrameRateNumerator;
-    unsigned mFrameRateDenominator;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
     unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
     InputType mInputType;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
+    bool mH264Encoder;
+    std::string mH264Url;
     float mAngularPositionLimit;
     bool mVerbose;
 };

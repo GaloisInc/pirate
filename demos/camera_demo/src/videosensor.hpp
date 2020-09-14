@@ -33,15 +33,14 @@ public:
     VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
-    virtual int init();
-    virtual void term();
+    int init();
+    void term();
 
-    virtual int captureEnable();
-    virtual int captureDisable();
 private:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     const ImageConvert& mImageConvert;
-    
+
+    const bool mVerbose;
     const std::string mDevicePath;
     const VideoType mVideoType;
     const bool mFlipHorizontal;
@@ -76,6 +75,8 @@ private:
     int uninitVideoDevice();
     int initCaptureBuffers();
     int releaseCaptureBuffers();
+    int captureEnable();
+    int captureDisable();
 
     std::thread *mPollThread;
     bool mPoll;

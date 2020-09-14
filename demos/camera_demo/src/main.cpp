@@ -36,30 +36,37 @@
 #include "videosensor.hpp"
 #include "options.hpp"
 
+const int OPT_THRESH   = 129;
+const int OPT_OUT_DIR  = 130;
+const int OPT_MAX_OUT  = 131;
+const int OPT_MONO     = 132;
+const int OPT_SLIDE    = 133;
+const int OPT_LIMIT    = 134;
+
 static struct argp_option options[] =
 {
-    { 0,              0,   0,             0, "video options:",                           1 },
-    { "video_device", 'd', "device",      0, "video device",                             0 },
-    { "video_type",   't', "jpeg|yuyv",   0, "video type",                               0 },
-    { "width",        'W', "pixels",      0, "image width",                              0 },
-    { "height",       'H', "pixels",      0, "image height",                             0 },
-    { "flip",         'f', "v|h",         0, "horizontal or vertical image flip",        0 },
-    { "framerate",    'r', "num/den",     0, "frame rate fraction",                      0 },
-    { 0,              0,   0,             0, "frame processor options:",                 2 },
-    { "color_track",  'c', "RRGGBB",      0, "color tracking (RGB hex) frame processor", 0 },
-    { "threshold",    'T', "val",         0, "color tracking threshold",                 0 },
-    { "xwindows",     'X', NULL,          0, "xwindows frame processor",                 0 },
-    { "filesystem",   'F', NULL,          0, "filesystem frame processor",               0 },
-    { "out_dir",      'O', "path",        0, "image output directory",                   0 },
-    { "out_count",    'M', "val",         0, "image output maximum file count",          0 },
-    { "monochrome",   'm', NULL,          0, "monochrome image filter",                  0 },
-    { "sliding",      's', NULL,          0, "sliding window image filter",              0 },
-    { 0,              0,   0,             0, "input/output options:",                    3 },
-    { "pos_in",       'i', "acc|kbd",     0, "position input",                           0 },
-    { "pos_out",      'o', "servo|print", 0, "angular position output",                  0 },
-    { "pos_lim",      'l', "val",         0, "angular position bound",                   0 },
-    { "verbose",      'v', NULL,          0, "verbose output",                           4 },
-    { NULL,            0 , NULL,          0, NULL,                                       0 },
+    { 0,              0,            0,             0, "video options:",                           1 },
+    { "video_device", 'd',          "device",      0, "video device",                             0 },
+    { "video_type",   't',          "type",        0, "video type (jpeg|yuyv|h264)",              0 },
+    { "width",        'W',          "pixels",      0, "image width",                              0 },
+    { "height",       'H',          "pixels",      0, "image height",                             0 },
+    { "flip",         'f',          "v|h",         0, "horizontal or vertical image flip",        0 },
+    { 0,              0,            0,             0, "frame processor options:",                 2 },
+    { "color_track",  'C',          "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
+    { "threshold",    OPT_THRESH,   "val",         0, "color tracking threshold",                 0 },
+    { "xwindows",     'X',          NULL,          0, "xwindows frame processor",                 0 },
+    { "filesystem",   'F',          NULL,          0, "filesystem frame processor",               0 },
+    { "encoder",      'E',          "url",         0, "MPEG-TS H.264 encoder url (host:port)",    0 },
+    { "out_dir",      OPT_OUT_DIR,  "path",        0, "image output directory",                   0 },
+    { "out_count",    OPT_MAX_OUT,  "val",         0, "image output maximum file count",          0 },
+    { "monochrome",   OPT_MONO,     NULL,          0, "monochrome image filter",                  0 },
+    { "sliding",      OPT_SLIDE,    NULL,          0, "sliding window image filter",              0 },
+    { 0,              0,            0,             0, "input/output options:",                    3 },
+    { "input",        'i',          "acc|kbd",     0, "position input",                           0 },
+    { "output",       'o',          "servo|print", 0, "angular position output",                  0 },
+    { "output_limit", OPT_LIMIT,    "val",         0, "angular position bound",                   0 },
+    { "verbose",      'v',          NULL,          0, "verbose output",                           4 },
+    { NULL,            0 ,          NULL,          0, NULL,                                       0 },
 };
 
 static std::atomic<bool> interrupted(false);
@@ -68,7 +75,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
     Options * opt = static_cast<Options *>(state->input);
     std::istringstream ss(arg != NULL ? arg : "");
-    char delim;
 
     switch (key)
     {
@@ -85,10 +91,14 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             {
                 opt->mVideoType = YUYV;
             }
+            else if (ss.str() == "h264")
+            {
+                opt->mVideoType = H264;
+            }
             else
             {
                 argp_usage(state);
-                argp_error(state, "invalid -t argument '%s'", arg);
+                argp_error(state, "invalid video type argument '%s'", arg);
             }
             break;
 
@@ -111,26 +121,16 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_error(state, "invalid -f argument '%s'", arg);
+                argp_error(state, "invalid flip argument '%s'", arg);
             }
 
             break;
 
-        case 'r':
-            ss >> opt->mFrameRateNumerator;
-            ss >> delim;
-            ss >> opt->mFrameRateDenominator;
-            if ((opt->mFrameRateNumerator == 0) || (opt->mFrameRateDenominator == 0))
-            {
-                argp_error(state, "invalid -r argument '%s'", arg);
-            }
-            break;
-
-        case 'O':
+        case OPT_OUT_DIR:
             ss >> opt->mImageOutputDirectory;
             break;
 
-        case 'M':
+        case OPT_MAX_OUT:
             ss >> opt->mImageOutputMaxFiles;
             break;
 
@@ -145,7 +145,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_error(state, "invalid -o argument '%s'", arg);
+                argp_error(state, "invalid output argument '%s'", arg);
             }
             break;
 
@@ -160,7 +160,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             else
             {
-                argp_error(state, "invalid -i argument '%s'", arg);
+                argp_error(state, "invalid input argument '%s'", arg);
             }
             break;
 
@@ -172,24 +172,45 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mFilesystemProcessor = true;
             break;
 
-        case 'l':
+        case 'E':
+            opt->mH264Encoder = true;
+            ss >> opt->mH264Url;
+            if (opt->mH264Url.find(':') == std::string::npos)
+            {
+                argp_error(state, "mpeg-ts encoder argument '%s' must be host:port", arg);
+            }
+            if (opt->mH264Url.find("udp://") != std::string::npos)
+            {
+                // do nothing
+            }
+            else if (opt->mH264Url.find("://") != std::string::npos)
+            {
+                argp_error(state, "mpeg-ts encoder argument '%s' must be host:port", arg);
+            }
+            else
+            {
+                opt->mH264Url = "udp://" + opt->mH264Url;
+            }
+            break;
+
+        case OPT_LIMIT:
             ss >> opt->mAngularPositionLimit;
             break;
 
-        case 'm':
+        case OPT_MONO:
             opt->mImageMonochrome = true;
             break;
 
-        case 's':
+        case OPT_SLIDE:
             opt->mImageSlidingWindow = true;
             break;
 
-        case 'c': {
+        case 'C': {
             std::string argval = ss.str();
             opt->mImageTracking = true;
             if (argval.length() != 6)
             {
-                argp_error(state, "invalid length of -c argument '%s'", arg);
+                argp_error(state, "invalid length of color tracking argument '%s'", arg);
             }
             for (size_t i = 0; i < 6; i++)
             {
@@ -205,7 +226,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
                     val = c - 'A' + 10;
                 }
                 if (val < 0) {
-                    argp_error(state, "invalid RRGGBB -c argument '%s'", arg);
+                    argp_error(state, "invalid RRGGBB color tracking argument '%s'", arg);
                 } else {
                     opt->mImageTrackingRGB[idx] += (val) << (shift ? 4 : 0);
                 }
@@ -213,7 +234,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
         }
 
-        case 'T':
+        case OPT_THRESH:
             ss >> opt->mImageTrackingThreshold;
             break;
 
@@ -287,15 +308,15 @@ int main(int argc, char *argv[])
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessor *fp = FrameProcessorCreator::get(Filesystem, options, orientationOutput, imageConvert);
-        std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
-        frameProcessors.push_back(frameProcessor);
+        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput, imageConvert);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessor *fp = FrameProcessorCreator::get(XWindows, options, orientationOutput, imageConvert);
-        std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
-        frameProcessors.push_back(frameProcessor);
+        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput, imageConvert);
+    }
+
+    if (options.mH264Encoder) {
+        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput, imageConvert);
     }
 
     if (options.mImageTracking) {

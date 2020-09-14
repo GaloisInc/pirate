@@ -15,13 +15,16 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+
 #include <string>
 #include <cerrno>
 #include <cstring>
@@ -35,6 +38,7 @@ VideoSensor::VideoSensor(const Options& options,
         const ImageConvert& imageConvert) :
     mFrameProcessors(frameProcessors),
     mImageConvert(imageConvert),
+    mVerbose(options.mVerbose),
     mDevicePath(options.mVideoDevice),
     mVideoType(options.mVideoType),
     mFlipHorizontal(options.mImageHorizontalFlip),
@@ -260,7 +264,7 @@ int VideoSensor::initVideoDevice()
 
         // Errors are not critical
         rv = ioctlWait(mFd, VIDIOC_S_CROP, &crop);
-        if (rv != 0)
+        if ((rv != 0) && (errno != ENOTTY))
         {
             std::perror("Unable to set cropping");
         }
@@ -298,33 +302,6 @@ int VideoSensor::initVideoDevice()
         }
     }
 
-    // Frame rate
-    if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
-    {
-        struct v4l2_streamparm streamparm;
-        std::memset(&streamparm, 0, sizeof(streamparm));
-        streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
-        if (rv != 0)
-        {
-            std::perror("Failed to get stream parameters");
-            return -1;
-        }
-
-        streamparm.parm.capture.timeperframe.numerator = mFrameRateNumerator;
-        streamparm.parm.capture.timeperframe.denominator = mFrameRateDenominator;
-        rv = ioctlWait(mFd, VIDIOC_S_PARM, &streamparm);
-        if (rv != 0)
-        {
-            std::perror("Failed to set stream parameters");
-            return -1;
-        }
-    }
-    else
-    {
-        std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
-    }
-
     // Configure image format
     std::memset(&mFormat, 0, sizeof(mFormat));
 
@@ -346,6 +323,9 @@ int VideoSensor::initVideoDevice()
         case YUYV:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
             break;
+        case H264:
+            mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
+            break;
         default:
             std::cout << "Unknown video type " << mVideoType << std::endl;
             return -1;
@@ -361,8 +341,53 @@ int VideoSensor::initVideoDevice()
         (mFormat.fmt.pix.height != mImageHeight))
     {
         errno = EINVAL;
-        std::perror("Image resilution is not supported");
+        std::perror("Image resolution is not supported");
         return -1;
+    }
+
+    // Get frame rate
+
+    // Note: the supported frame rate of the camera
+    // can change based on the image format
+
+    struct v4l2_streamparm streamparm;
+    std::memset(&streamparm, 0, sizeof(streamparm));
+    streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    rv = ioctlWait(mFd, VIDIOC_G_PARM, &streamparm);
+    if (rv != 0)
+    {
+        std::perror("Failed to get stream parameters");
+        return -1;
+    }
+
+    // Compare in frames per second (not seconds per frame)
+    double expFrameRate = ((double) mFrameRateDenominator) / ((double) mFrameRateNumerator);
+    double obsFrameRate = ((double) streamparm.parm.capture.timeperframe.denominator) /
+        ((double) streamparm.parm.capture.timeperframe.numerator);
+    double delta = fabs(expFrameRate - obsFrameRate);
+
+    // Set frame rate
+    if (delta >= 1.0)
+    {
+        if (mCapability.capabilities & V4L2_CAP_TIMEPERFRAME)
+        {
+            streamparm.parm.capture.timeperframe.numerator = mFrameRateNumerator;
+            streamparm.parm.capture.timeperframe.denominator = mFrameRateDenominator;
+            rv = ioctlWait(mFd, VIDIOC_S_PARM, &streamparm);
+            if (rv != 0)
+            {
+                std::perror("Failed to set stream parameters");
+                return -1;
+            }
+        }
+        else
+        {
+            std::cout << mDevicePath << " does not support frame rate adjustments" << std::endl;
+            return -1;
+        }
+    }
+    if (mVerbose) {
+        std::cout << "Frame rate is " << mFrameRateNumerator << " / " << mFrameRateDenominator << std::endl;
     }
 
     // Initialize and allocate capture buffers
@@ -456,6 +481,8 @@ int VideoSensor::releaseCaptureBuffers()
 void VideoSensor::pollThread()
 {
     unsigned frameNumber = 0;
+    time_t currentTime, snapshotTime = time(NULL);
+    unsigned snapshotFrame = 0;
 
     while (mPoll)
     {
@@ -534,6 +561,18 @@ void VideoSensor::pollThread()
                 }
             }
         }
+
+        if (mVerbose) {
+            currentTime = time(NULL);
+            if (currentTime != snapshotTime) {
+                if ((currentTime % 10) == 0) {
+                    std::cout << (frameNumber - snapshotFrame) << " frames per second" << std::endl;
+                }
+                snapshotFrame = frameNumber;
+                snapshotTime = currentTime;
+            }
+        }
+
         // Queue the buffer
         rv = ioctlWait(mFd, VIDIOC_QBUF, &buf);
         if (rv != 0)
@@ -543,4 +582,3 @@ void VideoSensor::pollThread()
         }
     }
 }
-

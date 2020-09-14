@@ -1,0 +1,40 @@
+# 3rd party libraries leak static initialization
+{
+   libgobject
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libgobject*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libglib
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libglib*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libpixman
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libpixman*
+   fun:call_init
+   fun:_dl_init
+}
+{
+   libgomp
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libgomp*
+   fun:call_init
+   fun:_dl_init
+}
+# See https://trac.ffmpeg.org/ticket/3194
+{
+   ffmpeg_network_leak
+   Memcheck:Leak
+   ...
+   fun:avformat_network_init
+}
