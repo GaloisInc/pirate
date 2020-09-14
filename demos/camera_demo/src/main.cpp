@@ -85,15 +85,15 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
         case 't':
             if (ss.str() == "jpeg")
             {
-                opt->mVideoType = JPEG;
+                opt->mVideoInputType = JPEG;
             }
             else if (ss.str() == "yuyv")
             {
-                opt->mVideoType = YUYV;
+                opt->mVideoInputType = YUYV;
             }
             else if (ss.str() == "h264")
             {
-                opt->mVideoType = H264;
+                opt->mVideoInputType = H264;
             }
             else
             {
@@ -307,16 +307,18 @@ int main(int argc, char *argv[])
         orientationInput = std::shared_ptr<OrientationInput>(oi);
     }
 
+    VideoType videoOutput = VideoSensor::videoInputToVideoOutput(options.mVideoInputType);
+
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, Filesystem, videoOutput, options, orientationOutput, imageConvert);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, XWindows, videoOutput, options, orientationOutput, imageConvert);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, H264Stream, videoOutput, options, orientationOutput, imageConvert);
     }
 
     if (options.mImageTracking) {

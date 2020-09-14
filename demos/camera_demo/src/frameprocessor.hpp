@@ -30,7 +30,7 @@ public:
     int processFrame(FrameBuffer data, size_t length);
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) = 0;
 
-    const VideoType mVideoType;
+    const VideoType mVideoOutputType;
     const unsigned  mImageWidth;
     const unsigned  mImageHeight;
 

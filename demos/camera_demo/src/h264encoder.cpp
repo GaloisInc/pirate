@@ -29,8 +29,8 @@ extern "C" {
     #include <libavutil/opt.h>
 }
 
-H264Encoder::H264Encoder(const Options& options) :
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+H264Encoder::H264Encoder(VideoType videoType, const Options& options) :
+    FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264Url),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
@@ -57,7 +57,7 @@ int H264Encoder::init()
     av_register_all();
     avformat_network_init();
 
-    if ((mVideoType != YUYV) && (mVideoType != H264)) {
+    if ((mVideoOutputType != YUYV) && (mVideoOutputType != H264)) {
         std::cout << "h264 streamer requires yuyv or h264 input frames" << std::endl;
         return 1;
     }
@@ -269,13 +269,13 @@ int H264Encoder::processH264(FrameBuffer data, size_t length)
 
 int H264Encoder::process(FrameBuffer data, size_t length)
 {
-    switch (mVideoType) {
+    switch (mVideoOutputType) {
         case YUYV:
             return processYUYV(data, length);
         case H264:
             return processH264(data, length);
         default:
-            std::cout << "Unknown video type " << mVideoType << std::endl;
+            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
             return 1;
     }
 }

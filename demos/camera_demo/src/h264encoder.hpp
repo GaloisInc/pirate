@@ -28,7 +28,7 @@ extern "C" {
 class H264Encoder : public FrameProcessor
 {
 public:
-    H264Encoder(const Options& options);
+    H264Encoder(VideoType videoType, const Options& options);
     virtual ~H264Encoder();
 
     virtual int init() override;

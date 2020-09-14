@@ -34,6 +34,7 @@ public:
     static void add(
         std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         FrameProcessorType processorType,
+        VideoType videoType,
         const Options& options,
         std::shared_ptr<OrientationOutput> orientationOutput,
         const ImageConvert& imageConvert)
@@ -47,16 +48,16 @@ public:
         {
 #if XWIN_PRESENT
             case XWindows:
-                fp = new XWinFrameProcessor(options, orientationOutput, imageConvert);
+                fp = new XWinFrameProcessor(videoType, options, orientationOutput, imageConvert);
                 break;
 #endif
 #if FFMPEG_PRESENT
             case H264Stream:
-                fp = new H264Encoder(options);
+                fp = new H264Encoder(videoType, options);
                 break;
 #endif
             case Filesystem:
-                fp = new FileFrameProcessor(options);
+                fp = new FileFrameProcessor(videoType, options);
                 break;
             default:
                 std::cout << "Skipping unknown frame processor." << std::endl;

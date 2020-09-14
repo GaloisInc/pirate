@@ -16,7 +16,7 @@
 #include "frameprocessor.hpp"
 
 FrameProcessor::FrameProcessor(VideoType videoType, unsigned width, unsigned height) :
-    mVideoType(videoType),
+    mVideoOutputType(videoType),
     mImageWidth(width),
     mImageHeight(height),
     mIndex(0)

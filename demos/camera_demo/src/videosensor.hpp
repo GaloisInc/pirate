@@ -36,13 +36,15 @@ public:
     int init();
     void term();
 
+    static VideoType videoInputToVideoOutput(VideoType videoInput);
+
 private:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     const ImageConvert& mImageConvert;
 
     const bool mVerbose;
     const std::string mDevicePath;
-    const VideoType mVideoType;
+    const VideoType mVideoOutputType;
     const bool mFlipHorizontal;
     const bool mFlipVertical;
     unsigned mImageWidth;

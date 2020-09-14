@@ -47,8 +47,8 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
     } else {
         mYUYVImageBuffer = nullptr;
     }
-    if (mMonochrome && (mVideoType != YUYV)) {
-            std::cout << "Monochrome filter cannot be used with video type " << mVideoType << std::endl;
+    if (mMonochrome && (mVideoOutputType != YUYV)) {
+            std::cout << "Monochrome filter cannot be used with video type " << mVideoOutputType << std::endl;
             return -1;
     }
     mImage = XCreateImage(mDisplay, CopyFromParent, 24, ZPixmap, 0, (char*) mImageBuffer,
@@ -111,11 +111,12 @@ void XWinFrameProcessor::renderImage() {
     errno = err;
 }
 
-XWinFrameProcessor::XWinFrameProcessor(const Options& options,
+XWinFrameProcessor::XWinFrameProcessor(VideoType videoType,
+    const Options& options,
     std::shared_ptr<OrientationOutput> orientationOutput,
     const ImageConvert& imageConvert) :
 
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
     mOrientationOutput(orientationOutput),
     mImageConvert(imageConvert),
     mMonochrome(options.mImageMonochrome),
@@ -160,7 +161,7 @@ int XWinFrameProcessor::convertJpeg(FrameBuffer data, size_t length) {
 int XWinFrameProcessor::process(FrameBuffer data, size_t length)
 {
     int rv;
-    switch (mVideoType) {
+    switch (mVideoOutputType) {
         case JPEG:
             rv = convertJpeg(data, length);
             break;
@@ -168,7 +169,7 @@ int XWinFrameProcessor::process(FrameBuffer data, size_t length)
             rv = convertYuyv(data, length);
             break;
         default:
-            std::cout << "Unknown video type " << mVideoType << std::endl;
+            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
             return -1;
     }
     if (rv) {

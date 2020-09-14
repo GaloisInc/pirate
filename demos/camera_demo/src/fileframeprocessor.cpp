@@ -23,8 +23,8 @@
 
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(const Options& options) :
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+FileFrameProcessor::FileFrameProcessor(VideoType videoType, const Options& options) :
+    FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
     mOutputDirectory(options.mImageOutputDirectory),
     mImageOutputMaxFiles(options.mImageOutputMaxFiles),
     mVerbose(options.mVerbose)
@@ -58,7 +58,7 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
 
     ss << mOutputDirectory << "/capture_" 
        << std::setfill('0') << std::setw(4) << index;
-    switch (mVideoType) {
+    switch (mVideoOutputType) {
         case JPEG:
             ss << ".jpg";
             break;
@@ -66,7 +66,7 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
             ss << ".raw";
             break;
         default:
-            std::cout << "Unknown video type " << mVideoType << std::endl;
+            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
             return "";
     }
 

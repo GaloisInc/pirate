@@ -28,7 +28,10 @@
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
-    XWinFrameProcessor(const Options& options, std::shared_ptr<OrientationOutput> orientationOutput, const ImageConvert& imageConvert);
+    XWinFrameProcessor(VideoType videoType,
+        const Options& options,
+        std::shared_ptr<OrientationOutput> orientationOutput,
+        const ImageConvert& imageConvert);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
