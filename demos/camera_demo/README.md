@@ -197,7 +197,7 @@ $ sudo raspi-config
 #### Install Dependencies
 
 ```
-sudo apt install git cmake clang libssl-dev libjpeg-dev libx11-dev libpigpio-dev libusb-1.0-0-dev
+sudo apt install git cmake clang libssl-dev libjpeg-dev libx11-dev libpigpio-dev libusb-1.0-0-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 ```
 
 #### Clone and Build Dependencies
