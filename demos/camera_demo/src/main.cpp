@@ -34,6 +34,7 @@
 #include "imageconvert.hpp"
 #include "colortracking.hpp"
 #include "videosensor.hpp"
+#include "h264decoder.hpp"
 #include "options.hpp"
 
 const int OPT_THRESH   = 129;
@@ -328,7 +329,7 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(colorTracking);
     }
 
-    VideoSensor *videoSensor = new VideoSensor(options, frameProcessors, imageConvert);
+    H264Decoder *videoSensor = new H264Decoder(options, frameProcessors);
 
     rv = orientationOutput->init();
     if (rv != 0)
