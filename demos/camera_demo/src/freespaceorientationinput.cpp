@@ -23,7 +23,7 @@
 #include <freespace/freespace_util.h>
 #include "freespaceorientationinput.hpp"
 
-const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES = 
+const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
 {
     "Accelerometer",
     "Gyroscope",
@@ -34,7 +34,7 @@ const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
     "Sensor Fusion"
  };
 
-const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR_LEN] = 
+const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR_LEN] =
 {
     1.0 / 16.0,
     1.0 / 16.0,
@@ -47,7 +47,7 @@ const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR
 };
 
 FreespaceOrientationInput::FreespaceOrientationInput(
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback,
+        CameraOrientationUpdateCallback angPosUpdateCallback,
         float angPosMin, float angPosMax, unsigned periodUs) :
     OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
     mPeriodUs(periodUs),
@@ -155,7 +155,7 @@ int FreespaceOrientationInput::setSensorPeriod(FreespaceDeviceId deviceId,
         unsigned periodUs)
 {
     for (unsigned i = 0; i < SENSOR_NAMES.size(); ++i)
-    {   
+    {
         // Set the period
         struct freespace_message m;
         std::memset(&m, 0, sizeof(m));
@@ -271,7 +271,7 @@ void FreespaceOrientationInput::printVersionInfo()
 }
 
 int FreespaceOrientationInput::printDeviceInfo(FreespaceDeviceId deviceId)
-{   
+{
     struct FreespaceDeviceInfo info;
 
     int rv = freespace_getDeviceInfo(deviceId, &info);
@@ -312,7 +312,7 @@ int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
         }
 
         // Wait for sensor period
-        do 
+        do
         {
             rv = freespace_readMessage(deviceId, &m, TIMEOUT_MS);
             if (rv != FREESPACE_SUCCESS)
@@ -344,7 +344,7 @@ float FreespaceOrientationInput::weightedFilter(float angularPosition)
     float ret = 0.0;
     mPrevAngPos[mFilterIndex] = angularPosition;
     mFilterIndex = nextFirIndex(mFilterIndex);
-    
+
     for (unsigned i = 0; i < FIR_LEN; i++)
     {
         ret += FIR_COEFFS[i] * mPrevAngPos[(i + mFilterIndex) & (FIR_LEN - 1)];

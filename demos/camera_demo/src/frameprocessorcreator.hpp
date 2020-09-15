@@ -38,8 +38,10 @@ public:
         std::shared_ptr<OrientationOutput> orientationOutput,
         const ImageConvert& imageConvert)
     {
+#if !XWIN_PRESENT
         (void) orientationOutput;
         (void) imageConvert;
+#endif
 
         FrameProcessor *fp = nullptr;
 

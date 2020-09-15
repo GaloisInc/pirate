@@ -23,7 +23,7 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback,
+        CameraOrientationUpdateCallback angPosUpdateCallback,
         float angPosMin, float angPosMax, float angIncrement) :
     OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
     mAngIncrement(angIncrement),
@@ -40,7 +40,7 @@ KeyboardOrientationInput::~KeyboardOrientationInput()
 
 int KeyboardOrientationInput::init()
 {
-    // Setup stdin to be read one key at a time 
+    // Setup stdin to be read one key at a time
     int rv = tcgetattr(0, &mTermiosBackup);
     if (rv)
     {
@@ -63,7 +63,7 @@ int KeyboardOrientationInput::init()
     // Start the reading thread
     mPoll = true;
     mPollThread = new std::thread(&KeyboardOrientationInput::pollThread, this);
-    
+
     return 0;
 }
 
@@ -93,7 +93,7 @@ void KeyboardOrientationInput::pollThread()
         fd_set fdSet;
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
-        
+
         struct timeval timeout;
         timeout.tv_sec = 0;
         timeout.tv_usec = 100000;
@@ -105,7 +105,7 @@ void KeyboardOrientationInput::pollThread()
             std::perror("select failed");
             mPoll = false;
             return;
-        } 
+        }
         else if (rv == 0)
         {
             continue;       // Timeout
@@ -136,4 +136,3 @@ void KeyboardOrientationInput::pollThread()
         setAngularPosition(angularPosition);
     }
 }
-

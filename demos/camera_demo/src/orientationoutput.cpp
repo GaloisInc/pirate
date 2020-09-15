@@ -28,7 +28,7 @@ OrientationOutput::OrientationOutput(float angularPositionLimit, bool verbose) :
 
 OrientationOutput::~OrientationOutput()
 {
-    
+
 }
 
 int OrientationOutput::init()
@@ -53,7 +53,7 @@ bool OrientationOutput::setAngularPosition(float angularPosition)
     return AngularPosition::setAngularPosition(angularPosition);
 }
 
-const OrientationUpdateCallback& OrientationOutput::getUpdateCallback()
+const CameraOrientationUpdateCallback& OrientationOutput::getUpdateCallback()
 {
     return mUpdateCallback;
 }

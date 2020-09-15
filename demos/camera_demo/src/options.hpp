@@ -18,7 +18,7 @@
 #include <string>
 
 enum VideoType { JPEG, YUYV, H264, RGBX };
-enum InputType { Freespace, Keyboard };
+enum InputType { Keyboard, Freespace };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
 
@@ -44,7 +44,8 @@ struct Options
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
         mOutputType(PiServo),
-        mInputType(Freespace),
+        mInputKeyboard(false),
+        mInputFreespace(false),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
         mH264Encoder(false),
@@ -71,7 +72,8 @@ struct Options
     std::string mImageOutputDirectory;
     unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
-    InputType mInputType;
+    bool mInputKeyboard;
+    bool mInputFreespace;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
     bool mH264Encoder;

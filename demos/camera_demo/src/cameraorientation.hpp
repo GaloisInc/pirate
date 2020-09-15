@@ -15,26 +15,8 @@
 
 #pragma once
 
-#include "cameraorientation.hpp"
+#include "orientation.hpp"
 
-class OrientationOutput : public CameraOrientation
-{
-public:
-    OrientationOutput(float angularPositionLimit = DEFAULT_ANG_POS_LIMIT,
-                        bool verbose = false);
-    virtual ~OrientationOutput();
-
-    virtual int init();
-    virtual void term();
-
-    virtual bool setAngularPosition(float angularPosition) override;
-
-    const CameraOrientationUpdateCallback& getUpdateCallback();
-protected:
-    const bool mVerbose;
-private:
-    static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
-
-    const CameraOrientationUpdateCallback mUpdateCallback;
-};
-
+using PositionUpdate = float;
+using CameraOrientation = AngularPosition<PositionUpdate>;
+using CameraOrientationUpdateCallback = CameraOrientation::UpdateCallback;

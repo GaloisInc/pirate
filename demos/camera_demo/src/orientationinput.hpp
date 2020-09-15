@@ -17,14 +17,14 @@
 
 // Definition of a simple interface for reading camera angular orientation
 
-#include "orientation.hpp"
+#include "cameraorientation.hpp"
 
-class OrientationInput : public AngularPosition<float>
+class OrientationInput : public CameraOrientation
 {
 public:
-    OrientationInput(   AngularPosition<float>::UpdateCallback updateCallback,
-                        float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT, 
-                        float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT) :
+    OrientationInput(   CameraOrientationUpdateCallback updateCallback,
+                        float angPosMin = -CameraOrientation::DEFAULT_ANG_POS_LIMIT,
+                        float angPosMax =  CameraOrientation::DEFAULT_ANG_POS_LIMIT) :
         AngularPosition(angPosMin, angPosMax),
         mUpdateCallback(updateCallback)
     {
@@ -50,6 +50,5 @@ public:
         return updated;
     }
 private:
-    AngularPosition<float>::UpdateCallback mUpdateCallback;
+    CameraOrientationUpdateCallback mUpdateCallback;
 };
-

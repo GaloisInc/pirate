@@ -25,7 +25,7 @@ class ColorTracking : public OrientationInput, public FrameProcessor
 {
 public:
     ColorTracking(const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback);
+        CameraOrientationUpdateCallback angPosUpdateCallback);
     virtual ~ColorTracking();
 
     virtual int init() override;
@@ -43,5 +43,4 @@ private:
 protected:
     virtual int process(FrameBuffer data, size_t length) override;
     virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
-
 };

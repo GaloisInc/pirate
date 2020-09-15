@@ -27,9 +27,9 @@ class FreespaceOrientationInput : public OrientationInput
 {
 public:
     FreespaceOrientationInput(
-            AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-            float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
-            float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
+            CameraOrientationUpdateCallback angPosUpdateCallback,
+            float angPosMin = -CameraOrientation::DEFAULT_ANG_POS_LIMIT,
+            float angPosMax =  CameraOrientation::DEFAULT_ANG_POS_LIMIT,
             unsigned periodUs = DEFAULT_PERIOD_US);
     virtual ~FreespaceOrientationInput();
 
@@ -67,4 +67,3 @@ private:
         return (++index) & (FIR_LEN - 1);
     }
 };
-

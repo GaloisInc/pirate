@@ -16,6 +16,7 @@
 #pragma once
 
 #include <iostream>
+#include <stdexcept>
 #include "keyboardorientationinput.hpp"
 
 #if FREESPACE_PRESENT
@@ -26,25 +27,30 @@
 
 class OrientationInputCreator {
 public:
-    static OrientationInput * get(const Options& options,
-            AngularPosition<float>::UpdateCallback angPosUpdateCallback)
+    static OrientationInput * get(InputType inputType, const Options& options,
+            CameraOrientationUpdateCallback angPosUpdateCallback)
     {
-        switch (options.mInputType)
+        switch (inputType)
         {
 #if FREESPACE_PRESENT
             case Freespace:
                 if (options.mVerbose) {
-                    std::cout << "Freespace is here" << std::endl;
+                    std::cout << "Using Freespace device" << std::endl;
                 }
                 return new FreespaceOrientationInput(angPosUpdateCallback,
                             -options.mAngularPositionLimit,
                             options.mAngularPositionLimit);
 #endif
             case Keyboard:
-            default:
+                if (options.mVerbose) {
+                    std::cout << "Using keyboard" << std::endl;
+                }
                 return new KeyboardOrientationInput(angPosUpdateCallback,
                             -options.mAngularPositionLimit,
                             options.mAngularPositionLimit);
+            default:
+                throw std::runtime_error("Unsupported orientation input");
+                return nullptr;
         }
     }
 };

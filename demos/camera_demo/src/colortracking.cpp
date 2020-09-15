@@ -19,7 +19,7 @@
 
 ColorTracking::ColorTracking(
         const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
+        CameraOrientationUpdateCallback angPosUpdateCallback) :
     OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
     FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
