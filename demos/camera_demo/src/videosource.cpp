@@ -43,6 +43,9 @@ VideoType VideoSource::videoInputToOutput(VideoType videoInput) {
             return videoInput;
         case STREAM:
             return YUYV;
+        default:
+            return UNKNOWN;
+
     }
 }
 
