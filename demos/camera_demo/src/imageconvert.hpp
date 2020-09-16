@@ -26,9 +26,7 @@ public:
     ~ImageConvert();
 
     int convert(FrameBuffer src, size_t srcLength, VideoType srcType, unsigned char* dst, VideoType dstType) const;
-    unsigned char* getBuffer(VideoType videoType) const;
-
-    static size_t expectedBytes(unsigned width, unsigned height, VideoType videoType);
+    unsigned char* getBuffer(VideoType videoType, size_t* length) const;
 private:
 
     const unsigned mImageWidth;

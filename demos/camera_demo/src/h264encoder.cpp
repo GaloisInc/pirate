@@ -190,9 +190,10 @@ void H264Encoder::term()
     avformat_network_deinit();
 }
 
-unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType) {
+unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType, size_t* length) {
     (void) index;
     (void) videoType;
+    (void) length;
     return nullptr;
 }
 

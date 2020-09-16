@@ -47,9 +47,10 @@ void FileFrameProcessor::term()
 
 }
 
-unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType) {
+unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType, size_t* length) {
     (void) index;
     (void) videoType;
+    (void) length;
     return nullptr;
 }
 

@@ -36,24 +36,12 @@ ImageConvert::~ImageConvert() {
     free(mRGBXBuffer);
 }
 
-unsigned char* ImageConvert::getBuffer(VideoType videoType) const {
+unsigned char* ImageConvert::getBuffer(VideoType videoType, size_t* length) const {
     if (videoType == RGBX) {
+        *length = mImageWidth * mImageHeight * 4;
         return mRGBXBuffer;
     } else {
         return nullptr;
-    }
-}
-
-size_t ImageConvert::expectedBytes(unsigned width, unsigned height, VideoType videoType) {
-    switch (videoType) {
-        case JPEG:
-            return 0;
-        case YUYV:
-            return width * height * 2;
-        case RGBX:
-            return width * height * 4;
-        default:
-            return 0;
     }
 }
 

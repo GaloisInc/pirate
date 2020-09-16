@@ -182,11 +182,12 @@ int XWinFrameProcessor::process(FrameBuffer data, size_t length)
     return 0;
 }
 
-unsigned char* XWinFrameProcessor::getFrame(unsigned index, VideoType videoType) {
+unsigned char* XWinFrameProcessor::getFrame(unsigned index, VideoType videoType, size_t* length) {
     if (index != mIndex) {
         return nullptr;
     }
     if (videoType == RGBX) {
+        *length = mImageWidth * mImageHeight * 4;
         return mRGBXImageBuffer;
     } else {
         return nullptr;

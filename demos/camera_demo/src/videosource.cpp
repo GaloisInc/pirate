@@ -60,19 +60,19 @@ int VideoSource::process(FrameBuffer data, size_t length) {
             }
         } else {
             unsigned char* convertedBuffer = nullptr;
-            size_t convertedLength = ImageConvert::expectedBytes(mOutputWidth, mOutputHeight, current->mVideoOutputType);
+            size_t convertedLength = 0;
             // check whether the image has already been converted
             // in a previous frame processor
             for (size_t j = 0; j < i; j++) {
                 auto prev = mFrameProcessors[j];
-                convertedBuffer = prev->getFrame(mIndex, current->mVideoOutputType);
+                convertedBuffer = prev->getFrame(mIndex, current->mVideoOutputType, &convertedLength);
                 if (convertedBuffer != nullptr) {
                     break;
                 }
             }
             // otherwise attempt to convert the image
             if ((convertedBuffer == nullptr) &&
-                (convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType)) != nullptr) {
+                (convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType, &convertedLength)) != nullptr) {
                 mImageConvert.convert(data,
                         length,
                         mVideoOutputType,

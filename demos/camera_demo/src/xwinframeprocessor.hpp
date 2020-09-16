@@ -39,7 +39,7 @@ public:
 
 protected:
     virtual int process(FrameBuffer data, size_t length) override;
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
+    virtual unsigned char* getFrame(unsigned index, VideoType videoType, size_t* length) override;
 
 private:
     std::shared_ptr<OrientationOutput> mOrientationOutput;
