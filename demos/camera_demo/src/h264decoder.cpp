@@ -111,8 +111,8 @@ int H264Decoder::init()
     }
 
     mOutputFrame->format = YUYV_PIXEL_FORMAT;
-    mOutputFrame->width  = mImageWidth;
-    mOutputFrame->height = mImageHeight;
+    mOutputFrame->width  = mOutputWidth;
+    mOutputFrame->height = mOutputHeight;
 
     rv = av_frame_get_buffer(mOutputFrame, 32);
     if (rv < 0) {
@@ -162,6 +162,13 @@ void H264Decoder::term()
     }
 }
 
+int H264Decoder::processDataFrame() {
+    return 0;
+}
+
+// If there are decoding errors in the video frame
+// then drop the frame and do not stop the frame
+// processing pipeline.
 int H264Decoder::processVideoFrame() {
     int rv;
 
@@ -190,7 +197,7 @@ int H264Decoder::processVideoFrame() {
         }
 
         mSwsContext = sws_getContext(mInputFrame->width, mInputFrame->height,
-            H264_PIXEL_FORMAT, mImageWidth, mImageHeight,
+            H264_PIXEL_FORMAT, mOutputWidth, mOutputHeight,
             YUYV_PIXEL_FORMAT, 0, nullptr, nullptr, nullptr);
 
         if (mSwsContext == nullptr) {
@@ -205,12 +212,12 @@ int H264Decoder::processVideoFrame() {
     rv = sws_scale(mSwsContext, mInputFrame->data, mInputFrame->linesize,
         0, mInputHeight, mOutputFrame->data, mOutputFrame->linesize);
 
-    if (rv != ((int) mImageHeight)) {
+    if (rv != ((int) mOutputHeight)) {
         std::cout << "sws_scale error " << rv << std::endl;
         return -1;
     }
 
-    rv = process(mOutputFrame->data[0], mImageWidth * mImageHeight * 2);
+    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2);
     if (rv) {
         return rv;
     }

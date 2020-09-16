@@ -309,8 +309,8 @@ int VideoSensor::initVideoDevice()
         return -1;
     }
 
-    mFormat.fmt.pix.width = mImageWidth;
-    mFormat.fmt.pix.height = mImageHeight;
+    mFormat.fmt.pix.width = mOutputWidth;
+    mFormat.fmt.pix.height = mOutputHeight;
     switch (mVideoOutputType) {
         case JPEG:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
@@ -332,8 +332,8 @@ int VideoSensor::initVideoDevice()
         return -1;
     }
     
-    if ((mFormat.fmt.pix.width != mImageWidth) ||
-        (mFormat.fmt.pix.height != mImageHeight))
+    if ((mFormat.fmt.pix.width != mOutputWidth) ||
+        (mFormat.fmt.pix.height != mOutputHeight))
     {
         errno = EINVAL;
         std::perror("Image resolution is not supported");

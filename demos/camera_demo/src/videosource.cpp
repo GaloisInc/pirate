@@ -24,8 +24,8 @@ VideoSource::VideoSource(const Options& options,
         mImageConvert(imageConvert),
         mVerbose(options.mVerbose),
         mVideoOutputType(VideoSource::videoInputToOutput(options.mVideoInputType)),
-        mImageWidth(options.mImageWidth),
-        mImageHeight(options.mImageHeight),
+        mOutputWidth(options.mImageWidth),
+        mOutputHeight(options.mImageHeight),
         mIndex(0),
         mSnapshotIndex(0),
         mSnapshotTime(0) {
@@ -60,7 +60,7 @@ int VideoSource::process(FrameBuffer data, size_t length) {
             }
         } else {
             unsigned char* convertedBuffer = nullptr;
-            size_t convertedLength = ImageConvert::expectedBytes(mImageWidth, mImageHeight, current->mVideoOutputType);
+            size_t convertedLength = ImageConvert::expectedBytes(mOutputWidth, mOutputHeight, current->mVideoOutputType);
             // check whether the image has already been converted
             // in a previous frame processor
             for (size_t j = 0; j < i; j++) {

@@ -60,6 +60,7 @@ private:
     bool mPoll;
 
     void pollThread();
+    int processDataFrame();
     int processVideoFrame();
 
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
