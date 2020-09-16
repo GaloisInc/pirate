@@ -246,8 +246,10 @@ uint64_t KlvGetValueUInt(KlvUasDataElement_t Element, int *pResult)
             // Treat the data as invalid if it doesn't fit in a uint64_t
             if ((Value > (double)0xFFFFFFFFFFFFFFFFULL) || (Value < 0))
                 break;
-            else if (Value > 0)
+            else if (Value >= 0)
                 return Value + 0.5f;
+            else
+                break;
         }
 
         case KLV_TYPE_UINT:
