@@ -63,7 +63,7 @@ int main(void) {
     fflush(stdout);
 
     ssize_t len = getline(&line, &line_sz, stdin);
-    if (len < 0) {
+    if (len <= 1) {
       puts("\n");
       break;
     }
