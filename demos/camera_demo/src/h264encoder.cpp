@@ -31,6 +31,7 @@ extern "C" {
 H264Encoder::H264Encoder(VideoType videoType, const Options& options) :
     FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264EncoderUrl),
+    mFFmpegLogLevel(options.mFFmpegLogLevel),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mCodec(nullptr),
@@ -52,6 +53,7 @@ int H264Encoder::init()
 {
     int rv;
 
+    av_log_set_level(mFFmpegLogLevel);
     avcodec_register_all();
     av_register_all();
     avformat_network_init();

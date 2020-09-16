@@ -17,7 +17,7 @@
 
 #include <string>
 
-enum VideoType { UNKNOWN, JPEG, YUYV, H264, RGBX, STREAM };
+enum VideoType { INVALID_VIDEO, JPEG, YUYV, H264, RGBX, STREAM };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
@@ -51,7 +51,8 @@ struct Options
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
         mAngularPositionLimit(45.0),
-        mVerbose(false)
+        mVerbose(false),
+        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/)
     {
 
     }
@@ -80,4 +81,5 @@ struct Options
     std::string mH264DecoderUrl;
     float mAngularPositionLimit;
     bool mVerbose;
+    int mFFmpegLogLevel;
 };

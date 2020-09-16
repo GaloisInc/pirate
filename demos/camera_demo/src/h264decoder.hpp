@@ -44,6 +44,7 @@ public:
 
 private:
     const std::string mH264Url;
+    int mFFmpegLogLevel;
     int mInputWidth;
     int mInputHeight;
 
@@ -55,12 +56,17 @@ private:
     AVFrame *mInputFrame, *mOutputFrame;
     struct SwsContext *mSwsContext;
     AVPacket mPkt;
+    uint64_t mMetaDataBytes, mMetaDataSize;
+    uint8_t* mMetaData;
+    size_t mMetaDataBufferSize;
+
 
     std::thread *mPollThread;
     bool mPoll;
 
     void pollThread();
-    int processDataFrame();
+    int parseDataFrame();
+    int processDataFrame();    
     int processVideoFrame();
 
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;

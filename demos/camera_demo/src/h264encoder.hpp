@@ -40,6 +40,7 @@ protected:
 
 private:
     std::string mH264Url;
+    int mFFmpegLogLevel;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
     AVCodec *mCodec;

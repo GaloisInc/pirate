@@ -42,6 +42,7 @@ const int OPT_MAX_OUT  = 131;
 const int OPT_MONO     = 132;
 const int OPT_SLIDE    = 133;
 const int OPT_LIMIT    = 134;
+const int OPT_LOGLEVEL = 135;
 
 static struct argp_option options[] =
 {
@@ -67,6 +68,7 @@ static struct argp_option options[] =
     { "output",       'o',          "servo|print", 0, "angular position output",                  0 },
     { "output_limit", OPT_LIMIT,    "val",         0, "angular position bound",                   0 },
     { "verbose",      'v',          NULL,          0, "verbose output",                           4 },
+    { "loglevel",     OPT_LOGLEVEL, "val",         0, "ffmpeg libraries log level",               0 },
     { NULL,            0 ,          NULL,          0, NULL,                                       0 },
 };
 
@@ -256,6 +258,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'v':
             opt->mVerbose = true;
+            break;
+
+        case OPT_LOGLEVEL:
+            ss >> opt->mFFmpegLogLevel;
             break;
     }
 

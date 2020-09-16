@@ -22,22 +22,26 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <string>
 #include <cerrno>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 
 #include "options.hpp"
 #include "h264decoder.hpp"
+
+#include "KlvParser.hpp"
+#include "KlvTree.hpp"
 
 H264Decoder::H264Decoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const ImageConvert& imageConvert) :
     VideoSource(options, frameProcessors, imageConvert),
     mH264Url(options.mH264DecoderUrl),
+    mFFmpegLogLevel(options.mFFmpegLogLevel),
     mInputWidth(0),
     mInputHeight(0),
     mInputContext(nullptr),
@@ -48,6 +52,10 @@ H264Decoder::H264Decoder(const Options& options,
     mInputFrame(nullptr),
     mOutputFrame(nullptr),
     mSwsContext(nullptr),
+    mMetaDataBytes(0),
+    mMetaDataSize(0),
+    mMetaData(nullptr),
+    mMetaDataBufferSize(0),
     mPollThread(nullptr),
     mPoll(false)
 {
@@ -67,6 +75,7 @@ int H264Decoder::init()
         return 1;
     }
 
+    av_log_set_level(mFFmpegLogLevel);
     avcodec_register_all();
     av_register_all();
     avformat_network_init();
@@ -160,9 +169,107 @@ void H264Decoder::term()
         avformat_close_input(&mInputContext);
         avformat_free_context(mInputContext);
     }
+    if (mMetaData != nullptr) {
+        free(mMetaData);
+    }
+}
+
+#ifndef MIN
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#endif
+
+int H264Decoder::parseDataFrame() {
+    // If we have a full metadata packet in memory, zero out the size and index
+    if (mMetaDataBytes == mMetaDataSize) {
+        mMetaDataBytes = mMetaDataSize = 0;
+    }
+
+    // If we don't have any metadata buffered up yet and this packet is big enough for a US key and size
+    if ((mMetaDataBytes == 0) && (mPkt.size > 17)) {
+        // UAS LS universal key
+        static const uint8_t KlvHeader[16] = {
+            0x06, 0x0E, 0x2B, 0x34, 0x02, 0x0B, 0x01, 0x01,
+            0x0E, 0x01, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00
+        };
+
+        // Try finding the KLV header in this packet
+        const uint8_t *pStart = (const uint8_t*) memmem(mPkt.data, mPkt.size, KlvHeader, 16);
+        const uint8_t *pSize = pStart + 16;
+
+        // If we found the header and the size tag is contained in this packet
+        if ((pStart != 0) && ((pSize - mPkt.data) < mPkt.size)) {
+            // Initialize the header size to US key + 1 size byte and zero KLV tag bytes
+            uint64_t klvSize = 0, headerSize = 17;
+
+            // If the size is a multi-byte BER-OID size
+            if (pSize[0] & 0x80) {
+                // Get the size of the size (up to )
+                int bytes = pSize[0] & 0x07, i;
+
+                // If the entire size field is contained in this packet
+                if (&pSize[bytes] < &mPkt.data[mPkt.size]) {
+                    // Build the size up from the individual bytes
+                    for (i = 0; i < bytes; i++) {
+                        klvSize = (klvSize << 8) | pSize[i + 1];
+                    }
+                }
+
+                // Add the additional size bytes to the header size
+                headerSize += bytes;
+            }
+            // Otherwise, just read the size byte straight out of byte 16
+            else {
+                klvSize = pSize[0];
+            }
+
+            // If we got a valid local set size
+            if (klvSize > 0) {
+                // Compute the maximum bytes to copy out of the packet
+                size_t maxBytes = mPkt.size - (pStart - mPkt.data);
+                size_t totalSize = headerSize + klvSize;
+                size_t bytesToCopy = MIN(maxBytes, totalSize);
+
+                // If our local buffer is too small for the incoming data
+                if (mMetaDataBufferSize < totalSize) {
+                    // Reallocate enough space and store the new buffer size
+                    mMetaData = (uint8_t *) realloc(mMetaData, totalSize);
+                    mMetaDataBufferSize = totalSize;
+                }
+
+                // Now copy the new data into the start of the local buffer
+                memcpy(mMetaData, pStart, bytesToCopy);
+                mMetaDataSize = totalSize;
+                mMetaDataBytes = bytesToCopy;
+            }
+        }
+    // Otherwise, if we're mid-packet
+    } else if (mMetaDataBytes < mMetaDataSize) {
+        // Figure out the number of bytes to copy out of this particular packet
+        int bytesToCopy = MIN(((unsigned) mPkt.size), mMetaDataSize - mMetaDataBytes);
+
+        // Copy into the local buffer in the right spot and increment the index
+        memcpy(&mMetaData[mMetaDataBytes], mPkt.data, bytesToCopy);
+        mMetaDataBytes += bytesToCopy;
+    }
+
+    return 0;
 }
 
 int H264Decoder::processDataFrame() {
+    if ((mMetaDataSize > 0) && (mMetaDataBytes == mMetaDataSize)) {
+        uint64_t ts;
+        int success = 0;
+
+        if (mVerbose && (mIndex > 0) && ((mIndex % 100) == 0)) {
+            KlvNewData(mMetaData, mMetaDataSize);
+            ts = KlvGetValueUInt(KLV_UAS_TIME_STAMP, &success);
+            if (success) {
+                std::time_t t = ts / 1000000;
+                std::cout << "KLV metadata has timestamp of " << std::asctime(std::localtime(&t));
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -240,7 +347,10 @@ void H264Decoder::pollThread()
         index = mPkt.stream_index;
 
         if (index == mDataStreamNum) {
-            // TODO: process data stream
+            rv = parseDataFrame();
+            if (!rv) {
+                rv = processDataFrame();
+            }
         } else if (index == mVideoStreamNum) {
             rv = processVideoFrame();
         }

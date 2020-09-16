@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(TGT_CAMERA_DEMO camera_demo)
 
 # Build flags
-set(BUILD_FALGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
+set(BUILD_FLAGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
 
 # Libraries
 find_library(FREESPACE_LIB freespace)
@@ -35,36 +35,42 @@ set(SRCS
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
+    src/orion-sdk/fielddecode.cpp
+    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/floatspecial.cpp
+    src/orion-sdk/KlvParser.cpp
+    src/orion-sdk/KlvTree.cpp
 )
 
 if (FREESPACE_LIB)
-    set(BUILD_FALGS -DFREESPACE_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
 endif (FREESPACE_LIB)
 
 if (FFMPEG_LIBS)
-    set(BUILD_FALGS -DFFMPEG_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DFFMPEG_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/h264encoder.cpp)
     set(SRCS ${SRCS} src/h264decoder.cpp)
 endif (FFMPEG_LIBS)
 
 if (PIGPIO_LIB)
-    set(BUILD_FALGS -DPIGPIO_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
     set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
 endif (PIGPIO_LIB)
 
 if (JPEG_LIB AND X11_LIB)
-    set(BUILD_FALGS -DXWIN_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DXWIN_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${JPEG_LIB} ${X11_LIB} ${LIBS})
     set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
 endif (JPEG_LIB AND X11_LIB)
 
 add_executable(${TGT_CAMERA_DEMO} ${SRCS})
 target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
-target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FALGS})
+target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO} PRIVATE src/orion-sdk)
 
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
