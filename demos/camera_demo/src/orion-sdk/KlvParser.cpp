@@ -205,6 +205,8 @@ int64_t KlvGetValueInt(KlvUasDataElement_t Element, int *pResult)
                 return Value + 0.5f;
             else
                 return Value - 0.5f;
+
+            break;
         }
 
         case KLV_TYPE_UINT:
@@ -250,6 +252,8 @@ uint64_t KlvGetValueUInt(KlvUasDataElement_t Element, int *pResult)
                 return Value + 0.5f;
             else
                 break;
+
+            break;
         }
 
         case KLV_TYPE_UINT:
