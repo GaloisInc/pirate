@@ -147,67 +147,45 @@ be covered in this document.
 Implementation
 ---------------
 
-Currently, LLVM-10 has an implementation for a Data Dependence Graph, but not
-for a Control Dependence Graph or a Program Dependence Graph. Thus, the
-current analysis infrastructure needs to be extended to ultimately support
-the Program Dependence Graph. As of now, there are two options that should be
-discussed for achieving this goal.
+The Program Dependence Graph in PIRATE LLVM leverages the pre-existing Data
+Dependence Graph implementation.  Official Documentation for the Data
+Dependence Graph implementation can be found
+[here](https://llvm.org/docs/DependenceGraphs/index.html).  The Program
+Dependence Graph implementation builds on top of the builder design pattern
+illustrated in the above documentation.  A new `PDGBuilder` was added which
+implements a post-dominance frontier algorithm for deriving control
+dependencies. The algorithm is pretty straightforward.  It simply uses the
+existing `PostDominanceAnalysis` to identify which basic blocks post dominate
+each other. If basic block B is a follower of basic block A and does *not*
+post-dominate it, then basic block B is control dependent on basic block A.
+This algorithm was also outlined in the above documentation. One key design was
+to not implement a separate `ControlDependenceGraph` class. This decision was
+made because the code for finding the control dependencies is pretty simple and
+did not seem to warrant an entirely separate class. This decision can easily be
+changed by adding a `CDGBuilder` class which determines the control
+dependencies and is then used by the `PDGBuilder`. The current Program
+Dependence Graph is an *intraprocedural* analysis pass, and thus does not
+currently capture *interprocedural* dependencies. 
 
-Option #1
-+++++++++++
+Below is an example illustrating the compiler flags used to invoke the pass:
 
-The current LLVM documentation
-(https://llvm.org/docs/DependenceGraphs/index.html) shows an architecture
-where the ``ProgramDependenceGraph`` is built using the builder design
-pattern using the pre-existing ``DependenceGraphBuilder`` class. The
-structure of this class can be seen here:
-https://www.llvm.org/doxygen/classllvm_1_1AbstractDependenceGraphBuilder.html#details.
-The important function of this class is ``populate()``, which makes calls to
-the dependence graph construction algorithm. This function currently calls
-both ``createDefUseEdges()`` and ``createMemoryDependencyEdges()`` which are
-great for data dependency graphs, but do not make any reference to adding
-control edges needed for the CDG and PDG. Thus, option #1 will involve
-extending this function to include a ``createControlEdges()`` function.
+1. Compile source code into LLVM bitcode:
 
-.. image:: controledges
-    :align: center
+   `<PIRATE LLVM PATH>/clang -S -emit-llvm example.c`
 
-This function would implement the post-dominanator tree algorithm mentioned
-in the *Control Dependence Graph* section.
+2. Run PDG analysis pass (warning: a new dot file will be created for each
+   *function* since the pass is intraprocedural):
 
-Ultimately, this option **will not involve** a separate
-``ControlDependenceGraph`` class; instead, the UML diagram outlined in
-https://llvm.org/docs/DependenceGraphs/index.html will be obeyed. A
-``ProgramDependenceGraph`` class will be created, along with a ``PDGBuilder``
-class that creates *both* data and control edges. One important caveat is
-that the Program Dependence Graph should be *interprocedural* in the end.
-This means a separate pass will need to run over the LLVM module to connect
-function call sites to their constructed PDG. The strategy for linking call
-sites with the formal PDG is still under development.
+   `<PIRATE LLVM PATH>/opt -passes="dot-pdg" example.ll`
 
-Option #2
-++++++++++
+3. Convert dot file to something nicer to look at:
 
-The second option involves a slightly different class architecture than
-option #1. Instead of the UML diagram shown above in the official LLVM
-documentation (where only ``ProgramDependenceGraph`` and
-``DataDependenceGraph`` exist) this option will implement
-``ControlDependenceGraph`` using the current
-builder pattern. The UML diagram for this option will look something like the
-following:
+   `dot -Tpng main.dot -o main.png`
 
-.. image:: option2_uml.png
-    :align: center
+   Here's an example output:
 
-This option differs from the first in that the ``ProgramDependenceGraph``
-would *not* be built using the current builder pattern. Only the CDG and DDG
-would be built using ``CDGBuilder`` and ``DDGBuilder`` respectively. The
-``ProgramDependenceGraph`` class would simply be constructed using an
-inter-procedural analysis pass that builds the CDG and DDG for each function,
-and then constructs its own graph based on the union of the two. Importantly,
-the current ``DependenceGraphBuilder`` in LLVM (linked above) does not seem
-to support this paradigm well, as it looks like all graphs build using the
-``DependenceGraphBuilder`` class were intended to have data dependencies.
+   .. image:: main.png 
+      :align: center
 
 References
 -----------
