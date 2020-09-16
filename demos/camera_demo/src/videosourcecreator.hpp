@@ -16,9 +16,12 @@
 #pragma once
 
 #include "options.hpp"
-#include "h264decoder.hpp"
 #include "videosensor.hpp"
 #include "videosource.hpp"
+
+#if FFMPEG_PRESENT
+#include "h264decoder.hpp"
+#endif
 
 class VideoSourceCreator {
 public:
@@ -30,8 +33,10 @@ public:
     {
         switch (videoInput)
         {
+#if FFMPEG_PRESENT
             case STREAM:
                 return new H264Decoder(options, frameProcessors, imageConvert);
+#endif
             default:
                 return new VideoSensor(options, frameProcessors, imageConvert);
         }
