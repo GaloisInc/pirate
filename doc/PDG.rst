@@ -149,13 +149,13 @@ Implementation
 
 The Program Dependence Graph in PIRATE LLVM leverages the pre-existing Data
 Dependence Graph implementation.  Official Documentation for the Data
-Dependence Graph implementation can be found
-[here](https://llvm.org/docs/DependenceGraphs/index.html).  The Program
+Dependence Graph implementation can be found `here
+<https://llvm.org/docs/DependenceGraphs/index.html>`_.  The Program
 Dependence Graph implementation builds on top of the builder design pattern
 illustrated in the above documentation.  A new `PDGBuilder` was added which
 implements a post-dominance frontier algorithm for deriving control
 dependencies. The algorithm is pretty straightforward.  It simply uses the
-existing `PostDominanceAnalysis` to identify which basic blocks post dominate
+existing `PostDominanceAnalysis` to identify which basic blocks post-dominate
 each other. If basic block B is a follower of basic block A and does *not*
 post-dominate it, then basic block B is control dependent on basic block A.
 This algorithm was also outlined in the above documentation. One key design was
@@ -171,18 +171,24 @@ Below is an example illustrating the compiler flags used to invoke the pass:
 
 1. Compile source code into LLVM bitcode:
 
-   `<PIRATE LLVM PATH>/clang -S -emit-llvm example.c`
+    .. code-block:: RST
+    
+        <PIRATE LLVM PATH>/clang -S -emit-llvm example.c
 
 2. Run PDG analysis pass (warning: a new dot file will be created for each
    *function* since the pass is intraprocedural):
-
-   `<PIRATE LLVM PATH>/opt -passes="dot-pdg" example.ll`
+    
+    .. code-block:: RST
+    
+        <PIRATE LLVM PATH>/opt -passes="dot-pdg" example.ll
 
 3. Convert dot file to something nicer to look at:
 
-   `dot -Tpng main.dot -o main.png`
+    .. code-block:: RST
+    
+        dot -Tpng main.dot -o main.png
 
-   Here's an example output:
+   Here's an example output. The red edges are data dependencies. The blue edges are control dependencies. Each node is an LLVM IR instruction.
 
    .. image:: main.png 
       :align: center
