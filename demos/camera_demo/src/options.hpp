@@ -17,7 +17,7 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV, H264, RGBX };
+enum VideoType { JPEG, YUYV, H264, RGBX, STREAM };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
@@ -48,7 +48,8 @@ struct Options
         mFilesystemProcessor(false),
         mXWinProcessor(false),
         mH264Encoder(false),
-        mH264Url(""),
+        mH264EncoderUrl(""),
+        mH264DecoderUrl(""),
         mAngularPositionLimit(45.0),
         mVerbose(false)
     {
@@ -75,7 +76,8 @@ struct Options
     bool mFilesystemProcessor;
     bool mXWinProcessor;
     bool mH264Encoder;
-    std::string mH264Url;
+    std::string mH264EncoderUrl;
+    std::string mH264DecoderUrl;
     float mAngularPositionLimit;
     bool mVerbose;
 };

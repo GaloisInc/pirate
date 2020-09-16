@@ -26,29 +26,21 @@
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
+#include "videosource.hpp"
 
-class VideoSensor
+class VideoSensor : public VideoSource
 {
 public:
     VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
-    int init();
-    void term();
-
-    static VideoType videoInputToVideoOutput(VideoType videoInput);
+    virtual int init() override;
+    virtual void term() override;
 
 private:
-    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
-    const ImageConvert& mImageConvert;
-
-    const bool mVerbose;
     const std::string mDevicePath;
-    const VideoType mVideoOutputType;
     const bool mFlipHorizontal;
     const bool mFlipVertical;
-    unsigned mImageWidth;
-    unsigned mImageHeight;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
 

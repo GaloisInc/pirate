@@ -31,23 +31,21 @@ extern "C" {
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
+#include "videosource.hpp"
 
-class H264Decoder
+class H264Decoder : public VideoSource
 {
 public:
-    H264Decoder(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
+    H264Decoder(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
     virtual ~H264Decoder();
 
-    int init();
-    void term();
+    virtual int init() override;
+    virtual void term() override;
 
 private:
-    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
-
-    const unsigned mInputWidth;
-    const unsigned mInputHeight;
-    const unsigned mOutputWidth;
-    const unsigned mOutputHeight;
+    const std::string mH264Url;
+    int mInputWidth;
+    int mInputHeight;
 
     AVFormatContext *mInputContext;
     int mVideoStreamNum;
@@ -62,6 +60,7 @@ private:
     bool mPoll;
 
     void pollThread();
+    int processVideoFrame();
 
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;

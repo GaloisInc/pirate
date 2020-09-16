@@ -36,15 +36,10 @@
 VideoSensor::VideoSensor(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const ImageConvert& imageConvert) :
-    mFrameProcessors(frameProcessors),
-    mImageConvert(imageConvert),
-    mVerbose(options.mVerbose),
+    VideoSource(options, frameProcessors, imageConvert),
     mDevicePath(options.mVideoDevice),
-    mVideoOutputType(videoInputToVideoOutput(options.mVideoInputType)),
     mFlipHorizontal(options.mImageHorizontalFlip),
     mFlipVertical(options.mImageVerticalFlip),
-    mImageWidth(options.mImageWidth),
-    mImageHeight(options.mImageHeight),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mFd(-1),
@@ -480,10 +475,6 @@ int VideoSensor::releaseCaptureBuffers()
 
 void VideoSensor::pollThread()
 {
-    unsigned frameNumber = 0;
-    time_t currentTime, snapshotTime = time(NULL);
-    unsigned snapshotFrame = 0;
-
     while (mPoll)
     {
         int rv = 0;
@@ -522,55 +513,9 @@ void VideoSensor::pollThread()
         }
 
         // Process the frame
-        frameNumber++;
-        for (size_t i = 0; i < mFrameProcessors.size(); i++)
-        {
-            auto current = mFrameProcessors[i];
-            if (current->mVideoOutputType == mVideoOutputType)
-            {
-                current->processFrame(mBuffers[buf.index].mStart, buf.bytesused);
-            }
-            else
-            {
-                unsigned char* convertedBuffer = nullptr;
-                size_t convertedLength = ImageConvert::expectedBytes(mImageWidth, mImageHeight, current->mVideoOutputType);
-                // check whether the image has already been converted
-                // in a previous frame processor
-                for (size_t j = 0; j < i; j++)
-                {
-                    auto prev = mFrameProcessors[j];
-                    convertedBuffer = prev->getFrame(frameNumber, current->mVideoOutputType);
-                    if (convertedBuffer != nullptr)
-                    {
-                        break;
-                    }
-                }
-                // otherwise attempt to convert the image
-                if ((convertedBuffer == nullptr) &&
-                    (convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType)) != nullptr)
-                {
-                    mImageConvert.convert(mBuffers[buf.index].mStart,
-                        buf.bytesused,
-                        mVideoOutputType,
-                        convertedBuffer,
-                        current->mVideoOutputType);
-                }
-                if (convertedBuffer != nullptr)
-                {
-                    current->processFrame(convertedBuffer, convertedLength);
-                }
-            }
-        }
-
-        if (mVerbose) {
-            currentTime = time(NULL);
-            if (currentTime != snapshotTime) {
-                if ((currentTime % 10) == 0) {
-                    std::cout << (frameNumber - snapshotFrame) << " frames per second" << std::endl;
-                }
-                snapshotFrame = frameNumber;
-                snapshotTime = currentTime;
-            }
+        rv = process(mBuffers[buf.index].mStart, buf.bytesused);
+        if (rv) {
+            continue;
         }
 
         // Queue the buffer
@@ -580,15 +525,5 @@ void VideoSensor::pollThread()
             std::perror("Failed to queue the buffer");
             continue;
         }
-    }
-}
-
-VideoType VideoSensor::videoInputToVideoOutput(VideoType videoInput) {
-    switch (videoInput) {
-        case JPEG:
-        case YUYV:
-        case RGBX:
-        case H264:
-            return videoInput;
     }
 }

@@ -25,13 +25,12 @@
 #include "h264encoder.hpp"
 
 extern "C" {
-    #include <libavutil/imgutils.h>
     #include <libavutil/opt.h>
 }
 
 H264Encoder::H264Encoder(VideoType videoType, const Options& options) :
     FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
-    mH264Url(options.mH264Url),
+    mH264Url(options.mH264EncoderUrl),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mCodec(nullptr),
@@ -114,17 +113,13 @@ int H264Encoder::init()
     mOutputFrame->width  = mImageWidth;
     mOutputFrame->height = mImageHeight;
 
-    rv = av_image_alloc(mInputFrame->data, mInputFrame->linesize,
-        mImageWidth, mImageHeight,
-        YUYV_PIXEL_FORMAT, 32);
+    rv = av_frame_get_buffer(mInputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate input image buffer" << std::endl;
         return 1;
     }
 
-    rv = av_image_alloc(mOutputFrame->data, mOutputFrame->linesize,
-        mImageWidth, mImageHeight,
-        H264_PIXEL_FORMAT, 32);
+    rv = av_frame_get_buffer(mOutputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate output image buffer" << std::endl;
         return 1;

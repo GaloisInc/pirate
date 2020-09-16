@@ -31,10 +31,9 @@
 #include "orientationinputcreator.hpp"
 #include "orientationoutputcreator.hpp"
 #include "frameprocessorcreator.hpp"
+#include "videosourcecreator.hpp"
 #include "imageconvert.hpp"
 #include "colortracking.hpp"
-#include "videosensor.hpp"
-#include "h264decoder.hpp"
 #include "options.hpp"
 
 const int OPT_THRESH   = 129;
@@ -48,10 +47,11 @@ static struct argp_option options[] =
 {
     { 0,              0,            0,             0, "video options:",                           1 },
     { "video_device", 'd',          "device",      0, "video device",                             0 },
-    { "video_type",   't',          "type",        0, "video type (jpeg|yuyv|h264)",              0 },
+    { "video_type",   't',          "type",        0, "video type (jpeg|yuyv|h264|stream)",       0 },
     { "width",        'W',          "pixels",      0, "image width",                              0 },
     { "height",       'H',          "pixels",      0, "image height",                             0 },
     { "flip",         'f',          "v|h",         0, "horizontal or vertical image flip",        0 },
+    { "decoder",      'D',          "url",         0, "MPEG-TS H.264 decoder url (host:port)",    0 },
     { 0,              0,            0,             0, "frame processor options:",                 2 },
     { "color_track",  'C',          "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
     { "threshold",    OPT_THRESH,   "val",         0, "color tracking threshold",                 0 },
@@ -71,6 +71,29 @@ static struct argp_option options[] =
 };
 
 static std::atomic<bool> interrupted(false);
+
+static std::string parseStreamUrl(std::string url, struct argp_state * state, bool encoder)
+{
+    std::string msg = encoder ? "encoder" : "decoder";
+    if (url.find(':') == std::string::npos)
+    {
+        argp_error(state, "mpeg-ts %s argument '%s' must be host:port", msg.c_str(), url.c_str());
+        return "";
+    }
+    if (url.find("udp://") == 0)
+    {
+        return url;
+    }
+    else if (url.find("://") != std::string::npos)
+    {
+        argp_error(state, "mpeg-ts %s argument '%s' must be host:port", msg.c_str(), url.c_str());
+        return "";
+    }
+    else
+    {
+        return "udp://" + url;
+    }
+}
 
 static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
@@ -95,6 +118,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             else if (ss.str() == "h264")
             {
                 opt->mVideoInputType = H264;
+            }
+            else if (ss.str() == "stream")
+            {
+                opt->mVideoInputType = STREAM;
             }
             else
             {
@@ -175,23 +202,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'E':
             opt->mH264Encoder = true;
-            ss >> opt->mH264Url;
-            if (opt->mH264Url.find(':') == std::string::npos)
-            {
-                argp_error(state, "mpeg-ts encoder argument '%s' must be host:port", arg);
-            }
-            if (opt->mH264Url.find("udp://") != std::string::npos)
-            {
-                // do nothing
-            }
-            else if (opt->mH264Url.find("://") != std::string::npos)
-            {
-                argp_error(state, "mpeg-ts encoder argument '%s' must be host:port", arg);
-            }
-            else
-            {
-                opt->mH264Url = "udp://" + opt->mH264Url;
-            }
+            opt->mH264EncoderUrl = parseStreamUrl(ss.str(), state, true);
+            break;
+
+        case 'D':
+            opt->mH264DecoderUrl = parseStreamUrl(ss.str(), state, false);
             break;
 
         case OPT_LIMIT:
@@ -308,18 +323,16 @@ int main(int argc, char *argv[])
         orientationInput = std::shared_ptr<OrientationInput>(oi);
     }
 
-    VideoType videoOutput = VideoSensor::videoInputToVideoOutput(options.mVideoInputType);
-
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(frameProcessors, Filesystem, videoOutput, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput, imageConvert);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(frameProcessors, XWindows, videoOutput, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput, imageConvert);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(frameProcessors, H264Stream, videoOutput, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput, imageConvert);
     }
 
     if (options.mImageTracking) {
@@ -329,7 +342,7 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(colorTracking);
     }
 
-    H264Decoder *videoSensor = new H264Decoder(options, frameProcessors);
+    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, options, frameProcessors, imageConvert);
 
     rv = orientationOutput->init();
     if (rv != 0)
@@ -351,10 +364,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    rv = videoSensor->init();
+    rv = videoSource->init();
     if (rv != 0)
     {
-        videoSensor->term();
+        videoSource->term();
         return -1;
     }
 
@@ -368,7 +381,7 @@ int main(int argc, char *argv[])
     signalThread->join();
 
     delete signalThread;
-    delete videoSensor;
+    delete videoSource;
     frameProcessors.clear();
     orientationInput = nullptr;
     orientationOutput = nullptr;

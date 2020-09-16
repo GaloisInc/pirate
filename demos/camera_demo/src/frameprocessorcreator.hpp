@@ -20,6 +20,7 @@
 #include "orientationinput.hpp"
 #include "orientationoutput.hpp"
 #include "fileframeprocessor.hpp"
+#include "videosource.hpp"
 
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
@@ -34,7 +35,6 @@ public:
     static void add(
         std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         FrameProcessorType processorType,
-        VideoType videoType,
         const Options& options,
         std::shared_ptr<OrientationOutput> orientationOutput,
         const ImageConvert& imageConvert)
@@ -43,6 +43,7 @@ public:
         (void) imageConvert;
 
         FrameProcessor *fp = nullptr;
+        VideoType videoType = VideoSource::videoInputToOutput(options.mVideoInputType);
 
         switch (processorType)
         {
