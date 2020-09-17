@@ -179,11 +179,9 @@ void H264Encoder::term()
         sws_freeContext(mSwsContext);
     }
     if (mOutputFrame != nullptr) {
-        av_freep(&mOutputFrame->data[0]);
         av_frame_free(&mOutputFrame);
     }
     if (mInputFrame != nullptr) {
-        av_freep(&mInputFrame->data[0]);
         av_frame_free(&mInputFrame);
     }
     if (mCodecContext != nullptr) {

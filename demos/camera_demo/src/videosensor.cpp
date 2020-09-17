@@ -36,6 +36,7 @@
 VideoSensor::VideoSensor(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
+    mDevicePath(options.mVideoDevice),
     mFlipHorizontal(options.mImageHorizontalFlip),
     mFlipVertical(options.mImageVerticalFlip),
     mFrameRateNumerator(options.mFrameRateNumerator),
