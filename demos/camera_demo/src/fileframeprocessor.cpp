@@ -47,13 +47,6 @@ void FileFrameProcessor::term()
 
 }
 
-unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType, size_t* length) {
-    (void) index;
-    (void) videoType;
-    (void) length;
-    return nullptr;
-}
-
 std::string FileFrameProcessor::buildFilename(unsigned index) {
     std::stringstream ss;
 
@@ -65,6 +58,9 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
             break;
         case YUYV:
             ss << ".raw";
+            break;
+        case H264:
+            ss << ".h264";
             break;
         default:
             std::cout << "Unknown video type " << mVideoOutputType << std::endl;

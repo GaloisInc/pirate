@@ -29,7 +29,7 @@ public:
         VideoType videoInput,
         const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const ImageConvert& imageConvert)
+        ImageConvert& imageConvert)
     {
         switch (videoInput)
         {

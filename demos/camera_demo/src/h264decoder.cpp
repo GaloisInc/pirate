@@ -38,7 +38,7 @@
 
 H264Decoder::H264Decoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const ImageConvert& imageConvert) :
+        ImageConvert& imageConvert) :
     VideoSource(options, frameProcessors, imageConvert),
     mH264Url(options.mH264DecoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),

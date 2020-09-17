@@ -35,7 +35,7 @@
 
 VideoSensor::VideoSensor(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const ImageConvert& imageConvert) :
+        ImageConvert& imageConvert) :
     VideoSource(options, frameProcessors, imageConvert),
     mDevicePath(options.mVideoDevice),
     mFlipHorizontal(options.mImageHorizontalFlip),
@@ -520,7 +520,7 @@ void VideoSensor::pollThread()
         // Process the frame
         rv = process(mBuffers[buf.index].mStart, buf.bytesused);
         if (rv) {
-            continue;
+            std::cout << "frame processor error " << rv << std::endl;
         }
 
         // Queue the buffer

@@ -39,10 +39,9 @@
 const int OPT_THRESH   = 129;
 const int OPT_OUT_DIR  = 130;
 const int OPT_MAX_OUT  = 131;
-const int OPT_MONO     = 132;
-const int OPT_SLIDE    = 133;
-const int OPT_LIMIT    = 134;
-const int OPT_LOGLEVEL = 135;
+const int OPT_SLIDE    = 132;
+const int OPT_LIMIT    = 133;
+const int OPT_LOGLEVEL = 134;
 
 static struct argp_option options[] =
 {
@@ -61,7 +60,6 @@ static struct argp_option options[] =
     { "encoder",      'E',          "url",         0, "MPEG-TS H.264 encoder url (host:port)",    0 },
     { "out_dir",      OPT_OUT_DIR,  "path",        0, "image output directory",                   0 },
     { "out_count",    OPT_MAX_OUT,  "val",         0, "image output maximum file count",          0 },
-    { "monochrome",   OPT_MONO,     NULL,          0, "monochrome image filter",                  0 },
     { "sliding",      OPT_SLIDE,    NULL,          0, "sliding window image filter",              0 },
     { 0,              0,            0,             0, "input/output options:",                    3 },
     { "input",        'i',          "acc|kbd",     0, "position input",                           0 },
@@ -215,10 +213,6 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             ss >> opt->mAngularPositionLimit;
             break;
 
-        case OPT_MONO:
-            opt->mImageMonochrome = true;
-            break;
-
         case OPT_SLIDE:
             opt->mImageSlidingWindow = true;
             break;
@@ -330,15 +324,15 @@ int main(int argc, char *argv[])
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput, imageConvert);
+        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput);
     }
 
     if (options.mImageTracking) {

@@ -28,7 +28,6 @@ public:
     virtual int init() = 0;
     virtual void term() = 0;
     int processFrame(FrameBuffer data, size_t length);
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType, size_t* length) = 0;
 
     const VideoType mVideoOutputType;
     const unsigned  mImageWidth;

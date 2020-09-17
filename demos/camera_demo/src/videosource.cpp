@@ -19,7 +19,7 @@
 
 VideoSource::VideoSource(const Options& options,
     const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-    const ImageConvert& imageConvert) :
+    ImageConvert& imageConvert) :
         mFrameProcessors(frameProcessors),
         mImageConvert(imageConvert),
         mVerbose(options.mVerbose),
@@ -43,11 +43,11 @@ VideoType VideoSource::videoInputToOutput(VideoType videoInput) {
     switch (videoInput) {
         case JPEG:
         case YUYV:
-        case RGBX:
         case H264:
             return videoInput;
         case STREAM:
             return YUYV;
+        case RGBX:
         default:
             return INVALID_VIDEO;
     }
@@ -68,24 +68,11 @@ int VideoSource::process(FrameBuffer data, size_t length) {
         } else {
             unsigned char* convertedBuffer = nullptr;
             size_t convertedLength = 0;
-            // check whether the image has already been converted
-            // in a previous frame processor
-            for (size_t j = 0; j < i; j++) {
-                auto prev = mFrameProcessors[j];
-                convertedBuffer = prev->getFrame(mIndex, current->mVideoOutputType, &convertedLength);
-                if (convertedBuffer != nullptr) {
-                    break;
-                }
+            rv = mImageConvert.convert(data, length, mVideoOutputType, current->mVideoOutputType, mIndex);
+            if (rv) {
+                return rv;
             }
-            // otherwise attempt to convert the image
-            if ((convertedBuffer == nullptr) &&
-                (convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType, &convertedLength)) != nullptr) {
-                mImageConvert.convert(data,
-                        length,
-                        mVideoOutputType,
-                        convertedBuffer,
-                        current->mVideoOutputType);
-            }
+            convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType, mIndex, &convertedLength);
             if (convertedBuffer != nullptr) {
                 rv = current->processFrame(convertedBuffer, convertedLength);
                 if (rv) {

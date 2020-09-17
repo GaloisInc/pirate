@@ -34,7 +34,6 @@ struct Options
         mImageHeight(480),
         mImageHorizontalFlip(false),
         mImageVerticalFlip(false),
-        mImageMonochrome(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
@@ -63,7 +62,6 @@ struct Options
     unsigned mImageHeight;
     bool mImageHorizontalFlip;
     bool mImageVerticalFlip;
-    bool mImageMonochrome;
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];

@@ -25,17 +25,24 @@ public:
     ImageConvert(unsigned width, unsigned height);
     ~ImageConvert();
 
-    int convert(FrameBuffer src, size_t srcLength, VideoType srcType, unsigned char* dst, VideoType dstType) const;
-    unsigned char* getBuffer(VideoType videoType, size_t* length) const;
+    int convert(FrameBuffer src, size_t srcLength, VideoType srcType, VideoType dstType, unsigned index);
+    unsigned char* getBuffer(VideoType dstType, unsigned index, size_t* length) const;
 private:
 
     const unsigned mImageWidth;
     const unsigned mImageHeight;
 
-    unsigned char* mTempJpegBuffer;
-    unsigned char* mTempJpegBufferRow;
+    unsigned char* mYUYVBuffer;
     unsigned char* mRGBXBuffer;
 
-    int convertJpegToRGBX(FrameBuffer src, size_t srcLength, unsigned char* dst) const;
-    int convertYUYVToRGBX(FrameBuffer src, unsigned char* dst) const;
+    unsigned mYUYVIndex;
+    unsigned mRGBXIndex;
+
+    unsigned char* mTempJpegBuffer;
+    unsigned char* mTempJpegBufferRow;
+
+    int jpegToRGBX(FrameBuffer src, size_t length, unsigned index);
+    int jpegToYUYV(FrameBuffer src, size_t length, unsigned index);
+    int yuyvToRGBX(FrameBuffer src, size_t length, unsigned index);
+    int rgbxToYUYV(FrameBuffer src, size_t length, unsigned index);
 };

@@ -30,7 +30,7 @@ class VideoSource
 public:
     VideoSource(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const ImageConvert& imageConvert);
+        ImageConvert& imageConvert);
     virtual ~VideoSource();
 
     virtual int init();
@@ -40,7 +40,7 @@ public:
 
 protected:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
-    const ImageConvert& mImageConvert;
+    ImageConvert& mImageConvert;
     const bool mVerbose;
     const VideoType mVideoOutputType;
     const unsigned mOutputWidth;

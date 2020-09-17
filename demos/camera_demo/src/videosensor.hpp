@@ -31,7 +31,9 @@
 class VideoSensor : public VideoSource
 {
 public:
-    VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
+    VideoSensor(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
+        ImageConvert& imageConvert);
     virtual ~VideoSensor();
 
     virtual int init() override;

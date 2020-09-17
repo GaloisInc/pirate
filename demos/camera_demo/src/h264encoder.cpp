@@ -29,7 +29,7 @@ extern "C" {
 }
 
 H264Encoder::H264Encoder(VideoType videoType, const Options& options) :
-    FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
+    FrameProcessor((videoType == H264) ? H264 : YUYV, options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264EncoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
     mFrameRateNumerator(options.mFrameRateNumerator),
@@ -53,15 +53,15 @@ int H264Encoder::init()
 {
     int rv;
 
-    av_log_set_level(mFFmpegLogLevel);
-    avcodec_register_all();
-    av_register_all();
-    avformat_network_init();
-
     if ((mVideoOutputType != YUYV) && (mVideoOutputType != H264)) {
         std::cout << "h264 streamer requires yuyv or h264 input frames" << std::endl;
         return 1;
     }
+
+    av_log_set_level(mFFmpegLogLevel);
+    avcodec_register_all();
+    av_register_all();
+    avformat_network_init();
 
     mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (mCodec == nullptr) {
@@ -190,13 +190,6 @@ void H264Encoder::term()
         avcodec_free_context(&mCodecContext);
     }
     avformat_network_deinit();
-}
-
-unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType, size_t* length) {
-    (void) index;
-    (void) videoType;
-    (void) length;
-    return nullptr;
 }
 
 int H264Encoder::processYUYV(FrameBuffer data, size_t length)

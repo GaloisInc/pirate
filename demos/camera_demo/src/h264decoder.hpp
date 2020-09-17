@@ -36,7 +36,9 @@ extern "C" {
 class H264Decoder : public VideoSource
 {
 public:
-    H264Decoder(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
+    H264Decoder(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
+        ImageConvert& imageConvert);
     virtual ~H264Decoder();
 
     virtual int init() override;

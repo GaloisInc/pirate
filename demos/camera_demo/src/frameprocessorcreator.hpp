@@ -36,11 +36,9 @@ public:
         std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         FrameProcessorType processorType,
         const Options& options,
-        std::shared_ptr<OrientationOutput> orientationOutput,
-        const ImageConvert& imageConvert)
+        std::shared_ptr<OrientationOutput> orientationOutput)
     {
         (void) orientationOutput;
-        (void) imageConvert;
 
         FrameProcessor *fp = nullptr;
         VideoType videoType = VideoSource::videoInputToOutput(options.mVideoInputType);
@@ -49,7 +47,7 @@ public:
         {
 #if XWIN_PRESENT
             case XWindows:
-                fp = new XWinFrameProcessor(videoType, options, orientationOutput, imageConvert);
+                fp = new XWinFrameProcessor(options, orientationOutput);
                 break;
 #endif
 #if FFMPEG_PRESENT

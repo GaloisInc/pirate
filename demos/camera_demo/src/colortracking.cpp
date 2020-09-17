@@ -45,13 +45,6 @@ void ColorTracking::term()
 
 }
 
-unsigned char* ColorTracking::getFrame(unsigned index, VideoType videoType, size_t* length) {
-    (void) index;
-    (void) videoType;
-    (void) length;
-    return nullptr;
-}
-
 void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
     unsigned int x, y, k;
     unsigned int count = 0;
@@ -112,5 +105,5 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
     } else if (delta < -tolerance) {
         setAngularPosition(angularPosition - mAngIncrement);
     }
-    return 1;
+    return 0;
 }
