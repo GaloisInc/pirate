@@ -54,7 +54,7 @@ int H264Encoder::init()
 {
     int rv;
 
-    if ((mVideoOutputType != YUYV) && (mVideoOutputType != H264)) {
+    if ((mVideoType != YUYV) && (mVideoType != H264)) {
         std::cout << "h264 streamer requires yuyv or h264 input frames" << std::endl;
         return 1;
     }
@@ -259,13 +259,13 @@ int H264Encoder::processH264(FrameBuffer data, size_t length)
 
 int H264Encoder::process(FrameBuffer data, size_t length)
 {
-    switch (mVideoOutputType) {
+    switch (mVideoType) {
         case YUYV:
             return processYUYV(data, length);
         case H264:
             return processH264(data, length);
         default:
-            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
+            std::cout << "Unknown video type " << mVideoType << std::endl;
             return 1;
     }
 }

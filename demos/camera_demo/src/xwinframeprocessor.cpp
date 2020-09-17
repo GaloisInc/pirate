@@ -27,7 +27,7 @@
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
     std::shared_ptr<OrientationOutput> orientationOutput) :
 
-    FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(BGRX, options.mImageWidth, options.mImageHeight),
     mOrientationOutput(orientationOutput),
     mImageSlidingWindow(options.mImageSlidingWindow)
 {

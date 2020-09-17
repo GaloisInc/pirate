@@ -52,7 +52,7 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
 
     ss << mOutputDirectory << "/capture_" 
        << std::setfill('0') << std::setw(4) << index;
-    switch (mVideoOutputType) {
+    switch (mVideoType) {
         case JPEG:
             ss << ".jpg";
             break;
@@ -63,7 +63,7 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
             ss << ".h264";
             break;
         default:
-            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
+            std::cout << "Unknown video type " << mVideoType << std::endl;
             return "";
     }
 

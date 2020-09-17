@@ -33,16 +33,19 @@ private:
     const unsigned mImageHeight;
 
     unsigned char* mYUYVBuffer;
-    unsigned char* mRGBXBuffer;
+    unsigned char* mBGRXBuffer;
 
     unsigned mYUYVIndex;
-    unsigned mRGBXIndex;
+    unsigned mBGRXIndex;
 
-    unsigned char* mTempJpegBuffer;
-    unsigned char* mTempJpegBufferRow;
+    unsigned char* mRGBBuffer;
+    unsigned char* mRGBBufferRow;
 
-    int jpegToRGBX(FrameBuffer src, size_t length, unsigned index);
+    int jpegToRGB(FrameBuffer src, size_t length);
+    int rgbToBGRX();
+    int rgbToYUYV();
+
+    int jpegToBGRX(FrameBuffer src, size_t length, unsigned index);
     int jpegToYUYV(FrameBuffer src, size_t length, unsigned index);
-    int yuyvToRGBX(FrameBuffer src, size_t length, unsigned index);
-    int rgbxToYUYV(FrameBuffer src, size_t length, unsigned index);
+    int yuyvToBGRX(FrameBuffer src, size_t length, unsigned index);
 };

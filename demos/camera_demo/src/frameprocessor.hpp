@@ -29,7 +29,7 @@ public:
     virtual void term() = 0;
     int processFrame(FrameBuffer data, size_t length);
 
-    const VideoType mVideoOutputType;
+    const VideoType mVideoType;
     const unsigned  mImageWidth;
     const unsigned  mImageHeight;
 

@@ -17,7 +17,7 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV, H264, RGBX, STREAM };
+enum VideoType { JPEG, YUYV, H264, BGRX, STREAM };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };

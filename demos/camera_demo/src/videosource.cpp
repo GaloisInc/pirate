@@ -44,7 +44,7 @@ int VideoSource::process(FrameBuffer data, size_t length) {
     mIndex++;
     for (size_t i = 0; i < mFrameProcessors.size(); i++) {
         auto current = mFrameProcessors[i];
-        if (current->mVideoOutputType == mVideoOutputType) {
+        if (current->mVideoType == mVideoOutputType) {
             rv = current->processFrame(data, length);
             if (rv) {
                 return rv;
@@ -52,11 +52,11 @@ int VideoSource::process(FrameBuffer data, size_t length) {
         } else {
             unsigned char* convertedBuffer = nullptr;
             size_t convertedLength = 0;
-            rv = mImageConvert.convert(data, length, mVideoOutputType, current->mVideoOutputType, mIndex);
+            rv = mImageConvert.convert(data, length, mVideoOutputType, current->mVideoType, mIndex);
             if (rv) {
                 return rv;
             }
-            convertedBuffer = mImageConvert.getBuffer(current->mVideoOutputType, mIndex, &convertedLength);
+            convertedBuffer = mImageConvert.getBuffer(current->mVideoType, mIndex, &convertedLength);
             if (convertedBuffer != nullptr) {
                 rv = current->processFrame(convertedBuffer, convertedLength);
                 if (rv) {
