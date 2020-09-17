@@ -36,8 +36,6 @@ public:
     virtual int init();
     virtual void term() = 0;
 
-   static VideoType videoInputToOutput(VideoType videoInput);
-
 protected:
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
     ImageConvert& mImageConvert;

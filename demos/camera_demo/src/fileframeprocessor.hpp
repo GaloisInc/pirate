@@ -21,7 +21,7 @@
 class FileFrameProcessor : public FrameProcessor
 {
 public:
-    FileFrameProcessor(VideoType videoType, const Options& options);
+    FileFrameProcessor(const Options& options);
     virtual ~FileFrameProcessor();
 
     virtual int init() override;

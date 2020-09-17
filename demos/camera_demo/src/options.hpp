@@ -30,6 +30,7 @@ struct Options
     Options() :
         mVideoDevice("/dev/video0"),
         mVideoInputType(JPEG),
+        mVideoOutputType(JPEG),
         mImageWidth(640),
         mImageHeight(480),
         mImageHorizontalFlip(false),
@@ -58,6 +59,7 @@ struct Options
 
     std::string mVideoDevice;
     VideoType mVideoInputType;
+    VideoType mVideoOutputType;
     unsigned mImageWidth;
     unsigned mImageHeight;
     bool mImageHorizontalFlip;

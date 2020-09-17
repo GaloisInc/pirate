@@ -110,18 +110,22 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             if (ss.str() == "jpeg")
             {
                 opt->mVideoInputType = JPEG;
+                opt->mVideoOutputType = JPEG;
             }
             else if (ss.str() == "yuyv")
             {
                 opt->mVideoInputType = YUYV;
+                opt->mVideoOutputType = YUYV;
             }
             else if (ss.str() == "h264")
             {
                 opt->mVideoInputType = H264;
+                opt->mVideoOutputType = H264;
             }
             else if (ss.str() == "stream")
             {
                 opt->mVideoInputType = STREAM;
+                opt->mVideoOutputType = YUYV;
             }
             else
             {

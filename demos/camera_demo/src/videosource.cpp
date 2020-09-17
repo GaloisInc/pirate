@@ -23,7 +23,7 @@ VideoSource::VideoSource(const Options& options,
         mFrameProcessors(frameProcessors),
         mImageConvert(imageConvert),
         mVerbose(options.mVerbose),
-        mVideoOutputType(VideoSource::videoInputToOutput(options.mVideoInputType)),
+        mVideoOutputType(options.mVideoOutputType),
         mOutputWidth(options.mImageWidth),
         mOutputHeight(options.mImageHeight),
         mIndex(0),
@@ -36,21 +36,6 @@ VideoSource::~VideoSource() { }
 int VideoSource::init() {
     mSnapshotTime = time(NULL);
     return 0;
-}
-
-
-VideoType VideoSource::videoInputToOutput(VideoType videoInput) {
-    switch (videoInput) {
-        case JPEG:
-        case YUYV:
-        case H264:
-            return videoInput;
-        case STREAM:
-            return YUYV;
-        case RGBX:
-        default:
-            return INVALID_VIDEO;
-    }
 }
 
 int VideoSource::process(FrameBuffer data, size_t length) {

@@ -41,7 +41,6 @@ public:
         (void) orientationOutput;
 
         FrameProcessor *fp = nullptr;
-        VideoType videoType = VideoSource::videoInputToOutput(options.mVideoInputType);
 
         switch (processorType)
         {
@@ -52,11 +51,11 @@ public:
 #endif
 #if FFMPEG_PRESENT
             case H264Stream:
-                fp = new H264Encoder(videoType, options);
+                fp = new H264Encoder(options);
                 break;
 #endif
             case Filesystem:
-                fp = new FileFrameProcessor(videoType, options);
+                fp = new FileFrameProcessor(options);
                 break;
             default:
                 std::cout << "Skipping unknown frame processor." << std::endl;

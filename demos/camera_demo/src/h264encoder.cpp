@@ -28,8 +28,9 @@ extern "C" {
     #include <libavutil/opt.h>
 }
 
-H264Encoder::H264Encoder(VideoType videoType, const Options& options) :
-    FrameProcessor((videoType == H264) ? H264 : YUYV, options.mImageWidth, options.mImageHeight),
+H264Encoder::H264Encoder(const Options& options) :
+    FrameProcessor((options.mVideoOutputType == H264) ? H264 : YUYV,
+        options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264EncoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
     mFrameRateNumerator(options.mFrameRateNumerator),

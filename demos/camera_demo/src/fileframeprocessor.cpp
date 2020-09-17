@@ -23,8 +23,8 @@
 
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(VideoType videoType, const Options& options) :
-    FrameProcessor(videoType, options.mImageWidth, options.mImageHeight),
+FileFrameProcessor::FileFrameProcessor(const Options& options) :
+    FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
     mOutputDirectory(options.mImageOutputDirectory),
     mImageOutputMaxFiles(options.mImageOutputMaxFiles),
     mVerbose(options.mVerbose)
