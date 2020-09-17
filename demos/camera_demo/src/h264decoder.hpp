@@ -37,8 +37,7 @@ class H264Decoder : public VideoSource
 {
 public:
     H264Decoder(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        ImageConvert& imageConvert);
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
     virtual ~H264Decoder();
 
     virtual int init() override;

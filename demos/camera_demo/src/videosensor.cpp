@@ -34,10 +34,8 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        ImageConvert& imageConvert) :
-    VideoSource(options, frameProcessors, imageConvert),
-    mDevicePath(options.mVideoDevice),
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
+    VideoSource(options, frameProcessors),
     mFlipHorizontal(options.mImageHorizontalFlip),
     mFlipVertical(options.mImageVerticalFlip),
     mFrameRateNumerator(options.mFrameRateNumerator),

@@ -28,17 +28,16 @@ public:
     static VideoSource* create(
         VideoType videoInput,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const Options& options,
-        ImageConvert& imageConvert)
+        const Options& options)
     {
         switch (videoInput)
         {
 #if FFMPEG_PRESENT
             case STREAM:
-                return new H264Decoder(options, frameProcessors, imageConvert);
+                return new H264Decoder(options, frameProcessors);
 #endif
             default:
-                return new VideoSensor(options, frameProcessors, imageConvert);
+                return new VideoSensor(options, frameProcessors);
         }
     }
 };

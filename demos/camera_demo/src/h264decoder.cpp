@@ -37,9 +37,8 @@
 #include "KlvTree.hpp"
 
 H264Decoder::H264Decoder(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        ImageConvert& imageConvert) :
-    VideoSource(options, frameProcessors, imageConvert),
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
+    VideoSource(options, frameProcessors),
     mH264Url(options.mH264DecoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
     mInputWidth(0),

@@ -312,7 +312,6 @@ int main(int argc, char *argv[])
 
     parseArgs(argc, argv, &options);
 
-    ImageConvert imageConvert(options.mImageWidth, options.mImageHeight);
     std::shared_ptr<OrientationOutput> orientationOutput;
     std::shared_ptr<OrientationInput> orientationInput;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
@@ -346,7 +345,7 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(colorTracking);
     }
 
-    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options, imageConvert);
+    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
 
     rv = orientationOutput->init();
     if (rv != 0)

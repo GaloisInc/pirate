@@ -18,10 +18,9 @@
 #include "videosource.hpp"
 
 VideoSource::VideoSource(const Options& options,
-    const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-    ImageConvert& imageConvert) :
+    const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
+        mImageConvert(ImageConvert(options.mImageWidth, options.mImageHeight)),
         mFrameProcessors(frameProcessors),
-        mImageConvert(imageConvert),
         mVerbose(options.mVerbose),
         mVideoOutputType(options.mVideoOutputType),
         mOutputWidth(options.mImageWidth),

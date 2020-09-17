@@ -29,16 +29,15 @@ class VideoSource
 {
 public:
     VideoSource(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        ImageConvert& imageConvert);
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
     virtual ~VideoSource();
 
     virtual int init();
     virtual void term() = 0;
 
 protected:
+    ImageConvert mImageConvert;
     const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
-    ImageConvert& mImageConvert;
     const bool mVerbose;
     const VideoType mVideoOutputType;
     const unsigned mOutputWidth;
