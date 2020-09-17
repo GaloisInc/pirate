@@ -328,15 +328,15 @@ int main(int argc, char *argv[])
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(frameProcessors, Filesystem, options, orientationOutput);
+        FrameProcessorCreator::add(Filesystem, frameProcessors, options, orientationOutput);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(frameProcessors, XWindows, options, orientationOutput);
+        FrameProcessorCreator::add(XWindows, frameProcessors, options, orientationOutput);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(frameProcessors, H264Stream, options, orientationOutput);
+        FrameProcessorCreator::add(H264Stream, frameProcessors, options, orientationOutput);
     }
 
     if (options.mImageTracking) {
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(colorTracking);
     }
 
-    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, options, frameProcessors, imageConvert);
+    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options, imageConvert);
 
     rv = orientationOutput->init();
     if (rv != 0)

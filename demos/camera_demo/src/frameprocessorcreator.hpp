@@ -33,8 +33,8 @@
 class FrameProcessorCreator {
 public:
     static void add(
-        std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         FrameProcessorType processorType,
+        std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const Options& options,
         std::shared_ptr<OrientationOutput> orientationOutput)
     {

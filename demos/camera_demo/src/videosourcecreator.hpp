@@ -27,8 +27,8 @@ class VideoSourceCreator {
 public:
     static VideoSource* create(
         VideoType videoInput,
-        const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
+        const Options& options,
         ImageConvert& imageConvert)
     {
         switch (videoInput)
