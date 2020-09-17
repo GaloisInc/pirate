@@ -60,6 +60,11 @@ int VideoSensor::init()
 {
     int rv;
 
+    rv = VideoSource::init();
+    if (rv) {
+        return rv;
+    }
+
     // Open the video device
     rv = openVideoDevice();
     if (rv != 0)

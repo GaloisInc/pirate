@@ -75,6 +75,11 @@ int H264Decoder::init()
         return 1;
     }
 
+    rv = VideoSource::init();
+    if (rv) {
+        return rv;
+    }
+
     av_log_set_level(mFFmpegLogLevel);
     avcodec_register_all();
     av_register_all();

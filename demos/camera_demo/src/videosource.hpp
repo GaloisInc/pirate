@@ -33,7 +33,7 @@ public:
         const ImageConvert& imageConvert);
     virtual ~VideoSource();
 
-    virtual int init() = 0;
+    virtual int init();
     virtual void term() = 0;
 
    static VideoType videoInputToOutput(VideoType videoInput);

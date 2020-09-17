@@ -33,6 +33,11 @@ VideoSource::VideoSource(const Options& options,
 
 VideoSource::~VideoSource() { }
 
+int VideoSource::init() {
+    mSnapshotTime = time(NULL);
+    return 0;
+}
+
 
 VideoType VideoSource::videoInputToOutput(VideoType videoInput) {
     switch (videoInput) {
