@@ -42,5 +42,4 @@ private:
 
 protected:
     virtual int process(FrameBuffer data, size_t length) override;
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
 };

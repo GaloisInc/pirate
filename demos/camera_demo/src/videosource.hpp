@@ -16,25 +16,34 @@
 #pragma once
 
 #include <functional>
+#include <memory>
+#include <vector>
 
+#include <time.h>
+
+#include "frameprocessor.hpp"
+#include "imageconvert.hpp"
 #include "options.hpp"
 
-class FrameProcessor
+class VideoSource
 {
 public:
-    FrameProcessor(VideoType videoType, unsigned width, unsigned height);
-    virtual ~FrameProcessor();
+    VideoSource(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
+    virtual ~VideoSource();
 
-    virtual int init() = 0;
+    virtual int init();
     virtual void term() = 0;
-    int processFrame(FrameBuffer data, size_t length);
-
-    const VideoType mVideoType;
-    const unsigned  mImageWidth;
-    const unsigned  mImageHeight;
 
 protected:
-    unsigned    mIndex;
-    virtual int process(FrameBuffer data, size_t length) = 0;
+    ImageConvert mImageConvert;
+    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
+    const bool mVerbose;
+    const VideoType mVideoOutputType;
+    const unsigned mOutputWidth;
+    const unsigned mOutputHeight;
+    unsigned mIndex, mSnapshotIndex;
+    time_t mSnapshotTime;
 
+    int process(FrameBuffer data, size_t length);
 };

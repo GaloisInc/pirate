@@ -20,6 +20,7 @@
 #include "orientationinput.hpp"
 #include "orientationoutput.hpp"
 #include "fileframeprocessor.hpp"
+#include "videosource.hpp"
 
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
@@ -32,16 +33,12 @@
 class FrameProcessorCreator {
 public:
     static void add(
-        std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         FrameProcessorType processorType,
+        std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const Options& options,
-        std::shared_ptr<OrientationOutput> orientationOutput,
-        const ImageConvert& imageConvert)
+        std::shared_ptr<OrientationOutput> orientationOutput)
     {
-#if !XWIN_PRESENT
         (void) orientationOutput;
-        (void) imageConvert;
-#endif
 
         FrameProcessor *fp = nullptr;
 
@@ -49,7 +46,7 @@ public:
         {
 #if XWIN_PRESENT
             case XWindows:
-                fp = new XWinFrameProcessor(options, orientationOutput, imageConvert);
+                fp = new XWinFrameProcessor(options, orientationOutput);
                 break;
 #endif
 #if FFMPEG_PRESENT

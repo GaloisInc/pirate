@@ -15,26 +15,29 @@
 
 #pragma once
 
-#include <functional>
-
 #include "options.hpp"
+#include "videosensor.hpp"
+#include "videosource.hpp"
 
-class FrameProcessor
-{
+#if FFMPEG_PRESENT
+#include "h264decoder.hpp"
+#endif
+
+class VideoSourceCreator {
 public:
-    FrameProcessor(VideoType videoType, unsigned width, unsigned height);
-    virtual ~FrameProcessor();
-
-    virtual int init() = 0;
-    virtual void term() = 0;
-    int processFrame(FrameBuffer data, size_t length);
-
-    const VideoType mVideoType;
-    const unsigned  mImageWidth;
-    const unsigned  mImageHeight;
-
-protected:
-    unsigned    mIndex;
-    virtual int process(FrameBuffer data, size_t length) = 0;
-
+    static VideoSource* create(
+        VideoType videoInput,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
+        const Options& options)
+    {
+        switch (videoInput)
+        {
+#if FFMPEG_PRESENT
+            case STREAM:
+                return new H264Decoder(options, frameProcessors);
+#endif
+            default:
+                return new VideoSensor(options, frameProcessors);
+        }
+    }
 };
