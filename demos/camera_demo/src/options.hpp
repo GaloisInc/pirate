@@ -17,7 +17,7 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV, H264, RGBX };
+enum VideoType { JPEG, YUYV, H264, BGRX, STREAM };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
@@ -29,12 +29,12 @@ struct Options
 {
     Options() :
         mVideoDevice("/dev/video0"),
-        mVideoType(JPEG),
+        mVideoInputType(JPEG),
+        mVideoOutputType(JPEG),
         mImageWidth(640),
         mImageHeight(480),
         mImageHorizontalFlip(false),
         mImageVerticalFlip(false),
-        mImageMonochrome(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
@@ -48,20 +48,22 @@ struct Options
         mFilesystemProcessor(false),
         mXWinProcessor(false),
         mH264Encoder(false),
-        mH264Url(""),
+        mH264EncoderUrl(""),
+        mH264DecoderUrl(""),
         mAngularPositionLimit(45.0),
-        mVerbose(false)
+        mVerbose(false),
+        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/)
     {
 
     }
 
     std::string mVideoDevice;
-    VideoType mVideoType;
+    VideoType mVideoInputType;
+    VideoType mVideoOutputType;
     unsigned mImageWidth;
     unsigned mImageHeight;
     bool mImageHorizontalFlip;
     bool mImageVerticalFlip;
-    bool mImageMonochrome;
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
@@ -75,7 +77,9 @@ struct Options
     bool mFilesystemProcessor;
     bool mXWinProcessor;
     bool mH264Encoder;
-    std::string mH264Url;
+    std::string mH264EncoderUrl;
+    std::string mH264DecoderUrl;
     float mAngularPositionLimit;
     bool mVerbose;
+    int mFFmpegLogLevel;
 };

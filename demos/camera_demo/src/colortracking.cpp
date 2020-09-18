@@ -21,7 +21,7 @@ ColorTracking::ColorTracking(
         const Options& options,
         AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
     OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
-    FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
     mAngIncrement(1.0),
     mImageSlidingWindow(options.mImageSlidingWindow),
@@ -43,12 +43,6 @@ int ColorTracking::init()
 void ColorTracking::term()
 {
 
-}
-
-unsigned char* ColorTracking::getFrame(unsigned index, VideoType videoType) {
-    (void) index;
-    (void) videoType;
-    return nullptr;
 }
 
 void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
@@ -111,5 +105,5 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
     } else if (delta < -tolerance) {
         setAngularPosition(angularPosition - mAngIncrement);
     }
-    return 1;
+    return 0;
 }

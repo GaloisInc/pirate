@@ -25,13 +25,14 @@
 #include "h264encoder.hpp"
 
 extern "C" {
-    #include <libavutil/imgutils.h>
     #include <libavutil/opt.h>
 }
 
 H264Encoder::H264Encoder(const Options& options) :
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
-    mH264Url(options.mH264Url),
+    FrameProcessor((options.mVideoOutputType == H264) ? H264 : YUYV,
+        options.mImageWidth, options.mImageHeight),
+    mH264Url(options.mH264EncoderUrl),
+    mFFmpegLogLevel(options.mFFmpegLogLevel),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mCodec(nullptr),
@@ -53,14 +54,15 @@ int H264Encoder::init()
 {
     int rv;
 
-    avcodec_register_all();
-    av_register_all();
-    avformat_network_init();
-
     if ((mVideoType != YUYV) && (mVideoType != H264)) {
         std::cout << "h264 streamer requires yuyv or h264 input frames" << std::endl;
         return 1;
     }
+
+    av_log_set_level(mFFmpegLogLevel);
+    avcodec_register_all();
+    av_register_all();
+    avformat_network_init();
 
     mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (mCodec == nullptr) {
@@ -114,17 +116,13 @@ int H264Encoder::init()
     mOutputFrame->width  = mImageWidth;
     mOutputFrame->height = mImageHeight;
 
-    rv = av_image_alloc(mInputFrame->data, mInputFrame->linesize,
-        mImageWidth, mImageHeight,
-        YUYV_PIXEL_FORMAT, 32);
+    rv = av_frame_get_buffer(mInputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate input image buffer" << std::endl;
         return 1;
     }
 
-    rv = av_image_alloc(mOutputFrame->data, mOutputFrame->linesize,
-        mImageWidth, mImageHeight,
-        H264_PIXEL_FORMAT, 32);
+    rv = av_frame_get_buffer(mOutputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate output image buffer" << std::endl;
         return 1;
@@ -181,11 +179,9 @@ void H264Encoder::term()
         sws_freeContext(mSwsContext);
     }
     if (mOutputFrame != nullptr) {
-        av_freep(&mOutputFrame->data[0]);
         av_frame_free(&mOutputFrame);
     }
     if (mInputFrame != nullptr) {
-        av_freep(&mInputFrame->data[0]);
         av_frame_free(&mInputFrame);
     }
     if (mCodecContext != nullptr) {
@@ -193,12 +189,6 @@ void H264Encoder::term()
         avcodec_free_context(&mCodecContext);
     }
     avformat_network_deinit();
-}
-
-unsigned char* H264Encoder::getFrame(unsigned index, VideoType videoType) {
-    (void) index;
-    (void) videoType;
-    return nullptr;
 }
 
 int H264Encoder::processYUYV(FrameBuffer data, size_t length)

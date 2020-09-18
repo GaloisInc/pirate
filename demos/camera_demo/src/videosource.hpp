@@ -15,31 +15,35 @@
 
 #pragma once
 
-#include <thread>
+#include <functional>
+#include <memory>
+#include <vector>
 
-#include "orientationinput.hpp"
+#include <time.h>
+
 #include "frameprocessor.hpp"
+#include "imageconvert.hpp"
 #include "options.hpp"
 
-class ColorTracking : public OrientationInput, public FrameProcessor
+class VideoSource
 {
 public:
-    ColorTracking(const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback);
-    virtual ~ColorTracking();
+    VideoSource(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
+    virtual ~VideoSource();
 
-    virtual int init() override;
-    virtual void term() override;
-
-private:
-    const bool           mVerbose;
-    const float          mAngIncrement;
-    const bool           mImageSlidingWindow;
-    const unsigned char  mImageTrackingRGB[3];
-    const unsigned       mImageTrackingThreshold;
-
-    void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
+    virtual int init();
+    virtual void term() = 0;
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
+    ImageConvert mImageConvert;
+    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
+    const bool mVerbose;
+    const VideoType mVideoOutputType;
+    const unsigned mOutputWidth;
+    const unsigned mOutputHeight;
+    unsigned mIndex, mSnapshotIndex;
+    time_t mSnapshotTime;
+
+    int process(FrameBuffer data, size_t length);
 };

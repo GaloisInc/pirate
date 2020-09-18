@@ -31,6 +31,14 @@
    fun:call_init
    fun:_dl_init
 }
+{
+   libgnutls
+   Memcheck:Leak
+   ...
+   obj:/usr/*lib*/libgnutls*
+   fun:call_init
+   fun:_dl_init
+}
 # See https://trac.ffmpeg.org/ticket/3194
 {
    ffmpeg_network_leak

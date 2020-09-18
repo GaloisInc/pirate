@@ -34,17 +34,11 @@
 #include "videosensor.hpp"
 
 VideoSensor::VideoSensor(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
-        const ImageConvert& imageConvert) :
-    mFrameProcessors(frameProcessors),
-    mImageConvert(imageConvert),
-    mVerbose(options.mVerbose),
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
+    VideoSource(options, frameProcessors),
     mDevicePath(options.mVideoDevice),
-    mVideoType(options.mVideoType),
     mFlipHorizontal(options.mImageHorizontalFlip),
     mFlipVertical(options.mImageVerticalFlip),
-    mImageWidth(options.mImageWidth),
-    mImageHeight(options.mImageHeight),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mFd(-1),
@@ -64,6 +58,11 @@ VideoSensor::~VideoSensor()
 int VideoSensor::init()
 {
     int rv;
+
+    rv = VideoSource::init();
+    if (rv) {
+        return rv;
+    }
 
     // Open the video device
     rv = openVideoDevice();
@@ -314,9 +313,9 @@ int VideoSensor::initVideoDevice()
         return -1;
     }
 
-    mFormat.fmt.pix.width = mImageWidth;
-    mFormat.fmt.pix.height = mImageHeight;
-    switch (mVideoType) {
+    mFormat.fmt.pix.width = mOutputWidth;
+    mFormat.fmt.pix.height = mOutputHeight;
+    switch (mVideoOutputType) {
         case JPEG:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
             break;
@@ -327,7 +326,7 @@ int VideoSensor::initVideoDevice()
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
             break;
         default:
-            std::cout << "Unknown video type " << mVideoType << std::endl;
+            std::cout << "Unknown video type " << mVideoOutputType << std::endl;
             return -1;
     }
     rv = ioctlWait(mFd, VIDIOC_S_FMT, &mFormat);
@@ -337,8 +336,8 @@ int VideoSensor::initVideoDevice()
         return -1;
     }
     
-    if ((mFormat.fmt.pix.width != mImageWidth) ||
-        (mFormat.fmt.pix.height != mImageHeight))
+    if ((mFormat.fmt.pix.width != mOutputWidth) ||
+        (mFormat.fmt.pix.height != mOutputHeight))
     {
         errno = EINVAL;
         std::perror("Image resolution is not supported");
@@ -480,10 +479,6 @@ int VideoSensor::releaseCaptureBuffers()
 
 void VideoSensor::pollThread()
 {
-    unsigned frameNumber = 0;
-    time_t currentTime, snapshotTime = time(NULL);
-    unsigned snapshotFrame = 0;
-
     while (mPoll)
     {
         int rv = 0;
@@ -522,55 +517,9 @@ void VideoSensor::pollThread()
         }
 
         // Process the frame
-        frameNumber++;
-        for (size_t i = 0; i < mFrameProcessors.size(); i++)
-        {
-            auto current = mFrameProcessors[i];
-            if (current->mVideoType == mVideoType)
-            {
-                current->processFrame(mBuffers[buf.index].mStart, buf.bytesused);
-            }
-            else
-            {
-                unsigned char* convertedBuffer = nullptr;
-                size_t convertedLength = ImageConvert::expectedBytes(mImageWidth, mImageHeight, current->mVideoType);
-                // check whether the image has already been converted
-                // in a previous frame processor
-                for (size_t j = 0; j < i; j++)
-                {
-                    auto prev = mFrameProcessors[j];
-                    convertedBuffer = prev->getFrame(frameNumber, current->mVideoType);
-                    if (convertedBuffer != nullptr)
-                    {
-                        break;
-                    }
-                }
-                // otherwise attempt to convert the image
-                if ((convertedBuffer == nullptr) &&
-                    (convertedBuffer = mImageConvert.getBuffer(current->mVideoType)) != nullptr)
-                {
-                    mImageConvert.convert(mBuffers[buf.index].mStart,
-                        buf.bytesused,
-                        mVideoType,
-                        convertedBuffer,
-                        current->mVideoType);
-                }
-                if (convertedBuffer != nullptr)
-                {
-                    current->processFrame(convertedBuffer, convertedLength);
-                }
-            }
-        }
-
-        if (mVerbose) {
-            currentTime = time(NULL);
-            if (currentTime != snapshotTime) {
-                if ((currentTime % 10) == 0) {
-                    std::cout << (frameNumber - snapshotFrame) << " frames per second" << std::endl;
-                }
-                snapshotFrame = frameNumber;
-                snapshotTime = currentTime;
-            }
+        rv = process(mBuffers[buf.index].mStart, buf.bytesused);
+        if (rv) {
+            std::cout << "frame processor error " << rv << std::endl;
         }
 
         // Queue the buffer

@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(TGT_CAMERA_DEMO camera_demo)
 
 # Build flags
-set(BUILD_FALGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
+set(BUILD_FLAGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
 
 # Libraries
 find_library(FREESPACE_LIB freespace)
@@ -32,13 +32,19 @@ set(SRCS
     src/fileframeprocessor.cpp
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
+    src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
+    src/orion-sdk/fielddecode.cpp
+    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/floatspecial.cpp
+    src/orion-sdk/KlvParser.cpp
+    src/orion-sdk/KlvTree.cpp
 )
 
 if (FREESPACE_LIB)
     message("-- Freespace library found")
-    set(BUILD_FALGS -DFREESPACE_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
 else ()
@@ -47,34 +53,44 @@ endif (FREESPACE_LIB)
 
 if (FFMPEG_LIBS)
     message("-- Ffmpeg libraries found")
-    set(BUILD_FALGS -DFFMPEG_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DFFMPEG_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/h264encoder.cpp)
+    set(SRCS ${SRCS} src/h264decoder.cpp)
 else ()
     message("-- Ffmpeg libraries not found")
 endif (FFMPEG_LIBS)
 
 if (PIGPIO_LIB)
     message("-- Pigpio library found")
-    set(BUILD_FALGS -DPIGPIO_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
     set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
 else ()
     message("-- Pigpio library not found")
 endif (PIGPIO_LIB)
 
-if (JPEG_LIB AND X11_LIB)
-    message("-- Jpeg and X11 libraries found")
-    set(BUILD_FALGS -DXWIN_PRESENT=1 ${BUILD_FALGS})
-    set(LIBS ${JPEG_LIB} ${X11_LIB} ${LIBS})
+if (JPEG_LIB)
+    message("-- Jpeg library found")
+    set(BUILD_FLAGS -DJPEG_PRESENT=1 ${BUILD_FLAGS})
+    set(LIBS ${JPEG_LIB} ${LIBS})
+else ()
+    message("-- Jpeg library not found")
+endif (JPEG_LIB)
+
+if (X11_LIB)
+    message("-- X11 library found")
+    set(BUILD_FLAGS -DXWIN_PRESENT=1 ${BUILD_FLAGS})
+    set(LIBS ${X11_LIB} ${LIBS})
     set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
 else ()
-    message("-- Jpeg and X11 libraries not found")
-endif (JPEG_LIB AND X11_LIB)
+    message("-- X11 library not found")
+endif (X11_LIB)
 
 add_executable(${TGT_CAMERA_DEMO} ${SRCS})
 target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
-target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FALGS})
+target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO} PRIVATE src/orion-sdk)
 
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)

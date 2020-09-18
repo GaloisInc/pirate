@@ -24,7 +24,7 @@
 #include "fileframeprocessor.hpp"
 
 FileFrameProcessor::FileFrameProcessor(const Options& options) :
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
     mOutputDirectory(options.mImageOutputDirectory),
     mImageOutputMaxFiles(options.mImageOutputMaxFiles),
     mVerbose(options.mVerbose)
@@ -47,12 +47,6 @@ void FileFrameProcessor::term()
 
 }
 
-unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType) {
-    (void) index;
-    (void) videoType;
-    return nullptr;
-}
-
 std::string FileFrameProcessor::buildFilename(unsigned index) {
     std::stringstream ss;
 
@@ -64,6 +58,9 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
             break;
         case YUYV:
             ss << ".raw";
+            break;
+        case H264:
+            ss << ".h264";
             break;
         default:
             std::cout << "Unknown video type " << mVideoType << std::endl;
