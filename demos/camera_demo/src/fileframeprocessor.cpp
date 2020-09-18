@@ -53,13 +53,13 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
     ss << mOutputDirectory << "/capture_" 
        << std::setfill('0') << std::setw(4) << index;
     switch (mVideoType) {
-        case JPEG:
+        case VIDEO_JPEG:
             ss << ".jpg";
             break;
-        case YUYV:
+        case VIDEO_YUYV:
             ss << ".raw";
             break;
-        case H264:
+        case VIDEO_H264:
             ss << ".h264";
             break;
         default:

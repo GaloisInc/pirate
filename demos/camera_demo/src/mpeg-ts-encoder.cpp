@@ -22,16 +22,17 @@
 
 #include <stdio.h>
 
-#include "h264encoder.hpp"
+#include "mpeg-ts-encoder.hpp"
 
 extern "C" {
     #include <libavutil/opt.h>
 }
 
-H264Encoder::H264Encoder(const Options& options) :
-    FrameProcessor((options.mVideoOutputType == H264) ? H264 : YUYV,
+MpegTsEncoder::MpegTsEncoder(const Options& options) :
+    FrameProcessor((options.mVideoOutputType == VIDEO_H264) ? VIDEO_H264 : VIDEO_YUYV,
         options.mImageWidth, options.mImageHeight),
     mH264Url(options.mH264EncoderUrl),
+    mCodecType(options.mEncoderCodecType),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
@@ -45,18 +46,36 @@ H264Encoder::H264Encoder(const Options& options) :
 
 }
 
-H264Encoder::~H264Encoder()
+MpegTsEncoder::~MpegTsEncoder()
 {
     term();
 }
 
-int H264Encoder::init()
+int MpegTsEncoder::init()
 {
     int rv;
+    AVCodecID codecID;
 
-    if ((mVideoType != YUYV) && (mVideoType != H264)) {
+    if ((mVideoType != VIDEO_YUYV) && (mVideoType != VIDEO_H264)) {
         std::cout << "h264 streamer requires yuyv or h264 input frames" << std::endl;
         return 1;
+    }
+
+    if ((mVideoType == VIDEO_H264) && (mCodecType != CODEC_H264)) {
+        std::cout << "h264 video capture requires h264 codec" << std::endl;
+        return 1;
+    }
+
+    switch (mCodecType) {
+        case CODEC_MPEG1:
+            codecID = AV_CODEC_ID_MPEG1VIDEO;
+            break;
+        case CODEC_MPEG2:
+            codecID = AV_CODEC_ID_MPEG2VIDEO;
+            break;
+        case CODEC_H264:
+            codecID = AV_CODEC_ID_H264;
+            break;
     }
 
     av_log_set_level(mFFmpegLogLevel);
@@ -64,7 +83,7 @@ int H264Encoder::init()
     av_register_all();
     avformat_network_init();
 
-    mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    mCodec = avcodec_find_encoder(codecID);
     if (mCodec == nullptr) {
         std::cout << "h.264 codec not found" << std::endl;
         return 1;
@@ -154,7 +173,7 @@ int H264Encoder::init()
     stream->codecpar->bit_rate = mCodecContext->bit_rate;
     stream->codecpar->width = mCodecContext->width;
     stream->codecpar->height = mCodecContext->height;
-    stream->codecpar->codec_id = AV_CODEC_ID_H264;
+    stream->codecpar->codec_id = codecID;
     stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     stream->time_base.num = mCodecContext->time_base.num;
     stream->time_base.den = mCodecContext->time_base.den;
@@ -168,7 +187,7 @@ int H264Encoder::init()
     return 0;
 }
 
-void H264Encoder::term()
+void MpegTsEncoder::term()
 {
     if (mOutputContext != nullptr) {
         av_write_trailer(mOutputContext);
@@ -191,7 +210,7 @@ void H264Encoder::term()
     avformat_network_deinit();
 }
 
-int H264Encoder::processYUYV(FrameBuffer data, size_t length)
+int MpegTsEncoder::processYUYV(FrameBuffer data, size_t length)
 {
     int rv;
 
@@ -234,7 +253,7 @@ int H264Encoder::processYUYV(FrameBuffer data, size_t length)
     return 0;
 }
 
-int H264Encoder::processH264(FrameBuffer data, size_t length)
+int MpegTsEncoder::processH264(FrameBuffer data, size_t length)
 {
     int rv;
 
@@ -257,12 +276,12 @@ int H264Encoder::processH264(FrameBuffer data, size_t length)
     return rv;
 }
 
-int H264Encoder::process(FrameBuffer data, size_t length)
+int MpegTsEncoder::process(FrameBuffer data, size_t length)
 {
     switch (mVideoType) {
-        case YUYV:
+        case VIDEO_YUYV:
             return processYUYV(data, length);
-        case H264:
+        case VIDEO_H264:
             return processH264(data, length);
         default:
             std::cout << "Unknown video type " << mVideoType << std::endl;

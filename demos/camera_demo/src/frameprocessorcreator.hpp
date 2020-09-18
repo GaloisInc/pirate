@@ -27,7 +27,7 @@
 #endif
 
 #if FFMPEG_PRESENT
-#include "h264encoder.hpp"
+#include "mpeg-ts-encoder.hpp"
 #endif
 
 class FrameProcessorCreator {
@@ -51,7 +51,7 @@ public:
 #endif
 #if FFMPEG_PRESENT
             case H264Stream:
-                fp = new H264Encoder(options);
+                fp = new MpegTsEncoder(options);
                 break;
 #endif
             case Filesystem:

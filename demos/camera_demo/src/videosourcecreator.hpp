@@ -20,7 +20,7 @@
 #include "videosource.hpp"
 
 #if FFMPEG_PRESENT
-#include "h264decoder.hpp"
+#include "mpeg-ts-decoder.hpp"
 #endif
 
 class VideoSourceCreator {
@@ -33,8 +33,8 @@ public:
         switch (videoInput)
         {
 #if FFMPEG_PRESENT
-            case STREAM:
-                return new H264Decoder(options, frameProcessors);
+            case VIDEO_STREAM:
+                return new MpegTsDecoder(options, frameProcessors);
 #endif
             default:
                 return new VideoSensor(options, frameProcessors);
