@@ -31,12 +31,12 @@
 #include <iostream>
 
 #include "options.hpp"
-#include "h264decoder.hpp"
+#include "mpeg-ts-decoder.hpp"
 
 #include "KlvParser.hpp"
 #include "KlvTree.hpp"
 
-H264Decoder::H264Decoder(const Options& options,
+MpegTsDecoder::MpegTsDecoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
     mH264Url(options.mH264DecoderUrl),
@@ -60,12 +60,12 @@ H264Decoder::H264Decoder(const Options& options,
 {
 }
 
-H264Decoder::~H264Decoder()
+MpegTsDecoder::~MpegTsDecoder()
 {
     term();
 }
 
-int H264Decoder::init()
+int MpegTsDecoder::init()
 {
     int rv;
 
@@ -139,12 +139,12 @@ int H264Decoder::init()
 
     // Start the capture thread
     mPoll = true;
-    mPollThread = new std::thread(&H264Decoder::pollThread, this);
+    mPollThread = new std::thread(&MpegTsDecoder::pollThread, this);
 
     return 0;
 }
 
-void H264Decoder::term()
+void MpegTsDecoder::term()
 {
     if (mPoll)
     {
@@ -182,7 +182,7 @@ void H264Decoder::term()
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-int H264Decoder::parseDataFrame() {
+int MpegTsDecoder::parseDataFrame() {
     // If we have a full metadata packet in memory, zero out the size and index
     if (mMetaDataBytes == mMetaDataSize) {
         mMetaDataBytes = mMetaDataSize = 0;
@@ -259,7 +259,7 @@ int H264Decoder::parseDataFrame() {
     return 0;
 }
 
-int H264Decoder::processDataFrame() {
+int MpegTsDecoder::processDataFrame() {
     if ((mMetaDataSize > 0) && (mMetaDataBytes == mMetaDataSize)) {
         uint64_t ts;
         int success = 0;
@@ -280,7 +280,7 @@ int H264Decoder::processDataFrame() {
 // If there are decoding errors in the video frame
 // then drop the frame and do not stop the frame
 // processing pipeline.
-int H264Decoder::processVideoFrame() {
+int MpegTsDecoder::processVideoFrame() {
     int rv;
 
     rv = avcodec_send_packet(mCodecContext, &mPkt);
@@ -336,7 +336,7 @@ int H264Decoder::processVideoFrame() {
     return 0;
 }
 
-void H264Decoder::pollThread()
+void MpegTsDecoder::pollThread()
 {
     int index, rv;
 

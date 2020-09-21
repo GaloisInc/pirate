@@ -21,7 +21,7 @@ ColorTracking::ColorTracking(
         const Options& options,
         CameraOrientationCallbacks angPosallbacks) :
     OrientationInput(angPosallbacks),
-    FrameProcessor(BGRX, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
     mAngMin(-options.mAngularPositionLimit),
     mAngMax(options.mAngularPositionLimit),

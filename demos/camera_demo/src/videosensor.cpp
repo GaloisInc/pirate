@@ -316,13 +316,13 @@ int VideoSensor::initVideoDevice()
     mFormat.fmt.pix.width = mOutputWidth;
     mFormat.fmt.pix.height = mOutputHeight;
     switch (mVideoOutputType) {
-        case JPEG:
+        case VIDEO_JPEG:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
             break;
-        case YUYV:
+        case VIDEO_YUYV:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
             break;
-        case H264:
+        case VIDEO_H264:
             mFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_H264;
             break;
         default:
