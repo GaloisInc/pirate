@@ -37,11 +37,12 @@
 #include "options.hpp"
 
 const int OPT_THRESH   = 129;
-const int OPT_OUT_DIR  = 130;
-const int OPT_MAX_OUT  = 131;
-const int OPT_SLIDE    = 132;
-const int OPT_LIMIT    = 133;
-const int OPT_LOGLEVEL = 134;
+const int OPT_CODEC    = 130;
+const int OPT_OUT_DIR  = 131;
+const int OPT_MAX_OUT  = 132;
+const int OPT_SLIDE    = 133;
+const int OPT_LIMIT    = 134;
+const int OPT_LOGLEVEL = 135;
 
 static struct argp_option options[] =
 {
@@ -57,7 +58,8 @@ static struct argp_option options[] =
     { "threshold",    OPT_THRESH,   "val",         0, "color tracking threshold",                 0 },
     { "xwindows",     'X',          NULL,          0, "xwindows frame processor",                 0 },
     { "filesystem",   'F',          NULL,          0, "filesystem frame processor",               0 },
-    { "encoder",      'E',          "url",         0, "MPEG-TS H.264 encoder url (host:port)",    0 },
+    { "encoder",      'E',          "url",         0, "MPEG-TS encoder url (host:port)",          0 },
+    { "codec",        OPT_CODEC,    "type",        0, "encoder codec (mpeg1|mpeg2|h264)",         0 },
     { "out_dir",      OPT_OUT_DIR,  "path",        0, "image output directory",                   0 },
     { "out_count",    OPT_MAX_OUT,  "val",         0, "image output maximum file count",          0 },
     { "sliding",      OPT_SLIDE,    NULL,          0, "sliding window image filter",              0 },
@@ -109,28 +111,46 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
         case 't':
             if (ss.str() == "jpeg")
             {
-                opt->mVideoInputType = JPEG;
-                opt->mVideoOutputType = JPEG;
+                opt->mVideoInputType = VIDEO_JPEG;
+                opt->mVideoOutputType = VIDEO_JPEG;
             }
             else if (ss.str() == "yuyv")
             {
-                opt->mVideoInputType = YUYV;
-                opt->mVideoOutputType = YUYV;
+                opt->mVideoInputType = VIDEO_YUYV;
+                opt->mVideoOutputType = VIDEO_YUYV;
             }
             else if (ss.str() == "h264")
             {
-                opt->mVideoInputType = H264;
-                opt->mVideoOutputType = H264;
+                opt->mVideoInputType = VIDEO_H264;
+                opt->mVideoOutputType = VIDEO_H264;
             }
             else if (ss.str() == "stream")
             {
-                opt->mVideoInputType = STREAM;
-                opt->mVideoOutputType = YUYV;
+                opt->mVideoInputType = VIDEO_STREAM;
+                opt->mVideoOutputType = VIDEO_YUYV;
             }
             else
             {
-                argp_usage(state);
                 argp_error(state, "invalid video type argument '%s'", arg);
+            }
+            break;
+
+        case OPT_CODEC:
+            if (ss.str() == "mpeg1")
+            {
+                opt->mEncoderCodecType = CODEC_MPEG1;
+            }
+            else if (ss.str() == "mpeg2")
+            {
+                opt->mEncoderCodecType = CODEC_MPEG2;
+            }
+            else if (ss.str() == "h264")
+            {
+                opt->mEncoderCodecType = CODEC_H264;
+            }
+            else
+            {
+                argp_error(state, "invalid codec type argument '%s'", arg);
             }
             break;
 

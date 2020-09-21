@@ -49,32 +49,32 @@ int ImageConvert::convert(FrameBuffer src, size_t srcLength, VideoType srcType,
         return 1;
     }
 
-    if ((dstType != YUYV) && (dstType != BGRX)) {
+    if ((dstType != VIDEO_YUYV) && (dstType != VIDEO_BGRX)) {
         std::cout << "video destination type must be YUYV or BGRX" << std::endl;
         return 1;
     }
 
-    if ((srcType != JPEG) && (srcType != YUYV)) {
+    if ((srcType != VIDEO_JPEG) && (srcType != VIDEO_YUYV)) {
         std::cout << "video source type must be JPEG or YUYV" << std::endl;
         return 1;
     }
 
     switch (dstType) {
-        case YUYV:
+        case VIDEO_YUYV:
             switch (srcType) {
-                case JPEG:
+                case VIDEO_JPEG:
                     rv = jpegToYUYV(src, srcLength, index);
                     break;
                 default:
                     break;
             }
             break;
-        case BGRX:
+        case VIDEO_BGRX:
             switch (srcType) {
-                case YUYV:
+                case VIDEO_YUYV:
                     rv = yuyvToBGRX(src, srcLength, index);
                     break;
-                case JPEG:
+                case VIDEO_JPEG:
                     rv = jpegToBGRX(src, srcLength, index);
                     break;
                 default:
@@ -90,11 +90,11 @@ int ImageConvert::convert(FrameBuffer src, size_t srcLength, VideoType srcType,
 
 unsigned char* ImageConvert::getBuffer(VideoType videoType, unsigned index, size_t* length) const {
     switch (videoType) {
-        case YUYV:
+        case VIDEO_YUYV:
             if (index != mYUYVIndex) return nullptr;
             *length = mImageWidth * mImageHeight * 2;
             return mYUYVBuffer;
-        case BGRX:
+        case VIDEO_BGRX:
             if (index != mBGRXIndex) return nullptr;
             *length = mImageWidth * mImageHeight * 4;
             return mBGRXBuffer;

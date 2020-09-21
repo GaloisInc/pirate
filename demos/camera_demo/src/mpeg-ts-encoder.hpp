@@ -15,12 +15,7 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
-#include <thread>
-#include <vector>
-
-#include <stdint.h>
 
 extern "C" {
     #include <libavcodec/avcodec.h>
@@ -28,49 +23,36 @@ extern "C" {
     #include <libavformat/avformat.h>
 }
 
-#include "imageconvert.hpp"
 #include "frameprocessor.hpp"
-#include "options.hpp"
-#include "videosource.hpp"
 
-class H264Decoder : public VideoSource
+class MpegTsEncoder : public FrameProcessor
 {
 public:
-    H264Decoder(const Options& options,
-        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
-    virtual ~H264Decoder();
+    MpegTsEncoder(const Options& options);
+    virtual ~MpegTsEncoder();
 
     virtual int init() override;
     virtual void term() override;
 
-private:
-    const std::string mH264Url;
-    int mFFmpegLogLevel;
-    int mInputWidth;
-    int mInputHeight;
+protected:
+    virtual int process(FrameBuffer data, size_t length) override;
 
-    AVFormatContext *mInputContext;
-    int mVideoStreamNum;
-    int mDataStreamNum;
+private:
+    std::string mH264Url;
+    CodecType mCodecType;
+    int mFFmpegLogLevel;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
     AVCodec *mCodec;
     AVCodecContext *mCodecContext;
     AVFrame *mInputFrame, *mOutputFrame;
     struct SwsContext *mSwsContext;
+    AVFormatContext *mOutputContext;
     AVPacket mPkt;
-    uint64_t mMetaDataBytes, mMetaDataSize;
-    uint8_t* mMetaData;
-    size_t mMetaDataBufferSize;
 
-
-    std::thread *mPollThread;
-    bool mPoll;
-
-    void pollThread();
-    int parseDataFrame();
-    int processDataFrame();    
-    int processVideoFrame();
+    int processYUYV(FrameBuffer data, size_t length);
+    int processH264(FrameBuffer data, size_t length);
 
     static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
 };
-

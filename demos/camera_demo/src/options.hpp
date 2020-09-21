@@ -17,7 +17,8 @@
 
 #include <string>
 
-enum VideoType { JPEG, YUYV, H264, BGRX, STREAM };
+enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM };
+enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
@@ -29,8 +30,9 @@ struct Options
 {
     Options() :
         mVideoDevice("/dev/video0"),
-        mVideoInputType(JPEG),
-        mVideoOutputType(JPEG),
+        mVideoInputType(VIDEO_JPEG),
+        mVideoOutputType(VIDEO_JPEG),
+        mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
         mImageHorizontalFlip(false),
@@ -60,6 +62,7 @@ struct Options
     std::string mVideoDevice;
     VideoType mVideoInputType;
     VideoType mVideoOutputType;
+    CodecType mEncoderCodecType;
     unsigned mImageWidth;
     unsigned mImageHeight;
     bool mImageHorizontalFlip;

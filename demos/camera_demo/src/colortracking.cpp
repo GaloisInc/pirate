@@ -21,7 +21,7 @@ ColorTracking::ColorTracking(
         const Options& options,
         AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
     OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
-    FrameProcessor(BGRX, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
     mAngIncrement(1.0),
     mImageSlidingWindow(options.mImageSlidingWindow),
