@@ -23,9 +23,8 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        CameraOrientationUpdateCallback angPosUpdateCallback,
-        float angPosMin, float angPosMax, float angIncrement) :
-    OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
+        CameraOrientationCallbacks angPosCallbacks, float angIncrement) :
+    OrientationInput(angPosCallbacks),
     mAngIncrement(angIncrement),
     mPollThread(nullptr),
     mPoll(false)
@@ -120,19 +119,16 @@ void KeyboardOrientationInput::pollThread()
             return;
         }
 
-        float angularPosition = getAngularPosition();
         switch (c)
         {
             case LEFT:
-                angularPosition -= mAngIncrement;
+                mCallbacks.mUpdate(-mAngIncrement);
                 break;
             case RIGHT:
-                angularPosition += mAngIncrement;
+                mCallbacks.mUpdate(mAngIncrement);
                 break;
             default:
                 continue;
         }
-
-        setAngularPosition(angularPosition);
     }
 }

@@ -314,21 +314,21 @@ int main(int argc, char *argv[])
 
     orientationOutput = std::shared_ptr<OrientationOutput>(OrientationOutputCreator::get(options));
 
-    CameraOrientationUpdateCallback orientationUpdateCallback = orientationOutput->getUpdateCallback();
+    CameraOrientationCallbacks andPosCallbacks = orientationOutput->getCallbacks();
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, orientationUpdateCallback);
+        colorTracking = std::make_shared<ColorTracking>(options, andPosCallbacks);
         orientationInputs.push_back(colorTracking);
     }
 
     if (options.mInputKeyboard) {
         std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, orientationUpdateCallback));
+            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, andPosCallbacks));
         orientationInputs.push_back(io);
     }
 
     if (options.mInputFreespace) {
         std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, orientationUpdateCallback));
+            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, andPosCallbacks));
         orientationInputs.push_back(io);
     }
 

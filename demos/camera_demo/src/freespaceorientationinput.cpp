@@ -47,9 +47,8 @@ const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR
 };
 
 FreespaceOrientationInput::FreespaceOrientationInput(
-        CameraOrientationUpdateCallback angPosUpdateCallback,
-        float angPosMin, float angPosMax, unsigned periodUs) :
-    OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
+        CameraOrientationCallbacks angPosCallbacks, unsigned periodUs) :
+    OrientationInput(angPosCallbacks),
     mPeriodUs(periodUs),
     mPollThread(nullptr),
     mPoll(false),
@@ -226,8 +225,8 @@ void FreespaceOrientationInput::pollThread()
     std::memset(&m, 0, sizeof(m));
     std::memset(&acc, 0, sizeof(acc));
 
-    const float slope = (mAngularPositionMax - mAngularPositionMin) / (GRAVITY_ACC * 2.0);
-    const float offset = slope * GRAVITY_ACC + mAngularPositionMin;
+    const float slope = 90.0 / GRAVITY_ACC;
+    const float offset = slope * GRAVITY_ACC - 90.0;
     float angularPosition = 0.0;
 
     // Enable the data flow
@@ -258,7 +257,7 @@ void FreespaceOrientationInput::pollThread()
         }
 
         angularPosition = weightedFilter(slope * acc.y + offset);
-        setAngularPosition(rint(angularPosition));
+        mCallbacks.mSet(angularPosition);
     }
 
     // Disable data flow

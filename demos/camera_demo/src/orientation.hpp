@@ -60,8 +60,15 @@ public:
         return false;
     }
 
+    virtual bool updateAngularPosition(T positionUpdate)
+    {
+        return setAngularPosition(mAngularPosition + positionUpdate);
+    }
+
     static constexpr T DEFAULT_ANG_POS_LIMIT = 90;
 
+    using GetCallback = std::function<T()>;
+    using SetCallback = std::function<bool(T)>;
     using UpdateCallback = std::function<bool(T)>;
     const T mAngularPositionMin;
     const T mAngularPositionMax;

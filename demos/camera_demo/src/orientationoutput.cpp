@@ -20,8 +20,9 @@
 OrientationOutput::OrientationOutput(float angularPositionLimit, bool verbose) :
     AngularPosition(-angularPositionLimit, angularPositionLimit),
     mVerbose(verbose),
-    mUpdateCallback(std::bind(&OrientationOutput::setAngularPosition, this,
-                std::placeholders::_1))
+    mCallbacks(std::bind(&OrientationOutput::getAngularPosition, this),
+               std::bind(&OrientationOutput::setAngularPosition, this,  std::placeholders::_1),
+               std::bind(&OrientationOutput::updateAngularPosition, this,  std::placeholders::_1))
 {
 
 }
@@ -53,7 +54,7 @@ bool OrientationOutput::setAngularPosition(float angularPosition)
     return AngularPosition::setAngularPosition(angularPosition);
 }
 
-const CameraOrientationUpdateCallback& OrientationOutput::getUpdateCallback()
+const CameraOrientationCallbacks& OrientationOutput::getCallbacks()
 {
-    return mUpdateCallback;
+    return mCallbacks;
 }

@@ -28,7 +28,7 @@
 class OrientationInputCreator {
 public:
     static OrientationInput * get(InputType inputType, const Options& options,
-            CameraOrientationUpdateCallback angPosUpdateCallback)
+            CameraOrientationCallbacks angPosCallbacks)
     {
         switch (inputType)
         {
@@ -37,17 +37,13 @@ public:
                 if (options.mVerbose) {
                     std::cout << "Using Freespace device" << std::endl;
                 }
-                return new FreespaceOrientationInput(angPosUpdateCallback,
-                            -options.mAngularPositionLimit,
-                            options.mAngularPositionLimit);
+                return new FreespaceOrientationInput(angPosCallbacks);
 #endif
             case Keyboard:
                 if (options.mVerbose) {
                     std::cout << "Using keyboard" << std::endl;
                 }
-                return new KeyboardOrientationInput(angPosUpdateCallback,
-                            -options.mAngularPositionLimit,
-                            options.mAngularPositionLimit);
+                return new KeyboardOrientationInput(angPosCallbacks);
             default:
                 throw std::runtime_error("Unsupported orientation input");
                 return nullptr;

@@ -25,9 +25,7 @@
 class KeyboardOrientationInput : public OrientationInput
 {
 public:
-    KeyboardOrientationInput(CameraOrientationUpdateCallback angPosUpdateCallback,
-                             float angPosMin = -CameraOrientation::DEFAULT_ANG_POS_LIMIT,
-                             float angPosMax =  CameraOrientation::DEFAULT_ANG_POS_LIMIT,
+    KeyboardOrientationInput(CameraOrientationCallbacks angPosCallbacks,
                              float angIncrement = DEFAULT_ANG_INCR);
     virtual ~KeyboardOrientationInput();
 

@@ -19,14 +19,11 @@
 
 #include "cameraorientation.hpp"
 
-class OrientationInput : public CameraOrientation
+class OrientationInput
 {
 public:
-    OrientationInput(   CameraOrientationUpdateCallback updateCallback,
-                        float angPosMin = -CameraOrientation::DEFAULT_ANG_POS_LIMIT,
-                        float angPosMax =  CameraOrientation::DEFAULT_ANG_POS_LIMIT) :
-        AngularPosition(angPosMin, angPosMax),
-        mUpdateCallback(updateCallback)
+    OrientationInput(CameraOrientationCallbacks callbacks) :
+        mCallbacks(callbacks)
     {
 
     }
@@ -39,16 +36,6 @@ public:
     virtual int init() = 0;
     virtual void term() = 0;
 
-    virtual bool setAngularPosition(float angularPosition) override
-    {
-        bool updated = AngularPosition::setAngularPosition(angularPosition);
-        if (updated)
-        {
-            mUpdateCallback(getAngularPosition());
-        }
-
-        return updated;
-    }
-private:
-    CameraOrientationUpdateCallback mUpdateCallback;
+protected:
+    CameraOrientationCallbacks mCallbacks;
 };

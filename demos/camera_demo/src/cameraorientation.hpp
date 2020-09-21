@@ -17,6 +17,20 @@
 
 #include "orientation.hpp"
 
-using PositionUpdate = float;
-using CameraOrientation = AngularPosition<PositionUpdate>;
-using CameraOrientationUpdateCallback = CameraOrientation::UpdateCallback;
+using CameraOrientation = AngularPosition<float>;
+
+struct CameraOrientationCallbacks
+{
+    CameraOrientationCallbacks(
+        CameraOrientation::GetCallback get,
+        CameraOrientation::SetCallback set,
+        CameraOrientation::UpdateCallback update) :
+        mGet(get), mSet(set), mUpdate(update)
+    {
+
+    }
+
+    CameraOrientation::GetCallback mGet;
+    CameraOrientation::SetCallback mSet;
+    CameraOrientation::UpdateCallback mUpdate;
+};

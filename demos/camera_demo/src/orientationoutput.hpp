@@ -29,12 +29,12 @@ public:
 
     virtual bool setAngularPosition(float angularPosition) override;
 
-    const CameraOrientationUpdateCallback& getUpdateCallback();
+    const CameraOrientationCallbacks& getCallbacks();
 protected:
     const bool mVerbose;
 private:
     static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
 
-    const CameraOrientationUpdateCallback mUpdateCallback;
+    const CameraOrientationCallbacks mCallbacks;
 };
 
