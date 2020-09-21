@@ -44,6 +44,7 @@ void OrientationOutput::term()
 
 bool OrientationOutput::setAngularPosition(float angularPosition)
 {
+    mLock.lock();
     if (mVerbose)
     {
         std::cout   << "Camera Position "
@@ -51,7 +52,9 @@ bool OrientationOutput::setAngularPosition(float angularPosition)
                     << angularPosition << std::endl;
     }
 
-    return AngularPosition::setAngularPosition(angularPosition);
+    bool updated = AngularPosition::setAngularPosition(angularPosition);
+    mLock.unlock();
+    return updated;
 }
 
 const CameraOrientationCallbacks& OrientationOutput::getCallbacks()

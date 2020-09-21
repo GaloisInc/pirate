@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <mutex>
 #include "cameraorientation.hpp"
 
 class OrientationOutput : public CameraOrientation
@@ -33,6 +34,7 @@ public:
 protected:
     const bool mVerbose;
 private:
+    std::mutex mLock;
     static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
 
     const CameraOrientationCallbacks mCallbacks;
