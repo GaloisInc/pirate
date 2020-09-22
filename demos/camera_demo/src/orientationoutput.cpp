@@ -42,17 +42,59 @@ void OrientationOutput::term()
 
 }
 
-bool OrientationOutput::setAngularPosition(float angularPosition)
+float OrientationOutput::getAngularPosition()
+{
+    float angularPosition;
+    mLock.lock();
+    angularPosition = AngularPosition::getAngularPosition();
+    mLock.unlock();
+    return angularPosition;
+}
+
+bool OrientationOutput::setAngularPosition(float& angularPosition)
 {
     mLock.lock();
+
+    bool updated = AngularPosition::setAngularPosition(angularPosition);
+    if (updated)
+    {
+        updated = applyAngularPosition(angularPosition);
+    }
+
     if (mVerbose)
     {
-        std::cout   << "Camera Position "
+        std::cout   << "Camera Position Set "
                     << std::setprecision(4)
                     << angularPosition << std::endl;
     }
 
+    mLock.unlock();
+    return updated;
+}
+
+bool OrientationOutput::updateAngularPosition(float positionUpdate)
+{
+    mLock.lock();
+
+    float angularPosition = AngularPosition::getAngularPosition();
+    angularPosition += positionUpdate;
+
     bool updated = AngularPosition::setAngularPosition(angularPosition);
+
+    if (updated)
+    {
+        updated = applyAngularPosition(angularPosition);
+    }
+
+    if (mVerbose)
+    {
+        std::cout   << "Camera Position Update "
+                    << std::setprecision(4) << positionUpdate
+                    << " to "
+                    << std::setprecision(4) << angularPosition
+                    << std::endl;
+    }
+
     mLock.unlock();
     return updated;
 }
@@ -60,4 +102,10 @@ bool OrientationOutput::setAngularPosition(float angularPosition)
 const CameraOrientationCallbacks& OrientationOutput::getCallbacks()
 {
     return mCallbacks;
+}
+
+bool OrientationOutput::applyAngularPosition(float angularPosition)
+{
+    (void) angularPosition;
+    return true;
 }

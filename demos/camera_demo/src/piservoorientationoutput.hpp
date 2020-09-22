@@ -27,10 +27,9 @@ public:
     virtual int init() override;
     virtual void term() override;
 
-    virtual bool setAngularPosition(float angularPosition) override;
-
 private:
     static int angleToServo(float angle);
+    virtual bool applyAngularPosition(float angularPosition) override;
 
     const int mServoPin;
     const bool mGpioLibInit;

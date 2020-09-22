@@ -94,8 +94,8 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
         return 0;
     }
 
-    float angularPosition = mCallbacks.mGet();
     if (mImageSlidingWindow) {
+        float angularPosition = mCallbacks.mGet();
         float fraction = (angularPosition - mAngMin) / (mAngMax - mAngMin);
         center = mImageWidth * fraction;
     } else {
