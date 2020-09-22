@@ -85,20 +85,6 @@ void PiServoOrientationOutput::term()
     }
 }
 
-bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
-{
-    OrientationOutput::setAngularPosition(angularPosition);
-    int rv = gpioServo(mServoPin, angleToServo(getAngularPosition()));
-
-    if (rv < 0)
-    {
-        std::perror("Failed to set servo position");
-        return false;
-    }
-
-    return true;
-}
-
 int PiServoOrientationOutput::angleToServo(float angle)
 {
     static const float slope =
@@ -107,4 +93,17 @@ int PiServoOrientationOutput::angleToServo(float angle)
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
     // Fip the sign. The camera is mounted upside-down.
     return -1.0 * slope * angle + off;
+}
+
+bool PiServoOrientationOutput::applyAngularPosition(float angularPosition)
+{
+    int rv = gpioServo(mServoPin, angleToServo(angularPosition));
+
+    if (rv < 0)
+    {
+        std::perror("Failed to set servo position");
+        return false;
+    }
+
+    return true;
 }

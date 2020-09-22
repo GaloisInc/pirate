@@ -36,40 +36,43 @@
 #include "colortracking.hpp"
 #include "options.hpp"
 
-const int OPT_THRESH   = 129;
-const int OPT_CODEC    = 130;
-const int OPT_OUT_DIR  = 131;
-const int OPT_MAX_OUT  = 132;
-const int OPT_SLIDE    = 133;
-const int OPT_LIMIT    = 134;
-const int OPT_LOGLEVEL = 135;
+const int OPT_THRESH    = 129;
+const int OPT_CODEC     = 131;
+const int OPT_OUT_DIR   = 132;
+const int OPT_MAX_OUT   = 133;
+const int OPT_SLIDE     = 134;
+const int OPT_LIMIT     = 135;
+const int OPT_LOGLEVEL  = 136;
+const int OPT_KBD       = 137;
+const int OPT_FREESPACE = 138;
 
 static struct argp_option options[] =
 {
-    { 0,              0,            0,             0, "video options:",                           1 },
-    { "video_device", 'd',          "device",      0, "video device",                             0 },
-    { "video_type",   't',          "type",        0, "video type (jpeg|yuyv|h264|stream)",       0 },
-    { "width",        'W',          "pixels",      0, "image width",                              0 },
-    { "height",       'H',          "pixels",      0, "image height",                             0 },
-    { "flip",         'f',          "v|h",         0, "horizontal or vertical image flip",        0 },
-    { "decoder",      'D',          "url",         0, "MPEG-TS H.264 decoder url (host:port)",    0 },
-    { 0,              0,            0,             0, "frame processor options:",                 2 },
-    { "color_track",  'C',          "RRGGBB",      0, "color tracking (RGB hex)",                 0 },
-    { "threshold",    OPT_THRESH,   "val",         0, "color tracking threshold",                 0 },
-    { "xwindows",     'X',          NULL,          0, "xwindows frame processor",                 0 },
-    { "filesystem",   'F',          NULL,          0, "filesystem frame processor",               0 },
-    { "encoder",      'E',          "url",         0, "MPEG-TS encoder url (host:port)",          0 },
-    { "codec",        OPT_CODEC,    "type",        0, "encoder codec (mpeg1|mpeg2|h264)",         0 },
-    { "out_dir",      OPT_OUT_DIR,  "path",        0, "image output directory",                   0 },
-    { "out_count",    OPT_MAX_OUT,  "val",         0, "image output maximum file count",          0 },
-    { "sliding",      OPT_SLIDE,    NULL,          0, "sliding window image filter",              0 },
-    { 0,              0,            0,             0, "input/output options:",                    3 },
-    { "input",        'i',          "acc|kbd",     0, "position input",                           0 },
-    { "output",       'o',          "servo|print", 0, "angular position output",                  0 },
-    { "output_limit", OPT_LIMIT,    "val",         0, "angular position bound",                   0 },
-    { "verbose",      'v',          NULL,          0, "verbose output",                           4 },
-    { "loglevel",     OPT_LOGLEVEL, "val",         0, "ffmpeg libraries log level",               0 },
-    { NULL,            0 ,          NULL,          0, NULL,                                       0 },
+    { 0,              0,             0,             0, "video options:",                            1 },
+    { "video_device", 'd',           "device",      0, "video device",                              0 },
+    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream)",        0 },
+    { "width",        'W',           "pixels",      0, "image width",                               0 },
+    { "height",       'H',           "pixels",      0, "image height",                              0 },
+    { "flip",         'f',           "v|h",         0, "horizontal or vertical image flip",         0 },
+    { "decoder",      'D',           "url",         0, "MPEG-TS H.264 decoder url (host:port)",     0 },
+    { 0,              0,             0,             0, "frame processor options:",                  2 },
+    { "color_track",  'C',           "RRGGBB",      0, "color tracking (RGB hex)",                  0 },
+    { "threshold",    OPT_THRESH,    "val",         0, "color tracking threshold",                  0 },
+    { "xwindows",     'X',           NULL,          0, "xwindows frame processor",                  0 },
+    { "filesystem",   'F',           NULL,          0, "filesystem frame processor",                0 },
+    { "encoder",      'E',           "url",         0, "MPEG-TS H.264 encoder url (host:port)",     0 },
+    { "codec",        OPT_CODEC,     "type",        0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
+    { "out_dir",      OPT_OUT_DIR,   "path",        0, "image output directory",                    0 },
+    { "out_count",    OPT_MAX_OUT,   "val",         0, "image output maximum file count",           0 },
+    { "sliding",      OPT_SLIDE,     NULL,          0, "sliding window image filter",               0 },
+    { 0,              0,             0,             0, "input/output options:",                     3 },
+    { "in_keyboard",  OPT_KBD,       NULL,          0, "read position input from keyboard",         0 },
+    { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
+    { "output",       'o',           "servo|print", 0, "angular position output",                   0 },
+    { "output_limit", OPT_LIMIT,     "val",         0, "angular position bound",                    0 },
+    { "verbose",      'v',           NULL,          0, "verbose output",                            4 },
+    { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
+    { NULL,            0 ,           NULL,          0, NULL,                                        0 },
 };
 
 static std::atomic<bool> interrupted(false);
@@ -201,19 +204,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
 
-        case 'i':
-            if (ss.str() == "acc")
-            {
-                opt->mInputType = Freespace;
-            }
-            else if (ss.str() == "kbd")
-            {
-                opt->mInputType = Keyboard;
-            }
-            else
-            {
-                argp_error(state, "invalid input argument '%s'", arg);
-            }
+        case OPT_KBD:
+            opt->mInputKeyboard = true;
+            break;
+
+        case OPT_FREESPACE:
+            opt->mInputFreespace = true;
             break;
 
         case 'X':
@@ -333,17 +329,27 @@ int main(int argc, char *argv[])
     parseArgs(argc, argv, &options);
 
     std::shared_ptr<OrientationOutput> orientationOutput;
-    std::shared_ptr<OrientationInput> orientationInput;
+    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
     orientationOutput = std::shared_ptr<OrientationOutput>(OrientationOutputCreator::get(options));
 
+    CameraOrientationCallbacks andPosCallbacks = orientationOutput->getCallbacks();
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, orientationOutput->getUpdateCallback());
-        orientationInput = colorTracking;
-    } else {
-        OrientationInput* oi = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
-        orientationInput = std::shared_ptr<OrientationInput>(oi);
+        colorTracking = std::make_shared<ColorTracking>(options, andPosCallbacks);
+        orientationInputs.push_back(colorTracking);
+    }
+
+    if (options.mInputKeyboard) {
+        std::shared_ptr<OrientationInput> io =
+            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, andPosCallbacks));
+        orientationInputs.push_back(io);
+    }
+
+    if (options.mInputFreespace) {
+        std::shared_ptr<OrientationInput> io =
+            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, andPosCallbacks));
+        orientationInputs.push_back(io);
     }
 
     if (options.mFilesystemProcessor) {
@@ -373,10 +379,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rv = orientationInput->init();
-    if (rv != 0)
-    {
-        return -1;
+    for (auto orientationInput : orientationInputs) {
+        rv = orientationInput->init();
+        if (rv != 0)
+        {
+            return -1;
+        }
     }
 
     for (auto frameProcessor : frameProcessors) {
@@ -406,7 +414,7 @@ int main(int argc, char *argv[])
     delete signalThread;
     delete videoSource;
     frameProcessors.clear();
-    orientationInput = nullptr;
+    orientationInputs.clear();
     orientationOutput = nullptr;
 
     return 0;

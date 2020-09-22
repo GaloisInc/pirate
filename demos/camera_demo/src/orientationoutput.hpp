@@ -15,11 +15,10 @@
 
 #pragma once
 
-#include "orientation.hpp"
+#include <mutex>
+#include "cameraorientation.hpp"
 
-using OrientationUpdateCallback = AngularPosition<float>::UpdateCallback;
-
-class OrientationOutput : public AngularPosition<float>
+class OrientationOutput : public CameraOrientation
 {
 public:
     OrientationOutput(float angularPositionLimit = DEFAULT_ANG_POS_LIMIT,
@@ -29,14 +28,19 @@ public:
     virtual int init();
     virtual void term();
 
-    virtual bool setAngularPosition(float angularPosition) override;
+    virtual float getAngularPosition() override;
+    virtual bool setAngularPosition(float& angularPosition) override;
+    virtual bool updateAngularPosition(float positionUpdate) override;
 
-    const OrientationUpdateCallback& getUpdateCallback(); 
+    const CameraOrientationCallbacks& getCallbacks();
 protected:
     const bool mVerbose;
+
+    virtual bool applyAngularPosition(float angularPosition);
 private:
+    std::mutex mLock;
     static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
 
-    const OrientationUpdateCallback mUpdateCallback;
+    const CameraOrientationCallbacks mCallbacks;
 };
 

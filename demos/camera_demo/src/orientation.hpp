@@ -35,12 +35,12 @@ public:
 
     }
 
-    virtual T getAngularPosition() const
+    virtual T getAngularPosition()
     {
         return mAngularPosition;   
     }
 
-    virtual bool setAngularPosition(T angularPosition)
+    virtual bool setAngularPosition(T& angularPosition)
     {
         if (angularPosition < mAngularPositionMin)
         {
@@ -60,8 +60,16 @@ public:
         return false;
     }
 
+    virtual bool updateAngularPosition(T positionUpdate)
+    {
+        T angularPosition = mAngularPosition + positionUpdate;
+        return setAngularPosition(angularPosition);
+    }
+
     static constexpr T DEFAULT_ANG_POS_LIMIT = 90;
 
+    using GetCallback = std::function<T()>;
+    using SetCallback = std::function<bool(T&)>;
     using UpdateCallback = std::function<bool(T)>;
     const T mAngularPositionMin;
     const T mAngularPositionMax;

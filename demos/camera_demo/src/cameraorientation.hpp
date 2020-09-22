@@ -15,25 +15,22 @@
 
 #pragma once
 
-#include "orientationoutput.hpp"
+#include "orientation.hpp"
 
-class PiServoOrientationOutput : public OrientationOutput
+using CameraOrientation = AngularPosition<float>;
+
+struct CameraOrientationCallbacks
 {
-public:
-    PiServoOrientationOutput(int servoPin, float angLimit = DEFAULT_ANGLE_LIMIT,
-            bool verbose = false, bool gpioLibInit = true);
-    virtual ~PiServoOrientationOutput();
+    CameraOrientationCallbacks(
+        CameraOrientation::GetCallback get,
+        CameraOrientation::SetCallback set,
+        CameraOrientation::UpdateCallback update) :
+        mGet(get), mSet(set), mUpdate(update)
+    {
 
-    virtual int init() override;
-    virtual void term() override;
+    }
 
-private:
-    static int angleToServo(float angle);
-    virtual bool applyAngularPosition(float angularPosition) override;
-
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float DEFAULT_ANGLE_LIMIT = 30.0;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+    CameraOrientation::GetCallback mGet;
+    CameraOrientation::SetCallback mSet;
+    CameraOrientation::UpdateCallback mUpdate;
 };
-

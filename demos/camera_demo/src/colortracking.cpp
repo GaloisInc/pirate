@@ -19,10 +19,12 @@
 
 ColorTracking::ColorTracking(
         const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
-    OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
+        CameraOrientationCallbacks angPosallbacks) :
+    OrientationInput(angPosallbacks),
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
+    mAngMin(-options.mAngularPositionLimit),
+    mAngMax(options.mAngularPositionLimit),
     mAngIncrement(1.0),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
@@ -91,19 +93,21 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
         // object not found
         return 0;
     }
-    float angularPosition = getAngularPosition();
+
     if (mImageSlidingWindow) {
-        float range = mAngularPositionMax - mAngularPositionMin;
-        float percent = (angularPosition - mAngularPositionMin) / range;
-        center = mImageWidth * percent;
+        float angularPosition = mCallbacks.mGet();
+        float fraction = (angularPosition - mAngMin) / (mAngMax - mAngMin);
+        center = mImageWidth * fraction;
     } else {
         center = mImageWidth / 2;
     }
+
     delta = x_position - center;
     if (delta > tolerance) {
-        setAngularPosition(angularPosition + mAngIncrement);
+        mCallbacks.mUpdate(mAngIncrement);
     } else if (delta < -tolerance) {
-        setAngularPosition(angularPosition - mAngIncrement);
+        mCallbacks.mUpdate(-mAngIncrement);
     }
+
     return 0;
 }

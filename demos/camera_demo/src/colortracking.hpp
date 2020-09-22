@@ -25,7 +25,7 @@ class ColorTracking : public OrientationInput, public FrameProcessor
 {
 public:
     ColorTracking(const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback);
+        CameraOrientationCallbacks angPosCallbacks);
     virtual ~ColorTracking();
 
     virtual int init() override;
@@ -33,6 +33,8 @@ public:
 
 private:
     const bool           mVerbose;
+    const float          mAngMin;
+    const float          mAngMax;
     const float          mAngIncrement;
     const bool           mImageSlidingWindow;
     const unsigned char  mImageTrackingRGB[3];
