@@ -33,6 +33,7 @@
 #include "frameprocessorcreator.hpp"
 #include "imageconvert.hpp"
 #include "colortracking.hpp"
+#include "colortrackingenclave.cpp"
 #include "videosensor.hpp"
 #include "options.hpp"
 
@@ -274,13 +275,14 @@ int main(int argc, char *argv[])
     ImageConvert imageConvert(options.mImageWidth, options.mImageHeight);
     std::shared_ptr<OrientationOutput> orientationOutput;
     std::shared_ptr<OrientationInput> orientationInput;
-    std::shared_ptr<ColorTracking> colorTracking = nullptr;
+    std::shared_ptr<FrameProcessor> colorTracking = nullptr;
 
     orientationOutput = std::shared_ptr<OrientationOutput>(OrientationOutputCreator::get(options));
 
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, orientationOutput->getUpdateCallback());
-        orientationInput = colorTracking;
+        auto ptr = std::make_shared<ColorTrackingRemote>(orientationOutput->getUpdateCallback());
+        colorTracking = ptr;
+        orientationInput = ptr;
     } else {
         OrientationInput* oi = OrientationInputCreator::get(options, orientationOutput->getUpdateCallback());
         orientationInput = std::shared_ptr<OrientationInput>(oi);
@@ -298,7 +300,7 @@ int main(int argc, char *argv[])
         frameProcessors.push_back(frameProcessor);
     }
 
-    if (options.mImageTracking) {
+    if (colorTracking) {
         // Add color tracking to the end of frame processors.
         // Take advantage of any RGB conversion in previous
         // frame processors.

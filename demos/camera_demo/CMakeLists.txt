@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_EXTENSIONS NO)
+
 # Targets
 set(TGT_CAMERA_DEMO camera_demo)
 
 # Build flags
-set(BUILD_FALGS -std=c++11 ${PIRATE_C_FLAGS})
+set(BUILD_FLAGS -std=c++17 ${PIRATE_C_FLAGS})
 
 # Libraries
 find_library(FREESPACE_LIB freespace)
@@ -28,26 +32,26 @@ set(SRCS
 )
 
 if (FREESPACE_LIB)
-    set(BUILD_FALGS -DFREESPACE_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
 endif (FREESPACE_LIB)
 
 if (PIGPIO_LIB)
-    set(BUILD_FALGS -DPIGPIO_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
     set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
 endif (PIGPIO_LIB)
 
 if (JPEG_LIB AND X11_LIB)
-    set(BUILD_FALGS -DXWIN_PRESENT=1 ${BUILD_FALGS})
+    set(BUILD_FLAGS -DXWIN_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${JPEG_LIB} ${X11_LIB} ${LIBS})
     set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
 endif (JPEG_LIB AND X11_LIB)
 
 add_executable(${TGT_CAMERA_DEMO} ${SRCS})
 target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
-target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FALGS})
+target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FLAGS})
 
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
