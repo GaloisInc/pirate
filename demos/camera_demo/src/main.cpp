@@ -229,9 +229,13 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mH264DecoderUrl = parseStreamUrl(ss.str(), state, false);
             break;
 
-        case OPT_LIMIT:
-            ss >> opt->mAngularPositionLimit;
+        case OPT_LIMIT: {
+            float limit;
+            ss >> limit;
+            opt->mAngularPositionMin = -limit;
+            opt->mAngularPositionMax = limit;
             break;
+        }
 
         case OPT_SLIDE:
             opt->mImageSlidingWindow = true;

@@ -33,7 +33,7 @@ public:
     virtual void term();
 
     static constexpr float DEFAULT_ANG_INCR =
-        CameraOrientation::DEFAULT_ANG_POS_LIMIT / 30.0;
+        OrientationOutput::DEFAULT_ANG_POS_LIMIT / 30.0;
 private:
     const float mAngIncrement;
 

@@ -32,6 +32,7 @@ set(SRCS
     src/fileframeprocessor.cpp
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
+    src/baseorientationoutput.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp

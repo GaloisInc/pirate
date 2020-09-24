@@ -40,6 +40,8 @@ protected:
 
 private:
     std::shared_ptr<OrientationOutput> mOrientationOutput;
+    const float                        mAngMin;
+    const float                        mAngMax;
     bool                               mImageSlidingWindow;
     Display*                           mDisplay;
     Window                             mWindow;

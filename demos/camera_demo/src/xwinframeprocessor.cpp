@@ -29,6 +29,8 @@ XWinFrameProcessor::XWinFrameProcessor(const Options& options,
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mOrientationOutput(orientationOutput),
+    mAngMin(options.mAngularPositionMin),
+    mAngMax(options.mAngularPositionMax),
     mImageSlidingWindow(options.mImageSlidingWindow)
 {
 
@@ -74,9 +76,9 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
 void XWinFrameProcessor::slidingWindow() {
     int x, y, k;
 
-    float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
+    float range = mAngMax - mAngMin;
     float position = mOrientationOutput->getAngularPosition();
-    float percent = (position - mOrientationOutput->mAngularPositionMin) / range;
+    float percent = (position - mAngMin) / range;
     int center = mImageWidth * percent;
     // min can go negative
     int min = (center - mImageWidth / 4);
