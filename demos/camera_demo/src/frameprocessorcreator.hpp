@@ -36,9 +36,9 @@ public:
         FrameProcessorType processorType,
         std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const Options& options,
-        std::shared_ptr<OrientationOutput> orientationOutput)
+        CameraOrientationCallbacks angPosCallbacks)
     {
-        (void) orientationOutput;
+        (void) angPosCallbacks;
 
         FrameProcessor *fp = nullptr;
 
@@ -46,7 +46,7 @@ public:
         {
 #if XWIN_PRESENT
             case XWindows:
-                fp = new XWinFrameProcessor(options, orientationOutput);
+                fp = new XWinFrameProcessor(options, angPosCallbacks);
                 break;
 #endif
 #if FFMPEG_PRESENT

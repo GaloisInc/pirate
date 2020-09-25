@@ -25,10 +25,10 @@
 #include <X11/Xutil.h>
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    std::shared_ptr<OrientationOutput> orientationOutput) :
+    CameraOrientationCallbacks angPosCallbacks) :
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
-    mOrientationOutput(orientationOutput),
+    mCallbacks(angPosCallbacks),
     mAngMin(options.mAngularPositionMin),
     mAngMax(options.mAngularPositionMax),
     mImageSlidingWindow(options.mImageSlidingWindow)
@@ -77,7 +77,7 @@ void XWinFrameProcessor::slidingWindow() {
     int x, y, k;
 
     float range = mAngMax - mAngMin;
-    float position = mOrientationOutput->getAngularPosition();
+    float position = mCallbacks.mGet();
     float percent = (position - mAngMin) / range;
     int center = mImageWidth * percent;
     // min can go negative

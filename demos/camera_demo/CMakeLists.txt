@@ -18,7 +18,7 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-set(LIBS pthread)
+set(LIBS pthread pirate)
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
@@ -33,6 +33,7 @@ set(SRCS
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
     src/baseorientationoutput.cpp
+    src/remoteorientationoutput.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp

@@ -37,6 +37,5 @@ public:
             default:
                 return new BaseOrientationOutput(options);
         }
-
     }
 };
