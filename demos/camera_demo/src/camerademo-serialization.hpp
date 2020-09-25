@@ -31,6 +31,8 @@ namespace CameraDemo {
 				return "OutputSet";
 			case OrientationOutputReqType::OutputUpdate:					
 				return "OutputUpdate";
+			default:
+				return "Error";
 		}
 	}
 
@@ -42,6 +44,8 @@ namespace CameraDemo {
 				return "ColorTracking";
 			case OrientationOutputReqSender::XWinFrame:
 				return "XWinFrame";
+			default:
+				return "Error";
 		}
 	}
 
