@@ -27,7 +27,6 @@ class RemoteOrientationOutput : public OrientationOutput
 {
 public:
     RemoteOrientationOutput(
-        RemoteOutputType remoteType,
         std::unique_ptr<OrientationOutput> delegate,
         const Options& options);
     virtual ~RemoteOrientationOutput();
@@ -41,14 +40,14 @@ public:
 
 private:
     const std::unique_ptr<OrientationOutput> mDelegate;
+    const uint16_t mClientId;
+    uint16_t mMessageCounter;
 
-    int mClientReadGd;
-    int mClientWriteGd;
-    CameraDemo::OrientationOutputReqSender mClientSenderId;
+    const int mClientReadGd;
+    const int mClientWriteGd;
 
-    int mServerReadGd;
-    int mServerWriteColorTrackingGd;
-    int mServerWriteXWinFrameGd;
+    const int mServerReadGd;
+    const std::vector<int> mServerWriteGds;
 
     std::mutex mClientLock;
     std::thread *mPollThread;
@@ -57,8 +56,7 @@ private:
     void pollThread();
 
     bool sendRequest(const CameraDemo::OrientationOutputRequest& request);
-    bool sendResponse(CameraDemo::OrientationOutputReqSender id,
-        const CameraDemo::OrientationOutputResponse& response);
+    bool sendResponse(uint16_t id, const CameraDemo::OrientationOutputResponse& response);
 
     bool recvRequest(CameraDemo::OrientationOutputRequest& request);
     bool recvResponse(CameraDemo::OrientationOutputResponse& response);

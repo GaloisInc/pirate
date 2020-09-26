@@ -16,13 +16,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
 enum OutputType { PiServo, Print };
-enum RemoteOutputType { OutputServer, OutputTrackingClient, OutputXWindowsClient };
 
 using FrameBuffer = const unsigned char *;
 
@@ -40,7 +40,6 @@ struct Options
         mImageVerticalFlip(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
-        mImageTrackingChannel("udp_socket,127.0.0.1,22661"),
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
         mFrameRateNumerator(1),
@@ -48,12 +47,10 @@ struct Options
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
         mOutputType(PiServo),
-        mOutputChannel("udp_socket,127.0.0.1,22660"),
         mInputKeyboard(false),
         mInputFreespace(false),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
-        mXWinProcessorChannel("udp_socket,127.0.0.1,22662"),
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
@@ -61,14 +58,13 @@ struct Options
         mAngularPositionMax(45.0),
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
-        mClientTrackingReadGd(-1),
-        mClientTrackingWriteGd(-1),
-        mClientXWinReadGd(-1),
-        mClientXWinWriteGd(-1),
+        mClientId(0),
+        mOutputClientChannel("udp_socket,127.0.0.1,22660"),
+        mOutputServerChannel("udp_socket,127.0.0.1,22661"),
+        mClientReadGd(-1),
         mClientWriteGd(-1),
         mServerReadGd(-1),
-        mServerWriteTrackingGd(-1),
-        mServerWriteXWinGd(-1)
+        mServerWriteGds()
     {
 
     }
@@ -83,7 +79,6 @@ struct Options
     bool mImageVerticalFlip;
     bool mImageSlidingWindow;
     bool mImageTracking;
-    std::string mImageTrackingChannel;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
     const unsigned mFrameRateNumerator;
@@ -91,12 +86,10 @@ struct Options
     std::string mImageOutputDirectory;
     unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
-    std::string mOutputChannel;
     bool mInputKeyboard;
     bool mInputFreespace;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
-    std::string mXWinProcessorChannel;
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
@@ -104,14 +97,12 @@ struct Options
     float mAngularPositionMax;
     bool mVerbose;
     int mFFmpegLogLevel;
+    int mClientId;
+    std::string mOutputClientChannel;
+    std::string mOutputServerChannel;
 
-    int mClientTrackingReadGd;
-    int mClientTrackingWriteGd;
-    int mClientXWinReadGd;
-    int mClientXWinWriteGd;
+    int mClientReadGd;
     int mClientWriteGd;
-
     int mServerReadGd;
-    int mServerWriteTrackingGd;
-    int mServerWriteXWinGd;
+    std::vector<int> mServerWriteGds;
 };

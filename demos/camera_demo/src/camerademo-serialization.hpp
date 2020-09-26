@@ -17,40 +17,9 @@ namespace CameraDemo {
 		OutputUpdate
 	};
 
-	enum class OrientationOutputReqSender : uint32_t {
-		None,
-		ColorTracking,
-		XWinFrame
-	};
-
-	static inline std::string orientationOutputReqTypeToString(OrientationOutputReqType val) {
-		switch (val) {
-			case OrientationOutputReqType::OutputGet:
-				return "OutputGet";
-			case OrientationOutputReqType::OutputSet:
-				return "OutputSet";
-			case OrientationOutputReqType::OutputUpdate:					
-				return "OutputUpdate";
-			default:
-				return "Error";
-		}
-	}
-
-	static inline std::string orientationOutputReqSenderToString(OrientationOutputReqSender val) {
-		switch (val) {
-			case OrientationOutputReqSender::None:
-				return "None";
-			case OrientationOutputReqSender::ColorTracking:
-				return "ColorTracking";
-			case OrientationOutputReqSender::XWinFrame:
-				return "XWinFrame";
-			default:
-				return "Error";
-		}
-	}
-
 	struct OrientationOutputRequest {
-		OrientationOutputReqSender senderId __attribute__((aligned(4)));
+		uint16_t clientId __attribute__((aligned(2)));
+		uint16_t messageId __attribute__((aligned(2)));
 		OrientationOutputReqType reqType __attribute__((aligned(4)));
 		float angularPosition __attribute__((aligned(4)));
 	};
@@ -60,7 +29,8 @@ namespace CameraDemo {
 	};
 
 	struct OrientationOutputRequest_wire {
-		unsigned char senderId[4] __attribute__((aligned(4)));
+		unsigned char clientId[2] __attribute__((aligned(2)));
+		unsigned char messageId[2] __attribute__((aligned(2)));
 		unsigned char reqType[4] __attribute__((aligned(4)));
 		unsigned char angularPosition[4] __attribute__((aligned(4)));
 	};
@@ -89,16 +59,20 @@ namespace pirate {
 			buf.resize(sizeof(struct CameraDemo::OrientationOutputRequest));
 			struct CameraDemo::OrientationOutputRequest_wire* output = (struct CameraDemo::OrientationOutputRequest_wire*) buf.data();
 			const struct CameraDemo::OrientationOutputRequest* input = &val;
-			uint32_t field_senderId;
+			uint16_t field_clientId;
+			uint16_t field_messageId;
 			uint32_t field_reqType;
 			uint32_t field_angularPosition;
-			memcpy(&field_senderId, &input->senderId, sizeof(uint32_t));
+			memcpy(&field_clientId, &input->clientId, sizeof(uint16_t));
+			memcpy(&field_messageId, &input->messageId, sizeof(uint16_t));
 			memcpy(&field_reqType, &input->reqType, sizeof(uint32_t));
 			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
-			field_senderId = htobe32(field_senderId);
+			field_clientId = htobe16(field_clientId);
+			field_messageId = htobe16(field_messageId);
 			field_reqType = htobe32(field_reqType);
 			field_angularPosition = htobe32(field_angularPosition);
-			memcpy(&output->senderId, &field_senderId, sizeof(uint32_t));
+			memcpy(&output->clientId, &field_clientId, sizeof(uint16_t));
+			memcpy(&output->messageId, &field_messageId, sizeof(uint16_t));
 			memcpy(&output->reqType, &field_reqType, sizeof(uint32_t));
 			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
 		}
@@ -113,16 +87,20 @@ namespace pirate {
 					std::to_string(sizeof(struct CameraDemo::OrientationOutputRequest));
 				throw std::length_error(error_msg);
 			}
-			uint32_t field_senderId;
+			uint16_t field_clientId;
+			uint16_t field_messageId;
 			uint32_t field_reqType;
 			uint32_t field_angularPosition;
-			memcpy(&field_senderId, &input->senderId, sizeof(uint32_t));
+			memcpy(&field_clientId, &input->clientId, sizeof(uint16_t));
+			memcpy(&field_messageId, &input->messageId, sizeof(uint16_t));
 			memcpy(&field_reqType, &input->reqType, sizeof(uint32_t));
 			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
-			field_senderId = be32toh(field_senderId);
+			field_clientId = be16toh(field_clientId);
+			field_messageId = be16toh(field_messageId);
 			field_reqType = be32toh(field_reqType);
 			field_angularPosition = be32toh(field_angularPosition);
-			memcpy(&output->senderId, &field_senderId, sizeof(uint32_t));
+			memcpy(&output->clientId, &field_clientId, sizeof(uint16_t));
+			memcpy(&output->messageId, &field_messageId, sizeof(uint16_t));
 			memcpy(&output->reqType, &field_reqType, sizeof(uint32_t));
 			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
 			return retval;

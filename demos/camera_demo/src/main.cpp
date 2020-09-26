@@ -321,41 +321,22 @@ static void parseArgs(int argc, char * argv[], Options * opt)
 }
 
 void pirateInitReaders(Options &options, int &success) {
-    int rv, count = 0;
+    int rv;
     success = -1;
 
-    if (options.mImageTracking) {
-        count++;
-    }
-    if (options.mXWinProcessor && options.mImageSlidingWindow) {
-        count++;
-    }
-    if (options.mInputKeyboard || options.mInputFreespace) {
-        count++;
-    }
 
     options.mServerReadGd = pirate_open_parse("multiplex", O_RDONLY);
-    rv = pirate_multiplex_open_parse(options.mServerReadGd, options.mOutputChannel.c_str(), O_RDONLY, count);
+    rv = pirate_multiplex_open_parse(options.mServerReadGd, options.mOutputServerChannel.c_str(), O_RDONLY, 1);
     if (rv < 0) {
-        perror("pirate open server channel reader error");
+        perror("pirate open server write channel error");
         return;
     }
-    if (options.mImageTracking) {
-        rv = pirate_open_parse(options.mImageTrackingChannel.c_str(), O_RDONLY);
-        if (rv < 0) {
-            perror("pirate open image tracking reader error");
-            return;
-        }
-        options.mClientTrackingReadGd = rv;
+    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_RDONLY);
+    if (rv < 0) {
+        perror("pirate open client read channel error");
+        return;
     }
-    if (options.mXWinProcessor && options.mImageSlidingWindow) {
-        rv = pirate_open_parse(options.mXWinProcessorChannel.c_str(), O_RDONLY);
-        if (rv < 0) {
-            perror("pirate open x windows processor reader error");
-            return;
-        }
-        options.mClientXWinReadGd = rv;
-    }
+    options.mClientReadGd = rv;
 
     success = 0;
 }
@@ -364,46 +345,20 @@ void pirateInitWriters(Options &options, int &success) {
     int rv;
     success = -1;
 
-    if (options.mImageTracking) {
-        rv = pirate_open_parse(options.mOutputChannel.c_str(), O_WRONLY);
-        if (rv < 0) {
-            perror("pirate open image tracking to orientation output writer error");
-            return;
-        }
-        options.mClientTrackingWriteGd = rv;
+    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_WRONLY);
+    if (rv < 0) {
+        perror("pirate open server write channel error");
+        return;
     }
-    if (options.mXWinProcessor && options.mImageSlidingWindow) {
-        rv = pirate_open_parse(options.mOutputChannel.c_str(), O_WRONLY);
-        if (rv < 0) {
-            perror("pirate open xwin processor to orientation output writer error");
-            return;
-        }
-        options.mClientXWinWriteGd = rv;
+    options.mClientWriteGd = rv;
+
+    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_WRONLY);
+    if (rv < 0) {
+        perror("pirate open client write channel error");
+        return;
     }
-    if (options.mInputKeyboard || options.mInputFreespace) {
-        rv = pirate_open_parse(options.mOutputChannel.c_str(), O_WRONLY);
-        if (rv < 0) {
-            perror("pirate open simplex client to orientation output writer error");
-            return;
-        }
-        options.mClientWriteGd = rv;
-    }
-    if (options.mImageTracking) {
-        rv = pirate_open_parse(options.mImageTrackingChannel.c_str(), O_WRONLY);
-        if (rv < 0) {
-            perror("pirate open orientation output to image tracking writer error");
-            return;
-        }
-        options.mServerWriteTrackingGd = rv;
-    }
-    if (options.mXWinProcessor && options.mImageSlidingWindow) {
-        rv = pirate_open_parse(options.mXWinProcessorChannel.c_str(), O_WRONLY);
-        if (rv < 0) {
-            perror("pirate open orientation output to xwin processor writer error");
-            return;
-        }
-        options.mServerWriteXWinGd = rv;
-    }
+    options.mServerWriteGds.push_back(rv);
+
     success = 0;
 }
 
@@ -432,20 +387,17 @@ int main(int argc, char *argv[])
     sigaddset(&set, SIGINT);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
-    OrientationOutput *orientationServer;
-    OrientationOutput *orientationTrackingClient = nullptr;
-    OrientationOutput *orientationXWinClient = nullptr;
+    OrientationOutput *orientationOutput;
 
     std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
-    std::unique_ptr<OrientationOutput> orientationOutput(OrientationOutputCreator::get(options));
-    orientationServer = new RemoteOrientationOutput(OutputServer, std::move(orientationOutput), options);
-    CameraOrientationCallbacks angPosCallbacks = orientationServer->getCallbacks();
+    std::unique_ptr<OrientationOutput> delegate(OrientationOutputCreator::get(options));
+    orientationOutput = new RemoteOrientationOutput(std::move(delegate), options);
+    CameraOrientationCallbacks angPosCallbacks = orientationOutput->getCallbacks();
 
     if (options.mImageTracking) {
-        orientationTrackingClient = new RemoteOrientationOutput(OutputTrackingClient, nullptr, options);
-        colorTracking = std::make_shared<ColorTracking>(options, orientationTrackingClient->getCallbacks());
+        colorTracking = std::make_shared<ColorTracking>(options, angPosCallbacks);
         orientationInputs.push_back(colorTracking);
     }
 
@@ -466,8 +418,7 @@ int main(int argc, char *argv[])
     }
 
     if (options.mXWinProcessor) {
-        orientationXWinClient = new RemoteOrientationOutput(OutputXWindowsClient, nullptr, options);
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, orientationXWinClient->getCallbacks());
+        FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
     }
 
     if (options.mH264Encoder) {
@@ -480,7 +431,7 @@ int main(int argc, char *argv[])
 
     VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
 
-    rv = orientationServer->init();
+    rv = orientationOutput->init();
     if (rv != 0)
     {
         return -1;
@@ -522,9 +473,7 @@ int main(int argc, char *argv[])
     delete videoSource;
     frameProcessors.clear();
     orientationInputs.clear();
-    delete orientationServer;
-    if (orientationTrackingClient != nullptr) delete orientationTrackingClient;
-    if (orientationXWinClient != nullptr) delete orientationXWinClient;
+    delete orientationOutput;
 
     return 0;
 }

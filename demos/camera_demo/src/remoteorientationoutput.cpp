@@ -25,39 +25,16 @@ using namespace pirate;
 using namespace CameraDemo;
 
 RemoteOrientationOutput::RemoteOrientationOutput(
-    RemoteOutputType remoteType,
     std::unique_ptr<OrientationOutput> delegate,
     const Options& options) :
         OrientationOutput(),
-        mDelegate(std::move(delegate)) {
-
-    switch (remoteType) {
-        case OutputServer:
-            mClientReadGd = -1;
-            mClientWriteGd = options.mClientWriteGd;
-            mClientSenderId = OrientationOutputReqSender::None;
-            mServerReadGd = options.mServerReadGd;
-            mServerWriteColorTrackingGd = options.mServerWriteTrackingGd;
-            mServerWriteXWinFrameGd = options.mServerWriteXWinGd;
-            break;
-        case OutputTrackingClient:
-            mClientReadGd = options.mClientTrackingReadGd;
-            mClientWriteGd = options.mClientTrackingWriteGd;
-            mClientSenderId = OrientationOutputReqSender::ColorTracking;
-            mServerReadGd = -1;
-            mServerWriteColorTrackingGd = -1;
-            mServerWriteXWinFrameGd = -1;
-            break;
-        case OutputXWindowsClient:
-            mClientReadGd = options.mClientXWinReadGd;
-            mClientWriteGd = options.mClientXWinWriteGd;
-            mClientSenderId = OrientationOutputReqSender::XWinFrame;
-            mServerReadGd = -1;
-            mServerWriteColorTrackingGd = -1;
-            mServerWriteXWinFrameGd = -1;
-            break;
-    }
-
+        mDelegate(std::move(delegate)),
+        mClientId(options.mClientId),
+        mMessageCounter(0),
+        mClientReadGd(options.mClientReadGd),
+        mClientWriteGd(options.mClientWriteGd),
+        mServerReadGd(options.mServerReadGd),
+        mServerWriteGds(options.mServerWriteGds) {
 }
 
 RemoteOrientationOutput::~RemoteOrientationOutput() {
@@ -98,7 +75,7 @@ bool RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& 
         return false;
     }
     if (rv != sizeof(struct OrientationOutputRequest_wire)) {
-        std::cout << "orientation output request " << orientationOutputReqTypeToString(request.reqType)
+        std::cout << "orientation output request " << ((int) request.reqType)
             << " received " << rv << " out of " << sizeof(struct OrientationOutputRequest_wire)
             << " bytes" << std::endl;
         return false;
@@ -137,7 +114,7 @@ bool RemoteOrientationOutput::sendRequest(const OrientationOutputRequest& reques
         return false;
     }
     if (rv != sizeof(struct OrientationOutputRequest_wire)) {
-        std::cout << "orientation output request " << orientationOutputReqTypeToString(request.reqType)
+        std::cout << "orientation output request " << ((int) request.reqType)
             << " sent " << rv << " out of " << sizeof(struct OrientationOutputRequest_wire)
             << " bytes" << std::endl;
         return false;
@@ -145,23 +122,16 @@ bool RemoteOrientationOutput::sendRequest(const OrientationOutputRequest& reques
     return true;
 }
 
-bool RemoteOrientationOutput::sendResponse(OrientationOutputReqSender id,
+bool RemoteOrientationOutput::sendResponse(uint16_t id,
     const OrientationOutputResponse& response) {
 
     int rv, gd;
 
-    switch (id) {
-        case OrientationOutputReqSender::None:
-            std::cout << "sender id was not specified" << std::endl;
-            return false;
-        case OrientationOutputReqSender::ColorTracking:
-            gd = mServerWriteColorTrackingGd;
-            break;
-        case OrientationOutputReqSender::XWinFrame:
-            gd = mServerWriteXWinFrameGd;
-            break;
+    if (id >= mServerWriteGds.size()) {
+        std::cout << "invalid client id " << id << std::endl;
+        return false;
     }
-
+    gd = mServerWriteGds[id];
     std::vector<char> writeBuf(sizeof(struct OrientationOutputResponse_wire));
     Serialization<struct OrientationOutputResponse>::toBuffer(response, writeBuf);
     rv = pirate_write(gd, writeBuf.data(), sizeof(struct OrientationOutputResponse_wire));
@@ -170,7 +140,7 @@ bool RemoteOrientationOutput::sendResponse(OrientationOutputReqSender id,
         return false;
     }
     if (rv != sizeof(struct OrientationOutputResponse_wire)) {
-        std::cout << "orientation output response to " << orientationOutputReqSenderToString(id)
+        std::cout << "orientation output response to client " << id
             << " sent " << rv << " out of " << sizeof(struct OrientationOutputResponse_wire)
             << " bytes" << std::endl;
         return false;
@@ -183,8 +153,10 @@ float RemoteOrientationOutput::getAngularPosition() {
     OrientationOutputResponse response;
 
     mClientLock.lock();
+    mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputGet;
-    request.senderId = mClientSenderId;
+    request.clientId = mClientId;
+    request.messageId = mMessageCounter;
     request.angularPosition = std::numeric_limits<float>::quiet_NaN();
     bool success = sendRequest(request);
     if (success) {
@@ -202,8 +174,10 @@ void RemoteOrientationOutput::setAngularPosition(float angularPosition) {
     OrientationOutputRequest request;
 
     mClientLock.lock();
+    mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputSet;
-    request.senderId = mClientSenderId;
+    request.clientId = mClientId;
+    request.messageId = mMessageCounter;
     request.angularPosition = angularPosition;
     sendRequest(request);
     mClientLock.unlock();
@@ -213,8 +187,10 @@ void RemoteOrientationOutput::updateAngularPosition(float positionUpdate) {
     OrientationOutputRequest request;
 
     mClientLock.lock();
+    mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputUpdate;
-    request.senderId = mClientSenderId;
+    request.clientId = mClientId;
+    request.messageId = mMessageCounter;
     request.angularPosition = positionUpdate;
     sendRequest(request);
     mClientLock.unlock();
@@ -232,7 +208,7 @@ void RemoteOrientationOutput::pollThread() {
         switch (request.reqType) {
             case OrientationOutputReqType::OutputGet:
                 response.angularPosition = mDelegate->getAngularPosition();
-                sendResponse(request.senderId, response);
+                sendResponse(request.clientId, response);
                 break;
             case OrientationOutputReqType::OutputSet:
                 mDelegate->setAngularPosition(request.angularPosition);
