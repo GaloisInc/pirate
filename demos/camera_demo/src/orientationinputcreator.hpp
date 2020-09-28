@@ -43,7 +43,7 @@ public:
                 if (options.mVerbose) {
                     std::cout << "Using keyboard" << std::endl;
                 }
-                return new KeyboardOrientationInput(angPosCallbacks);
+                return new KeyboardOrientationInput(options, angPosCallbacks);
             default:
                 throw std::runtime_error("Unsupported orientation input");
                 return nullptr;
