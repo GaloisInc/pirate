@@ -28,7 +28,7 @@
 #include <sys/signalfd.h>
 #include <unistd.h>
 
-#include <libpirate.h>
+#include "libpirate.h"
 
 #include "orientationinputcreator.hpp"
 #include "orientationoutputcreator.hpp"

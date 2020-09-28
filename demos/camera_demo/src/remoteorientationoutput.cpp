@@ -16,7 +16,7 @@
 #include <iostream>
 #include <vector>
 
-#include <libpirate.h>
+#include "libpirate.h"
 
 #include "camerademo-serialization.hpp"
 #include "remoteorientationoutput.hpp"
