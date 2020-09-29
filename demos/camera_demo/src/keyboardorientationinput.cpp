@@ -23,9 +23,9 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        CameraOrientationCallbacks angPosCallbacks, float angIncrement) :
+        const Options& options, CameraOrientationCallbacks angPosCallbacks) :
     OrientationInput(angPosCallbacks),
-    mAngIncrement(angIncrement),
+    mAngIncrement(options.mAngularPositionIncrement),
     mPollThread(nullptr),
     mPoll(false)
 {

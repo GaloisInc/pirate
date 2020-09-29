@@ -56,6 +56,7 @@ struct Options
         mH264DecoderUrl(""),
         mAngularPositionMin(-45.0),
         mAngularPositionMax(45.0),
+        mAngularPositionIncrement(1.0),
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
         mClientId(0),
@@ -95,6 +96,7 @@ struct Options
     std::string mH264DecoderUrl;
     float mAngularPositionMin;
     float mAngularPositionMax;
+    float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;
     int mClientId;
