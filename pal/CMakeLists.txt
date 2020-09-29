@@ -79,7 +79,8 @@ target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml ${PIRATE_APP_LIBS} pthread rt)
-Target_compile_options(exepal PRIVATE -Wall -Werror)
 
+target_link_libraries(exepal libcyaml ${PIRATE_APP_LIBS} pthread rt)
+target_compile_options(exepal PRIVATE -Wall -Werror)
 install(TARGETS exepal DESTINATION bin)
+install(FILES include/pal/pal.h DESTINATION include/pal)
