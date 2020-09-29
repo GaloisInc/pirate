@@ -42,9 +42,10 @@ const int OPT_OUT_DIR   = 132;
 const int OPT_MAX_OUT   = 133;
 const int OPT_SLIDE     = 134;
 const int OPT_LIMIT     = 135;
-const int OPT_LOGLEVEL  = 136;
-const int OPT_KBD       = 137;
-const int OPT_FREESPACE = 138;
+const int OPT_INC       = 136;
+const int OPT_LOGLEVEL  = 137;
+const int OPT_KBD       = 138;
+const int OPT_FREESPACE = 139;
 
 static struct argp_option options[] =
 {
@@ -70,6 +71,7 @@ static struct argp_option options[] =
     { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
     { "output",       'o',           "servo|print", 0, "angular position output",                   0 },
     { "output_limit", OPT_LIMIT,     "val",         0, "angular position bound",                    0 },
+    { "output_incr",  OPT_INC,       "val",         0, "angular position increment",                0 },
     { "verbose",      'v',           NULL,          0, "verbose output",                            4 },
     { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,           NULL,          0, NULL,                                        0 },
@@ -231,6 +233,13 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_LIMIT:
             ss >> opt->mAngularPositionLimit;
+            break;
+
+        case OPT_INC:
+            ss >> opt->mAngularPositionIncrement;
+            if ((opt->mAngularPositionIncrement <= 0.0) || (opt->mAngularPositionIncrement > 5.0)) {
+                argp_error(state, "angular position increment must be between 0.0 and 5.0: '%s'", arg);
+            }
             break;
 
         case OPT_SLIDE:

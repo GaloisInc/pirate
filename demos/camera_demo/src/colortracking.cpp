@@ -25,7 +25,7 @@ ColorTracking::ColorTracking(
     mVerbose(options.mVerbose),
     mAngMin(-options.mAngularPositionLimit),
     mAngMax(options.mAngularPositionLimit),
-    mAngIncrement(1.0),
+    mAngIncrement(options.mAngularPositionIncrement),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
     mImageTrackingThreshold(options.mImageTrackingThreshold)

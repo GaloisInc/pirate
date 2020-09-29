@@ -20,20 +20,19 @@
 #include <thread>
 #include <termios.h>
 
+#include "options.hpp"
 #include "orientationinput.hpp"
 
 class KeyboardOrientationInput : public OrientationInput
 {
 public:
-    KeyboardOrientationInput(CameraOrientationCallbacks angPosCallbacks,
-                             float angIncrement = DEFAULT_ANG_INCR);
+    KeyboardOrientationInput(const Options& options,
+                             CameraOrientationCallbacks angPosCallbacks);
     virtual ~KeyboardOrientationInput();
 
     virtual int init();
     virtual void term();
 
-    static constexpr float DEFAULT_ANG_INCR =
-        CameraOrientation::DEFAULT_ANG_POS_LIMIT / 30.0;
 private:
     const float mAngIncrement;
 

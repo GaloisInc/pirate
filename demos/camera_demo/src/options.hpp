@@ -54,6 +54,7 @@ struct Options
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
         mAngularPositionLimit(45.0),
+        mAngularPositionIncrement(1.0),
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/)
     {
@@ -85,6 +86,7 @@ struct Options
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
     float mAngularPositionLimit;
+    float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;
 };
