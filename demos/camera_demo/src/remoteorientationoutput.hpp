@@ -21,6 +21,7 @@
 
 #include "orientationoutput.hpp"
 #include "options.hpp"
+#include "remotes.hpp"
 #include "camerademo-serialization.hpp"
 
 class RemoteOrientationOutput : public OrientationOutput
@@ -28,7 +29,8 @@ class RemoteOrientationOutput : public OrientationOutput
 public:
     RemoteOrientationOutput(
         std::unique_ptr<OrientationOutput> delegate,
-        const Options& options);
+        const Options& options,
+        const RemoteDescriptors& remotes);
     virtual ~RemoteOrientationOutput();
 
     virtual int init() override;
@@ -58,6 +60,6 @@ private:
     bool sendRequest(const CameraDemo::OrientationOutputRequest& request);
     bool sendResponse(uint16_t id, const CameraDemo::OrientationOutputResponse& response);
 
-    bool recvRequest(CameraDemo::OrientationOutputRequest& request);
+    int recvRequest(CameraDemo::OrientationOutputRequest& request);
     bool recvResponse(CameraDemo::OrientationOutputResponse& response);
 };

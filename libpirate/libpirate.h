@@ -261,7 +261,7 @@ typedef struct {
 
 #define PIRATE_MULTIPLEX_NUM_CHANNELS 16
 typedef struct {
-    char unused;
+    int timeout;
 } pirate_multiplex_param_t;
 
 typedef struct {

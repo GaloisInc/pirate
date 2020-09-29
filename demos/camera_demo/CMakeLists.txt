@@ -4,7 +4,8 @@ project(camera_demo)
 set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
-set(TGT_CAMERA_DEMO camera_demo)
+set(TGT_CAMERA_DEMO_GAPS camera_demo_gaps)
+set(TGT_CAMERA_DEMO_MONOLITH camera_demo_monolith)
 
 # Build flags
 set(BUILD_FLAGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
@@ -25,8 +26,8 @@ if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 
 # Source files
-set(SRCS 
-    src/main.cpp
+set(SRCS
+    src/optionsparser.cpp
     src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
@@ -89,10 +90,15 @@ else ()
     message("-- X11 library not found")
 endif (X11_LIB)
 
-add_executable(${TGT_CAMERA_DEMO} ${SRCS})
-target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
-target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FLAGS})
-target_include_directories(${TGT_CAMERA_DEMO} PRIVATE src/orion-sdk)
+add_executable(${TGT_CAMERA_DEMO_GAPS} ${SRCS} src/main-gaps.cpp)
+target_link_libraries(${TGT_CAMERA_DEMO_GAPS} ${LIBS})
+target_compile_options(${TGT_CAMERA_DEMO_GAPS} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO_GAPS} PRIVATE src/orion-sdk)
+
+add_executable(${TGT_CAMERA_DEMO_MONOLITH} ${SRCS} src/main-monolith.cpp)
+target_link_libraries(${TGT_CAMERA_DEMO_MONOLITH} ${LIBS})
+target_compile_options(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE src/orion-sdk)
 
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)

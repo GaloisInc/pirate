@@ -13,30 +13,10 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <atomic>
-#include <chrono>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <argp.h>
-#include <signal.h>
-#include <sys/signalfd.h>
-#include <unistd.h>
 
-#include "libpirate.h"
+#include <sstream>
 
-#include "orientationinputcreator.hpp"
-#include "orientationoutputcreator.hpp"
-#include "remoteorientationoutput.hpp"
-#include "frameprocessorcreator.hpp"
-#include "videosourcecreator.hpp"
-#include "imageconvert.hpp"
-#include "colortracking.hpp"
 #include "options.hpp"
 
 const int OPT_THRESH    = 129;
@@ -79,8 +59,6 @@ static struct argp_option options[] =
     { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,           NULL,          0, NULL,                                        0 },
 };
-
-static std::atomic<bool> interrupted(false);
 
 static std::string parseStreamUrl(std::string url, struct argp_state * state, bool encoder)
 {
@@ -298,24 +276,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
     return 0;
 }
 
-static int waitInterrupt(void* arg) {
-    (void) arg;
-    sigset_t set;
-    struct signalfd_siginfo unused;
-    int fd;
-
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-
-    fd = signalfd(-1, &set, 0);
-    read(fd, &unused, sizeof(unused));
-
-    interrupted = true;
-    return 0;
-}
-
-static void parseArgs(int argc, char * argv[], Options * opt)
+void parseArgs(int argc, char * argv[], Options * opt)
 {
     struct argp argp;
     argp.options = options;
@@ -327,162 +288,4 @@ static void parseArgs(int argc, char * argv[], Options * opt)
     argp.argp_domain = NULL;
 
     argp_parse(&argp, argc, argv, 0, 0, opt);
-}
-
-void pirateInitReaders(Options &options, int &success) {
-    int rv;
-    success = -1;
-
-
-    options.mServerReadGd = pirate_open_parse("multiplex", O_RDONLY);
-    rv = pirate_multiplex_open_parse(options.mServerReadGd, options.mOutputServerChannel.c_str(), O_RDONLY, 1);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
-    }
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_RDONLY);
-    if (rv < 0) {
-        perror("pirate open client read channel error");
-        return;
-    }
-    options.mClientReadGd = rv;
-
-    success = 0;
-}
-
-void pirateInitWriters(Options &options, int &success) {
-    int rv;
-    success = -1;
-
-    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
-    }
-    options.mClientWriteGd = rv;
-
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open client write channel error");
-        return;
-    }
-    options.mServerWriteGds.push_back(rv);
-
-    success = 0;
-}
-
-int main(int argc, char *argv[])
-{
-    int rv, readerSuccess, writerSuccess;
-    Options options;
-    sigset_t set;
-    std::thread *signalThread, *readerInitThread, *writerInitThread;
-    std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
-
-    parseArgs(argc, argv, &options);
-    readerInitThread = new std::thread(pirateInitReaders, std::ref(options), std::ref(readerSuccess));
-    writerInitThread = new std::thread(pirateInitWriters, std::ref(options), std::ref(writerSuccess));
-    readerInitThread->join();
-    writerInitThread->join();
-    delete readerInitThread;
-    delete writerInitThread;
-
-    if (readerSuccess || writerSuccess) {
-        return -1;
-    }
-
-    // block SIGINT for all threads except for the signalThread
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-
-    OrientationOutput *orientationOutput;
-
-    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
-    std::shared_ptr<ColorTracking> colorTracking = nullptr;
-
-    std::unique_ptr<OrientationOutput> delegate(OrientationOutputCreator::get(options));
-    orientationOutput = new RemoteOrientationOutput(std::move(delegate), options);
-    CameraOrientationCallbacks angPosCallbacks = orientationOutput->getCallbacks();
-
-    if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, angPosCallbacks);
-        orientationInputs.push_back(colorTracking);
-    }
-
-    if (options.mInputKeyboard) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, angPosCallbacks));
-        orientationInputs.push_back(io);
-    }
-
-    if (options.mInputFreespace) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, angPosCallbacks));
-        orientationInputs.push_back(io);
-    }
-
-    if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(Filesystem, frameProcessors, options, angPosCallbacks);
-    }
-
-    if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
-    }
-
-    if (options.mH264Encoder) {
-        FrameProcessorCreator::add(H264Stream, frameProcessors, options, angPosCallbacks);
-    }
-
-    if (options.mImageTracking) {
-        frameProcessors.push_back(colorTracking);
-    }
-
-    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
-
-    rv = orientationOutput->init();
-    if (rv != 0)
-    {
-        return -1;
-    }
-
-    for (auto orientationInput : orientationInputs) {
-        rv = orientationInput->init();
-        if (rv != 0)
-        {
-            return -1;
-        }
-    }
-
-    for (auto frameProcessor : frameProcessors) {
-        rv = frameProcessor->init();
-        if (rv != 0)
-        {
-            return -1;
-        }
-    }
-
-    rv = videoSource->init();
-    if (rv != 0)
-    {
-        videoSource->term();
-        return -1;
-    }
-
-    signalThread = new std::thread(waitInterrupt, nullptr);
-
-    while (!interrupted)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-
-    signalThread->join();
-
-    delete signalThread;
-    delete videoSource;
-    frameProcessors.clear();
-    orientationInputs.clear();
-    delete orientationOutput;
-
-    return 0;
 }

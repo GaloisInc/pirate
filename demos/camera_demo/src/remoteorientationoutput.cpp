@@ -26,18 +26,24 @@ using namespace CameraDemo;
 
 RemoteOrientationOutput::RemoteOrientationOutput(
     std::unique_ptr<OrientationOutput> delegate,
-    const Options& options) :
+    const Options& options, const RemoteDescriptors& remotes) :
         OrientationOutput(),
         mDelegate(std::move(delegate)),
         mClientId(options.mClientId),
         mMessageCounter(0),
-        mClientReadGd(options.mClientReadGd),
-        mClientWriteGd(options.mClientWriteGd),
-        mServerReadGd(options.mServerReadGd),
-        mServerWriteGds(options.mServerWriteGds) {
-}
+        mClientReadGd(remotes.mClientReadGd),
+        mClientWriteGd(remotes.mClientWriteGd),
+        mServerReadGd(remotes.mServerReadGd),
+        mServerWriteGds(remotes.mServerWriteGds),
+        mClientLock(),
+        mPollThread(nullptr),
+        mPoll(false)
+        {
+
+        }
 
 RemoteOrientationOutput::~RemoteOrientationOutput() {
+    term();
 }
 
 int RemoteOrientationOutput::init() {
@@ -65,23 +71,29 @@ void RemoteOrientationOutput::term() {
     }
 }
 
-bool RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request) {
+int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request) {
     int rv;
 
     std::vector<char> readBuf(sizeof(struct OrientationOutputRequest_wire));
     rv = pirate_read(mServerReadGd, readBuf.data(), sizeof(struct OrientationOutputRequest_wire));
     if (rv < 0) {
+        if (errno == EAGAIN) {
+            errno = 0;
+            return 0;
+        }
         std::perror("remote orientation output receive request read error");
-        return false;
+        return -1;
+    } else if (rv == 0) {
+        return rv;
     }
     if (rv != sizeof(struct OrientationOutputRequest_wire)) {
         std::cout << "orientation output request " << ((int) request.reqType)
             << " received " << rv << " out of " << sizeof(struct OrientationOutputRequest_wire)
             << " bytes" << std::endl;
-        return false;
+        return -1;
     }
     request = Serialization<struct OrientationOutputRequest>::fromBuffer(readBuf);    
-    return true;
+    return rv;
 }
 
 bool RemoteOrientationOutput::recvResponse(CameraDemo::OrientationOutputResponse& response) {
@@ -201,9 +213,11 @@ void RemoteOrientationOutput::pollThread() {
     OrientationOutputResponse response;
 
     while (mPoll) {
-        bool success = recvRequest(request);
-        if (!success) {
+        int rv = recvRequest(request);
+        if (rv < 0) {
             return;
+        } else if (rv == 0) {
+            continue;
         }
         switch (request.reqType) {
             case OrientationOutputReqType::OutputGet:

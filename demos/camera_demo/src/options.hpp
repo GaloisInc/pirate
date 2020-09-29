@@ -16,7 +16,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
@@ -61,11 +60,7 @@ struct Options
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
         mClientId(0),
         mOutputClientChannel("udp_socket,127.0.0.1,22660"),
-        mOutputServerChannel("udp_socket,127.0.0.1,22661"),
-        mClientReadGd(-1),
-        mClientWriteGd(-1),
-        mServerReadGd(-1),
-        mServerWriteGds()
+        mOutputServerChannel("udp_socket,127.0.0.1,22661")
     {
 
     }
@@ -102,9 +97,4 @@ struct Options
     int mClientId;
     std::string mOutputClientChannel;
     std::string mOutputServerChannel;
-
-    int mClientReadGd;
-    int mClientWriteGd;
-    int mServerReadGd;
-    std::vector<int> mServerWriteGds;
 };
