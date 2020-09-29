@@ -8,6 +8,42 @@
 
 #include "log.h"
 
+/* YAML document representation
+ */
+
+enum pal_yaml_type {
+    MAPPING,
+    SEQUENCE,
+    SCALAR,
+    NIL,
+};
+
+struct pal_yaml_value {
+    enum pal_yaml_type type;
+
+    union {
+        struct pal_yaml_mapping *mapping;
+        struct pal_yaml_sequence *sequence;
+        char *scalar;
+    } data;
+};
+
+struct pal_yaml_mapping {
+    char *key;
+    struct pal_yaml_value value;
+
+    struct pal_yaml_mapping *next;
+};
+
+struct pal_yaml_sequence {
+    struct pal_yaml_value value;
+
+    struct pal_yaml_sequence *next;
+};
+
+/* Config file data structure
+ */
+
 struct enclave {
     char *enc_name;
     char *enc_path;

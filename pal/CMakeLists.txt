@@ -79,7 +79,7 @@ target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml pirate)
+target_link_libraries(exepal libcyaml pirate yaml)
 target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror)
 
 install(TARGETS exepal DESTINATION bin)

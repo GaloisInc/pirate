@@ -29,7 +29,8 @@ int main(int argc, char **argv, char **envp)
         fatal("Usage: %s path/to/config.yaml", argv[0]);
     cfg_path = argv[1];
 
-    tlp = load_yaml(cfg_path);
+    if(!(tlp = load_yaml(cfg_path)))
+        fatal("Failed to load yaml from %s", argv[0]);
 
     if(tlp->tl_cfg.cfg_loglvl > log_level)
         log_level = tlp->tl_cfg.cfg_loglvl;
