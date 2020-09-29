@@ -66,9 +66,6 @@ void RemoteOrientationOutput::term() {
             mPollThread = nullptr;
         }
     }
-    if (mDelegate) {
-        mDelegate->term();
-    }
 }
 
 int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request) {
