@@ -1,0 +1,12 @@
+module CameraDemo {
+    enum OrientationOutputReqType { OutputGet, OutputSet, OutputUpdate };
+    struct OrientationOutputRequest {
+        uint16 clientId;
+        uint16 messageId;
+        OrientationOutputReqType reqType;
+        float angularPosition;
+    };
+    struct OrientationOutputResponse {
+        float angularPosition;
+    };
+};

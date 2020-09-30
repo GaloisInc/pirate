@@ -17,7 +17,7 @@
 
 // Definition of a simple interface for reading camera angular orientation
 
-#include "cameraorientation.hpp"
+#include "orientationoutput.hpp"
 
 class OrientationInput
 {

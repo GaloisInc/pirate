@@ -17,13 +17,42 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
+#include "libpirate.h"
 #include "pirate_common.h"
 #include "multiplex.h"
 
+static void pirate_multiplex_init_param(pirate_multiplex_param_t *param) {
+    if (param->timeout == 0) {
+        param->timeout = -1;
+    }
+}
+
 int pirate_multiplex_parse_param(char *str, void *_param) {
-    (void) str;
-    (void) _param;
+    pirate_multiplex_param_t *param = (pirate_multiplex_param_t *)_param;
+    char *ptr = NULL, *key, *val;
+    char *saveptr1, *saveptr2;
+
+    if (((ptr = strtok_r(str, OPT_DELIM, &saveptr1)) == NULL) ||
+        (strcmp(ptr, "multiplex") != 0)) {
+        return -1;
+    }
+
+    while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
+        int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
+        if (rv < 0) {
+            return rv;
+        } else if (rv == 0) {
+            continue;
+        }
+        if (strncmp("timeout", key, strlen("timeout")) == 0) {
+            param->timeout = strtol(val, NULL, 10);
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -33,8 +62,10 @@ int pirate_multiplex_get_channel_description(const void *_param, char *desc, int
 }
 
 int pirate_multiplex_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) _param;
     (void) server_fdp;
+    pirate_multiplex_param_t *param = (pirate_multiplex_param_t *)_param;
+
+    pirate_multiplex_init_param(param);
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
     ctx->count = 0;
     memset(ctx->fds, 0, sizeof(ctx->fds));
@@ -73,9 +104,10 @@ int pirate_multiplex_add(void *_ctx, int gd) {
 ssize_t pirate_multiplex_read(const void *_param, void *_ctx, void *buf, size_t count) {
     (void) _param;
     struct pollfd fds[PIRATE_MULTIPLEX_NUM_CHANNELS];
+    pirate_multiplex_param_t *param = (pirate_multiplex_param_t *)_param;
     multiplex_ctx *ctx = (multiplex_ctx *)_ctx;
     int nonblock = ctx->flags & O_NONBLOCK;
-    int timeout = (nonblock) ? 0 : -1;
+    int timeout = (nonblock) ? 0 : param->timeout;
     if (!ctx->count) {
         errno = ENXIO;
         return -1;

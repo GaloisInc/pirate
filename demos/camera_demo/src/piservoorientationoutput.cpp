@@ -20,12 +20,10 @@
 #include <iostream>
 #include "piservoorientationoutput.hpp"
 
-PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, float angLimit,
-        bool verbose, bool gpioLibInit) :
-    OrientationOutput(angLimit, verbose),
+PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, const Options& options) :
+    BaseOrientationOutput(options),
     mServoPin(servoPin),
-    mGpioLibInit(gpioLibInit)
-
+    mGpioLibInit(true)
 {
 
 }
