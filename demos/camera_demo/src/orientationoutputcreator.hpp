@@ -31,13 +31,11 @@ public:
         {
 #ifdef PIGPIO_PRESENT
             case PiServo:
-                return new PiServoOrientationOutput(PI_SERVO_PIN,
-                    options.mAngularPositionLimit, options.mVerbose);
+                return new PiServoOrientationOutput(PI_SERVO_PIN, options);
 #endif
             case Print:
             default:
-                return new OrientationOutput(options.mAngularPositionLimit, options.mVerbose);
+                return new BaseOrientationOutput(options);
         }
-
     }
 };

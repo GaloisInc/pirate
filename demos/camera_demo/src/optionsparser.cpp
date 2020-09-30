@@ -13,27 +13,10 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <atomic>
-#include <chrono>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <argp.h>
-#include <signal.h>
-#include <sys/signalfd.h>
-#include <unistd.h>
 
-#include "orientationinputcreator.hpp"
-#include "orientationoutputcreator.hpp"
-#include "frameprocessorcreator.hpp"
-#include "videosourcecreator.hpp"
-#include "imageconvert.hpp"
-#include "colortracking.hpp"
+#include <sstream>
+
 #include "options.hpp"
 
 const int OPT_THRESH    = 129;
@@ -76,8 +59,6 @@ static struct argp_option options[] =
     { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,           NULL,          0, NULL,                                        0 },
 };
-
-static std::atomic<bool> interrupted(false);
 
 static std::string parseStreamUrl(std::string url, struct argp_state * state, bool encoder)
 {
@@ -231,9 +212,13 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mH264DecoderUrl = parseStreamUrl(ss.str(), state, false);
             break;
 
-        case OPT_LIMIT:
-            ss >> opt->mAngularPositionLimit;
+        case OPT_LIMIT: {
+            float limit;
+            ss >> limit;
+            opt->mAngularPositionMin = -limit;
+            opt->mAngularPositionMax = limit;
             break;
+        }
 
         case OPT_INC:
             ss >> opt->mAngularPositionIncrement;
@@ -291,24 +276,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
     return 0;
 }
 
-static int waitInterrupt(void* arg) {
-    (void) arg;
-    sigset_t set;
-    struct signalfd_siginfo unused;
-    int fd;
-
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-
-    fd = signalfd(-1, &set, 0);
-    read(fd, &unused, sizeof(unused));
-
-    interrupted = true;
-    return 0;
-}
-
-static void parseArgs(int argc, char * argv[], Options * opt)
+void parseArgs(int argc, char * argv[], Options * opt)
 {
     struct argp argp;
     argp.options = options;
@@ -320,111 +288,4 @@ static void parseArgs(int argc, char * argv[], Options * opt)
     argp.argp_domain = NULL;
 
     argp_parse(&argp, argc, argv, 0, 0, opt);
-}
-
-int main(int argc, char *argv[])
-{
-    int rv;
-    Options options;
-    sigset_t set;
-    std::thread *signalThread;
-    std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
-
-    // block SIGINT for all threads except for the signalThread
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-
-    parseArgs(argc, argv, &options);
-
-    std::shared_ptr<OrientationOutput> orientationOutput;
-    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
-    std::shared_ptr<ColorTracking> colorTracking = nullptr;
-
-    orientationOutput = std::shared_ptr<OrientationOutput>(OrientationOutputCreator::get(options));
-
-    CameraOrientationCallbacks andPosCallbacks = orientationOutput->getCallbacks();
-    if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, andPosCallbacks);
-        orientationInputs.push_back(colorTracking);
-    }
-
-    if (options.mInputKeyboard) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, andPosCallbacks));
-        orientationInputs.push_back(io);
-    }
-
-    if (options.mInputFreespace) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, andPosCallbacks));
-        orientationInputs.push_back(io);
-    }
-
-    if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(Filesystem, frameProcessors, options, orientationOutput);
-    }
-
-    if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, orientationOutput);
-    }
-
-    if (options.mH264Encoder) {
-        FrameProcessorCreator::add(H264Stream, frameProcessors, options, orientationOutput);
-    }
-
-    if (options.mImageTracking) {
-        // Add color tracking to the end of frame processors.
-        // Take advantage of any RGB conversion in previous
-        // frame processors.
-        frameProcessors.push_back(colorTracking);
-    }
-
-    VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
-
-    rv = orientationOutput->init();
-    if (rv != 0)
-    {
-        return -1;
-    }
-
-    for (auto orientationInput : orientationInputs) {
-        rv = orientationInput->init();
-        if (rv != 0)
-        {
-            return -1;
-        }
-    }
-
-    for (auto frameProcessor : frameProcessors) {
-        rv = frameProcessor->init();
-        if (rv != 0)
-        {
-            return -1;
-        }
-    }
-
-    rv = videoSource->init();
-    if (rv != 0)
-    {
-        videoSource->term();
-        return -1;
-    }
-
-    signalThread = new std::thread(waitInterrupt, nullptr);
-
-    while (!interrupted)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-
-    signalThread->join();
-
-    delete signalThread;
-    delete videoSource;
-    frameProcessors.clear();
-    orientationInputs.clear();
-    orientationOutput = nullptr;
-
-    return 0;
 }

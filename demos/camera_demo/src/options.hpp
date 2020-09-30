@@ -53,10 +53,14 @@ struct Options
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
-        mAngularPositionLimit(45.0),
+        mAngularPositionMin(-45.0),
+        mAngularPositionMax(45.0),
         mAngularPositionIncrement(1.0),
         mVerbose(false),
-        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/)
+        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
+        mClientId(0),
+        mOutputClientChannel("udp_socket,127.0.0.1,22660"),
+        mOutputServerChannel("udp_socket,127.0.0.1,22661")
     {
 
     }
@@ -85,8 +89,12 @@ struct Options
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
-    float mAngularPositionLimit;
+    float mAngularPositionMin;
+    float mAngularPositionMax;
     float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;
+    int mClientId;
+    std::string mOutputClientChannel;
+    std::string mOutputServerChannel;
 };

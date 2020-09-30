@@ -15,22 +15,6 @@
 
 #pragma once
 
-#include "orientation.hpp"
+#include "options.hpp"
 
-using CameraOrientation = AngularPosition<float>;
-
-struct CameraOrientationCallbacks
-{
-    CameraOrientationCallbacks(
-        CameraOrientation::GetCallback get,
-        CameraOrientation::SetCallback set,
-        CameraOrientation::UpdateCallback update) :
-        mGet(get), mSet(set), mUpdate(update)
-    {
-
-    }
-
-    CameraOrientation::GetCallback mGet;
-    CameraOrientation::SetCallback mSet;
-    CameraOrientation::UpdateCallback mUpdate;
-};
+void parseArgs(int argc, char* argv[], Options* opt);

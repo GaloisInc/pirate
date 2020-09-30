@@ -15,23 +15,20 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include <vector>
 
-class PiServoOrientationOutput : public BaseOrientationOutput
+struct RemoteDescriptors
 {
-public:
-    PiServoOrientationOutput(int servoPin, const Options& options);
-    virtual ~PiServoOrientationOutput();
+    RemoteDescriptors() :
+        mClientReadGd(-1),
+        mClientWriteGd(-1),
+        mServerReadGd(-1),
+        mServerWriteGds()
+    {
+    }
 
-    virtual int init() override;
-    virtual void term() override;
-
-private:
-    static int angleToServo(float angle);
-    virtual bool applyAngularPosition(float angularPosition) override;
-
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+    int mClientReadGd;
+    int mClientWriteGd;
+    int mServerReadGd;
+    std::vector<int> mServerWriteGds;    
 };
-

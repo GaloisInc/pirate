@@ -15,23 +15,32 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include "orientationoutput.hpp"
+#include "options.hpp"
 
-class PiServoOrientationOutput : public BaseOrientationOutput
+class BaseOrientationOutput : public OrientationOutput
 {
 public:
-    PiServoOrientationOutput(int servoPin, const Options& options);
-    virtual ~PiServoOrientationOutput();
+    BaseOrientationOutput(const Options& options);
+    virtual ~BaseOrientationOutput();
 
     virtual int init() override;
     virtual void term() override;
 
+    virtual float getAngularPosition() override;
+    virtual void setAngularPosition(float angularPosition) override;
+    virtual void updateAngularPosition(float positionUpdate) override;
+
+    const bool mVerbose;
+    const float mAngularPositionMin;
+    const float mAngularPositionMax;
+
+protected:
+    virtual bool applyAngularPosition(float angularPosition);
+
 private:
-    static int angleToServo(float angle);
-    virtual bool applyAngularPosition(float angularPosition) override;
+    std::mutex mLock;
+    float mAngularPosition;
 
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+    bool safelySetAngularPosition(float& angularPosition);
 };
-

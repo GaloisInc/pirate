@@ -29,7 +29,7 @@ class XWinFrameProcessor : public FrameProcessor
 {
 public:
     XWinFrameProcessor(const Options& options,
-        std::shared_ptr<OrientationOutput> orientationOutput);
+        CameraOrientationCallbacks angPosCallbacks);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
@@ -39,14 +39,16 @@ protected:
     virtual int process(FrameBuffer data, size_t length) override;
 
 private:
-    std::shared_ptr<OrientationOutput> mOrientationOutput;
-    bool                               mImageSlidingWindow;
-    Display*                           mDisplay;
-    Window                             mWindow;
-    XImage*                            mImage;
-    unsigned char*                     mImageBuffer;
-    GC                                 mContext;
-    XGCValues                          mContextVals;
+    CameraOrientationCallbacks mCallbacks;
+    const float                mAngMin;
+    const float                mAngMax;
+    bool                       mImageSlidingWindow;
+    Display*                   mDisplay;
+    Window                     mWindow;
+    XImage*                    mImage;
+    unsigned char*             mImageBuffer;
+    GC                         mContext;
+    XGCValues                  mContextVals;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
