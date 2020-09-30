@@ -130,10 +130,4 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         --error-exitcode=1
         ./${GAPS_CHANNELS_TEST}
     )
-
-    add_custom_target(valgrind-cxx COMMAND valgrind
-        --leak-check=full
-        --error-exitcode=1
-        ./${GAPS_CHANNELS_TEST_CXX}
-    )
 endif(PIRATE_UNIT_TEST)
