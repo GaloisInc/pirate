@@ -46,13 +46,25 @@ int pirate_tcp_socket_parse_param(char *str, void *_param) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->addr, ptr, sizeof(param->addr) - 1);
+    strncpy(param->reader_addr, ptr, sizeof(param->reader_addr) - 1);
 
     if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
-    param->port = strtol(ptr, NULL, 10);
+    param->reader_port = strtol(ptr, NULL, 10);
+
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    strncpy(param->writer_addr, ptr, sizeof(param->writer_addr) - 1);
+
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    param->writer_port = strtol(ptr, NULL, 10);
 
     while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
         int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
@@ -93,7 +105,9 @@ int pirate_tcp_socket_get_channel_description(const void *_param, char *desc, in
     if (param->buffer_size != 0) {
         snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
     }
-    return snprintf(desc, len, "tcp_socket,%s,%u%s%s%s", param->addr, param->port,
+    return snprintf(desc, len, "tcp_socket,%s,%u,%s,%u%s%s%s",
+        param->reader_addr, param->reader_port,
+        param->writer_addr, param->writer_port,
         buffer_size_str, min_tx_str, mtu_str);
 }
 
@@ -113,8 +127,8 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
         memset(&addr, 0, sizeof(struct sockaddr_in));
         addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = inet_addr(param->addr);
-        addr.sin_port = htons(param->port);
+        addr.sin_addr.s_addr = inet_addr(param->reader_addr);
+        addr.sin_port = htons(param->reader_port);
 
         int enable = 1;
         rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -154,7 +168,6 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     }
 
     ctx->sock = accept(server_fd, NULL, NULL);
-
     if (ctx->sock < 0) {
         err = errno;
         close(server_fd);
@@ -185,7 +198,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
 static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in addr;
+    struct sockaddr_in src_addr, dest_addr;
 
     ctx->sock = socket(AF_INET, SOCK_STREAM, 0);
     if (ctx->sock < 0) {
@@ -204,13 +217,29 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         }
     }
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(param->addr);
-    addr.sin_port = htons(param->port);
+    src_addr.sin_family = AF_INET;
+    if (strncmp(param->writer_addr, "0.0.0.0", 8) == 0) {
+        src_addr.sin_addr.s_addr = INADDR_ANY;
+    } else {
+        src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
+    }
+    src_addr.sin_port = htons(param->writer_port);
+
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
+    dest_addr.sin_port = htons(param->reader_port);
+
+    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
 
     for (;;) {
         err = errno;
-        rv = connect(ctx->sock, (struct sockaddr *)&addr, sizeof(addr));
+        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
         if (rv < 0) {
             if ((errno == ENOENT) || (errno == ECONNREFUSED)) {
                 struct timespec req;
@@ -242,7 +271,11 @@ int pirate_tcp_socket_open(void *_param, void *_ctx, int *server_fdp) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_tcp_socket_init_param(param);
-    if (param->port <= 0) {
+    if (param->reader_port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (param->writer_port < 0) {
         errno = EINVAL;
         return -1;
     }

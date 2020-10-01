@@ -67,15 +67,17 @@ typedef enum {
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port
-    //  - buffer_size - TCP socket buffer size
-    //  - min_tx_size - minimum transmit size (bytes)
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
+    //  - buffer_size  - TCP socket buffer size
+    //  - min_tx_size  - minimum transmit size (bytes)
     TCP_SOCKET,
 
-    // The gaps channel is implemented by using TCP sockets.
-    // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
+    // The gaps channel is implemented by using UDP sockets.
+    // Configuration parameters - pirate_udp_socket_param_t
+    //  - addr        - IP address
     //  - port        - IP port
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
@@ -172,10 +174,11 @@ typedef struct {
 } pirate_unix_seqpacket_param_t;
 
 // TCP_SOCKET parameters
-#define PIRATE_DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
     unsigned min_tx;
@@ -344,8 +347,8 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  DEVICE        device,path[,min_tx_size=N,mtu=N]\n"                                      \
     "  PIPE          pipe,path[,min_tx_size=N,mtu=N]\n"                                        \
     "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]\n"               \
     "  SHMEM         shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]\n"                         \
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
     "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
