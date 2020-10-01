@@ -82,14 +82,6 @@ typedef struct {
 static pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 static pirate_stats_t gaps_stats[PIRATE_NUM_CHANNELS];
 
-static char gaps_enclave_names[PIRATE_NUM_ENCLAVES][PIRATE_LEN_NAME];
-char* gaps_enclave_names_sorted[PIRATE_NUM_ENCLAVES];
-
-int gaps_reader_gds[PIRATE_NUM_CHANNELS];
-int gaps_reader_gds_num;
-
-int gaps_writer_control_gds[PIRATE_NUM_ENCLAVES];
-
 static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL},
     PIRATE_DEVICE_CHANNEL_FUNCS,
@@ -147,26 +139,6 @@ int pirate_enclave_cmpfunc(const void *a, const void *b) {
     }
 }
 
-int pirate_declare_enclaves(int count, ...) {
-    va_list ap;
-
-    if (count > PIRATE_NUM_ENCLAVES) {
-        errno = E2BIG;
-        return -1;
-    }
-    for (int i = 0; i < PIRATE_NUM_ENCLAVES; i++) {
-        gaps_enclave_names_sorted[i] = gaps_enclave_names[i];
-    }
-    va_start(ap, count);
-    for (int i = 0; i < count; i++) {
-        char *name = va_arg(ap, char*);
-        strncpy(gaps_enclave_names[i], name, sizeof(gaps_enclave_names[i]) - 1);
-    }
-    va_end(ap);
-    qsort(gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
-    return 0;
-}
-
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param) {
     memset(param, 0, sizeof(*param));
     param->channel_type = channel_type;
@@ -185,26 +157,8 @@ int pirate_parse_is_common_key(const char *key) {
 
 static int pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
 
-    if (strncmp("listener", key, strlen("listener")) == 0) {
-        param->listener = atoi(val);
-    } else if (strncmp("control", key, strlen("control")) == 0) {
-        param->control = atoi(val);
-    } else if (strncmp("drop", key, strlen("drop")) == 0) {
+    if (strncmp("drop", key, strlen("drop")) == 0) {
         param->drop = atoi(val);
-    } else if (strncmp("src", key, strlen("src")) == 0) {
-        char **tgt = bsearch(&val, gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
-        if (tgt == NULL) {
-            errno = EINVAL;
-            return -1;
-        }
-        param->src_enclave = (tgt - gaps_enclave_names_sorted) + 1;
-    } else if (strncmp("dst", key, strlen("dst")) == 0) {
-        char **tgt = bsearch(&val, gaps_enclave_names_sorted, PIRATE_NUM_ENCLAVES, sizeof(char*), pirate_enclave_cmpfunc);
-        if (tgt == NULL) {
-            errno = EINVAL;
-            return -1;
-        }
-        param->dst_enclave = (tgt - gaps_enclave_names_sorted) + 1;
     }
     return 0;
 }
@@ -416,28 +370,11 @@ static int pirate_open(pirate_channel_t *channel, int *server_fdp) {
     return open_func(&param->channel, ctx, server_fdp);
 }
 
-static void pirate_yield_setup(int gd, pirate_channel_param_t *param, int access) {
-    if ((access == O_RDONLY) && (param->listener || param->control)) {
-        gaps_reader_gds[gaps_reader_gds_num++] = gd;
-    }
-    if ((access == O_WRONLY) && param->control) {
-        gaps_writer_control_gds[param->dst_enclave - 1] = gd;
-    }
-}
-
 static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, int *server_fdp) {
     pirate_channel_t channel;
-    int access = flags & O_ACCMODE;
 
     if (next_gd >= PIRATE_NUM_CHANNELS) {
         errno = EMFILE;
-        return -1;
-    }
-
-    if ((param->listener || param->control) &&
-        ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
-         (param->src_enclave == param->dst_enclave))) {
-        errno = EINVAL;
         return -1;
     }
 
@@ -456,7 +393,6 @@ static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, in
     }
 
     memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
-    pirate_yield_setup(gd, param, access);
     return gd;
 }
 
@@ -516,13 +452,6 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if ((param->listener || param->control) &&
-        ((param->src_enclave == 0) || (param->dst_enclave == 0) ||
-         (param->src_enclave != param->dst_enclave))) {
-        errno = EINVAL;
-        return -1;
-    }
-
     mtu = pirate_write_mtu_estimate(param);
     if (mtu < 0) {
         return -1;
@@ -570,8 +499,6 @@ int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
 
     memcpy(&gaps_channels[read_gd], &read_channel, sizeof(pirate_channel_t));
     memcpy(&gaps_channels[write_gd], &write_channel, sizeof(pirate_channel_t));
-    pirate_yield_setup(read_gd, param, O_RDONLY);
-    pirate_yield_setup(write_gd, param, O_WRONLY);
 
     gd[0] = read_gd;
     gd[1] = write_gd;
@@ -848,12 +775,6 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
     } else {
         stats->success += 1;
         stats->bytes += rv;
-        if (param->listener && !param->control) {
-            int ret = pirate_listen();
-            if (ret < 0) {
-                return ret;
-            }
-        }
     }
 
     return rv;

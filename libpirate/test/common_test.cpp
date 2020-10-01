@@ -78,23 +78,6 @@ TEST(CommonChannel, InvalidReadWrite)
     errno = 0;
 }
 
-TEST(CommonChannel, RegisterEnclave)
-{
-    int rv;
-    pirate_channel_param_t param;
-
-    rv = pirate_declare_enclaves(3, "foo", "baz", "bar");
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-
-    rv = pirate_parse_channel_param("device,/dev/null,src=foo,dst=bar", &param);
-    ASSERT_EQ(0, rv);
-    ASSERT_EQ(0, errno);
-
-    ASSERT_EQ(3u, param.src_enclave);
-    ASSERT_EQ(1u, param.dst_enclave);
-}
-
 TEST(CommonChannel, UnparseChannelParam)
 {
     char output[80];

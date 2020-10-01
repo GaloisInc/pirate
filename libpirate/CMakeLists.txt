@@ -33,8 +33,7 @@ else()
         set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
     endif(PIRATE_SHMEM_FEATURE)
 
-    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES} "yield.cpp")
-    set(PIRATE_SOURCES ${PIRATE_SOURCES} "yield.c")
+    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES})
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
@@ -126,31 +125,9 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         ${GAPS_CHANNELS_TEST_LIBS}
     )
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-else()
-    set(PIRATE_CXX_TEST_FLAGS ${PIRATE_C_FLAGS})
-    set(GAPS_CHANNELS_TEST_CXX_LIBS ${PIRATE_APP_CXX_LIBS} pthread)
-    set(GAPS_CHANNELS_TEST_CXX gaps_channels_test_cxx)
-    file(GLOB GAPS_CHANNELS_TEST_SRC_CXX test/*.cxx)
-    add_executable(${GAPS_CHANNELS_TEST_CXX} ${GAPS_CHANNELS_TEST_SRC_CXX})
-    target_compile_options(${GAPS_CHANNELS_TEST_CXX} PRIVATE ${PIRATE_CXX_TEST_FLAGS})
-
-    target_link_libraries(${GAPS_CHANNELS_TEST_CXX}
-        ${GTEST_MAIN_LIBRARY}
-        ${GTEST_LIBRARIES}
-        ${GAPS_CHANNELS_TEST_CXX_LIBS}
-    )
-endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-
     add_custom_target(valgrind COMMAND valgrind
         --leak-check=full
         --error-exitcode=1
         ./${GAPS_CHANNELS_TEST}
-    )
-
-    add_custom_target(valgrind-cxx COMMAND valgrind
-        --leak-check=full
-        --error-exitcode=1
-        ./${GAPS_CHANNELS_TEST_CXX}
     )
 endif(PIRATE_UNIT_TEST)
