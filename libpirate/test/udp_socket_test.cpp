@@ -38,8 +38,13 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     const char *name = "udp_socket";
     const char *addr1 = "1.2.3.4";
     const short port1 = 0x4242;
+#ifdef _WIN32
+    const char *addr2 = "0.0.0.0";
+    const short port2 = 0;
+#else
     const char *addr2 = "5.6.7.8";
     const short port2 = 0x4243;
+#endif
     const unsigned buffer_size = 42 * 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -125,6 +130,7 @@ INSTANTIATE_TEST_SUITE_P(UdpSocketFunctionalTest, UdpSocketTest,
     Values(0, UdpSocketTest::TEST_BUF_LEN));
 
 TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
+#ifndef _WIN32
     char buf[80];
     int gd_r1, gd_r2;
     int gd_w1, gd_w2;
@@ -169,6 +175,7 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     pirate_close(gd_r2);
     pirate_close(gd_w1);
     pirate_close(gd_w2);
+#endif
 }
 
 } // namespace
