@@ -69,7 +69,7 @@ public:
         ASSERT_EQ(errno, 0);
         ASSERT_GE(Reader.gd, 0);
 
-        rv = pirate_multiplex_open_parse(Reader.gd, "udp_socket,127.0.0.1,8080", flags, 2);
+        rv = pirate_multiplex_open_parse(Reader.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 2);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 
@@ -100,11 +100,11 @@ public:
         ASSERT_GE(Writer.gd, 0);
 
         // simulate multiple writers with multiple calls to pirate_multiplex_open_parse()
-        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080", flags, 1);
+        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 1);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 
-        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080", flags, 1);
+        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 1);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 

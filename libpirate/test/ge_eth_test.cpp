@@ -98,7 +98,7 @@ public:
         pirate_ge_eth_param_t *param = &Reader.param.channel.ge_eth;
 
         pirate_init_channel_param(GE_ETH, &Reader.param);
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
+        snprintf(param->addr, sizeof(param->addr) - 1, "127.0.0.1");
         param->port = 0x4745;
         param->message_id = 0x5F475243;
         unsigned mtu = GetParam();

@@ -59,8 +59,8 @@ struct Options
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
         mClientId(0),
-        mOutputClientChannel("udp_socket,127.0.0.1,22660"),
-        mOutputServerChannel("udp_socket,127.0.0.1,22661")
+        mOutputClientChannel("udp_socket,127.0.0.1,22660,0.0.0.0,0"),
+        mOutputServerChannel("udp_socket,127.0.0.1,22661,0.0.0.0,0")
     {
 
     }

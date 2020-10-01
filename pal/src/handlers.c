@@ -101,11 +101,16 @@ int pirate_channel_resource_handler(pal_env_t *env,
                     = rsc->r_contents.cc_buffer_size;
             break;
         case TCP_SOCKET:
-            if(rsc->r_contents.cc_host)
-                strncpy(params.channel.tcp_socket.addr,
-                        rsc->r_contents.cc_host, INET_ADDRSTRLEN);
-            params.channel.tcp_socket.port
-                    = rsc->r_contents.cc_port;
+            if(rsc->r_contents.cc_reader_host)
+                strncpy(params.channel.tcp_socket.reader_addr,
+                        rsc->r_contents.cc_reader_host, INET_ADDRSTRLEN);
+            if(rsc->r_contents.cc_writer_host)
+                strncpy(params.channel.tcp_socket.writer_addr,
+                        rsc->r_contents.cc_writer_host, INET_ADDRSTRLEN);
+            params.channel.tcp_socket.reader_port
+                    = rsc->r_contents.cc_reader_port;
+            params.channel.tcp_socket.writer_port
+                    = rsc->r_contents.cc_writer_port;
             params.channel.tcp_socket.min_tx
                     = rsc->r_contents.cc_min_tx_size;
             params.channel.tcp_socket.mtu
@@ -114,11 +119,16 @@ int pirate_channel_resource_handler(pal_env_t *env,
                     = rsc->r_contents.cc_buffer_size;
             break;
         case UDP_SOCKET:
-            if(rsc->r_contents.cc_host)
-                strncpy(params.channel.udp_socket.addr,
-                        rsc->r_contents.cc_host, INET_ADDRSTRLEN);
-            params.channel.udp_socket.port
-                    = rsc->r_contents.cc_port;
+            if(rsc->r_contents.cc_reader_host)
+                strncpy(params.channel.udp_socket.reader_addr,
+                        rsc->r_contents.cc_reader_host, INET_ADDRSTRLEN);
+            if(rsc->r_contents.cc_writer_host)
+                strncpy(params.channel.udp_socket.writer_addr,
+                        rsc->r_contents.cc_writer_host, INET_ADDRSTRLEN);
+            params.channel.udp_socket.reader_port
+                    = rsc->r_contents.cc_reader_port;
+            params.channel.udp_socket.writer_port
+                    = rsc->r_contents.cc_writer_port;
             params.channel.udp_socket.mtu
                     = rsc->r_contents.cc_mtu;
             params.channel.udp_socket.buffer_size

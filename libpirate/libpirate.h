@@ -77,8 +77,10 @@ typedef enum {
 
     // The gaps channel is implemented by using UDP sockets.
     // Configuration parameters - pirate_udp_socket_param_t
-    //  - addr        - IP address
-    //  - port        - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
@@ -185,11 +187,12 @@ typedef struct {
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
-#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
 #define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
 } pirate_udp_socket_param_t;

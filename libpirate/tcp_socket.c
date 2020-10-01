@@ -217,6 +217,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         }
     }
 
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
     src_addr.sin_family = AF_INET;
     if (strncmp(param->writer_addr, "0.0.0.0", 8) == 0) {
         src_addr.sin_addr.s_addr = INADDR_ANY;
@@ -225,6 +226,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     }
     src_addr.sin_port = htons(param->writer_port);
 
+    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
     dest_addr.sin_port = htons(param->reader_port);

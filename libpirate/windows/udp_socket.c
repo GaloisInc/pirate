@@ -48,7 +48,7 @@ int pirate_udp_socket_parse_param(char *str, void *_param) {
     char *saveptr1, *saveptr2;
 
     if (((ptr = strtok_s(str, OPT_DELIM, &saveptr1)) == NULL) ||
-        (strcmp(ptr, "udp_socket") != 0)) {
+        (strncmp(ptr, "udp_socket", strlen("udp_socket")) != 0)) {
         return -1;
     }
 
@@ -56,13 +56,25 @@ int pirate_udp_socket_parse_param(char *str, void *_param) {
         SetLastError(WSAEINVAL);
         return -1;
     }
-    strncpy_s(param->addr, sizeof(param->addr) - 1, ptr, _TRUNCATE);
+    strncpy_s(param->reader_addr, sizeof(param->reader_addr) - 1, ptr, _TRUNCATE);
 
     if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         SetLastError(WSAEINVAL);
         return -1;
     }
-    param->port = strtos(ptr, NULL, 10);
+    param->reader_port = strtos(ptr, NULL, 10);
+
+    if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    strncpy_s(param->writer_addr, sizeof(param->writer_addr) - 1, ptr, _TRUNCATE);
+
+    if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    param->writer_port = strtos(ptr, NULL, 10);
 
     while ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) != NULL) {
         int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
@@ -97,7 +109,9 @@ int pirate_udp_socket_get_channel_description(const void *_param, char *desc, in
     if (param->buffer_size != 0) {
         _snprintf_s(buffer_size_str, 32, _TRUNCATE, ",buffer_size=%u", param->buffer_size);
     }
-    return _snprintf_s(desc, len, _TRUNCATE, "udp_socket,%s,%u%s%s", param->addr, param->port,
+    return _snprintf_s(desc, len, _TRUNCATE, "udp_socket,%s,%u,%s,%u%s%s",
+        param->reader_addr, param->reader_port,
+        param->writer_addr, param->writer_port,
         buffer_size_str, mtu_str);
 }
 
@@ -113,8 +127,8 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
-    InetPton(AF_INET, param->addr, &addr.sin_addr.s_addr);
-    addr.sin_port = htons(param->port);
+    InetPton(AF_INET, param->reader_addr, &addr.sin_addr.s_addr);
+    addr.sin_port = htons(param->reader_port);
 
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, (char*) &enable, sizeof(int));
@@ -188,8 +202,8 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    InetPton(AF_INET, param->addr, &addr.sin_addr.s_addr);
-    addr.sin_port = htons(param->port);
+    InetPton(AF_INET, param->reader_addr, &addr.sin_addr.s_addr);
+    addr.sin_port = htons(param->reader_port);
     rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
     if (rv == SOCKET_ERROR) {
         err = GetLastError();
@@ -221,7 +235,15 @@ int pirate_udp_socket_open(void *_param, void *_ctx) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_udp_socket_init_param(param);
-    if (param->port <= 0) {
+    if (param->reader_port <= 0) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    if (strncmp(param->writer_addr, "0.0.0.0", strlen("0.0.0.0")) != 0) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    if (param->writer_port != 0) {
         SetLastError(WSAEINVAL);
         return -1;
     }
