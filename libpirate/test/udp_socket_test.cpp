@@ -49,31 +49,31 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr1);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr1, port1);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s", name, addr1, port1, addr2);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(EINVAL, errno);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
-    errno = 0;
+    CROSS_PLATFORM_RESET_ERROR();
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s,%u", name, addr1, port1, addr2, port2);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr1, udp_socket_param->reader_addr);
@@ -84,7 +84,7 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s,%u,buffer_size=%u", name, addr1, port1, addr2, port2, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
-    ASSERT_EQ(0, errno);
+    ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
     ASSERT_STREQ(addr1, udp_socket_param->reader_addr);
