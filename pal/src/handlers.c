@@ -200,12 +200,17 @@ int pirate_channel_resource_handler(pal_env_t *env,
             break;
         case GE_ETH:
             if(rsc->r_contents.cc_reader_host)
-                strncpy(params.channel.ge_eth.addr,
+                strncpy(params.channel.ge_eth.reader_addr,
                         rsc->r_contents.cc_reader_host, INET_ADDRSTRLEN);
+            if(rsc->r_contents.cc_writer_host)
+                strncpy(params.channel.ge_eth.writer_addr,
+                        rsc->r_contents.cc_writer_host, INET_ADDRSTRLEN);                        
             params.channel.ge_eth.mtu
                     = rsc->r_contents.cc_mtu;
-            params.channel.ge_eth.port
+            params.channel.ge_eth.reader_port
                     = rsc->r_contents.cc_reader_port;
+            params.channel.ge_eth.writer_port
+                    = rsc->r_contents.cc_writer_port;
             params.channel.ge_eth.message_id
                     = rsc->r_contents.cc_message_id;
             break;
