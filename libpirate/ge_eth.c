@@ -242,16 +242,14 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
         return rv;
     }
 
-    if ((dest_addr.sin_addr.s_addr != INADDR_ANY) || (dest_addr.sin_port != 0)) {
-        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
-        if (rv < 0) {
-            err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
-            errno = err;
-            return rv;
-        }
-    }    
+    rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
+    }
 
     return 0;
 }

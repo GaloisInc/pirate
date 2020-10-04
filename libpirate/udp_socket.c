@@ -151,18 +151,6 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         }
     }
 
-    if ((dest_addr.sin_addr.s_addr != INADDR_ANY) || (dest_addr.sin_port != 0)) {
-        int enable = 1;
-        rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int));
-        if (rv < 0) {
-            err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
-            errno = err;
-            return rv;
-        }
-    }
-
     rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
         err = errno;
@@ -171,16 +159,13 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         errno = err;
         return rv;
     }
-
-    if ((dest_addr.sin_addr.s_addr != INADDR_ANY) || (dest_addr.sin_port != 0)) {
-        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
-        if (rv < 0) {
-            err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
-            errno = err;
-            return rv;
-        }
+    rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
     }
 
     return 0;

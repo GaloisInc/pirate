@@ -70,11 +70,12 @@ typedef struct {
 } pirate_udp_socket_param_t;
 
 // GE_ETH parameters
-#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
