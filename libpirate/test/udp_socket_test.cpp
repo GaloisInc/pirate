@@ -140,7 +140,7 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_r1, 0);
 
-    gd_r2 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72602", O_RDONLY);
+    gd_r2 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72602", O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_r2, 0);
 
@@ -148,7 +148,7 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_w1, 0);
 
-    gd_w2 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72602", O_WRONLY);
+    gd_w2 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72602", O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_w2, 0);
 

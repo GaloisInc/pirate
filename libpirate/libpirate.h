@@ -256,11 +256,12 @@ typedef struct {
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
-#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
@@ -357,7 +358,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
     "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
     "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
+    "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //

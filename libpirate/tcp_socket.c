@@ -30,6 +30,12 @@ static void pirate_tcp_socket_init_param(pirate_tcp_socket_param_t *param) {
     if (param->min_tx == 0) {
         param->min_tx = PIRATE_DEFAULT_MIN_TX;
     }
+    if (strnlen(param->reader_addr, 1) == 0) {
+        strncpy(param->reader_addr, "0.0.0.0", sizeof(param->reader_addr) - 1);
+    }
+    if (strnlen(param->writer_addr, 1) == 0) {
+        strncpy(param->writer_addr, "0.0.0.0", sizeof(param->writer_addr) - 1);
+    }
 }
 
 int pirate_tcp_socket_parse_param(char *str, void *_param) {
@@ -219,11 +225,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
     memset(&src_addr, 0, sizeof(struct sockaddr_in));
     src_addr.sin_family = AF_INET;
-    if (strncmp(param->writer_addr, "0.0.0.0", 8) == 0) {
-        src_addr.sin_addr.s_addr = INADDR_ANY;
-    } else {
-        src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    }
+    src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
     src_addr.sin_port = htons(param->writer_port);
 
     memset(&dest_addr, 0, sizeof(struct sockaddr_in));

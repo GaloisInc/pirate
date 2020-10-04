@@ -137,7 +137,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 #define GAPS_CHANNEL_OPTIONS                                                                                \
     "Supported channels:\n"                                                                                 \
     "  UDP SOCKET    udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]\n"    \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
+    "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //

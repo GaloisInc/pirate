@@ -214,7 +214,7 @@ Test utility for writing deterministic GAPS packets
    UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
-   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
+   GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]
 
 
   -?, --help                 Give this help list
@@ -248,7 +248,7 @@ Test utility for reading deterministic GAPS packets
    UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
    MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
-   GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]
+   GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]
 
 
   -?, --help                 Give this help list
