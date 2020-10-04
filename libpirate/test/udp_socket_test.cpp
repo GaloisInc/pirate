@@ -156,6 +156,18 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(6, rv);
 
+    rv = pirate_write(gd_w1, "a", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "b", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "c", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
     rv = pirate_write(gd_w2, "world", 6);
     ASSERT_EQ(0, errno);
     ASSERT_EQ(6, rv);
@@ -170,6 +182,21 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     ASSERT_EQ(0, errno);
     ASSERT_EQ(6, rv);
     ASSERT_STREQ("hello", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("a", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("b", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("c", buf);
 
     pirate_close(gd_r1);
     pirate_close(gd_r2);
