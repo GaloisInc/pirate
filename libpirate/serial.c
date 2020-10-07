@@ -129,8 +129,7 @@ int pirate_serial_get_channel_description(const void *_param, char *desc, int le
     return snprintf(desc, len, "serial,%s%s%s%s", param->path, baud_str, mtu_str, max_tx_str);
 }
 
-int pirate_serial_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_serial_open(void *_param, void *_ctx) {
     pirate_serial_param_t *param = (pirate_serial_param_t *)_param;
     serial_ctx *ctx = (serial_ctx *)_ctx;
     struct termios attr;

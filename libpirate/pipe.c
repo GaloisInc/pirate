@@ -83,8 +83,7 @@ int pirate_pipe_get_channel_description(const void *_param, char *desc, int len)
     return snprintf(desc, len, "pipe,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
-int pirate_pipe_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_pipe_open(void *_param, void *_ctx) {
     pirate_pipe_param_t *param = (pirate_pipe_param_t *)_param;
     pipe_ctx *ctx = (pipe_ctx *)_ctx;
     int nonblock = ctx->flags & O_NONBLOCK;

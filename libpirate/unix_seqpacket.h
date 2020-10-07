@@ -26,7 +26,7 @@ typedef struct {
 
 int pirate_unix_seqpacket_parse_param(char *str, void *_param);
 int pirate_unix_seqpacket_get_channel_description(const void *_param, char *desc, int len);
-int pirate_unix_seqpacket_open(void *_param, void *_ctx, int *server_fdp);
+int pirate_unix_seqpacket_open(void *_param, void *_ctx);
 int pirate_unix_seqpacket_close(void *_ctx);
 ssize_t pirate_unix_seqpacket_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_unix_seqpacket_write(const void *_param, void *_ctx, const void *buf, size_t count);

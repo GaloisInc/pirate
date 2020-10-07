@@ -88,52 +88,48 @@ int pirate_unix_socket_get_channel_description(const void *_param, char *desc, i
         buffer_size_str, min_tx_str, mtu_str);
 }
 
-static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx, int *server_fdp) {
+static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
     int server_fd;
     int err, rv;
     struct sockaddr_un addr;
 
-    if ((server_fdp != NULL) && (*server_fdp > 0)) {
-        server_fd = *server_fdp;
-    } else {
-        server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (server_fd < 0) {
-            return server_fd;
-        }
+    server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        return server_fd;
+    }
 
-        memset(&addr, 0, sizeof(struct sockaddr_un));
-        addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, param->path, sizeof(addr.sun_path) - 1);
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, param->path, sizeof(addr.sun_path) - 1);
 
-        if (param->buffer_size > 0) {
-            rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
-                            sizeof(param->buffer_size));
-            if (rv < 0) {
-                err = errno;
-                close(server_fd);
-                errno = err;
-                return rv;
-            }
+    if (param->buffer_size > 0) {
+        rv = setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &param->buffer_size,
+                        sizeof(param->buffer_size));
+        if (rv < 0) {
+            err = errno;
+            close(server_fd);
+            errno = err;
+            return rv;
         }
+    }
+    err = errno;
+    unlink(param->path);
+    // ignore unlink error if file does not exist
+    errno = err;
+    rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
+    if (rv < 0) {
         err = errno;
-        unlink(param->path);
-        // ignore unlink error if file does not exist
+        close(server_fd);
         errno = err;
-        rv = bind(server_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
-        if (rv < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return rv;
-        }
+        return rv;
+    }
 
-        rv = listen(server_fd, 0);
-        if (rv < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return rv;
-        }
+    rv = listen(server_fd, 0);
+    if (rv < 0) {
+        err = errno;
+        close(server_fd);
+        errno = err;
+        return rv;
     }
 
     ctx->sock = accept(server_fd, NULL, NULL);
@@ -142,15 +138,12 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-        if (server_fdp != NULL) *server_fdp = 0;
         return ctx->sock;
     }
 
-    if (server_fdp == NULL) {
-        close(server_fd);
-    } else if (*server_fdp == 0) {
-        *server_fdp = server_fd;
-    }
+    err = errno;
+    close(server_fd);
+    errno = err;
     return 0;
 }
 
@@ -204,8 +197,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
     return -1;
 }
 
-int pirate_unix_socket_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_unix_socket_open(void *_param, void *_ctx) {
     pirate_unix_socket_param_t *param = (pirate_unix_socket_param_t *)_param;
     unix_socket_ctx *ctx = (unix_socket_ctx *)_ctx;
     int rv = -1;
@@ -218,7 +210,7 @@ int pirate_unix_socket_open(void *_param, void *_ctx, int *server_fdp) {
         return -1;
     }
     if (access == O_RDONLY) {
-        rv = unix_socket_reader_open(param, ctx, server_fdp);
+        rv = unix_socket_reader_open(param, ctx);
     } else {
         rv = unix_socket_writer_open(param, ctx);
     }

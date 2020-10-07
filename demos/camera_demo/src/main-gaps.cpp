@@ -61,13 +61,12 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
     int rv;
     success = -1;
 
-
-    remotes.mServerReadGd = pirate_open_parse("multiplex,timeout=100", O_RDONLY);
-    rv = pirate_multiplex_open_parse(remotes.mServerReadGd, options.mOutputServerChannel.c_str(), O_RDONLY, 1);
+    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_RDONLY);
     if (rv < 0) {
         perror("pirate open server write channel error");
         return;
     }
+    remotes.mServerReadGd = rv;
     rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_RDONLY);
     if (rv < 0) {
         perror("pirate open client read channel error");

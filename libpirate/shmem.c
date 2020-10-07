@@ -244,8 +244,7 @@ int shmem_buffer_get_channel_description(const void *_param, char *desc, int len
     return snprintf(desc, len, "shmem,%s%s%s", param->path, buffer_size_str, max_tx_str);
 }
 
-int shmem_buffer_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int shmem_buffer_open(void *_param, void *_ctx) {
     pirate_shmem_param_t *param = (pirate_shmem_param_t *)_param;
     shmem_ctx *ctx = (shmem_ctx *)_ctx;
     int err;
