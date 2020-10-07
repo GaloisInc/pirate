@@ -128,8 +128,10 @@ typedef enum {
 
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
-    //  - addr       - IP address, if empty then 127.0.0.1 is used
-    //  - port       - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
