@@ -240,8 +240,10 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     //     likely the writers will arrive out of order with respect to
     //     opening the reader channels. We currently solve this problem
     //     by closing the socket if it is opened out of order. The writer
-    //     must test the socket to confirm that the reader has no closed
-    //     the connection.
+    //     must test the socket to confirm that the reader has not closed
+    //     the connection. The writer must perform a blocking read()
+    //     because if it performed a write() it could write data on the socket
+    //     before the reader has closed the socket.
     //
     //     An alternative approach to this problem is to cache the sockets
     //     that are opened out of order and then provide these cached sockets
@@ -251,19 +253,19 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     //     opens all the gaps channels at once. This would require
     //     changing the libpirate API with something like pirate_setup()
     //     that accepted all of the channel configuration strings.
+    //     All gaps channels descriptors would have to be registered
+    //     before any of the gaps channels are opened.
     //
     //     (2) A subsequent writer can connect to the server socket
     //     before the reader has had a chance to close the server
     //     socket. In Linux the sockets that are waiting in the listen()
     //     queue are fully-connected sockets. When the server socket
     //     is closed then the sockets in the listen() queue are terminated.
-    //     The subsequent writer does not know that it's socket has
+    //     The subsequent writer does not know that its socket has
     //     a closed connection until the writer tests the connection.
     //
-    //     An alternative approach is to create a service that
-    //     opens all the gaps channels at once. This would require
-    //     changing the libpirate API with something like pirate_setup()
-    //     that accepted all of the channel configuration strings.
+    //     The service approach that opens all the gaps channels at once
+    //     described above would solve this problem.
     char zero = 0;
     rv = write(ctx->sock, &zero, 1);
     if (rv < 0) {
