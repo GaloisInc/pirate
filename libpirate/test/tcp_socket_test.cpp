@@ -171,4 +171,135 @@ TEST_F(TcpSocketCloseReaderTest, Run)
     Run();
 }
 
+static int gd_r1, gd_r2, gd_r3;
+static int gd_w1, gd_w2, gd_w3;
+
+static void* OutOfOrderOpenTestReader(void* param) {
+    (void) param;
+    int rv;
+    char buf[80];
+
+    gd_r1 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20000", O_RDONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_r1, 0);
+
+    gd_r2 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20001", O_RDONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_r2, 0);
+
+    gd_r3 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20002", O_RDONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_r3, 0);
+
+    rv = pirate_read(gd_r1, buf, 6);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(6, rv);
+    EXPECT_STREQ("hello", buf);
+
+    rv = pirate_read(gd_r2, buf, 6);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(6, rv);
+    EXPECT_STREQ("world", buf);
+
+    rv = pirate_read(gd_r3, buf, 7);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(7, rv);
+    EXPECT_STREQ("foobar", buf);
+
+    return NULL;
+}
+
+static void* OutOfOrderOpenTestWriter1(void* param) {
+    (void) param;
+    int rv;
+
+    gd_w1 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20000", O_WRONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_w1, 0);
+
+    rv = pirate_write(gd_w1, "hello", 6);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(rv, 6);
+
+    return NULL;
+}
+
+static void* OutOfOrderOpenTestWriter2(void* param) {
+    (void) param;
+    int rv;
+
+    gd_w2 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20001", O_WRONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_w2, 0);
+
+    rv = pirate_write(gd_w2, "world", 6);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(rv, 6);
+
+    return NULL;
+}
+
+static void* OutOfOrderOpenTestWriter3(void* param) {
+    (void) param;
+    int rv;
+
+    gd_w3 = pirate_open_parse("tcp_socket,127.0.0.1,12345,127.0.0.1,20002", O_WRONLY);
+    EXPECT_EQ(0, errno);
+    EXPECT_GE(gd_w3, 0);
+
+    rv = pirate_write(gd_w3, "foobar", 7);
+    EXPECT_EQ(0, errno);
+    EXPECT_EQ(rv, 7);
+
+    return NULL;
+}
+
+TEST(ChannelTcpSocketTest, OutOfOrderOpenTest) {
+    int rv;
+    pthread_t id1, id2, id3, id4;
+    void *status1, *status2, *status3, *status4;
+
+    rv = pthread_create(&id1, NULL, OutOfOrderOpenTestWriter1, NULL);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_create(&id2, NULL, OutOfOrderOpenTestWriter2, NULL);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_create(&id3, NULL, OutOfOrderOpenTestWriter3, NULL);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_create(&id4, NULL, OutOfOrderOpenTestReader, NULL);
+    ASSERT_EQ(0, rv);    
+
+    rv = pthread_join(id1, &status1);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_join(id2, &status2);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_join(id3, &status3);
+    ASSERT_EQ(0, rv);
+
+    rv = pthread_join(id4, &status4);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_r1);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_r2);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_r3);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_w1);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_w2);
+    ASSERT_EQ(0, rv);
+
+    rv = pirate_close(gd_w3);
+    ASSERT_EQ(0, rv);
+}
+
 } // namespace
