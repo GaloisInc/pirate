@@ -48,6 +48,7 @@ ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t cou
 ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, size_t write_mtu, const void *buf, size_t count);
 int pirate_parse_is_common_key(const char *key);
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
+int pirate_next_gd();
 
 #ifdef __cplusplus
 }

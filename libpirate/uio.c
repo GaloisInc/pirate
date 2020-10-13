@@ -175,7 +175,7 @@ int pirate_internal_uio_open(void *_param, void *_ctx) {
         } while (!init_pid);
     }
 
-    return 0;
+    return pirate_next_gd();
 error:
     err = errno;
     close(ctx->fd);

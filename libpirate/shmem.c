@@ -309,7 +309,7 @@ int shmem_buffer_open(void *_param, void *_ctx) {
         }
     }
 
-    return 0;
+    return pirate_next_gd();
 error:
     err = errno;
     ctx->buf = NULL;

@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 #define PIRATE_LEN_NAME 64
-#define PIRATE_NUM_CHANNELS 64
+#define PIRATE_NUM_CHANNELS 32
 #define PIRATE_IOV_MAX 16
 
 #define PIRATE_DEFAULT_MIN_TX 512

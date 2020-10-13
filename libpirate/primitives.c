@@ -26,17 +26,13 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#ifdef __cplusplus
-#include <atomic>
-typedef std::atomic_int pirate_atomic_int;
-#define ATOMIC_INC(PTR) std::atomic_fetch_add(PTR, 1)
-#elif HAVE_STD_ATOMIC
+#if HAVE_STD_ATOMIC
 #include <stdatomic.h>
 typedef atomic_int pirate_atomic_int;
-#define ATOMIC_INC(PTR) atomic_fetch_add(PTR, 1)
+#define ATOMIC_DEC(PTR) atomic_fetch_sub(PTR, 1)
 #else
 typedef int pirate_atomic_int;
-#define ATOMIC_INC(PTR) __atomic_fetch_add(PTR, 1, __ATOMIC_SEQ_CST)
+#define ATOMIC_DEC(PTR) __atomic_fetch_sub(PTR, 1, __ATOMIC_SEQ_CST)
 #endif
 
 #include "libpirate.h"
@@ -80,6 +76,9 @@ typedef struct {
 static pirate_channel_t gaps_channels[PIRATE_NUM_CHANNELS];
 static pirate_stats_t gaps_stats[PIRATE_NUM_CHANNELS];
 
+static pirate_channel_t gaps_nofd_channels[PIRATE_NUM_CHANNELS];
+static pirate_stats_t gaps_nofd_stats[PIRATE_NUM_CHANNELS];
+
 static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL},
     PIRATE_DEVICE_CHANNEL_FUNCS,
@@ -96,16 +95,23 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_GE_ETH_CHANNEL_FUNCS
 };
 
+#define PIRATE_NOFD_CHANNELS_LIMIT (-PIRATE_NUM_CHANNELS - 2)
+
 int pirate_close_channel(pirate_channel_t *channel);
 
 static inline pirate_channel_t *pirate_get_channel(int gd) {
     pirate_channel_t *channel;
-    if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
+
+    if ((gd == -1) || (gd >= PIRATE_NUM_CHANNELS) || (gd <= PIRATE_NOFD_CHANNELS_LIMIT)) {
         errno = EBADF;
         return NULL;
     }
 
-    channel = &gaps_channels[gd];
+    if (gd > 0) {
+        channel = &gaps_channels[gd];
+    } else {
+        channel = &gaps_nofd_channels[-gd - 2];
+    }
     if (channel->param.channel_type == INVALID) {
         errno = EBADF;
         return NULL;
@@ -247,14 +253,20 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
-const pirate_stats_t *pirate_get_stats(int gd) {
+pirate_stats_t *pirate_get_stats_internal(int gd) {
+    if (gd > 0) {
+        return &gaps_stats[gd];
+    } else {
+        return &gaps_nofd_stats[-gd - 2];
+    }
+}
 
-    if ((gd < 0) || (gd >= PIRATE_NUM_CHANNELS)) {
+const pirate_stats_t *pirate_get_stats(int gd) {
+    if ((gd == -1) || (gd >= PIRATE_NUM_CHANNELS) || (gd <= PIRATE_NOFD_CHANNELS_LIMIT)) {
         errno = EBADF;
         return NULL;
     }
-
-    return &gaps_stats[gd];
+    return pirate_get_stats_internal(gd);
 }
 
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {
@@ -283,21 +295,17 @@ int pirate_get_channel_description(int gd, char *desc, int len) {
     return pirate_unparse_channel_param(&channel->param, desc, len);
 }
 
-/*
-static pirate_atomic_int next_gd;
+static pirate_atomic_int next_gd = -2;
 
-static int pirate_next_gd() {
-    int next = ATOMIC_INC(&next_gd);
-    if (next >= PIRATE_NUM_CHANNELS) {
-        return -1;
-    }
+int pirate_next_gd() {
+    int next = ATOMIC_DEC(&next_gd);
     return next;
 }
-*/
 
 // Declared in libpirate_internal.h for testing purposes only
 void pirate_reset_stats() {
     memset(gaps_stats, 0, sizeof(gaps_stats));
+    memset(gaps_nofd_stats, 0, sizeof(gaps_nofd_stats));
 }
 
 static int pirate_open(pirate_channel_t *channel) {
@@ -345,11 +353,20 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     channel.ctx.common.flags = flags;
 
     gd = pirate_open(&channel);
+    if ((gd >= PIRATE_NUM_CHANNELS) || (gd <= PIRATE_NOFD_CHANNELS_LIMIT)) {
+        pirate_close_channel(&channel);
+        errno = EMFILE;
+        return -1;
+    }
     if (gd == -1) {
         return -1;
     }
 
-    memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
+    if (gd > 0) {
+        memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
+    } else {
+        memcpy(&gaps_nofd_channels[-gd - 2], &channel, sizeof(pirate_channel_t));
+    }
     return gd;
 }
 
@@ -422,7 +439,7 @@ ssize_t pirate_read(int gd, void *buf, size_t count) {
         return -1;
     }
 
-    pirate_stats_t *stats = &gaps_stats[gd];
+    pirate_stats_t *stats = pirate_get_stats_internal(gd);
     pirate_channel_param_t *param = &channel->param;
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
@@ -464,7 +481,7 @@ ssize_t pirate_write(int gd, const void *buf, size_t count) {
         return -1;
     }
 
-    pirate_stats_t *stats = &gaps_stats[gd];
+    pirate_stats_t *stats = pirate_get_stats_internal(gd);
     pirate_channel_param_t *param = &channel->param;
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
