@@ -206,11 +206,13 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             break;
         }
         err = errno;
+        shutdown(ctx->sock, SHUT_RDWR);
         close(ctx->sock);
         errno = err;
     }
 
     err = errno;
+    shutdown(server_fd, SHUT_RDWR);
     close(server_fd);
     errno = err;
 
@@ -258,7 +260,14 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     //     The service approach that opens all the gaps channels at once
     //     described above would solve this problem.
     char zero = 0;
-    rv = write(ctx->sock, &zero, 1);
+    rv = read(ctx->sock, &zero, 1);
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
+    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
@@ -298,13 +307,34 @@ static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct sockaddr_in *de
 
 static int tcp_socket_writer_test(tcp_socket_ctx *ctx) {
     int err, rv;
-    char zero;
+    char zero = 0;
+
+    err = errno;
+    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
+    if (rv <= 0) {
+        // ECONNRESET: either scenario (1) or (2) from above has occurred
+        if ((rv == 0) || (errno == ECONNRESET) || (errno == EPIPE)) {
+            struct timespec req;
+            close(ctx->sock);
+            errno = err;
+            req.tv_sec = 0;
+            req.tv_nsec = (rand() % 10) * 1e7;
+            rv = nanosleep(&req, NULL);
+            if (rv == 0) {
+                return 0;
+            }
+        }
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
 
     err = errno;
     rv = read(ctx->sock, &zero, 1);
-    if (rv < 0) {
+    if (rv <= 0) {
         // ECONNRESET: either scenario (1) or (2) from above has occurred
-        if (errno == ECONNRESET) {
+        if ((rv == 0) || (errno == ECONNRESET)) {
             struct timespec req;
             close(ctx->sock);
             errno = err;
