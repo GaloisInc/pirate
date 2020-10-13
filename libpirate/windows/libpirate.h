@@ -39,15 +39,19 @@ typedef enum {
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (must be 0.0.0.0)
+    //  - writer_port  - IP port on write end (must be 0)
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
-    //  - addr       - IP address, if empty then 127.0.0.1 is used
-    //  - port       - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (must be 0.0.0.0)
+    //  - writer_port  - IP port on write end (must be 0)
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
@@ -57,21 +61,23 @@ typedef enum {
 } channel_enum_t;
 
 // UDP_SOCKET parameters
-#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
 #define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
 } pirate_udp_socket_param_t;
 
 // GE_ETH parameters
-#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
@@ -131,10 +137,10 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                                   \
-    "Supported channels:\n"                                                                    \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
+#define GAPS_CHANNEL_OPTIONS                                                                                \
+    "Supported channels:\n"                                                                                 \
+    "  UDP SOCKET    udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]\n"    \
+    "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //

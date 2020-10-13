@@ -69,14 +69,14 @@ public:
         ASSERT_EQ(errno, 0);
         ASSERT_GE(Reader.gd, 0);
 
-        rv = pirate_multiplex_open_parse(Reader.gd, "udp_socket,127.0.0.1,8080", flags, 2);
+        rv = pirate_multiplex_open_parse(Reader.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 2);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 
         ASSERT_EQ(1, pirate_multiplex_count(Reader.gd));
 
         if (!nonblocking_IO) {
-            rv = pirate_multiplex_open_parse(Reader.gd, "tcp_socket,127.0.0.1,8081", flags, 2);
+            rv = pirate_multiplex_open_parse(Reader.gd, "tcp_socket,127.0.0.1,8081,0.0.0.0,0", flags, 2);
             ASSERT_EQ(errno, 0);
             ASSERT_GE(rv, 0);
             ASSERT_EQ(3, pirate_multiplex_count(Reader.gd));
@@ -100,22 +100,22 @@ public:
         ASSERT_GE(Writer.gd, 0);
 
         // simulate multiple writers with multiple calls to pirate_multiplex_open_parse()
-        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080", flags, 1);
+        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 1);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 
-        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080", flags, 1);
+        rv = pirate_multiplex_open_parse(Writer.gd, "udp_socket,127.0.0.1,8080,0.0.0.0,0", flags, 1);
         ASSERT_EQ(errno, 0);
         ASSERT_GE(rv, 0);
 
         ASSERT_EQ(2, pirate_multiplex_count(Writer.gd));
 
         if (!nonblocking_IO) {
-            rv = pirate_multiplex_open_parse(Writer.gd, "tcp_socket,127.0.0.1,8081", flags, 1);
+            rv = pirate_multiplex_open_parse(Writer.gd, "tcp_socket,127.0.0.1,8081,0.0.0.0,0", flags, 1);
             ASSERT_EQ(errno, 0);
             ASSERT_GE(rv, 0);
 
-            rv = pirate_multiplex_open_parse(Writer.gd, "tcp_socket,127.0.0.1,8081", flags, 1);
+            rv = pirate_multiplex_open_parse(Writer.gd, "tcp_socket,127.0.0.1,8081,0.0.0.0,0", flags, 1);
             ASSERT_EQ(errno, 0);
             ASSERT_GE(rv, 0);
 

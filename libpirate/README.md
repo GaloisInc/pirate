@@ -128,10 +128,11 @@ Unix domain socket communication. Path to Unix socket must be specified.
 ### TCP_SOCKET type
 
 ```
-"tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]"
+"tcp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,min_tx_size=N,mtu=N]"
 ```
 
 TCP socket communication. Host and port of the reader process must be specified.
+The writer may specify 0.0.0.0 for the address and 0 for the port.
 
 ### UDP_SOCKET type
 
@@ -140,6 +141,7 @@ TCP socket communication. Host and port of the reader process must be specified.
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.
+The writer may specify 0.0.0.0 for the address and 0 for the port.
 
 ### SHMEM type
 

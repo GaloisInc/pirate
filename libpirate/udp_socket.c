@@ -28,6 +28,12 @@ static void pirate_udp_socket_init_param(pirate_udp_socket_param_t *param) {
     if (param->mtu == 0) {
         param->mtu = PIRATE_DEFAULT_UDP_PACKET_SIZE;
     }
+    if (strnlen(param->reader_addr, 1) == 0) {
+        strncpy(param->reader_addr, "0.0.0.0", sizeof(param->reader_addr) - 1);
+    }
+    if (strnlen(param->writer_addr, 1) == 0) {
+        strncpy(param->writer_addr, "0.0.0.0", sizeof(param->writer_addr) - 1);
+    }
 }
 
 int pirate_udp_socket_parse_param(char *str, void *_param) {
@@ -44,13 +50,25 @@ int pirate_udp_socket_parse_param(char *str, void *_param) {
         errno = EINVAL;
         return -1;
     }
-    strncpy(param->addr, ptr, sizeof(param->addr) - 1);
+    strncpy(param->reader_addr, ptr, sizeof(param->reader_addr) - 1);
 
     if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
         return -1;
     }
-    param->port = strtol(ptr, NULL, 10);
+    param->reader_port = strtol(ptr, NULL, 10);
+
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    strncpy(param->writer_addr, ptr, sizeof(param->writer_addr) - 1);
+
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    param->writer_port = strtol(ptr, NULL, 10);
 
     while ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) != NULL) {
         int rv = pirate_parse_key_value(&key, &val, ptr, &saveptr2);
@@ -84,13 +102,15 @@ int pirate_udp_socket_get_channel_description(const void *_param, char *desc, in
     if (param->buffer_size != 0) {
         snprintf(buffer_size_str, 32, ",buffer_size=%u", param->buffer_size);
     }
-    return snprintf(desc, len, "udp_socket,%s,%u%s%s", param->addr, param->port,
+    return snprintf(desc, len, "udp_socket,%s,%u,%s,%u%s%s",
+        param->reader_addr, param->reader_port,
+        param->writer_addr, param->writer_port,
         buffer_size_str, mtu_str);
 }
 
 static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in addr;
+    struct sockaddr_in src_addr, dest_addr;
     int nonblock = ctx->flags & O_NONBLOCK;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
@@ -98,10 +118,15 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         return ctx->sock;
     }
 
-    memset(&addr, 0, sizeof(struct sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(param->addr);
-    addr.sin_port = htons(param->port);
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
+    src_addr.sin_family = AF_INET;
+    src_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
+    src_addr.sin_port = htons(param->reader_port);
+
+    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
+    dest_addr.sin_port = htons(param->writer_port);
 
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -126,7 +151,15 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         }
     }
 
-    rv = bind(ctx->sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        ctx->sock = -1;
+        errno = err;
+        return rv;
+    }
+    rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
@@ -140,7 +173,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 
 static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in addr;
+    struct sockaddr_in src_addr, dest_addr;
     int nonblock = ctx->flags & O_NONBLOCK;
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
@@ -161,11 +194,24 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         }
     }
 
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(param->addr);
-    addr.sin_port = htons(param->port);
-    rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
+    src_addr.sin_family = AF_INET;
+    src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
+    src_addr.sin_port = htons(param->writer_port);
+
+    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
+    dest_addr.sin_port = htons(param->reader_port);
+
+    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
+    rv = connect(ctx->sock, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
@@ -186,7 +232,11 @@ int pirate_udp_socket_open(void *_param, void *_ctx, int *server_fdp) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_udp_socket_init_param(param);
-    if (param->port <= 0) {
+    if (param->reader_port <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (param->writer_port < 0) {
         errno = EINVAL;
         return -1;
     }

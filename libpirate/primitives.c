@@ -144,7 +144,7 @@ void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param
     param->channel_type = channel_type;
 }
 
-static const char* pirate_common_keys[] = {"src", "dst", "listener", "control", "drop", NULL};
+static const char* pirate_common_keys[] = {"drop", NULL};
 
 int pirate_parse_is_common_key(const char *key) {
     for (int i = 0; pirate_common_keys[i] != NULL; i++) {
@@ -156,17 +156,26 @@ int pirate_parse_is_common_key(const char *key) {
 }
 
 static int pirate_parse_common_kv(const char *key, const char *val, pirate_channel_param_t *param) {
-
     if (strncmp("drop", key, strlen("drop")) == 0) {
         param->drop = atoi(val);
     }
     return 0;
 }
 
+#define TWO_OPT_DELIM OPT_DELIM OPT_DELIM
+
+
 static int pirate_parse_common_param(char *str, pirate_channel_param_t *param) {
     char *token, *key, *val;
     char *saveptr1, *saveptr2;
+    const char *needle = TWO_OPT_DELIM;
     int rv;
+
+    // strtok cannot handle empty tokens
+    if (strstr(str, needle) != NULL) {
+        errno = EINVAL;
+        return -1;
+    }
 
     while ((token = strtok_r(str, OPT_DELIM, &saveptr1)) != NULL) {
         str = NULL;
