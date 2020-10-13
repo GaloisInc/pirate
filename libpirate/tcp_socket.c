@@ -206,11 +206,13 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             break;
         }
         err = errno;
+        shutdown(ctx->sock, SHUT_RDWR);
         close(ctx->sock);
         errno = err;
     }
 
     err = errno;
+    shutdown(server_fd, SHUT_RDWR);
     close(server_fd);
     errno = err;
 
