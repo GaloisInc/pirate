@@ -97,7 +97,7 @@ int pirate_device_open(void *_param, void *_ctx) {
         return -1;
     }
 
-    return 0;
+    return ctx->fd;
 }
 
 int pirate_device_close(void *_ctx) {

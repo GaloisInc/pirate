@@ -41,9 +41,6 @@ typedef struct {
     int flags;
 } common_ctx;
 
-pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
-common_ctx *pirate_get_common_ctx_ref(int gd);
-
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
 
 #ifdef __cplusplus

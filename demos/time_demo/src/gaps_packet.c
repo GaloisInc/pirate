@@ -49,8 +49,8 @@ static int gaps_write_len(int gd, void *buf, ssize_t len) {
 
 int gaps_packet_poll(int gd) {
     struct pollfd fds[1];
-    int fd = pirate_get_fd(gd);
-    if (fd == -1) {
+    int fd = gd;
+    if (fd < 0) {
         // No file descriptor so skip the polling
         return 1;
     }

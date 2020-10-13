@@ -25,7 +25,6 @@ typedef struct {
     uint8_t *min_tx_buf;
  } pipe_ctx;
 
-int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx);
 int pirate_pipe_parse_param(char *str, void *_param);
 int pirate_pipe_get_channel_description(const void *_param, char *desc, int len);
 int pirate_pipe_open(void *_param, void *_ctx);

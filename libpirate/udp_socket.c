@@ -168,7 +168,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
@@ -220,7 +220,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 int pirate_udp_socket_open(void *_param, void *_ctx) {

@@ -159,7 +159,7 @@ int pirate_serial_open(void *_param, void *_ctx) {
         return -1;
     }
 
-    return 0;
+    return ctx->fd;
 }
 
 int pirate_serial_close(void *_ctx) {

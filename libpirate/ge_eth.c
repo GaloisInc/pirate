@@ -251,7 +251,7 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
         return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
@@ -290,7 +290,7 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
         return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 int pirate_ge_eth_open(void *_param, void *_ctx) {

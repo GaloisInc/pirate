@@ -28,7 +28,6 @@ extern "C" {
 #endif
 
 #define PIRATE_LEN_NAME 64
-#define PIRATE_NUM_ENCLAVES 16
 #define PIRATE_NUM_CHANNELS 64
 #define PIRATE_IOV_MAX 16
 
@@ -407,57 +406,9 @@ int pirate_open_parse(const char *param, int flags);
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
 // Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
-
-int pirate_pipe_channel_type(channel_enum_t channel_type);
-
-// Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
 int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
-
-// Opens both ends of the gaps channel specified by the
-// parameter value. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
-
-// Opens both ends of the gaps channel specified by the
-// parameter string. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_parse(int gd[2], const char *param, int flags);
-
-//
-// Returns the underlying file descriptor of the gaps
-// channel if the gaps channel is implemented using
-// a file descriptor.
-//
-// On success, the file descriptor is returned.
-// On error -1 is returned, and errno is set appropriately.
-// errno is ENODEV if the gaps channel is not implemented
-// using a file descriptor.
-
-int pirate_get_fd(int gd);
 
 // Returns a reference to the read and write statistics
 // associated with the gaps descriptor.

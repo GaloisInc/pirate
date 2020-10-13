@@ -148,7 +148,7 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
     err = errno;
     close(server_fd);
     errno = err;
-    return 0;
+    return ctx->sock;
 }
 
 static int unix_seqpacket_writer_open(pirate_unix_seqpacket_param_t *param, unix_seqpacket_ctx *ctx) {
@@ -196,7 +196,7 @@ static int unix_seqpacket_writer_open(pirate_unix_seqpacket_param_t *param, unix
             return -1;
         }
 
-        return 0;
+        return ctx->sock;
     }
 
     return -1;

@@ -266,7 +266,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct sockaddr_in *dest_addr) {
@@ -377,7 +377,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         } else if (rv == 0) {
             continue;
         }
-        return 0;
+        return ctx->sock;
     }
 
     return -1;

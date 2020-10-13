@@ -133,35 +133,7 @@ int pirate_pipe_open(void *_param, void *_ctx) {
         return -1;
     }
 
-    return 0;
-}
-
-int pirate_pipe_pipe(pirate_pipe_param_t *param, pipe_ctx *read_ctx, pipe_ctx *write_ctx) {
-    int rv, fd[2];
-    int nonblock = read_ctx->flags & O_NONBLOCK;
-
-    pirate_pipe_init_param(param);
-    rv = pipe2(fd, nonblock);
-    if (rv < 0) {
-        return rv;
-    }
-
-    if (nonblock) {
-        // ensure that one read() or write() consumes the entire datagram
-        param->min_tx = param->mtu;
-    }
-
-    if ((read_ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
-        return -1;
-    }
-    if ((write_ctx->min_tx_buf = calloc(param->min_tx, 1)) == NULL) {
-        free(read_ctx->min_tx_buf);
-        return -1;
-    }
-
-    read_ctx->fd = fd[0];
-    write_ctx->fd = fd[1];
-    return 0;
+    return ctx->fd;
 }
 
 int pirate_pipe_close(void *_ctx) {
