@@ -99,11 +99,7 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
 
     server_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     if (server_fd < 0) {
-<<<<<<< HEAD
         return -1;
-=======
-        return server_fd;
->>>>>>> master
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -129,11 +125,7 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     rv = listen(server_fd, 0);
@@ -141,11 +133,7 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     ctx->sock = accept4(server_fd, NULL, NULL, nonblock);
@@ -154,21 +142,13 @@ static int unix_seqpacket_reader_open(pirate_unix_seqpacket_param_t *param, unix
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return ctx->sock;
->>>>>>> master
     }
 
     err = errno;
     close(server_fd);
     errno = err;
-<<<<<<< HEAD
     return ctx->sock;
-=======
-    return 0;
->>>>>>> master
 }
 
 static int unix_seqpacket_writer_open(pirate_unix_seqpacket_param_t *param, unix_seqpacket_ctx *ctx) {

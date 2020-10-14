@@ -138,11 +138,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
-<<<<<<< HEAD
         return -1;
-=======
-        return server_fd;
->>>>>>> master
     }
 
     int enable = 1;
@@ -151,11 +147,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     rv = setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
@@ -163,11 +155,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     if (param->buffer_size > 0) {
@@ -186,11 +174,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     rv = listen(server_fd, 0);
@@ -198,11 +182,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     for (;;) {
@@ -213,11 +193,7 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             err = errno;
             close(server_fd);
             errno = err;
-<<<<<<< HEAD
             return -1;
-=======
-            return ctx->sock;
->>>>>>> master
         }
 
         if ((dest_addr.sin_addr.s_addr != 0) && (dest_addr.sin_addr.s_addr != client_addr.sin_addr.s_addr)) {
@@ -285,16 +261,6 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     //     described above would solve this problem.
     char zero = 0;
     rv = read(ctx->sock, &zero, 1);
-<<<<<<< HEAD
-=======
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        errno = err;
-        return rv;
-    }
-    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
->>>>>>> master
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
@@ -342,42 +308,12 @@ static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct sockaddr_in *de
 static int tcp_socket_writer_test(tcp_socket_ctx *ctx) {
     int err, rv;
     char zero = 0;
-<<<<<<< HEAD
 
     err = errno;
     rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
     if (rv <= 0) {
         // ECONNRESET: either scenario (1) or (2) from above has occurred
         if ((rv == 0) || (errno == ECONNRESET) || (errno == EPIPE)) {
-=======
-
-    err = errno;
-    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
-    if (rv <= 0) {
-        // ECONNRESET: either scenario (1) or (2) from above has occurred
-        if ((rv == 0) || (errno == ECONNRESET) || (errno == EPIPE)) {
-            struct timespec req;
-            close(ctx->sock);
-            errno = err;
-            req.tv_sec = 0;
-            req.tv_nsec = (rand() % 10) * 1e7;
-            rv = nanosleep(&req, NULL);
-            if (rv == 0) {
-                return 0;
-            }
-        }
-        err = errno;
-        close(ctx->sock);
-        errno = err;
-        return rv;
-    }
-
-    err = errno;
-    rv = read(ctx->sock, &zero, 1);
-    if (rv <= 0) {
-        // ECONNRESET: either scenario (1) or (2) from above has occurred
-        if ((rv == 0) || (errno == ECONNRESET)) {
->>>>>>> master
             struct timespec req;
             close(ctx->sock);
             errno = err;

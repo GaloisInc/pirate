@@ -406,7 +406,6 @@ int pirate_open_parse(const char *param, int flags);
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 //
-<<<<<<< HEAD
 // The return value is -1 if an error occurred (in which case,
 // errno is set appropriately). Otherwise the return value represents
 // a successful open.
@@ -417,18 +416,6 @@ int pirate_open_parse(const char *param, int flags);
 // the gaps descriptor is not a file descriptor.
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
-=======
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
-
-int pirate_open_param(pirate_channel_param_t *param, int flags);
-
-// Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
-
-int pirate_pipe_channel_type(channel_enum_t channel_type);
->>>>>>> master
 
 // Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.

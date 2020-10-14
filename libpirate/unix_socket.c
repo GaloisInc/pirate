@@ -95,11 +95,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
 
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd < 0) {
-<<<<<<< HEAD
         return -1;
-=======
-        return server_fd;
->>>>>>> master
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -125,11 +121,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     rv = listen(server_fd, 0);
@@ -137,11 +129,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return rv;
->>>>>>> master
     }
 
     ctx->sock = accept(server_fd, NULL, NULL);
@@ -150,21 +138,13 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-<<<<<<< HEAD
         return -1;
-=======
-        return ctx->sock;
->>>>>>> master
     }
 
     err = errno;
     close(server_fd);
     errno = err;
-<<<<<<< HEAD
     return ctx->sock;
-=======
-    return 0;
->>>>>>> master
 }
 
 static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
