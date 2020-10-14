@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <vector>
+#include <poll.h>
 
 #include "libpirate.h"
 
@@ -70,18 +71,24 @@ void RemoteOrientationOutput::term() {
 
 int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request) {
     int rv;
-
+    struct pollfd fds[1];
     std::vector<char> readBuf(sizeof(struct OrientationOutputRequest_wire));
+
+    fds[0].fd = mServerReadGd;
+    fds[0].events = POLLIN;
+    rv = poll(fds, 1, 100);
+    if (rv == 0) {
+        return 0;
+    } else if (rv < 0) {
+        std::perror("remote orientation output receive request poll error");
+        return -1;
+    }
     rv = pirate_read(mServerReadGd, readBuf.data(), sizeof(struct OrientationOutputRequest_wire));
     if (rv < 0) {
-        if (errno == EAGAIN) {
-            errno = 0;
-            return 0;
-        }
         std::perror("remote orientation output receive request read error");
         return -1;
     } else if (rv == 0) {
-        return rv;
+        return 0;
     }
     if (rv != sizeof(struct OrientationOutputRequest_wire)) {
         std::cout << "orientation output request " << ((int) request.reqType)
