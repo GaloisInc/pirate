@@ -388,8 +388,14 @@ int pirate_get_channel_description(int gd, char *str, int len);
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 //
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// The return value is -1 if an error occurred (in which case,
+// errno is set appropriately). Otherwise the return value represents
+// a successful open.
+//
+// If the return value is a nonnegative integer then the gaps
+// descriptor is also a valid unix file descriptor.
+// If the return value is a negative integer less than -1 then
+// the gaps descriptor is not a file descriptor.
 
 int pirate_open_parse(const char *param, int flags);
 
@@ -400,8 +406,14 @@ int pirate_open_parse(const char *param, int flags);
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 //
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// The return value is -1 if an error occurred (in which case,
+// errno is set appropriately). Otherwise the return value represents
+// a successful open.
+//
+// If the return value is a nonnegative integer then the gaps
+// descriptor is also a valid unix file descriptor.
+// If the return value is a negative integer less than -1 then
+// the gaps descriptor is not a file descriptor.
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 

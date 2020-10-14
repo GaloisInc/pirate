@@ -106,7 +106,7 @@ TEST(CommonChannel, UnparseChannelParam)
 
 TEST(CommonChannel, Stats)
 {
-    int rv, gd[2];
+    int rv, read_gd, write_gd;
     char temp[80];
     const pirate_stats_t *stats_r, *stats_w;
     ssize_t nbytes;
@@ -114,20 +114,24 @@ TEST(CommonChannel, Stats)
 
     pirate_reset_stats();
 
-    rv = pirate_pipe_parse(gd, "pipe,/tmp/pipe_gaps_stats", O_RDWR);
+    read_gd = pirate_open_parse("udp_socket,127.0.0.1,26260,0.0.0.0,0", O_RDONLY);
     ASSERT_EQ(errno, 0);
-    ASSERT_EQ(rv, 0);
+    ASSERT_NE(read_gd, -1);
 
-    nbytes = pirate_write(gd[1], "hello world", 12);
+    write_gd = pirate_open_parse("udp_socket,127.0.0.1,26260,0.0.0.0,0", O_WRONLY);
+    ASSERT_EQ(errno, 0);
+    ASSERT_NE(write_gd, -1);
+
+    nbytes = pirate_write(write_gd, "hello world", 12);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(nbytes, 12);
 
-    nbytes = pirate_read(gd[0], temp, sizeof(temp));
+    nbytes = pirate_read(read_gd, temp, sizeof(temp));
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(nbytes, 12);
 
-    stats_r = pirate_get_stats(gd[0]);
-    stats_w = pirate_get_stats(gd[1]);
+    stats_r = pirate_get_stats(read_gd);
+    stats_w = pirate_get_stats(write_gd);
     ASSERT_TRUE(stats_r != NULL);
     ASSERT_TRUE(stats_w != NULL);
 
@@ -143,19 +147,18 @@ TEST(CommonChannel, Stats)
     ASSERT_EQ(0u, stats_w->fuzzed);
     ASSERT_EQ(0u, stats_w->errs);
 
-    rv = pirate_close(gd[0]);
+    rv = pirate_close(read_gd);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
-    rv = pirate_close(gd[1]);
+    rv = pirate_close(write_gd);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
-
 }
 
 TEST(CommonChannel, Drop)
 {
-    int rv, gd[2];
+    int rv, read_gd, write_gd;
     char temp[80];
     const pirate_stats_t *stats_r, *stats_w;
     ssize_t nbytes;
@@ -163,25 +166,29 @@ TEST(CommonChannel, Drop)
 
     pirate_reset_stats();
 
-    rv = pirate_pipe_parse(gd, "pipe,/tmp/pipe_gaps_stats,drop=2", O_RDWR);
+    read_gd = pirate_open_parse("udp_socket,127.0.0.1,26260,0.0.0.0,0,drop=2", O_RDONLY);
     ASSERT_EQ(errno, 0);
-    ASSERT_EQ(rv, 0);
+    ASSERT_NE(read_gd, -1);
 
-    nbytes = pirate_write(gd[1], "hello", 6);
+    write_gd = pirate_open_parse("udp_socket,127.0.0.1,26260,0.0.0.0,0,drop=2", O_WRONLY);
+    ASSERT_EQ(errno, 0);
+    ASSERT_NE(write_gd, -1);
+
+    nbytes = pirate_write(write_gd, "hello", 6);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(nbytes, 6);
 
-    nbytes = pirate_write(gd[1], "world", 6);
+    nbytes = pirate_write(write_gd, "world", 6);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(nbytes, 6);
 
-    nbytes = pirate_read(gd[0], temp, sizeof(temp));
+    nbytes = pirate_read(read_gd, temp, sizeof(temp));
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(nbytes, 6);
     ASSERT_STREQ("world", temp);
 
-    stats_r = pirate_get_stats(gd[0]);
-    stats_w = pirate_get_stats(gd[1]);
+    stats_r = pirate_get_stats(read_gd);
+    stats_w = pirate_get_stats(write_gd);
     ASSERT_TRUE(stats_r != NULL);
     ASSERT_TRUE(stats_w != NULL);
 
@@ -197,11 +204,11 @@ TEST(CommonChannel, Drop)
     ASSERT_EQ(1u, stats_w->fuzzed);
     ASSERT_EQ(0u, stats_w->errs);
 
-    rv = pirate_close(gd[0]);
+    rv = pirate_close(read_gd);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
-    rv = pirate_close(gd[1]);
+    rv = pirate_close(write_gd);
     ASSERT_EQ(errno, 0);
     ASSERT_EQ(rv, 0);
 
