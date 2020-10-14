@@ -117,7 +117,7 @@ int pirate_tcp_socket_get_channel_description(const void *_param, char *desc, in
         buffer_size_str, min_tx_str, mtu_str);
 }
 
-static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx, int *server_fdp) {
+static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int err, rv;
     int server_fd;
     struct sockaddr_in src_addr, dest_addr, client_addr;
@@ -136,57 +136,53 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     lo.l_onoff = 1;
     lo.l_linger = 0;
 
-    if ((server_fdp != NULL) && (*server_fdp > 0)) {
-        server_fd = *server_fdp;
-    } else {
-        server_fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_fd < 0) {
-            return server_fd;
-        }
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        return server_fd;
+    }
 
-        int enable = 1;
-        rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    int enable = 1;
+    rv = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    if (rv < 0) {
+        err = errno;
+        close(server_fd);
+        errno = err;
+        return rv;
+    }
+
+    rv = setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
+    if (rv < 0) {
+        err = errno;
+        close(server_fd);
+        errno = err;
+        return rv;
+    }
+
+    if (param->buffer_size > 0) {
+        rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &param->buffer_size,
+                    sizeof(param->buffer_size));
         if (rv < 0) {
             err = errno;
             close(server_fd);
             errno = err;
             return rv;
         }
+    }
 
-        rv = setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
-        if (rv < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return rv;
-        }
+    rv = bind(server_fd, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    if (rv < 0) {
+        err = errno;
+        close(server_fd);
+        errno = err;
+        return rv;
+    }
 
-        if (param->buffer_size > 0) {
-            rv = setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &param->buffer_size,
-                        sizeof(param->buffer_size));
-            if (rv < 0) {
-                err = errno;
-                close(server_fd);
-                errno = err;
-                return rv;
-            }
-        }
-
-        rv = bind(server_fd, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
-        if (rv < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return rv;
-        }
-
-        rv = listen(server_fd, 0);
-        if (rv < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return rv;
-        }
+    rv = listen(server_fd, 0);
+    if (rv < 0) {
+        err = errno;
+        close(server_fd);
+        errno = err;
+        return rv;
     }
 
     for (;;) {
@@ -197,7 +193,6 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             err = errno;
             close(server_fd);
             errno = err;
-            if (server_fdp != NULL) *server_fdp = 0;
             return ctx->sock;
         }
 
@@ -211,17 +206,15 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             break;
         }
         err = errno;
+        shutdown(ctx->sock, SHUT_RDWR);
         close(ctx->sock);
         errno = err;
     }
 
-    if (server_fdp == NULL) {
-        err = errno;
-        close(server_fd);
-        errno = err;
-    } else if (*server_fdp == 0) {
-        *server_fdp = server_fd;
-    }
+    err = errno;
+    shutdown(server_fd, SHUT_RDWR);
+    close(server_fd);
+    errno = err;
 
     // Test the gaps channel. This test performs a write operation
     // in the wrong direction of the gaps channel. This is acceptable
@@ -267,7 +260,14 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     //     The service approach that opens all the gaps channels at once
     //     described above would solve this problem.
     char zero = 0;
-    rv = write(ctx->sock, &zero, 1);
+    rv = read(ctx->sock, &zero, 1);
+    if (rv < 0) {
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
+    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
@@ -307,13 +307,34 @@ static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct sockaddr_in *de
 
 static int tcp_socket_writer_test(tcp_socket_ctx *ctx) {
     int err, rv;
-    char zero;
+    char zero = 0;
+
+    err = errno;
+    rv = send(ctx->sock, &zero, 1, MSG_NOSIGNAL);
+    if (rv <= 0) {
+        // ECONNRESET: either scenario (1) or (2) from above has occurred
+        if ((rv == 0) || (errno == ECONNRESET) || (errno == EPIPE)) {
+            struct timespec req;
+            close(ctx->sock);
+            errno = err;
+            req.tv_sec = 0;
+            req.tv_nsec = (rand() % 10) * 1e7;
+            rv = nanosleep(&req, NULL);
+            if (rv == 0) {
+                return 0;
+            }
+        }
+        err = errno;
+        close(ctx->sock);
+        errno = err;
+        return rv;
+    }
 
     err = errno;
     rv = read(ctx->sock, &zero, 1);
-    if (rv < 0) {
+    if (rv <= 0) {
         // ECONNRESET: either scenario (1) or (2) from above has occurred
-        if (errno == ECONNRESET) {
+        if ((rv == 0) || (errno == ECONNRESET)) {
             struct timespec req;
             close(ctx->sock);
             errno = err;
@@ -392,7 +413,7 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     return -1;
 }
 
-int pirate_tcp_socket_open(void *_param, void *_ctx, int *server_fdp) {
+int pirate_tcp_socket_open(void *_param, void *_ctx) {
     pirate_tcp_socket_param_t *param = (pirate_tcp_socket_param_t *)_param;
     tcp_socket_ctx *ctx = (tcp_socket_ctx *)_ctx;
     int rv = -1;
@@ -408,7 +429,7 @@ int pirate_tcp_socket_open(void *_param, void *_ctx, int *server_fdp) {
         return -1;
     }
     if (access == O_RDONLY) {
-        rv = tcp_socket_reader_open(param, ctx, server_fdp);
+        rv = tcp_socket_reader_open(param, ctx);
     } else {
         rv = tcp_socket_writer_open(param, ctx);
     }

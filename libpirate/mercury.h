@@ -27,7 +27,7 @@ typedef struct {
 
 int pirate_mercury_parse_param(char *str, void *_param);
 int pirate_mercury_get_channel_description(const void *_param, char *desc, int len);
-int pirate_mercury_open(void *_param, void *_ctx, int *server_fdp);
+int pirate_mercury_open(void *_param, void *_ctx);
 int pirate_mercury_close(void *_ctx);
 ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, size_t count);

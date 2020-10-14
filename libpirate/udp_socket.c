@@ -223,8 +223,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
     return 0;
 }
 
-int pirate_udp_socket_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_udp_socket_open(void *_param, void *_ctx) {
     pirate_udp_socket_param_t *param = (pirate_udp_socket_param_t *)_param;
     udp_socket_ctx *ctx = (udp_socket_ctx *)_ctx;
 

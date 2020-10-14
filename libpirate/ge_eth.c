@@ -293,8 +293,7 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     return 0;
 }
 
-int pirate_ge_eth_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_ge_eth_open(void *_param, void *_ctx) {
     pirate_ge_eth_param_t *param = (pirate_ge_eth_param_t *)_param;
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     int rv = -1;

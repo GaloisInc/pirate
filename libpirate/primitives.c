@@ -53,7 +53,6 @@ typedef int pirate_atomic_int;
 #include "serial.h"
 #include "mercury.h"
 #include "ge_eth.h"
-#include "multiplex.h"
 #include "pirate_common.h"
 #include "channel_funcs.h"
 
@@ -71,7 +70,6 @@ typedef union {
     serial_ctx         serial;
     mercury_ctx        mercury;
     ge_eth_ctx         ge_eth;
-    multiplex_ctx      multiplex;
 } pirate_channel_ctx_t;
 
 typedef struct {
@@ -95,8 +93,7 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_UIO_CHANNEL_FUNCS,
     PIRATE_SERIAL_CHANNEL_FUNCS,
     PIRATE_MERCURY_CHANNEL_FUNCS,
-    PIRATE_GE_ETH_CHANNEL_FUNCS,
-    PIRATE_MULTIPLEX_CHANNEL_FUNCS
+    PIRATE_GE_ETH_CHANNEL_FUNCS
 };
 
 int pirate_close_channel(pirate_channel_t *channel);
@@ -239,8 +236,6 @@ int pirate_parse_channel_param(const char *str, pirate_channel_param_t *param) {
         param->channel_type = MERCURY;
     } else if (strncmp("ge_eth", opt, strlen("ge_eth")) == 0) {
         param->channel_type = GE_ETH;
-    } else if (strncmp("multiplex", opt, strlen("multiplex")) == 0) {
-        param->channel_type = MULTIPLEX;
     }
 
     if (pirate_channel_type_valid(param->channel_type) != 0) {
@@ -343,7 +338,7 @@ void pirate_reset_stats() {
     memset(gaps_stats, 0, sizeof(gaps_stats));
 }
 
-static int pirate_open(pirate_channel_t *channel, int *server_fdp) {
+static int pirate_open(pirate_channel_t *channel) {
     pirate_channel_param_t *param = &channel->param;
     pirate_channel_ctx_t *ctx = &channel->ctx;
     int access = channel->ctx.common.flags & O_ACCMODE;
@@ -376,10 +371,11 @@ static int pirate_open(pirate_channel_t *channel, int *server_fdp) {
         return -1;
     }
 
-    return open_func(&param->channel, ctx, server_fdp);
+    return open_func(&param->channel, ctx);
 }
 
-static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, int *server_fdp) {
+// gaps descriptors must be opened from smallest to largest
+int pirate_open_param(pirate_channel_param_t *param, int flags) {
     pirate_channel_t channel;
 
     if (next_gd >= PIRATE_NUM_CHANNELS) {
@@ -390,7 +386,7 @@ static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, in
     memcpy(&channel.param, param, sizeof(pirate_channel_param_t));
     channel.ctx.common.flags = flags;
 
-    if (pirate_open(&channel, server_fdp) < 0) {
+    if (pirate_open(&channel) < 0) {
         return -1;
     }
 
@@ -403,11 +399,6 @@ static int pirate_open_param_helper(pirate_channel_param_t *param, int flags, in
 
     memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
     return gd;
-}
-
-// gaps descriptors must be opened from smallest to largest
-int pirate_open_param(pirate_channel_param_t *param, int flags) {
-    return pirate_open_param_helper(param, flags, NULL);
 }
 
 int pirate_open_parse(const char *param, int flags) {
@@ -434,7 +425,6 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     case UDP_SOCKET:
     case GE_ETH:
     case UNIX_SEQPACKET:
-    case MULTIPLEX:
         return 1;
     case PIPE:
         return ((mtu > 0) && (mtu <= (PIPE_BUF - sizeof(pirate_header_t))));
@@ -546,124 +536,6 @@ int pirate_get_fd(int gd) {
         errno = ENODEV;
         return -1;
     }
-}
-
-multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type) {
-    switch (channel_type) {
-        case DEVICE:
-        case PIPE:
-        case SHMEM:
-        case UDP_SHMEM:
-        case UIO_DEVICE:
-        case SERIAL:
-        case MERCURY:
-            return MULTIPLEX_EXACTLY_ONE;
-        case UNIX_SOCKET:
-        case UNIX_SEQPACKET:
-        case TCP_SOCKET:
-            return MULTIPLEX_ONE_OR_MORE;
-        case UDP_SOCKET:
-        case GE_ETH:
-            return MULTIPLEX_MANY;
-        case INVALID:
-        case MULTIPLEX:
-        default:
-            return MULTIPLEX_INVALID;
-    }
-}
-
-int pirate_multiplex_count(int multiplex_gd) {
-    pirate_channel_t *multiplex_channel;
-
-    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
-        return -1;
-    }
-
-    if (multiplex_channel->param.channel_type != MULTIPLEX) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    return multiplex_channel->ctx.multiplex.count;
-}
-
-int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count) {
-    pirate_channel_t *multiplex_channel;
-    int access = flags & O_ACCMODE;
-    int server_fd = 0;
-    multiplex_enum_t multiplex_type;
-
-    if (count == 0) {
-        errno = EINVAL;
-        return -1;
-    } else if ((access == O_WRONLY) && (count > 1)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if ((multiplex_channel = pirate_get_channel(multiplex_gd)) == NULL) {
-        return -1;
-    }
-
-    if (multiplex_channel->param.channel_type != MULTIPLEX) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (multiplex_channel->ctx.common.flags != flags) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    multiplex_type = pirate_multiplex_channel_type(param->channel_type);
-
-    if (multiplex_type == MULTIPLEX_INVALID) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if ((multiplex_type == MULTIPLEX_EXACTLY_ONE) && (count > 1)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (multiplex_type == MULTIPLEX_MANY) {
-        count = 1;
-    }
-
-    if ((next_gd + count) > PIRATE_NUM_CHANNELS) {
-        errno = EMFILE;
-        return -1;
-    }
-
-    for (size_t i = 0; i < count ; i++) {
-        int gd = pirate_open_param_helper(param, flags, &server_fd);
-        if (gd < 0) {
-            return gd;
-        }
-        int rv = pirate_multiplex_add(&multiplex_channel->ctx, gd);
-        if (rv < 0) {
-            return rv;
-        }
-    }
-
-    if (server_fd != 0) {
-        int err = errno;
-        close(server_fd);
-        errno = err;
-    }
-
-    return 0;
-}
-
-int pirate_multiplex_open_parse(int multiplex_gd, const char *param, int flags, size_t count) {
-   pirate_channel_param_t vals;
-
-    if (pirate_parse_channel_param(param, &vals) < 0) {
-        return -1;
-    }
-
-    return pirate_multiplex_open_param(multiplex_gd, &vals, flags, count);
 }
 
 int pirate_close(int gd) {
