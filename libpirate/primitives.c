@@ -79,6 +79,8 @@ static pirate_stats_t gaps_stats[PIRATE_NUM_CHANNELS];
 static pirate_channel_t gaps_nofd_channels[PIRATE_NUM_CHANNELS];
 static pirate_stats_t gaps_nofd_stats[PIRATE_NUM_CHANNELS];
 
+#define PIRATE_NOFD_CHANNELS_LIMIT (-PIRATE_NUM_CHANNELS - 2)
+
 static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL},
     PIRATE_DEVICE_CHANNEL_FUNCS,
@@ -95,8 +97,6 @@ static const pirate_channel_funcs_t gaps_channel_funcs[PIRATE_CHANNEL_TYPE_COUNT
     PIRATE_GE_ETH_CHANNEL_FUNCS
 };
 
-#define PIRATE_NOFD_CHANNELS_LIMIT (-PIRATE_NUM_CHANNELS - 2)
-
 int pirate_close_channel(pirate_channel_t *channel);
 
 static inline pirate_channel_t *pirate_get_channel(int gd) {
@@ -107,7 +107,7 @@ static inline pirate_channel_t *pirate_get_channel(int gd) {
         return NULL;
     }
 
-    if (gd > 0) {
+    if (gd >= 0) {
         channel = &gaps_channels[gd];
     } else {
         channel = &gaps_nofd_channels[-gd - 2];
@@ -254,7 +254,7 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
 }
 
 pirate_stats_t *pirate_get_stats_internal(int gd) {
-    if (gd > 0) {
+    if (gd >= 0) {
         return &gaps_stats[gd];
     } else {
         return &gaps_nofd_stats[-gd - 2];
@@ -362,7 +362,7 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
         return -1;
     }
 
-    if (gd > 0) {
+    if (gd >= 0) {
         memcpy(&gaps_channels[gd], &channel, sizeof(pirate_channel_t));
     } else {
         memcpy(&gaps_nofd_channels[-gd - 2], &channel, sizeof(pirate_channel_t));
