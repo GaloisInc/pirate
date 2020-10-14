@@ -352,8 +352,17 @@ int pirate_open_param(pirate_channel_param_t *param, int flags) {
     memcpy(&channel.param, param, sizeof(pirate_channel_param_t));
     channel.ctx.common.flags = flags;
 
+<<<<<<< HEAD
     gd = pirate_open(&channel);
     if ((gd >= PIRATE_NUM_CHANNELS) || (gd <= PIRATE_NOFD_CHANNELS_LIMIT)) {
+=======
+    if (pirate_open(&channel) < 0) {
+        return -1;
+    }
+
+    int gd = pirate_next_gd();
+    if (gd < 0) {
+>>>>>>> master
         pirate_close_channel(&channel);
         errno = EMFILE;
         return -1;
@@ -393,6 +402,114 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     }
 }
 
+<<<<<<< HEAD
+=======
+int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
+    pirate_channel_t read_channel, write_channel;
+    int rv, read_gd, write_gd;
+    ssize_t mtu;
+    int access = flags & O_ACCMODE;
+    int behavior = flags & ~O_ACCMODE;
+    int nonblock = flags & O_NONBLOCK;
+
+    if (!pirate_pipe_channel_type(param->channel_type)) {
+        errno = ENOSYS;
+        return -1;
+    }
+
+    if (next_gd >= (PIRATE_NUM_CHANNELS - 1)) {
+        errno = EMFILE;
+        return -1;
+    }
+
+    mtu = pirate_write_mtu_estimate(param);
+    if (mtu < 0) {
+        return -1;
+    }
+
+    if (access != O_RDWR) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (nonblock && !pirate_nonblock_channel_type(param->channel_type, (size_t) mtu)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    read_channel.ctx.common.flags = behavior | O_RDONLY;
+    write_channel.ctx.common.flags = behavior | O_WRONLY;
+
+    switch (param->channel_type) {
+    case PIPE:
+        rv = pirate_pipe_pipe(&param->channel.pipe,
+            &read_channel.ctx.pipe,
+            &write_channel.ctx.pipe);
+        break;
+    default:
+        errno = ENOSYS;
+        rv = -1;
+    }
+
+    memcpy(&read_channel.param, param, sizeof(pirate_channel_param_t));
+    memcpy(&write_channel.param, param, sizeof(pirate_channel_param_t));
+
+    if (rv < 0) {
+        return rv;
+    }
+
+    read_gd = pirate_next_gd();
+    write_gd = pirate_next_gd();
+    if ((read_gd < 0) || (write_gd < 0)) {
+        pirate_close_channel(&read_channel);
+        pirate_close_channel(&write_channel);
+        errno = EMFILE;
+        return -1;
+    }
+
+    memcpy(&gaps_channels[read_gd], &read_channel, sizeof(pirate_channel_t));
+    memcpy(&gaps_channels[write_gd], &write_channel, sizeof(pirate_channel_t));
+
+    gd[0] = read_gd;
+    gd[1] = write_gd;
+    return 0;
+}
+
+int pirate_pipe_parse(int gd[2], const char *param, int flags) {
+    pirate_channel_param_t vals;
+
+    if (pirate_parse_channel_param(param, &vals) < 0) {
+        return -1;
+    }
+
+    return pirate_pipe_param(gd, &vals, flags);
+}
+
+int pirate_get_fd(int gd) {
+    pirate_channel_t *channel;
+
+    if ((channel = pirate_get_channel(gd)) == NULL) {
+        return -1;
+    }
+
+    switch (channel->param.channel_type) {
+    case DEVICE:
+    case PIPE:
+    case UNIX_SOCKET:
+    case UNIX_SEQPACKET:
+    case TCP_SOCKET:
+    case UDP_SOCKET:
+    case SERIAL:
+    case MERCURY:
+    case GE_ETH:
+        return channel->ctx.common.fd;
+    default:
+        errno = ENODEV;
+        return -1;
+    }
+}
+
+>>>>>>> master
 int pirate_close(int gd) {
     pirate_channel_t *channel;
 
