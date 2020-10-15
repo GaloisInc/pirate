@@ -1,5 +1,6 @@
 {
 	"name": "linker-errors",
+	"publisher": "pirateteam",
 	"displayName": "linker-errors",
 	"description": "Show Pirate linker errors in the IDE",
 	"version": "0.0.1",
