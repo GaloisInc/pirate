@@ -48,7 +48,7 @@ static int waitInterrupt(void* arg) {
     pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 
     fd = signalfd(-1, &set, 0);
-    read(fd, &unused, sizeof(unused));
+    (void)read(fd, &unused, sizeof(unused));
 
     interrupted = true;
     return 0;
