@@ -4,6 +4,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 11)
 
+add_subdirectory(ticpp-master)
+
 if(NOT DEFINED ANTLR4_MODULE_PATH)
     message(FATAL_ERROR "ANTLR4_MODULE_PATH must be defined (eg. /usr/local/lib/cmake/antlr4)")
 endif(NOT DEFINED ANTLR4_MODULE_PATH)
@@ -32,11 +34,12 @@ SET(CDR_SOURCES
     "ModuleDecl.cpp"
     "Annotations.cpp"
     "indent_facet.cpp"
+    "DFDLGenerator.cpp"
 )
 
 add_executable(CDRGenerator CDRGeneratorMain.cpp ${CDR_SOURCES} ${ANTLR4_SRC_FILES_IDL})
 target_compile_options(CDRGenerator PRIVATE ${IDL_CXX_FLAGS})
-target_link_libraries(CDRGenerator antlr4-runtime)
+target_link_libraries(CDRGenerator antlr4-runtime ticpp)
 
 if(PIRATE_UNIT_TEST)
     find_package(GTest REQUIRED)
