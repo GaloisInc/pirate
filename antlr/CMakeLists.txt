@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH ${ANTLR4_MODULE_PATH})
 set(IDL_CXX_FLAGS -Werror -Wall -Wextra -Wpedantic -Wno-attributes -Wno-unused-parameter)
 
 include(antlr4-runtime-config)
-include_directories(${ANTLR4_INCLUDE_DIR})
+include_directories(${ANTLR4_INCLUDE_DIR} ticpp-master)
 link_directories(${ANTLR4_LIB_DIR})
 
 include(antlr4-generator-config)
@@ -48,7 +48,7 @@ if(PIRATE_UNIT_TEST)
     file(GLOB IDL_TEST_SRC test/*.cpp)
     add_executable(idl_test ${IDL_TEST_SRC} ${CDR_SOURCES} ${ANTLR4_SRC_FILES_IDL})
     target_compile_options(idl_test PRIVATE ${IDL_CXX_FLAGS})
-    target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread)
+    target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread ticpp)
 
     file(GLOB IDL_REGRESSION_TEST_SRC test/output/c/*.c)
     add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})

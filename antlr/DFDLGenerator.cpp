@@ -147,6 +147,7 @@ type_size(TypeSpec* type)
             }
             return acc;
         }
+        default: not_implemented("type_size of unspecified type");
     }
 }
 
@@ -193,6 +194,7 @@ type_alignment(TypeSpec* type)
                 return type_alignment(s->members[0]->typeSpec);
             }
         }
+        default: not_implemented("type_alignment of unspecified type");
     }
 }
 
