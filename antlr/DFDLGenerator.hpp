@@ -10,19 +10,17 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2020 Galois, All rights reserved.
  */
 
 #pragma once
 
+#include "CDRBuildTypes.hpp"
+#include "ModuleDecl.hpp"
+
 #include <iostream>
 
-typedef enum TargetLanguage {
-    UNKNOWN,
-    C_LANG,
-    CPP_LANG,
-    DFDL_LANG
-} target_t;
-
-std::string target_as_string(TargetLanguage target);
-int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target);
+int generate_dfdl(
+    std::ostream &ostream,
+    CDRBuildTypes const& buildTypes,
+    ModuleDecl const* moduleDecl);

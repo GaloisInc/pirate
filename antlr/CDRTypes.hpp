@@ -174,9 +174,8 @@ public:
 // TypeReference wraps a reference to another type.
 // Acts as weak reference to the type. Destructor does not cleanup.
 class TypeReference : public TypeSpec {
-private:
-    TypeSpec *child;
 public:
+    TypeSpec *child;
     TypeReference(TypeSpec *child) : child(child) { }
     virtual CDRTypeOf typeOf() override { return child->typeOf(); };
     virtual void cTypeDecl(std::ostream &ostream) override { }
