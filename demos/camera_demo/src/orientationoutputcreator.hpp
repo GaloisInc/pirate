@@ -30,10 +30,11 @@ public:
         switch (options.mOutputType)
         {
 #ifdef PIGPIO_PRESENT
-            case PiServo:
+            case PiServoOutput:
                 return new PiServoOrientationOutput(PI_SERVO_PIN, options);
 #endif
-            case Print:
+            case PrintOutput:
+            case NoneOutput:
             default:
                 return new BaseOrientationOutput(options);
         }

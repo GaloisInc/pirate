@@ -33,7 +33,7 @@ public:
     virtual ~VideoSource();
 
     virtual int init();
-    virtual void term() = 0;
+    virtual void term();
 
 protected:
     ImageConvert mImageConvert;

@@ -42,14 +42,13 @@ public:
 
 private:
     const std::unique_ptr<OrientationOutput> mDelegate;
-    const uint16_t mClientId;
     uint16_t mMessageCounter;
 
-    const int mClientReadGd;
-    const int mClientWriteGd;
-
-    const int mServerReadGd;
-    const std::vector<int> mServerWriteGds;
+    const bool mHasOutput;
+    const int mGapsRequestWriteGd;
+    const int mGapsResponseReadGd;
+    const std::vector<int> mGapsRequestReadGds;
+    const std::vector<int> mGapsResponseWriteGds;
 
     std::mutex mClientLock;
     std::thread *mPollThread;
@@ -60,6 +59,6 @@ private:
     bool sendRequest(const CameraDemo::OrientationOutputRequest& request);
     bool sendResponse(uint16_t id, const CameraDemo::OrientationOutputResponse& response);
 
-    int recvRequest(CameraDemo::OrientationOutputRequest& request);
+    int recvRequest(CameraDemo::OrientationOutputRequest& request, int& clientId);
     bool recvResponse(CameraDemo::OrientationOutputResponse& response);
 };

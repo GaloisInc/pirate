@@ -36,6 +36,8 @@ public:
             case VIDEO_STREAM:
                 return new MpegTsDecoder(options, frameProcessors);
 #endif
+            case VIDEO_NULL:
+                return new VideoSource(options, frameProcessors);
             default:
                 return new VideoSensor(options, frameProcessors);
         }
