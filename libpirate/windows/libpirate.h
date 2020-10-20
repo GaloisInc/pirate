@@ -200,45 +200,10 @@ int pirate_open_parse(const char *param, int flags);
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
 // Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
-
-int pirate_pipe_channel_type(channel_enum_t channel_type);
-
-// Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
 int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
 
-// Opens both ends of the gaps channel specified by the
-// parameter value. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and GetLastError() is set appropriately. If the channel type
-// does not support this functionality then GetLastError() is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
-
-// Opens both ends of the gaps channel specified by the
-// parameter string. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and GetLastError() is set appropriately. If the channel type
-// does not support this functionality then GetLastError() is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer

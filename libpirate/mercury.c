@@ -414,7 +414,7 @@ int pirate_mercury_open(void *_param, void *_ctx) {
         goto error;
     }
 
-    return 0;
+    return ctx->fd;
 error:
     if (fd_root > 0) {
         close(fd_root);

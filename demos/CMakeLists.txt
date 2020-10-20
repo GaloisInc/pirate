@@ -38,10 +38,7 @@ set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
-set(PIRATE_CXX_STATIC_LIB libpirate++_static)
-set(PIRATE_CXX_SHARED_LIB libpirate++_shared)
 set(PIRATE_APP_LIBS pirate)
-set(PIRATE_APP_CXX_LIBS pirate++)
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} pthread rt)

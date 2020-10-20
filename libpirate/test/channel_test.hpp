@@ -101,12 +101,6 @@ protected:
     sem_t nonblocking_sem;
 #endif
 
-    // If true the producer and consumer
-    // open the channel.
-    // If false the producer and consumer
-    // assume the channel is open.
-    bool child_open;
-
     // If true then producer and consumer
     // use non-blocking I/O
     bool nonblocking_IO;

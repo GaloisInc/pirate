@@ -115,7 +115,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
-        return ctx->sock;
+        return -1;
     }
 
     memset(&src_addr, 0, sizeof(struct sockaddr_in));
@@ -135,7 +135,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return rv;
+        return -1;
     }
 
     if (param->buffer_size > 0) {
@@ -147,7 +147,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
-            return rv;
+            return -1;
         }
     }
 
@@ -157,7 +157,7 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return rv;
+        return -1;
     }
     rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
@@ -165,10 +165,10 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return rv;
+        return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
@@ -178,7 +178,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
 
     ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
     if (ctx->sock < 0) {
-        return ctx->sock;
+        return -1;
     }
 
     if (param->buffer_size > 0) {
@@ -190,7 +190,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
-            return rv;
+            return -1;
         }
     }
 
@@ -209,7 +209,7 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         err = errno;
         close(ctx->sock);
         errno = err;
-        return rv;
+        return -1;
     }
     rv = connect(ctx->sock, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
@@ -217,10 +217,10 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return rv;
+        return -1;
     }
 
-    return 0;
+    return ctx->sock;
 }
 
 int pirate_udp_socket_open(void *_param, void *_ctx) {

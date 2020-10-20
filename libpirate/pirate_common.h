@@ -44,15 +44,11 @@ typedef struct {
     uint8_t *min_tx_buf;
 } common_ctx;
 
-pirate_channel_param_t *pirate_get_channel_param_ref(int gd);
-common_ctx *pirate_get_common_ctx_ref(int gd);
-
-int pirate_enclave_cmpfunc(const void *a, const void *b);
-
 ssize_t pirate_stream_read(common_ctx *ctx, size_t min_tx, void *buf, size_t count);
 ssize_t pirate_stream_write(common_ctx *ctx, size_t min_tx, size_t write_mtu, const void *buf, size_t count);
 int pirate_parse_is_common_key(const char *key);
 int pirate_parse_key_value(char **key, char **val, char *ptr, char **saveptr);
+int pirate_next_gd();
 
 #ifdef __cplusplus
 }

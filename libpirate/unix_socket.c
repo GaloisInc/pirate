@@ -95,7 +95,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
 
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        return server_fd;
+        return -1;
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -109,7 +109,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
             err = errno;
             close(server_fd);
             errno = err;
-            return rv;
+            return -1;
         }
     }
     err = errno;
@@ -121,7 +121,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-        return rv;
+        return -1;
     }
 
     rv = listen(server_fd, 0);
@@ -129,7 +129,7 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-        return rv;
+        return -1;
     }
 
     ctx->sock = accept(server_fd, NULL, NULL);
@@ -138,13 +138,13 @@ static int unix_socket_reader_open(pirate_unix_socket_param_t *param, unix_socke
         err = errno;
         close(server_fd);
         errno = err;
-        return ctx->sock;
+        return -1;
     }
 
     err = errno;
     close(server_fd);
     errno = err;
-    return 0;
+    return ctx->sock;
 }
 
 static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socket_ctx *ctx) {
@@ -153,7 +153,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
 
     ctx->sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (ctx->sock < 0) {
-        return ctx->sock;
+        return -1;
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -167,7 +167,7 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
             err = errno;
             close(ctx->sock);
             errno = err;
-            return rv;
+            return -1;
         }
     }
 
@@ -188,10 +188,10 @@ static int unix_socket_writer_open(pirate_unix_socket_param_t *param, unix_socke
             err = errno;
             close(ctx->sock);
             errno = err;
-            return rv;
+            return -1;
         }
 
-        return 0;
+        return ctx->sock;
     }
 
     return -1;

@@ -10,7 +10,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         "windows/udp_socket.c"
         "windows/ge_eth.c"
     )
-    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES})
 else()
     SET(PIRATE_SOURCES
         "primitives.c"
@@ -31,8 +30,6 @@ else()
         add_definitions(-DPIRATE_SHMEM_FEATURE=1)
         set(PIRATE_SOURCES ${PIRATE_SOURCES} "shmem.c" "uio.c" "udp_shmem.c" "checksum.c")
     endif(PIRATE_SHMEM_FEATURE)
-
-    set(PIRATE_CXX_SOURCES ${PIRATE_SOURCES})
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
@@ -48,29 +45,9 @@ add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
-add_library(${PIRATE_CXX_STATIC_LIB} STATIC ${PIRATE_CXX_SOURCES})
-set_target_properties(${PIRATE_CXX_STATIC_LIB} PROPERTIES
-    OUTPUT_NAME pirate++
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-    CLEAN_DIRECT_OUTPUT 1)
-target_compile_options(${PIRATE_CXX_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
-
-add_library(${PIRATE_CXX_SHARED_LIB} SHARED ${PIRATE_CXX_SOURCES})
-set_target_properties(${PIRATE_CXX_SHARED_LIB} PROPERTIES
-    OUTPUT_NAME pirate++
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-    CLEAN_DIRECT_OUTPUT 1)
-target_compile_options(${PIRATE_CXX_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
-
 install(FILES libpirate.h libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
-install(TARGETS ${PIRATE_CXX_SHARED_LIB} DESTINATION lib)
-install(TARGETS ${PIRATE_CXX_STATIC_LIB} DESTINATION lib)
 
 if(GAPS_BENCH)
     include_directories(BEFORE libpirate)
