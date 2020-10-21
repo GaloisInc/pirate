@@ -83,7 +83,7 @@ etc. The color tracking and sliding window components require a response channel
 ## Usage
 
 ```
-Usage: camera_demo_monolith [OPTION...] test
+Usage: camera_demo_monolith [OPTION...]
 Embedded application based on camera, position input and position driver
 
  video options:

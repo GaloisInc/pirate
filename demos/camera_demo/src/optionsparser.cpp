@@ -309,7 +309,7 @@ void parseArgs(int argc, char * argv[], Options * opt)
     struct argp argp;
     argp.options = options;
     argp.parser = parseOpt;
-    argp.args_doc = "test";
+    argp.args_doc = "";
     argp.doc = "Embedded application based on camera, position input and position driver";
     argp.children = NULL;
     argp.help_filter = NULL;
