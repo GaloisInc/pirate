@@ -42,6 +42,8 @@ int main(int argc, char* argv[]) {
                     target = TargetLanguage::CPP_LANG;
                 } else if (strncmp("c", optarg, 2) == 0) {
                     target = TargetLanguage::C_LANG;
+                } else if (strcmp("dfdl", optarg) == 0) {
+                    target = TargetLanguage::DFDL_LANG;
                 } else {
                     std::cerr << "unknown code generation target " << optarg << std::endl;
                     return 1;
