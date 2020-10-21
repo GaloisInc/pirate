@@ -75,7 +75,6 @@ void RemoteOrientationOutput::term() {
 
 int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request, int &clientId) {
     int rv;
-<<<<<<< HEAD
     struct pollfd fds[16];
     std::vector<char> readBuf(sizeof(struct OrientationOutputRequest_wire));
     int nfds = MIN(mGapsRequestReadGds.size(), 16);
@@ -85,21 +84,12 @@ int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& r
         fds[i].events = POLLIN;
     }
     rv = poll(fds, nfds, 100);
-=======
-    struct pollfd fds[1];
-    std::vector<char> readBuf(sizeof(struct OrientationOutputRequest_wire));
-
-    fds[0].fd = mServerReadGd;
-    fds[0].events = POLLIN;
-    rv = poll(fds, 1, 100);
->>>>>>> master
     if (rv == 0) {
         return 0;
     } else if (rv < 0) {
         std::perror("remote orientation output receive request poll error");
         return -1;
     }
-<<<<<<< HEAD
     int gd = -1;
     for (int i = 0; i < nfds; i++) {
         clientId = i;
@@ -109,9 +99,6 @@ int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& r
         }
     }
     rv = pirate_read(gd, readBuf.data(), sizeof(struct OrientationOutputRequest_wire));
-=======
-    rv = pirate_read(mServerReadGd, readBuf.data(), sizeof(struct OrientationOutputRequest_wire));
->>>>>>> master
     if (rv < 0) {
         std::perror("remote orientation output receive request read error");
         return -1;
