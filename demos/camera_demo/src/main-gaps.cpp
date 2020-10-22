@@ -18,6 +18,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -76,6 +77,8 @@ int pirateValidateGapsOptions(Options &options) {
 void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
     if (options.mHasOutput) {
         for (std::string channelDesc : options.mGapsRequestChannel) {
@@ -85,6 +88,9 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
                 return;
             }
             remotes.mGapsRequestReadGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for reading." << std::endl;
+            std::cout << msg.str();
+            msg.clear();
         }
     }
 
@@ -96,6 +102,9 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
             return;
         }
         remotes.mGapsResponseReadGd = rv;
+        msg << "Opened " << channelDesc << " for reading." << std::endl;
+        std::cout << msg.str();
+        msg.clear();
     }
 
     success = 0;
@@ -104,6 +113,8 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
 void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
     if (options.mHasInput && !options.mGapsRequestChannel.empty()) {
         std::string channelDesc = options.mGapsRequestChannel[0];
@@ -113,6 +124,9 @@ void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &succes
             return;
         }
         remotes.mGapsRequestWriteGd = rv;
+        msg << "Opened " << channelDesc << " for writing." << std::endl;
+        std::cout << msg.str();
+        msg.clear();
     }
 
     if (options.mHasOutput) {
@@ -123,6 +137,9 @@ void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &succes
                 return;
             }
             remotes.mGapsResponseWriteGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for writing." << std::endl;
+            std::cout << msg.str();
+            msg.clear();
         }
     }
 
