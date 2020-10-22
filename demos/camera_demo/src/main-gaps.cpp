@@ -66,10 +66,6 @@ int pirateValidateGapsOptions(Options &options) {
         std::cerr << "--gaps_req argument required for servo or print output types" << std::endl;
         return -1;
     }
-    if (options.mImageTracking && options.mGapsResponseChannel.empty()) {
-        std::cerr << "--gaps_rsp argument required for color tracking" << std::endl;
-        return -1;
-    }
     if (options.mImageSlidingWindow && options.mGapsResponseChannel.empty()) {
         std::cerr << "--gaps_rsp argument required for sliding window" << std::endl;
         return -1;
