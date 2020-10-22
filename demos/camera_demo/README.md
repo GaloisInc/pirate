@@ -74,7 +74,7 @@ and `--gaps_rsp` specify the gaps channel configuration for request and response
 channels, respectively. Each argument can be specify one or more times. The
 order of the arguments matters. The first gaps request configuration is paired
 with the first gaps response configuration, the second configurations are paired,
-etc. The color tracking and sliding window components require a response channel.
+etc. The sliding window component requires a response channel.
 
 ## Prototype
 
