@@ -44,7 +44,7 @@ class LinkerRunner {
         let uniqueItems = new Array();
         for (let i = 0; i < items.length; i++) {
             uniqueItems.push(items[i]);
-            while (items[i].message === items[i + 1].message) {
+            while (i < items.length - 1 && items[i].message === items[i + 1].message) {
                 i++;
             }
         }
