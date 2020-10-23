@@ -23,7 +23,22 @@ export class LinkerRunner {
   private makeUnique(
     items: Array<vscode.Diagnostic>
   ): Array<vscode.Diagnostic> {
-    return items;
+    items.sort((lhs, rhs): number => {
+      if (lhs.message < rhs.message) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+    let uniqueItems = new Array<vscode.Diagnostic>();
+    for (let i = 0; i < items.length; i++) {
+      uniqueItems.push(items[i]);
+      while (items[i].message === items[i + 1].message) {
+        i++;
+      }
+    }
+
+    return uniqueItems;
   }
 
   // Determines if a line of output text is one we want to parse
