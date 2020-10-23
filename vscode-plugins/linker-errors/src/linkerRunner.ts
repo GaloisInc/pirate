@@ -10,7 +10,10 @@ export class LinkerRunner {
       if (fileDiags) {
         const uniqueDiags = this.makeUnique(fileDiags);
         vscode.workspace.findFiles(file, null, 1).then(async (uriArray) => {
-          const newDiags = await this.adjustRangeStart(uriArray[0], uniqueDiags);
+          const newDiags = await this.adjustRangeStart(
+            uriArray[0],
+            uniqueDiags
+          );
           diagnosticCollection.set(uriArray[0], newDiags);
         });
       }
@@ -33,11 +36,14 @@ export class LinkerRunner {
     let uniqueItems = new Array<vscode.Diagnostic>();
     for (let i = 0; i < items.length; i++) {
       uniqueItems.push(items[i]);
-      while (i < items.length - 1 && items[i].message === items[i + 1].message) {
+      while (
+        i < items.length - 1 &&
+        items[i].message === items[i + 1].message &&
+        items[i].range.start.line === items[i + 1].range.start.line
+      ) {
         i++;
       }
     }
-
     return uniqueItems;
   }
 
