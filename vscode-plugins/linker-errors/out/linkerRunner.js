@@ -20,9 +20,9 @@ class LinkerRunner {
             for (let file of diagnostics.keys()) {
                 const fileDiags = diagnostics.get(file);
                 if (fileDiags) {
-                    this.makeUnique(fileDiags);
+                    const uniqueDiags = this.makeUnique(fileDiags);
                     vscode.workspace.findFiles(file, null, 1).then((uriArray) => __awaiter(this, void 0, void 0, function* () {
-                        const newDiags = yield this.adjustRangeStart(uriArray[0], fileDiags);
+                        const newDiags = yield this.adjustRangeStart(uriArray[0], uniqueDiags);
                         diagnosticCollection.set(uriArray[0], newDiags);
                     }));
                 }
