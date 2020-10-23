@@ -36,8 +36,15 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
 
     char opt[128];
     const char *name = "udp_socket";
-    const char *addr = "1.2.3.4";
-    const short port = 0x4242;
+    const char *addr1 = "1.2.3.4";
+    const short port1 = 0x4242;
+#ifdef _WIN32
+    const char *addr2 = "0.0.0.0";
+    const short port2 = 0;
+#else
+    const char *addr2 = "5.6.7.8";
+    const short port2 = 0x4243;
+#endif
     const unsigned buffer_size = 42 * 42;
 
     snprintf(opt, sizeof(opt) - 1, "%s", name);
@@ -46,28 +53,44 @@ TEST(ChannelUdpSocketTest, ConfigurationParser) {
     ASSERT_EQ(-1, rv);
     CROSS_PLATFORM_RESET_ERROR();
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr1);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
     CROSS_PLATFORM_RESET_ERROR();
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr, port);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u", name, addr1, port1);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
+    ASSERT_EQ(-1, rv);
+    CROSS_PLATFORM_RESET_ERROR();
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s", name, addr1, port1, addr2);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
+    ASSERT_EQ(-1, rv);
+    CROSS_PLATFORM_RESET_ERROR();
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s,%u", name, addr1, port1, addr2, port2);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
-    ASSERT_STREQ(addr, udp_socket_param->addr);
-    ASSERT_EQ(port, udp_socket_param->port);
+    ASSERT_STREQ(addr1, udp_socket_param->reader_addr);
+    ASSERT_EQ(port1, udp_socket_param->reader_port);
+    ASSERT_STREQ(addr2, udp_socket_param->writer_addr);
+    ASSERT_EQ(port2, udp_socket_param->writer_port);
     ASSERT_EQ(0u, udp_socket_param->buffer_size);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,buffer_size=%u", name, addr, port, buffer_size);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%u,%s,%u,buffer_size=%u", name, addr1, port1, addr2, port2, buffer_size);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(UDP_SOCKET, param.channel_type);
-    ASSERT_STREQ(addr, udp_socket_param->addr);
-    ASSERT_EQ(port, udp_socket_param->port);
+    ASSERT_STREQ(addr1, udp_socket_param->reader_addr);
+    ASSERT_EQ(port1, udp_socket_param->reader_port);
+    ASSERT_STREQ(addr2, udp_socket_param->writer_addr);
+    ASSERT_EQ(port2, udp_socket_param->writer_port);
     ASSERT_EQ(buffer_size, udp_socket_param->buffer_size);
 }
 
@@ -80,8 +103,10 @@ public:
         pirate_udp_socket_param_t *param = &Reader.param.channel.udp_socket;
 
         pirate_init_channel_param(UDP_SOCKET, &Reader.param);
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
-        param->port = 26427;
+        snprintf(param->reader_addr, sizeof(param->reader_addr) - 1, "127.0.0.1");
+        snprintf(param->writer_addr, sizeof(param->writer_addr) - 1, "0.0.0.0");
+        param->reader_port = 26427;
+        param->writer_port = 0;
         param->buffer_size = GetParam();
         Writer.param = Reader.param;
     }
@@ -103,5 +128,81 @@ TEST_P(UdpSocketTest, Run)
 // Test with IO vector sizes 0 and 16, passed as parameters
 INSTANTIATE_TEST_SUITE_P(UdpSocketFunctionalTest, UdpSocketTest,
     Values(0, UdpSocketTest::TEST_BUF_LEN));
+
+TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
+#ifndef _WIN32
+    char buf[80];
+    int gd_r1, gd_r2;
+    int gd_w1, gd_w2;
+    int rv;
+
+    gd_r1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_r1, 0);
+
+    gd_r2 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72602", O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_r2, 0);
+
+    gd_w1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_w1, 0);
+
+    gd_w2 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72602", O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_w2, 0);
+
+    rv = pirate_write(gd_w1, "hello", 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+
+    rv = pirate_write(gd_w1, "a", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "b", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "c", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w2, "world", 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+
+    rv = pirate_read(gd_r2, buf, 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+    // this would be "hello" if the streams were crossed
+    ASSERT_STREQ("world", buf);
+
+    rv = pirate_read(gd_r1, buf, 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+    ASSERT_STREQ("hello", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("a", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("b", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("c", buf);
+
+    pirate_close(gd_r1);
+    pirate_close(gd_r2);
+    pirate_close(gd_w1);
+    pirate_close(gd_w2);
+#endif
+}
 
 } // namespace

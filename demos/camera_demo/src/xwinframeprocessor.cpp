@@ -1,4 +1,20 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -7,11 +23,27 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <jpeglib.h>
+
+XWinFrameProcessor::XWinFrameProcessor(const Options& options,
+    CameraOrientationCallbacks angPosCallbacks) :
+
+    FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
+    mCallbacks(angPosCallbacks),
+    mAngMin(options.mAngularPositionMin),
+    mAngMax(options.mAngularPositionMax),
+    mImageSlidingWindow(options.mImageSlidingWindow)
+{
+
+}
+
+XWinFrameProcessor::~XWinFrameProcessor()
+{
+    term();
+}
 
 int XWinFrameProcessor::xwinDisplayInitialize() {
-    mDisplay = XOpenDisplay(NULL);
-    if (mDisplay == NULL) {
+    mDisplay = XOpenDisplay(nullptr);
+    if (mDisplay == nullptr) {
         std::cout << "Failed to open X display" << std::endl;
         return -1;
     }
@@ -20,10 +52,8 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
         RootWindow(mDisplay, x_screen), 10, 10, mImageWidth, mImageHeight, 1,
         BlackPixel(mDisplay, x_screen), WhitePixel(mDisplay, x_screen));
     mContext = XCreateGC(mDisplay, mWindow, 0, &mContextVals);
-    mImageBuffer = (char*) calloc(mImageWidth * mImageHeight * 4, 1);
-    mJpegBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 3, 1);
-    mJpegBufferRow = (unsigned char*) calloc(mImageWidth * 3, 1);
-    mImage = XCreateImage(mDisplay, CopyFromParent, 24, ZPixmap, 0, mImageBuffer,
+    mImageBuffer = (unsigned char*) calloc(mImageWidth * mImageHeight * 4, 1);
+    mImage = XCreateImage(mDisplay, CopyFromParent, 24, ZPixmap, 0, (char*) mImageBuffer,
         mImageWidth, mImageHeight, 32, 4 * mImageWidth);
     XMapWindow(mDisplay, mWindow);
     XSync(mDisplay, 0);
@@ -32,65 +62,37 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
 
 
 void XWinFrameProcessor::xwinDisplayTerminate() {
-    if (mDisplay != NULL) {
+    if (mDisplay != nullptr) {
         XDestroyImage(mImage); // frees mImageBuffer
         XFreeGC(mDisplay, mContext);
         XCloseDisplay(mDisplay);
-        free(mJpegBuffer);
-        free(mJpegBufferRow);
     }
-    mImage = NULL;
-    mDisplay = NULL;
-    mImageBuffer = NULL;
-    mJpegBuffer = NULL;
-    mJpegBufferRow = NULL;
-    mContext = NULL;
+    mImage = nullptr;
+    mDisplay = nullptr;
+    mImageBuffer = nullptr;
+    mContext = nullptr;
 }
 
-void XWinFrameProcessor::convertJpeg(FrameBuffer buf, size_t len) {
-    int i, width, depth;
-    unsigned x, y, z, k;
+void XWinFrameProcessor::slidingWindow() {
+    int x, y, k;
 
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
+    float range = mAngMax - mAngMin;
+    float position = mCallbacks.mGet();
+    float percent = (position - mAngMin) / range;
+    int center = mImageWidth * percent;
+    // min can go negative
+    int min = (center - mImageWidth / 4);
+    int max = (center + mImageWidth / 4);
 
-    JSAMPROW row_pointer[1];
-
-    unsigned long location = 0;
-
-    cinfo.err = jpeg_std_error(&jerr);
-
-    jpeg_create_decompress(&cinfo);
-    jpeg_mem_src(&cinfo, (unsigned char *) buf, len);
-    jpeg_read_header(&cinfo, 1);
-    cinfo.scale_num = 1;
-    cinfo.scale_denom = 1;
-
-    jpeg_start_decompress(&cinfo);
-    width = cinfo.output_width;
-    depth = cinfo.num_components; //should always be 3
-
-    row_pointer[0] = mJpegBufferRow;
-
-    while(cinfo.output_scanline < cinfo.output_height) {
-	    jpeg_read_scanlines(&cinfo, row_pointer, 1);
-	    for(i = 0; i < (width * depth); i++) {
-	        mJpegBuffer[location++] = row_pointer[0][i];
+    for(k = y = 0; y < (int) mImageHeight; y++) {
+	    for(x = 0; x < (int) mImageWidth; x++, k += 4) {
+            if ((x < min) || (x > max)) {
+                mImageBuffer[k+0]=0;
+                mImageBuffer[k+1]=0;
+                mImageBuffer[k+2]=0;
+            }
         }
     }
-
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
-
-    for(z = k = y = 0; y < mImageHeight; y++) {
-	    for(x = 0; x < mImageWidth; x++) {
-		    // for 24 bit depth, organization BGRX
-            mImageBuffer[k+0]=mJpegBuffer[z+2];
-			mImageBuffer[k+1]=mJpegBuffer[z+1];
-			mImageBuffer[k+2]=mJpegBuffer[z+0];
-			k+=4; z+=3;
-		}
-	}
 }
 
 void XWinFrameProcessor::renderImage() {
@@ -100,17 +102,6 @@ void XWinFrameProcessor::renderImage() {
     err = errno;
     XFlush(mDisplay);
     errno = err;
-}
-
-XWinFrameProcessor::XWinFrameProcessor(unsigned width, unsigned height) :
-    mImageWidth(width), mImageHeight(height)
-{
-
-}
-
-XWinFrameProcessor::~XWinFrameProcessor()
-{
-    term();
 }
 
 int XWinFrameProcessor::init()
@@ -123,9 +114,17 @@ void XWinFrameProcessor::term()
     xwinDisplayTerminate();
 }
 
-int XWinFrameProcessor::processFrame(FrameBuffer data, size_t length)
+
+int XWinFrameProcessor::process(FrameBuffer data, size_t length)
 {
-    convertJpeg(data, length);
+    if (length != (mImageWidth * mImageHeight * 4)) {
+        std::cout << "xwindows unexpected frame length " << length << std::endl;
+        return 1;
+    }
+    memcpy(mImageBuffer, data, length);
+    if (mImageSlidingWindow) {
+        slidingWindow();
+    }
     renderImage();
     return 0;
 }

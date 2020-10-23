@@ -28,7 +28,7 @@ typedef struct {
 
 int shmem_buffer_parse_param(char *str, void *_param);
 int shmem_buffer_get_channel_description(const void *_param, char *desc, int len);
-int shmem_buffer_open(void *_param, void *_ctx, int *server_fdp);
+int shmem_buffer_open(void *_param, void *_ctx);
 int shmem_buffer_close(void *_ctx);
 ssize_t shmem_buffer_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t shmem_buffer_write(const void *_param, void *_ctx, const void *buf, size_t count);

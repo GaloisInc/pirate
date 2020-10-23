@@ -39,15 +39,19 @@ typedef enum {
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (must be 0.0.0.0)
+    //  - writer_port  - IP port on write end (must be 0)
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
-    //  - addr       - IP address, if empty then 127.0.0.1 is used
-    //  - port       - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (must be 0.0.0.0)
+    //  - writer_port  - IP port on write end (must be 0)
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
@@ -57,21 +61,23 @@ typedef enum {
 } channel_enum_t;
 
 // UDP_SOCKET parameters
-#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
 #define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
 } pirate_udp_socket_param_t;
 
 // GE_ETH parameters
-#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET_ADDRSTRLEN];
+    char writer_addr[INET_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
@@ -131,10 +137,10 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
 
 #define OPT_DELIM ","
 #define KV_DELIM "="
-#define GAPS_CHANNEL_OPTIONS                                                                   \
-    "Supported channels:\n"                                                                    \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
+#define GAPS_CHANNEL_OPTIONS                                                                                \
+    "Supported channels:\n"                                                                                 \
+    "  UDP SOCKET    udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]\n"    \
+    "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
@@ -194,45 +200,10 @@ int pirate_open_parse(const char *param, int flags);
 int pirate_open_param(pirate_channel_param_t *param, int flags);
 
 // Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
-
-int pirate_pipe_channel_type(channel_enum_t channel_type);
-
-// Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
 int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
 
-// Opens both ends of the gaps channel specified by the
-// parameter value. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and GetLastError() is set appropriately. If the channel type
-// does not support this functionality then GetLastError() is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
-
-// Opens both ends of the gaps channel specified by the
-// parameter string. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and GetLastError() is set appropriately. If the channel type
-// does not support this functionality then GetLastError() is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_parse(int gd[2], const char *param, int flags);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer

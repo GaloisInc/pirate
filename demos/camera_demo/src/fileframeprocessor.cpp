@@ -1,13 +1,33 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <cerrno>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+
+#include <stdio.h>
+
 #include "fileframeprocessor.hpp"
 
-FileFrameProcessor::FileFrameProcessor(std::string& outputPath, bool verbose) :
-    mOutputDirectory(outputPath),
-    mVerbose(verbose) 
+FileFrameProcessor::FileFrameProcessor(const Options& options) :
+    FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
+    mOutputDirectory(options.mImageOutputDirectory),
+    mImageOutputMaxFiles(options.mImageOutputMaxFiles),
+    mVerbose(options.mVerbose)
 {
 
 }
@@ -27,21 +47,46 @@ void FileFrameProcessor::term()
 
 }
 
-int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
+std::string FileFrameProcessor::buildFilename(unsigned index) {
+    std::stringstream ss;
+
+    ss << mOutputDirectory << "/capture_" 
+       << std::setfill('0') << std::setw(4) << index;
+    switch (mVideoType) {
+        case VIDEO_JPEG:
+            ss << ".jpg";
+            break;
+        case VIDEO_YUYV:
+            ss << ".raw";
+            break;
+        case VIDEO_H264:
+            ss << ".h264";
+            break;
+        default:
+            std::cout << "Unknown video type " << mVideoType << std::endl;
+            return "";
+    }
+
+    return ss.str();
+}
+
+int FileFrameProcessor::process(FrameBuffer data, size_t length)
 {
     // Save the image file
-    std::stringstream ss;
-    ss << mOutputDirectory << "/capture_" 
-       << std::setfill('0') << std::setw(4) << mIndex << ".jpg";
+    std::string filename = buildFilename(mIndex);
+    if (filename.empty())
+    {
+        return -1;
+    }
     
-    std::ofstream out(ss.str(), std::ios::out | std::ios::binary);
+    std::ofstream out(filename, std::ios::out | std::ios::binary);
     if (!out)
     {
         std::perror("Failed to open image file for writing");
         return -1;   
     }
 
-    out.write(data, length);
+    out.write((const char*) data, length);
     out.close();
 
     if (!out.good())
@@ -50,9 +95,17 @@ int FileFrameProcessor::processFrame(FrameBuffer data, size_t length)
         return -1;
     }
 
+    if ((mImageOutputMaxFiles > 0) && (mIndex > mImageOutputMaxFiles)) {
+        unsigned prevIndex = mIndex - mImageOutputMaxFiles;
+        std::string prevFilename = buildFilename(prevIndex);
+        if (!prevFilename.empty()) {
+            remove(prevFilename.c_str());
+        }
+    }
+
     if (mVerbose)
     {
-        std::cout << ss.str() << std::endl;
+        std::cout << filename << std::endl;
     }
 
     return 0;

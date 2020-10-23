@@ -1,3 +1,18 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <pigpio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -5,12 +20,10 @@
 #include <iostream>
 #include "piservoorientationoutput.hpp"
 
-PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, float angLimit,
-        bool verbose, bool gpioLibInit) :
-    OrientationOutput(angLimit, verbose),
+PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, const Options& options) :
+    BaseOrientationOutput(options),
     mServoPin(servoPin),
-    mGpioLibInit(gpioLibInit)
-
+    mGpioLibInit(true)
 {
 
 }
@@ -70,10 +83,19 @@ void PiServoOrientationOutput::term()
     }
 }
 
-bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
+int PiServoOrientationOutput::angleToServo(float angle)
 {
-    OrientationOutput::setAngularPosition(angularPosition);
-    int rv = gpioServo(mServoPin, angleToServo(getAngularPosition()));
+    static const float slope =
+        (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
+        (2 * SERVO_ANGLE_LIMIT);
+    static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
+    // Fip the sign. The camera is mounted upside-down.
+    return -1.0 * slope * angle + off;
+}
+
+bool PiServoOrientationOutput::applyAngularPosition(float angularPosition)
+{
+    int rv = gpioServo(mServoPin, angleToServo(angularPosition));
 
     if (rv < 0)
     {
@@ -82,13 +104,4 @@ bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
     }
 
     return true;
-}
-
-int PiServoOrientationOutput::angleToServo(float angle)
-{
-    static const float slope =
-        (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
-        (2 * SERVO_ANGLE_LIMIT);
-    static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
-    return slope * angle + off;
 }

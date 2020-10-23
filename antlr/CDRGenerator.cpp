@@ -23,6 +23,7 @@
 #include "CDRGenerator.hpp"
 #include "CDRModuleCounter.hpp"
 #include "ModuleDecl.hpp"
+#include "DFDLGenerator.hpp"
 
 using namespace antlr4;
 
@@ -129,6 +130,9 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, t
         case TargetLanguage::CPP_LANG:
             rv = generate_cpp(ostream, buildTypes, moduleDecl);
             break;
+        case TargetLanguage::DFDL_LANG:
+            rv = generate_dfdl(ostream, buildTypes, moduleDecl);
+            break;
         default:
             estream << "unknown target language " << target << std::endl;
             rv = 1;
@@ -145,6 +149,8 @@ std::string target_as_string(TargetLanguage target) {
             return "c";
         case CPP_LANG:
             return "cpp";
+        case DFDL_LANG:
+            return "dfdl";
         case UNKNOWN:
         default:
             return "unknown";

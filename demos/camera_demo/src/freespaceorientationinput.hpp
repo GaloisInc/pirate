@@ -1,3 +1,18 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #pragma once
 
 // Angular position is read from the Hillcrest Labs FSM9 AGM device
@@ -12,9 +27,7 @@ class FreespaceOrientationInput : public OrientationInput
 {
 public:
     FreespaceOrientationInput(
-            AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-            float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
-            float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
+            CameraOrientationCallbacks angPosCallbacks,
             unsigned periodUs = DEFAULT_PERIOD_US);
     virtual ~FreespaceOrientationInput();
 
@@ -52,4 +65,3 @@ private:
         return (++index) & (FIR_LEN - 1);
     }
 };
-

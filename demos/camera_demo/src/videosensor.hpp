@@ -1,39 +1,47 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #pragma once
 
-#include <stdint.h>
+#include <memory>
 #include <string>
 #include <thread>
-#include <linux/videodev2.h>
-#include "frameprocessor.hpp"
+#include <vector>
 
-class VideoSensor
+#include <stdint.h>
+#include <linux/videodev2.h>
+
+#include "imageconvert.hpp"
+#include "frameprocessor.hpp"
+#include "options.hpp"
+#include "videosource.hpp"
+
+class VideoSensor : public VideoSource
 {
 public:
-    VideoSensor(const ProcessFrameCallback& processFrameCallback,
-            std::string& devicePath,
-            bool hFlip = true, bool vFlip = true,
-            unsigned imgWidth = DEFAULT_IMAGE_WIDTH,
-            unsigned imgHeight = DEFAULT_IMAGE_HEIGHT,
-            unsigned frameRateNumerator = DEFAULT_FRAME_RATE_NUMERATOR,
-            unsigned frameRateDenominator = DEFAULT_FRAME_RATE_DENOMINATOR);
+    VideoSensor(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
     virtual ~VideoSensor();
 
-    virtual int init();
-    virtual void term();
+    virtual int init() override;
+    virtual void term() override;
 
-    virtual int captureEnable(bool enable);
-    static constexpr unsigned DEFAULT_IMAGE_WIDTH = 640;
-    static constexpr unsigned DEFAULT_IMAGE_HEIGHT = 480;
-    static constexpr unsigned DEFAULT_FRAME_RATE_NUMERATOR = 1;
-    static constexpr unsigned DEFAULT_FRAME_RATE_DENOMINATOR = 1;
 private:
-    const ProcessFrameCallback& mProcessFrameCallback;
-    
     const std::string mDevicePath;
     const bool mFlipHorizontal;
     const bool mFlipVertical;
-    unsigned mImageWidth;
-    unsigned mImageHeight;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
 
@@ -48,7 +56,7 @@ private:
     {
         VideoBuffer() : mStart(nullptr), mLength(0) {}
 
-        char * mStart;
+        unsigned char * mStart;
         size_t mLength;
     };
 
@@ -62,6 +70,8 @@ private:
     int uninitVideoDevice();
     int initCaptureBuffers();
     int releaseCaptureBuffers();
+    int captureEnable();
+    int captureDisable();
 
     std::thread *mPollThread;
     bool mPoll;

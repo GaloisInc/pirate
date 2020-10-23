@@ -25,7 +25,7 @@ typedef struct {
 
 int pirate_serial_parse_param(char *str, void *_param);
 int pirate_serial_get_channel_description(const void *_param, char *desc, int len);
-int pirate_serial_open(void *_param, void *_ctx, int *server_fdp);
+int pirate_serial_open(void *_param, void *_ctx);
 int pirate_serial_close(void *_ctx);
 ssize_t pirate_serial_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_serial_write(const void *_param, void *_ctx, const void *buf, size_t count);

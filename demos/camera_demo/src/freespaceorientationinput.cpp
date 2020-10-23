@@ -1,3 +1,18 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <math.h>
 #include <chrono>
 #include <cerrno>
@@ -8,7 +23,7 @@
 #include <freespace/freespace_util.h>
 #include "freespaceorientationinput.hpp"
 
-const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES = 
+const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
 {
     "Accelerometer",
     "Gyroscope",
@@ -19,7 +34,7 @@ const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
     "Sensor Fusion"
  };
 
-const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR_LEN] = 
+const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR_LEN] =
 {
     1.0 / 16.0,
     1.0 / 16.0,
@@ -32,9 +47,8 @@ const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR
 };
 
 FreespaceOrientationInput::FreespaceOrientationInput(
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-        float angPosMin, float angPosMax, unsigned periodUs) :
-    OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
+        CameraOrientationCallbacks angPosCallbacks, unsigned periodUs) :
+    OrientationInput(angPosCallbacks),
     mPeriodUs(periodUs),
     mPollThread(nullptr),
     mPoll(false),
@@ -140,7 +154,7 @@ int FreespaceOrientationInput::setSensorPeriod(FreespaceDeviceId deviceId,
         unsigned periodUs)
 {
     for (unsigned i = 0; i < SENSOR_NAMES.size(); ++i)
-    {   
+    {
         // Set the period
         struct freespace_message m;
         std::memset(&m, 0, sizeof(m));
@@ -211,8 +225,8 @@ void FreespaceOrientationInput::pollThread()
     std::memset(&m, 0, sizeof(m));
     std::memset(&acc, 0, sizeof(acc));
 
-    const float slope = (mAngularPositionMax - mAngularPositionMin) / (GRAVITY_ACC * 2.0);
-    const float offset = slope * GRAVITY_ACC + mAngularPositionMin;
+    const float slope = 90.0 / GRAVITY_ACC;
+    const float offset = slope * GRAVITY_ACC - 90.0;
     float angularPosition = 0.0;
 
     // Enable the data flow
@@ -242,8 +256,8 @@ void FreespaceOrientationInput::pollThread()
             continue;
         }
 
-        angularPosition = weightedFilter(slope * (-1.0) * acc.y + offset);
-        setAngularPosition(rint(angularPosition));
+        angularPosition = weightedFilter(slope * acc.y + offset);
+        mCallbacks.mSet(angularPosition);
     }
 
     // Disable data flow
@@ -256,7 +270,7 @@ void FreespaceOrientationInput::printVersionInfo()
 }
 
 int FreespaceOrientationInput::printDeviceInfo(FreespaceDeviceId deviceId)
-{   
+{
     struct FreespaceDeviceInfo info;
 
     int rv = freespace_getDeviceInfo(deviceId, &info);
@@ -297,7 +311,7 @@ int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
         }
 
         // Wait for sensor period
-        do 
+        do
         {
             rv = freespace_readMessage(deviceId, &m, TIMEOUT_MS);
             if (rv != FREESPACE_SUCCESS)
@@ -329,7 +343,7 @@ float FreespaceOrientationInput::weightedFilter(float angularPosition)
     float ret = 0.0;
     mPrevAngPos[mFilterIndex] = angularPosition;
     mFilterIndex = nextFirIndex(mFilterIndex);
-    
+
     for (unsigned i = 0; i < FIR_LEN; i++)
     {
         ret += FIR_COEFFS[i] * mPrevAngPos[(i + mFilterIndex) & (FIR_LEN - 1)];

@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-void pirate_reset_gd();
 SSIZE_T pirate_write_mtu_estimate(const pirate_channel_param_t *param);
 
 #ifdef __cplusplus

@@ -9,12 +9,12 @@ CC += ${MY_CFLAGS}
 gaps_ilip-objs := ilip_base.o ilip_nl.o
 
 all:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) M=$(shell pwd) modules
 
 debug:
-	$(MAKE) EXTRA_CFLAGS="$(MY_CFLAGS)" -C $(KDIR) SUBDIRS=$(PWD) modules 
+	$(MAKE) EXTRA_CFLAGS="$(MY_CFLAGS)" -C $(KDIR) M=$(shell pwd) modules 
 
 clean:
 	rm -rf *.o *.ko *.mod.* *.cmd .module* modules* Module* .*.cmd .tmp*
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) clean
 

@@ -1,3 +1,18 @@
+/*
+ * This work was authored by Two Six Labs, LLC and is sponsored by a subcontract
+ * agreement with Galois, Inc.  This material is based upon work supported by
+ * the Defense Advanced Research Projects Agency (DARPA) under Contract No.
+ * HR0011-19-C-0103.
+ *
+ * The Government has unlimited rights to use, modify, reproduce, release,
+ * perform, display, or disclose computer software or computer software
+ * documentation marked with this legend. Any reproduction of technical data,
+ * computer software, or portions thereof marked with this legend must also
+ * reproduce this marking.
+ *
+ * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ */
+
 #include <cstdio>
 #include <unistd.h>
 #include <sys/select.h>
@@ -8,10 +23,9 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-        float angPosMin, float angPosMax, float angIncrement) :
-    OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
-    mAngIncrement(angIncrement),
+        const Options& options, CameraOrientationCallbacks angPosCallbacks) :
+    OrientationInput(angPosCallbacks),
+    mAngIncrement(options.mAngularPositionIncrement),
     mPollThread(nullptr),
     mPoll(false)
 {
@@ -25,7 +39,7 @@ KeyboardOrientationInput::~KeyboardOrientationInput()
 
 int KeyboardOrientationInput::init()
 {
-    // Setup stdin to be read one key at a time 
+    // Setup stdin to be read one key at a time
     int rv = tcgetattr(0, &mTermiosBackup);
     if (rv)
     {
@@ -48,7 +62,7 @@ int KeyboardOrientationInput::init()
     // Start the reading thread
     mPoll = true;
     mPollThread = new std::thread(&KeyboardOrientationInput::pollThread, this);
-    
+
     return 0;
 }
 
@@ -78,7 +92,7 @@ void KeyboardOrientationInput::pollThread()
         fd_set fdSet;
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
-        
+
         struct timeval timeout;
         timeout.tv_sec = 0;
         timeout.tv_usec = 100000;
@@ -90,7 +104,7 @@ void KeyboardOrientationInput::pollThread()
             std::perror("select failed");
             mPoll = false;
             return;
-        } 
+        }
         else if (rv == 0)
         {
             continue;       // Timeout
@@ -105,20 +119,16 @@ void KeyboardOrientationInput::pollThread()
             return;
         }
 
-        float angularPosition = getAngularPosition();
         switch (c)
         {
             case LEFT:
-                angularPosition += mAngIncrement;
+                mCallbacks.mUpdate(-mAngIncrement);
                 break;
             case RIGHT:
-                angularPosition -= mAngIncrement;
+                mCallbacks.mUpdate(mAngIncrement);
                 break;
             default:
                 continue;
         }
-
-        setAngularPosition(angularPosition);
     }
 }
-
