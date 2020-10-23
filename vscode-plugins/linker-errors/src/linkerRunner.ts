@@ -1,21 +1,41 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
+import * as tmp from 'tmp';
+import * as lookpath from 'lookpath';
 
 export class LinkerRunner {
   // The public entry point for the linker, which just needs a way to register diagnostics.
   public async runLinker(diagnosticCollection: vscode.DiagnosticCollection) {
-    let diagnostics = this.linkProject();
+    const buildDir = tmp.dirSync();
+    const opts: child_process.SpawnSyncOptions = {
+      cwd: buildDir.name,
+      encoding: 'utf8',
+      shell: true,
+    };
+
+    let buildCommands = await this.runCmake(opts);
+    if (!buildCommands) {
+      console.log(
+        'Fatal error while running CMake prevented linker extension from running'
+      );
+      return;
+    }
+    let diagnostics = await this.linkProject(buildCommands, opts);
     for (let file of diagnostics.keys()) {
       const fileDiags = diagnostics.get(file);
       if (fileDiags) {
         const uniqueDiags = this.makeUnique(fileDiags);
-        vscode.workspace.findFiles(file, null, 1).then(async (uriArray) => {
-          const newDiags = await this.adjustRangeStart(
-            uriArray[0],
-            uniqueDiags
-          );
-          diagnosticCollection.set(uriArray[0], newDiags);
-        });
+        const lastSlash = file.lastIndexOf('/') + 1;
+        const fileToFind = file.substr(lastSlash, file.length - lastSlash);
+        vscode.workspace
+          .findFiles(fileToFind, null, 1)
+          .then(async (uriArray) => {
+            const newDiags = await this.adjustRangeStart(
+              uriArray[0],
+              uniqueDiags
+            );
+            diagnosticCollection.set(uriArray[0], newDiags);
+          });
       }
     }
   }
@@ -49,7 +69,7 @@ export class LinkerRunner {
 
   // Determines if a line of output text is one we want to parse
   private isLinkerConflict(text: string): boolean {
-    return text.trimLeft().startsWith('ld.lld');
+    return text.trimLeft().startsWith('ld.lld: error: Symbol');
   }
 
   // Parses linker errors of the following specific form (assumes the ld.lld:
@@ -92,9 +112,9 @@ export class LinkerRunner {
   }
 
   // For a diagnostic and the corresponding file Uri, we adjust the range of the
-  // diagnostic to skip over whitespace characters at the start of the line. This
-  // is a purely aesthetic and probably somewhat slow operation, but highlighting
-  // potential many whitespace characters looks quite bad.
+  // diagnostic to skip over whitespace characters at the start of the line.
+  // This is a purely aesthetic and probably somewhat slow operation, but
+  // highlighting potential many whitespace characters looks quite bad.
   private async adjustRangeStart(
     uri: vscode.Uri,
     diags: Array<vscode.Diagnostic>
@@ -113,53 +133,96 @@ export class LinkerRunner {
     return diags;
   }
 
+  private buildDiagMap(
+    diags: Array<[vscode.Diagnostic, string]>
+  ): Map<string, Array<vscode.Diagnostic>> {
+    let map: Map<string, Array<vscode.Diagnostic>> = new Map();
+    for (const [d, filename] of diags) {
+      const currentFileDiags = map.get(filename);
+      if (currentFileDiags) {
+        currentFileDiags.push(d);
+        map.set(filename, currentFileDiags);
+      } else {
+        map.set(filename, [d]);
+      }
+    }
+    return map;
+  }
+
   // The main entry point for calling out to clang, providing a mapping from
   // filenames to arrays of errors
-  private linkProject(): Map<string, Array<vscode.Diagnostic>> {
-    let diags: Map<string, Array<vscode.Diagnostic>> = new Map();
-    const folders = vscode.workspace.workspaceFolders;
-    if (!folders) {
-      return diags;
+  private async linkProject(
+    buildCommands: Array<string>,
+    opts: child_process.SpawnSyncOptions
+  ): Promise<Map<string, Array<vscode.Diagnostic>>> {
+    let cmdDiags: Array<[vscode.Diagnostic, string]> = new Array();
+    for (const cmd of buildCommands) {
+      if (cmd !== '') {
+        const newDiags = await this.runBuildCommand(cmd, opts);
+        cmdDiags = cmdDiags.concat(newDiags);
+      }
     }
-    const options: child_process.SpawnSyncOptions = {
-      cwd: folders[0].uri.fsPath,
-      encoding: 'utf8',
-      shell: true,
-    };
-    let procResult = child_process.spawnSync(
-      '/home/karl/galois/pirate/pirate-llvm/build/bin/clang',
-      [
-        '-g',
-        '-fuse-ld=lld',
-        '-ffunction-sections',
-        '-fdata-sections',
-        '-Wl,-enclave,low',
-        '*.c',
-      ],
-      options
-    );
+    return this.buildDiagMap(cmdDiags);
+  }
 
-    const errText = procResult.stderr.toString('utf8');
+  // Run a single command that has been extracted from the makefile, looking for
+  // errors in the output
+  private async runBuildCommand(
+    cmd: string,
+    opts: child_process.SpawnSyncOptions
+  ): Promise<Array<[vscode.Diagnostic, string]>> {
+    let diagnostics = new Array<[vscode.Diagnostic, string]>();
+    let cmdResult = child_process.spawnSync(cmd, [], opts);
+
+    const errText = cmdResult.stderr.toString('utf8');
     const lines = errText.split('\n');
     let currLine = 0;
     while (currLine < lines.length - 1) {
       if (this.isLinkerConflict(lines[currLine])) {
         const parts = lines[currLine].split(':');
-        const [diag, fileName] = this.parseLinkerError(
-          parts[2],
-          lines[currLine + 1]
-        );
+        diagnostics.push(this.parseLinkerError(parts[2], lines[currLine + 1]));
         currLine++;
-        const currentDiags = diags.get(fileName);
-        if (currentDiags) {
-          currentDiags.push(diag);
-          diags.set(fileName, currentDiags);
-        } else {
-          diags.set(fileName, [diag]);
-        }
       }
       currLine++;
     }
-    return diags;
+    return diagnostics;
+  }
+
+  // A helper function that checks whether an executable exists on the PATH, so
+  // we can give better errors in error cases.
+  private async executableExists(exeName: string): Promise<boolean> {
+    let path = await lookpath.lookpath(exeName);
+    return path !== undefined;
+  }
+
+  // Try to get the compiler/linker commands that cmake would have used to build
+  // a project.
+  private async runCmake(
+    opts: child_process.SpawnSyncOptions
+  ): Promise<Array<string> | undefined> {
+    const folders = vscode.workspace.workspaceFolders;
+
+    if (!folders) {
+      console.log(
+        'The Pirate Linker extension requires you to open a workspace'
+      );
+      return undefined;
+    } else if (!this.executableExists('cmake')) {
+      console.log("Can't find cmake on the PATH");
+      return undefined;
+    }
+
+    let cmakeResult = child_process.spawnSync(
+      'cmake',
+      [
+        '-G',
+        '"Unix Makefiles"',
+        '-DCMAKE_BUILD_TYPE=Debug',
+        folders[0].uri.fsPath,
+      ],
+      opts
+    );
+    let makeResult = child_process.spawnSync('make', ['--dry-run'], opts);
+    return makeResult.stdout.toString('utf8').split('\n');
   }
 }
