@@ -205,8 +205,14 @@ get_type_name(TypeSpec* typeSpec)
         return p->identifier;
     } else if (auto * p = dynamic_cast<UnionTypeSpec*>(typeSpec)) {
         return p->identifier;
+    } else if (auto * p = dynamic_cast<TypeReference*>(typeSpec)) {
+        return get_type_name(p->child);
+    } else if (auto * p = dynamic_cast<EnumTypeSpec*>(typeSpec)) {
+        return p->identifier;
+    } else if (NULL != dynamic_cast<BaseTypeSpec*>(typeSpec)) {
+        not_implemented("get_type_name of base type");
     } else {
-        not_implemented("get_type_name of non union/struct");
+        not_implemented("get_type_name of unknown type");
     }
 }
 
@@ -216,9 +222,7 @@ void
 finish_type(Element* e, TypeSpec* typeSpec)
 {
     if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
-        std::string ref = "idl:";
-        ref += get_type_name(typeref->child);
-        e->SetAttribute("ref", ref);
+        e->SetAttribute("ref", "idl:" + get_type_name(typeref->child));
         e->RemoveAttribute("name");
         return;
     }
@@ -310,8 +314,17 @@ finish_type(Element* e, TypeSpec* typeSpec)
             unionchoice->SetAttribute("dfdl:choiceDispatchKey", "{xs:string(../tag)}");
 
             for (auto m : u->members) {
+                if (m->labels.empty()) continue;
+
+                std::string labels;
+                for (auto const& l : m->labels) {
+                    labels += l;
+                    labels += " ";
+                }
+                labels.pop_back();
+
                 auto member = add_element(unionchoice, "xs:element");
-                member->SetAttribute("dfdl:choiceBranchKey", m->labels[0]);
+                member->SetAttribute("dfdl:choiceBranchKey", labels);
                 member->SetAttribute("name", m->declarator->identifier);
 
                 construct_array(member, m->declarator->dimensions, m->typeSpec);
