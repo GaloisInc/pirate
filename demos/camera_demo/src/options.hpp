@@ -16,12 +16,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM };
+enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_NULL };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
-enum OutputType { PiServo, Print };
+enum OutputType { PiServoOutput, PrintOutput, NoneOutput };
 
 using FrameBuffer = const unsigned char *;
 
@@ -30,8 +31,8 @@ struct Options
 {
     Options() :
         mVideoDevice("/dev/video0"),
-        mVideoInputType(VIDEO_JPEG),
-        mVideoOutputType(VIDEO_JPEG),
+        mVideoInputType(VIDEO_NULL),
+        mVideoOutputType(VIDEO_NULL),
         mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
@@ -45,7 +46,7 @@ struct Options
         mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
-        mOutputType(PiServo),
+        mOutputType(NoneOutput),
         mInputKeyboard(false),
         mInputFreespace(false),
         mFilesystemProcessor(false),
@@ -58,9 +59,10 @@ struct Options
         mAngularPositionIncrement(1.0),
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
-        mClientId(0),
-        mOutputClientChannel("udp_socket,127.0.0.1,22660,0.0.0.0,0"),
-        mOutputServerChannel("udp_socket,127.0.0.1,22661,0.0.0.0,0")
+        mHasInput(false),
+        mHasOutput(false),
+        mGapsRequestChannel(),
+        mGapsResponseChannel()
     {
 
     }
@@ -94,7 +96,8 @@ struct Options
     float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;
-    int mClientId;
-    std::string mOutputClientChannel;
-    std::string mOutputServerChannel;
+    bool mHasInput;
+    bool mHasOutput;
+    std::vector<std::string> mGapsRequestChannel;
+    std::vector<std::string> mGapsResponseChannel;
 };

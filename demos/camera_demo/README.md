@@ -1,6 +1,7 @@
 # Embedded Camera Demo
 
 ## Overview
+
 The embedded camera demo is designed to:
 * Provide scalable and flexible C++ example for demonstrating GAPS PIRATE capabilities
 * Execute on platform-independent embedded environment
@@ -11,63 +12,109 @@ The embedded camera demo is designed to:
 Figure below illustrates the block diagram
  ![Alt text](img/gaps_pi_demo.png?raw=true "Block Diagram")
 
-### Position Input
-Position input generates angular position in degrees:
+## Components
 
-Input sources
- * [FSM-9](https://www.ceva-dsp.com/product/fsm-9/) 9-axis inertial measurement unit with an USB interface
- * Keyboard input with read from left/right arrow keys
- * New user-derived sources can be created by inheriting the *OrientationInput* class
-
-### Position Output
- * A servo motor controlled by a Raspberry Pi GPIO
- * Pure software implementation when hardware is not available
- * New user-derived position outputs can be created by inheriting the *OrientationOutput* class
+The camera demo consists of four components: a video source, input devices, output devices,
+and video frame processors. All of the components are disabled by default. If you start
+the camera demo with no arguments then it will do nothing.
 
 ### Video Source
- * [Raspberry Pi Camera V2](https://www.raspberrypi.org/products/camera-module-v2)
- * USB webcam
+
+The following types of video sources are supported:
+
+* [Raspberry Pi Camera V2](https://www.raspberrypi.org/products/camera-module-v2)
+* Laptop or USB webcam
+* MPEG-TS H.264 video stream
+* no video source
+
+The demo supports exactly one video source, or zero sources if 'no video source' is selected.
+The camera sources are capable of generating Motion JPEG, raw YUYV, or H.264 video frames.
+If you specify the MPEG-TS H.264 video stream then the video stream url must be specified
+with `--decoder=url`.
+
+### Input Devices
+
+The following types of input devices are supported:
+
+* [FSM-9](https://www.ceva-dsp.com/product/fsm-9/) 9-axis inertial measurement unit with an USB interface
+* keyboard input with read from left/right arrow keys
+* automatic color tracking (both an input device and a frame processor)
+
+The demo supports zero or more input devices.
+
+### Output Devices
+
+The following types of output devices are supported:
+
+* servo motor controlled by a Raspberry Pi GPIO
+* software emulation of servo motor position
+* no output device
+
+The demo supports exactly one output device, or zero devices if 'no output device' is selected.
 
 ### Frame Processor
- * File system data store
- * New user-derived frame processors can be created by inheriting the *FrameProcessor* class
 
-### Timestamping
- * Currently work in progress
- * Will generate timestamp sign requests processed by the [GAPS timestamp demo](https://github.com/GaloisInc/pirate/tree/master/demos/time_demo)
+The following types of frame processors are supported:
+
+* save image frames to the filesystem
+* automatic color tracking (both an input device and a frame processor)
+* sliding window image filter
+* xwindows display
+* MPEG-TS H.264 encoding
+
+The demo supports zero or more frame processors.
+
+## GAPS Channels
+
+There are two version of the demo. `camera_demo_monolith` is a single application
+that does not use gaps channels. `camera_demo_gaps` can be run as a distribution
+application that communicates over gaps channels. The input devices and the output
+device communicate over gaps channels. The command line arguments `--gaps_req`
+and `--gaps_rsp` specify the gaps channel configuration for request and response
+channels, respectively. Each argument can be specify one or more times. The
+order of the arguments matters. The first gaps request configuration is paired
+with the first gaps response configuration, the second configurations are paired,
+etc. The sliding window component requires a response channel.
 
 ## Prototype
+
  ![Alt text](img/embedded_camera_demo.jpg?raw=true "Prototype")
 
 ## Usage
 
 ```
-Usage: camera_demo [OPTION...]
+Usage: camera_demo_monolith [OPTION...]
 Embedded application based on camera, position input and position driver
 
  video options:
   -d, --video_device=device  video device
+  -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
   -f, --flip=v|h             horizontal or vertical image flip
   -H, --height=pixels        image height
-  -r, --framerate=num/den    frame rate fraction
-  -t, --video_type=jpeg|yuyv video type
+  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|none)
   -W, --width=pixels         image width
 
  frame processor options:
-  -c, --color_track=RRGGBB   color tracking (RGB hex) frame processor
+      --codec=type           encoder codec (mpeg1|mpeg2|h264)
+  -C, --color_track=RRGGBB   color tracking (RGB hex)
+  -E, --encoder=url          MPEG-TS H.264 encoder url (host:port)
   -F, --filesystem           filesystem frame processor
-  -m, --monochrome           monochrome image filter
-  -M, --out_count=val        image output maximum file count
-  -O, --out_dir=path         image output directory
-  -s, --sliding              sliding window image filter
-  -T, --threshold=val        color tracking threshold
+      --out_count=val        image output maximum file count
+      --out_dir=path         image output directory
+      --sliding              sliding window image filter
+      --threshold=val        color tracking threshold
   -X, --xwindows             xwindows frame processor
 
  input/output options:
-  -i, --pos_in=acc|kbd       position input
-  -l, --pos_lim=val          angular position bound
-  -o, --pos_out=servo|print  angular position output
+      --gaps_req=channel     gaps request channel
+      --gaps_rsp=channel     gaps response channel
+      --in_freespace         read position input from freespace device
+      --in_keyboard          read position input from keyboard
+  -o, --output=type          controller output (servo|print|none)
+      --output_incr=val      angular position increment
+      --output_limit=val     angular position bound
 
+      --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output
 
   -?, --help                 Give this help list
@@ -77,7 +124,7 @@ Embedded application based on camera, position input and position driver
 Example usage:
 
 ```
- ./demos/camera_demo/camera_demo --pos_in kbd --xwindows --sliding --verbose
+ ./demos/camera_demo/camera_demo_monolith --pos_in kbd --xwindows --sliding --verbose
 ```
 
 Uses the left and right arrow keys on the keyboard for input

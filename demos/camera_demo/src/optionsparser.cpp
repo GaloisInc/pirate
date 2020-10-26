@@ -29,12 +29,14 @@ const int OPT_INC       = 136;
 const int OPT_LOGLEVEL  = 137;
 const int OPT_KBD       = 138;
 const int OPT_FREESPACE = 139;
+const int OPT_GAPS_REQ  = 140;
+const int OPT_GAPS_RSP  = 141;
 
 static struct argp_option options[] =
 {
     { 0,              0,             0,             0, "video options:",                            1 },
     { "video_device", 'd',           "device",      0, "video device",                              0 },
-    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream)",        0 },
+    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream|none)",   0 },
     { "width",        'W',           "pixels",      0, "image width",                               0 },
     { "height",       'H',           "pixels",      0, "image height",                              0 },
     { "flip",         'f',           "v|h",         0, "horizontal or vertical image flip",         0 },
@@ -52,9 +54,11 @@ static struct argp_option options[] =
     { 0,              0,             0,             0, "input/output options:",                     3 },
     { "in_keyboard",  OPT_KBD,       NULL,          0, "read position input from keyboard",         0 },
     { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
-    { "output",       'o',           "servo|print", 0, "angular position output",                   0 },
+    { "output",       'o',           "type",        0, "controller output (servo|print|none)",      0 },
     { "output_limit", OPT_LIMIT,     "val",         0, "angular position bound",                    0 },
     { "output_incr",  OPT_INC,       "val",         0, "angular position increment",                0 },
+    { "gaps_req",     OPT_GAPS_REQ,  "channel",     0, "gaps request channel",                      0 },
+    { "gaps_rsp",     OPT_GAPS_RSP,  "channel",     0, "gaps response channel",                     0 },
     { "verbose",      'v',           NULL,          0, "verbose output",                            4 },
     { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,           NULL,          0, NULL,                                        0 },
@@ -114,6 +118,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             {
                 opt->mVideoInputType = VIDEO_STREAM;
                 opt->mVideoOutputType = VIDEO_YUYV;
+            }
+            else if (ss.str() == "none")
+            {
+                opt->mVideoInputType = VIDEO_NULL;
+                opt->mVideoOutputType = VIDEO_NULL;
             }
             else
             {
@@ -175,11 +184,18 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
         case 'o':
             if (ss.str() == "servo")
             {
-                opt->mOutputType = PiServo;
+                opt->mOutputType = PiServoOutput;
+                opt->mHasOutput = true;
             }
             else if (ss.str() == "print")
             {
-                opt->mOutputType = Print;
+                opt->mOutputType = PrintOutput;
+                opt->mHasOutput = true;
+            }
+            else if (ss.str() == "none")
+            {
+                opt->mOutputType = NoneOutput;
+                opt->mHasOutput = false;
             }
             else
             {
@@ -189,10 +205,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_KBD:
             opt->mInputKeyboard = true;
+            opt->mHasInput = true;
             break;
 
         case OPT_FREESPACE:
             opt->mInputFreespace = true;
+            opt->mHasInput = true;
             break;
 
         case 'X':
@@ -229,11 +247,13 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_SLIDE:
             opt->mImageSlidingWindow = true;
+            opt->mHasInput = true;
             break;
 
         case 'C': {
             std::string argval = ss.str();
             opt->mImageTracking = true;
+            opt->mHasInput = true;
             if (argval.length() != 6)
             {
                 argp_error(state, "invalid length of color tracking argument '%s'", arg);
@@ -268,6 +288,14 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mVerbose = true;
             break;
 
+        case OPT_GAPS_REQ:
+            opt->mGapsRequestChannel.push_back(ss.str());
+            break;
+
+        case OPT_GAPS_RSP:
+            opt->mGapsResponseChannel.push_back(ss.str());
+            break;
+
         case OPT_LOGLEVEL:
             ss >> opt->mFFmpegLogLevel;
             break;
@@ -281,7 +309,7 @@ void parseArgs(int argc, char * argv[], Options * opt)
     struct argp argp;
     argp.options = options;
     argp.parser = parseOpt;
-    argp.args_doc = "test";
+    argp.args_doc = "";
     argp.doc = "Embedded application based on camera, position input and position driver";
     argp.children = NULL;
     argp.help_filter = NULL;

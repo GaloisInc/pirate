@@ -18,6 +18,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -57,22 +58,54 @@ static int waitInterrupt(void* arg) {
     return 0;
 }
 
+int pirateValidateGapsOptions(Options &options) {
+    if (options.mHasInput && options.mGapsRequestChannel.empty()) {
+        std::cerr << "--gaps_req argument required for keyboard, freespace, or color tracking" << std::endl;
+        return -1;
+    }
+    if (options.mHasOutput && options.mGapsRequestChannel.empty()) {
+        std::cerr << "--gaps_req argument required for servo or print output types" << std::endl;
+        return -1;
+    }
+    if (options.mImageSlidingWindow && options.mGapsResponseChannel.empty()) {
+        std::cerr << "--gaps_rsp argument required for sliding window" << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
 void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
-    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_RDONLY);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
+    if (options.mHasOutput) {
+        for (std::string channelDesc : options.mGapsRequestChannel) {
+            rv = pirate_open_parse(channelDesc.c_str(), O_RDONLY);
+            if (rv < 0) {
+                perror("unable to open gaps request channel for reading");
+                return;
+            }
+            remotes.mGapsRequestReadGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for reading." << std::endl;
+            std::cout << msg.str();
+            msg.clear();
+        }
     }
-    remotes.mServerReadGd = rv;
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_RDONLY);
-    if (rv < 0) {
-        perror("pirate open client read channel error");
-        return;
+
+    if (options.mHasInput && !options.mGapsResponseChannel.empty()) {
+        std::string channelDesc = options.mGapsResponseChannel[0];
+        rv = pirate_open_parse(channelDesc.c_str(), O_RDONLY);
+        if (rv < 0) {
+            perror("unable to open gaps response channel for reading");
+            return;
+        }
+        remotes.mGapsResponseReadGd = rv;
+        msg << "Opened " << channelDesc << " for reading." << std::endl;
+        std::cout << msg.str();
+        msg.clear();
     }
-    remotes.mClientReadGd = rv;
 
     success = 0;
 }
@@ -80,35 +113,52 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
 void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
-    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
+    if (options.mHasInput && !options.mGapsRequestChannel.empty()) {
+        std::string channelDesc = options.mGapsRequestChannel[0];
+        rv = pirate_open_parse(channelDesc.c_str(), O_WRONLY);
+        if (rv < 0) {
+            perror("unable to open gaps request channel for writing");
+            return;
+        }
+        remotes.mGapsRequestWriteGd = rv;
+        msg << "Opened " << channelDesc << " for writing." << std::endl;
+        std::cout << msg.str();
+        msg.clear();
     }
-    remotes.mClientWriteGd = rv;
 
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open client write channel error");
-        return;
+    if (options.mHasOutput) {
+        for (std::string channelDesc : options.mGapsResponseChannel) {
+            rv = pirate_open_parse(channelDesc.c_str(), O_WRONLY);
+            if (rv < 0) {
+                perror("unable to open gaps response channel for writing");
+                return;
+            }
+            remotes.mGapsResponseWriteGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for writing." << std::endl;
+            std::cout << msg.str();
+            msg.clear();
+        }
     }
-    remotes.mServerWriteGds.push_back(rv);
 
     success = 0;
 }
 
 void pirateCloseRemotes(const RemoteDescriptors &remotes) {
-    if (remotes.mClientReadGd > 0) {
-        pirate_close(remotes.mClientReadGd);
+    if (remotes.mGapsRequestWriteGd > 0) {
+        pirate_close(remotes.mGapsRequestWriteGd);
     }
-    if (remotes.mClientWriteGd > 0) {
-        pirate_close(remotes.mClientWriteGd);       
+    if (remotes.mGapsResponseReadGd > 0) {
+        pirate_close(remotes.mGapsResponseReadGd);
     }
-    if (remotes.mServerReadGd > 0) {
-        pirate_close(remotes.mServerReadGd);
+    for (auto gd : remotes.mGapsResponseWriteGds) {
+        if (gd > 0) {
+            pirate_close(gd);
+        }
     }
-    for (auto gd : remotes.mServerWriteGds) {
+    for (auto gd : remotes.mGapsRequestReadGds) {
         if (gd > 0) {
             pirate_close(gd);
         }

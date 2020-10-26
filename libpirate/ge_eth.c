@@ -242,13 +242,15 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
         return -1;
     }
 
-    rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
-        errno = err;
-        return -1;
+    if (dest_addr.sin_addr.s_addr != INADDR_ANY) {
+        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
+        if (rv < 0) {
+            err = errno;
+            close(ctx->sock);
+            ctx->sock = -1;
+            errno = err;
+            return -1;
+        }
     }
 
     return ctx->sock;
@@ -274,12 +276,14 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
     dest_addr.sin_port = htons(param->reader_port);
 
-    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        errno = err;
-        return -1;
+    if (src_addr.sin_addr.s_addr != INADDR_ANY) {
+        rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+        if (rv < 0) {
+            err = errno;
+            close(ctx->sock);
+            errno = err;
+            return -1;
+        }
     }
     rv = connect(ctx->sock, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
     if (rv < 0) {
@@ -305,6 +309,10 @@ int pirate_ge_eth_open(void *_param, void *_ctx) {
         return -1;
     }
     if (param->writer_port < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if ((param->writer_port > 0) && (strncmp(param->writer_addr, "0.0.0.0", 8) == 0)) {
         errno = EINVAL;
         return -1;
     }

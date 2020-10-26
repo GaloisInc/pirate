@@ -37,6 +37,8 @@ int VideoSource::init() {
     return 0;
 }
 
+void VideoSource::term() { }
+
 int VideoSource::process(FrameBuffer data, size_t length) {
     int rv;
     time_t currentTime;
