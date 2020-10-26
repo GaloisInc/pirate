@@ -27,6 +27,7 @@ endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 
 # Source files
 set(SRCS
+    src/pantilt.cpp
     src/optionsparser.cpp
     src/imageconvert.cpp
     src/frameprocessor.cpp

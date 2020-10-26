@@ -76,17 +76,22 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
 void XWinFrameProcessor::slidingWindow() {
     int x, y, k;
 
-    float range = mAngMax - mAngMin;
-    float position = mCallbacks.mGet();
-    float percent = (position - mAngMin) / range;
-    int center = mImageWidth * percent;
+    float x_range = mAngMax - mAngMin;
+    float y_range = mAngMax - mAngMin;
+    PanTilt position = mCallbacks.mGet();
+    float x_percent = (position.pan - mAngMin) / x_range;
+    float y_percent = (position.tilt - mAngMin) / y_range;
+    int x_center = mImageWidth * x_percent;
+    int y_center = mImageHeight * y_percent;
     // min can go negative
-    int min = (center - mImageWidth / 4);
-    int max = (center + mImageWidth / 4);
+    int x_min = (x_center - mImageWidth / 3);
+    int x_max = (x_center + mImageWidth / 3);
+    int y_min = (y_center - mImageHeight / 3);
+    int y_max = (y_center + mImageHeight / 3);
 
     for(k = y = 0; y < (int) mImageHeight; y++) {
 	    for(x = 0; x < (int) mImageWidth; x++, k += 4) {
-            if ((x < min) || (x > max)) {
+            if ((x < x_min) || (x > x_max) || (y < y_min) || (y > y_max)) {
                 mImageBuffer[k+0]=0;
                 mImageBuffer[k+1]=0;
                 mImageBuffer[k+2]=0;

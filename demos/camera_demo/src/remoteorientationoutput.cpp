@@ -179,7 +179,11 @@ bool RemoteOrientationOutput::sendResponse(uint16_t id,
     return true;
 }
 
-float RemoteOrientationOutput::getAngularPosition() {
+bool RemoteOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2) {
+    return mDelegate->equivalentPosition(p1, p2);
+}
+
+PanTilt RemoteOrientationOutput::getAngularPosition() {
     OrientationOutputRequest request;
     OrientationOutputResponse response;
 
@@ -187,39 +191,42 @@ float RemoteOrientationOutput::getAngularPosition() {
     mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputGet;
     request.messageId = mMessageCounter;
-    request.angularPosition = std::numeric_limits<float>::quiet_NaN();
+    request.angularPositionPan = std::numeric_limits<float>::quiet_NaN();
+    request.angularPositionTilt = std::numeric_limits<float>::quiet_NaN();
     bool success = sendRequest(request);
     if (success) {
         success = recvResponse(response);
     }
     mClientLock.unlock();
     if (success) {
-        return response.angularPosition;
+        return PanTilt(response.angularPositionPan, response.angularPositionTilt);
     } else {
-        return std::numeric_limits<float>::quiet_NaN();
+        return PanTilt(std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
     }
 }
 
-void RemoteOrientationOutput::setAngularPosition(float angularPosition) {
+void RemoteOrientationOutput::setAngularPosition(PanTilt angularPosition) {
     OrientationOutputRequest request;
 
     mClientLock.lock();
     mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputSet;
     request.messageId = mMessageCounter;
-    request.angularPosition = angularPosition;
+    request.angularPositionPan = angularPosition.pan;
+    request.angularPositionTilt = angularPosition.tilt;
     sendRequest(request);
     mClientLock.unlock();
 }
 
-void RemoteOrientationOutput::updateAngularPosition(float positionUpdate) {
+void RemoteOrientationOutput::updateAngularPosition(PanTilt positionUpdate) {
     OrientationOutputRequest request;
 
     mClientLock.lock();
     mMessageCounter++;
     request.reqType = OrientationOutputReqType::OutputUpdate;
     request.messageId = mMessageCounter;
-    request.angularPosition = positionUpdate;
+    request.angularPositionPan = positionUpdate.pan;
+    request.angularPositionTilt = positionUpdate.tilt;
     sendRequest(request);
     mClientLock.unlock();
 }
@@ -227,6 +234,7 @@ void RemoteOrientationOutput::updateAngularPosition(float positionUpdate) {
 void RemoteOrientationOutput::pollThread() {
     OrientationOutputRequest request;
     OrientationOutputResponse response;
+    PanTilt angularPosition;
 
     while (mPoll) {
         int clientId = -1;
@@ -238,14 +246,20 @@ void RemoteOrientationOutput::pollThread() {
         }
         switch (request.reqType) {
             case OrientationOutputReqType::OutputGet:
-                response.angularPosition = mDelegate->getAngularPosition();
+                angularPosition = mDelegate->getAngularPosition();
+                response.angularPositionPan = angularPosition.pan;
+                response.angularPositionTilt = angularPosition.tilt;
                 sendResponse(clientId, response);
                 break;
             case OrientationOutputReqType::OutputSet:
-                mDelegate->setAngularPosition(request.angularPosition);
+                angularPosition.pan = request.angularPositionPan;
+                angularPosition.tilt = request.angularPositionTilt;
+                mDelegate->setAngularPosition(angularPosition);
                 break;
             case OrientationOutputReqType::OutputUpdate:
-                mDelegate->updateAngularPosition(request.angularPosition);
+                angularPosition.pan = request.angularPositionPan;
+                angularPosition.tilt = request.angularPositionTilt;
+                mDelegate->updateAngularPosition(angularPosition);
                 break;
         }
     }

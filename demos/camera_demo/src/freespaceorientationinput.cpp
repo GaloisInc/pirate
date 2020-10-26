@@ -52,11 +52,13 @@ FreespaceOrientationInput::FreespaceOrientationInput(
     mPeriodUs(periodUs),
     mPollThread(nullptr),
     mPoll(false),
-    mFilterIndex(0)
+    mPanIndex(0),
+    mTiltIndex(0)
 {
     for (unsigned i = 0; i < FIR_LEN; i++)
     {
-        mPrevAngPos[i] = 0.0;
+        mPrevPan[i] = 0.0;
+        mPrevTilt[i] = 0.0;
     }
 }
 
@@ -227,7 +229,6 @@ void FreespaceOrientationInput::pollThread()
 
     const float slope = 90.0 / GRAVITY_ACC;
     const float offset = slope * GRAVITY_ACC - 90.0;
-    float angularPosition = 0.0;
 
     // Enable the data flow
     int rv = sensorEnable(mDeviceId, true);
@@ -256,8 +257,9 @@ void FreespaceOrientationInput::pollThread()
             continue;
         }
 
-        angularPosition = weightedFilter(slope * acc.y + offset);
-        mCallbacks.mSet(angularPosition);
+        float angularPan = weightedFilter(slope * acc.y + offset, mPrevPan, mPanIndex);
+        float angularTilt = weightedFilter(slope * acc.x + offset, mPrevTilt, mTiltIndex);
+        mCallbacks.mSet(PanTilt(angularPan, angularTilt));
     }
 
     // Disable data flow
@@ -338,15 +340,15 @@ int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
     return 0;
 }
 
-float FreespaceOrientationInput::weightedFilter(float angularPosition)
+float FreespaceOrientationInput::weightedFilter(float angularPosition, float previous[], unsigned& index)
 {
     float ret = 0.0;
-    mPrevAngPos[mFilterIndex] = angularPosition;
-    mFilterIndex = nextFirIndex(mFilterIndex);
+    previous[index] = angularPosition;
+    index = nextFirIndex(index);
 
     for (unsigned i = 0; i < FIR_LEN; i++)
     {
-        ret += FIR_COEFFS[i] * mPrevAngPos[(i + mFilterIndex) & (FIR_LEN - 1)];
+        ret += FIR_COEFFS[i] * previous[(i + index) & (FIR_LEN - 1)];
     }
 
     return ret;
