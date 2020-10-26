@@ -21,8 +21,10 @@
 BaseOrientationOutput::BaseOrientationOutput(const Options& options) :
     OrientationOutput(),
     mVerbose(options.mVerbose),
-    mAngularPositionMin(options.mAngularPositionMin),
-    mAngularPositionMax(options.mAngularPositionMax),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
     mAngularPosition(0.0, 0.0)
 {
 
@@ -57,25 +59,15 @@ bool BaseOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
     return p1 == p2;
 }
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 bool BaseOrientationOutput::safelySetAngularPosition(PanTilt& angularPosition)
 {
-    if (angularPosition.pan < mAngularPositionMin)
-    {
-        angularPosition.pan = mAngularPositionMin;
-    }
-    else if (angularPosition.pan > mAngularPositionMax)
-    {
-        angularPosition.pan = mAngularPositionMax;
-    }
-
-    if (angularPosition.tilt < mAngularPositionMin)
-    {
-        angularPosition.tilt = mAngularPositionMin;
-    }
-    else if (angularPosition.tilt > mAngularPositionMax)
-    {
-        angularPosition.tilt = mAngularPositionMax;
-    }
+    angularPosition.pan = MAX(angularPosition.pan, mPanAxisMin);
+    angularPosition.pan = MIN(angularPosition.pan, mPanAxisMax);
+    angularPosition.tilt = MAX(angularPosition.tilt, mTiltAxisMin);
+    angularPosition.tilt = MIN(angularPosition.tilt, mTiltAxisMax);
 
     if (!equivalentPosition(mAngularPosition, angularPosition))
     {

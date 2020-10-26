@@ -33,8 +33,10 @@ public:
 
 private:
     const bool           mVerbose;
-    const float          mAngMin;
-    const float          mAngMax;
+    const float          mPanAxisMin;
+    const float          mPanAxisMax;
+    const float          mTiltAxisMin;
+    const float          mTiltAxisMax;
     const float          mAngIncrement;
     const bool           mImageSlidingWindow;
     const unsigned char  mImageTrackingRGB[3];

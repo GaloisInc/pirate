@@ -29,8 +29,10 @@ XWinFrameProcessor::XWinFrameProcessor(const Options& options,
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mCallbacks(angPosCallbacks),
-    mAngMin(options.mAngularPositionMin),
-    mAngMax(options.mAngularPositionMax),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
     mImageSlidingWindow(options.mImageSlidingWindow)
 {
 
@@ -76,11 +78,11 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
 void XWinFrameProcessor::slidingWindow() {
     int x, y, k;
 
-    float x_range = mAngMax - mAngMin;
-    float y_range = mAngMax - mAngMin;
+    float x_range = mPanAxisMax - mPanAxisMin;
+    float y_range = mTiltAxisMax - mTiltAxisMin;
     PanTilt position = mCallbacks.mGet();
-    float x_percent = (position.pan - mAngMin) / x_range;
-    float y_percent = (position.tilt - mAngMin) / y_range;
+    float x_percent = (position.pan - mPanAxisMin) / x_range;
+    float y_percent = (position.tilt - mTiltAxisMin) / y_range;
     int x_center = mImageWidth * x_percent;
     int y_center = mImageHeight * y_percent;
     // min can go negative

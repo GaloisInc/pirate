@@ -33,8 +33,10 @@ public:
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
     const bool mVerbose;
-    const float mAngularPositionMin;
-    const float mAngularPositionMax;
+    const float mPanAxisMin;
+    const float mPanAxisMax;
+    const float mTiltAxisMin;
+    const float mTiltAxisMax;
 
 protected:
     virtual bool applyAngularPosition(PanTilt angularPosition);

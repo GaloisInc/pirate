@@ -54,8 +54,10 @@ struct Options
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
-        mAngularPositionMin(-45.0),
-        mAngularPositionMax(45.0),
+        mPanAxisMin(-45.0),
+        mPanAxisMax(45.0),
+        mTiltAxisMin(-45.0),
+        mTiltAxisMax(45.0),
         mAngularPositionIncrement(1.0),
         mVerbose(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
@@ -91,8 +93,10 @@ struct Options
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
-    float mAngularPositionMin;
-    float mAngularPositionMax;
+    float mPanAxisMin;
+    float mPanAxisMax;
+    float mTiltAxisMin;
+    float mTiltAxisMax;
     float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;

@@ -23,8 +23,10 @@ ColorTracking::ColorTracking(
     OrientationInput(angPosallbacks),
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
-    mAngMin(options.mAngularPositionMin),
-    mAngMax(options.mAngularPositionMax),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
     mAngIncrement(options.mAngularPositionIncrement),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
@@ -99,8 +101,8 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
 
     if (mImageSlidingWindow) {
         PanTilt angularPosition = mCallbacks.mGet();
-        float fractionX = (angularPosition.pan - mAngMin) / (mAngMax - mAngMin);
-        float fractionY = (angularPosition.tilt - mAngMin) / (mAngMax - mAngMin);
+        float fractionX = (angularPosition.pan - mPanAxisMin) / (mPanAxisMax - mPanAxisMin);
+        float fractionY = (angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
         x_center = mImageWidth * fractionX;
         y_center = mImageHeight * fractionY;
     } else {
