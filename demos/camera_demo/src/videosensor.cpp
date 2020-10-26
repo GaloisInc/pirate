@@ -223,6 +223,7 @@ int VideoSensor::closeVideoDevice()
 int VideoSensor::initVideoDevice()
 {
     int rv;
+    struct v4l2_control ctrl;
 
     // Query video device capabilities
     std::memset(&mCapability, 0, sizeof(mCapability));
@@ -272,7 +273,6 @@ int VideoSensor::initVideoDevice()
     // Horizontal flip
     if (mFlipHorizontal)
     {
-        struct v4l2_control ctrl;
         std::memset(&ctrl, 0, sizeof(ctrl));
         ctrl.id = V4L2_CID_HFLIP;
         ctrl.value = 1;
@@ -288,7 +288,6 @@ int VideoSensor::initVideoDevice()
     // Vertical flip
     if (mFlipVertical)
     {
-        struct v4l2_control ctrl;
         std::memset(&ctrl, 0, sizeof(ctrl));
         ctrl.id = V4L2_CID_VFLIP;
         ctrl.value = 1;
@@ -299,6 +298,26 @@ int VideoSensor::initVideoDevice()
             std::perror("V4L2: failed to set camera vertical flip mode");
             return -1;
         }
+    }
+
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_MPEG_VIDEO_H264_I_PERIOD;
+    ctrl.value = 60; // 60 is the default value
+
+    rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+    if (rv != 0)
+    {
+        errno = 0;
+    }
+
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_MPEG_VIDEO_REPEAT_SEQ_HEADER;
+    ctrl.value = 1;
+
+    rv = ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+    if (rv != 0)
+    {
+        errno = 0;
     }
 
     // Configure image format
