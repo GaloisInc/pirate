@@ -7,6 +7,8 @@
 
 
 struct Annotation_Struct_Example {
+	int32_t u __attribute__((aligned(4)));
+	float v __attribute__((aligned(4)));
 	double x __attribute__((aligned(8)));
 	double y __attribute__((aligned(8)));
 	double z __attribute__((aligned(8)));
@@ -22,6 +24,8 @@ struct Annotation_Union_Example {
 };
 
 struct Annotation_Struct_Example_wire {
+	unsigned char u[4] __attribute__((aligned(4)));
+	unsigned char v[4] __attribute__((aligned(4)));
 	unsigned char x[8] __attribute__((aligned(8)));
 	unsigned char y[8] __attribute__((aligned(8)));
 	unsigned char z[8] __attribute__((aligned(8)));
@@ -41,15 +45,23 @@ static_assert(sizeof(struct Annotation_Union_Example) == sizeof(struct Annotatio
 );
 
 void encode_annotation_struct_example(struct Annotation_Struct_Example* input, struct Annotation_Struct_Example_wire* output) {
+	uint32_t field_u;
+	uint32_t field_v;
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
+	memcpy(&field_u, &input->u, sizeof(uint32_t));
+	memcpy(&field_v, &input->v, sizeof(uint32_t));
 	memcpy(&field_x, &input->x, sizeof(uint64_t));
 	memcpy(&field_y, &input->y, sizeof(uint64_t));
 	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_u = htobe32(field_u);
+	field_v = htobe32(field_v);
 	field_x = htobe64(field_x);
 	field_y = htobe64(field_y);
 	field_z = htobe64(field_z);
+	memcpy(&output->u, &field_u, sizeof(uint32_t));
+	memcpy(&output->v, &field_v, sizeof(uint32_t));
 	memcpy(&output->x, &field_x, sizeof(uint64_t));
 	memcpy(&output->y, &field_y, sizeof(uint64_t));
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
@@ -85,15 +97,23 @@ void encode_annotation_union_example(struct Annotation_Union_Example* input, str
 }
 
 void decode_annotation_struct_example(struct Annotation_Struct_Example_wire* input, struct Annotation_Struct_Example* output) {
+	uint32_t field_u;
+	uint32_t field_v;
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
+	memcpy(&field_u, &input->u, sizeof(uint32_t));
+	memcpy(&field_v, &input->v, sizeof(uint32_t));
 	memcpy(&field_x, &input->x, sizeof(uint64_t));
 	memcpy(&field_y, &input->y, sizeof(uint64_t));
 	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_u = be32toh(field_u);
+	field_v = be32toh(field_v);
 	field_x = be64toh(field_x);
 	field_y = be64toh(field_y);
 	field_z = be64toh(field_z);
+	memcpy(&output->u, &field_u, sizeof(uint32_t));
+	memcpy(&output->v, &field_v, sizeof(uint32_t));
 	memcpy(&output->x, &field_x, sizeof(uint64_t));
 	memcpy(&output->y, &field_y, sizeof(uint64_t));
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
@@ -129,6 +149,12 @@ void decode_annotation_union_example(struct Annotation_Union_Example_wire* input
 }
 
 int validate_annotation_struct_example(const struct Annotation_Struct_Example* input) {
+	if (input->u != 0) {
+		return -1;
+	}
+	if (input->v != 10) {
+		return -1;
+	}
 	if (input->x < 0) {
 		return -1;
 	}

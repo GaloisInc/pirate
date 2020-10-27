@@ -216,7 +216,7 @@ get_type_name(TypeSpec* typeSpec)
     }
 }
 
-void construct_array(Element* e, std::vector<int> const& dimensions, TypeSpec* type);
+void construct_member(Element* e, Declarator* decl, TypeSpec* type);
 
 void
 finish_type(Element* e, TypeSpec* typeSpec)
@@ -287,7 +287,7 @@ finish_type(Element* e, TypeSpec* typeSpec)
                     auto member = add_element(sequence, "xs:element");
                     member->SetAttribute("name", d->identifier);
 
-                    construct_array(member, d->dimensions, m->typeSpec);
+                    construct_member(member, d, m->typeSpec);
                 }
             }
             return;
@@ -327,23 +327,28 @@ finish_type(Element* e, TypeSpec* typeSpec)
                 member->SetAttribute("dfdl:choiceBranchKey", labels);
                 member->SetAttribute("name", m->declarator->identifier);
 
-                construct_array(member, m->declarator->dimensions, m->typeSpec);
+                construct_member(member, m->declarator, m->typeSpec);
             }
             return;
         }
     }
 }
 
-void construct_array(Element* e, std::vector<int> const& dimensions, TypeSpec* type)
+void construct_member(Element* e, Declarator* decl, TypeSpec* type)
 {
-    for (auto d : dimensions) {
+    for (auto dim : decl->dimensions) {
         auto complexType = add_element(e, "xs:complexType");
         auto sequence = add_element(complexType, "xs:sequence");
         e = add_element(sequence, "xs:element");
         e->SetAttribute("name", "item");
-        e->SetAttribute("minOccurs", d);
-        e->SetAttribute("maxOccurs", d);
+        e->SetAttribute("minOccurs", dim);
+        e->SetAttribute("maxOccurs", dim);
         e->SetAttribute("dfdl:occursCountKind", "fixed");
+    }
+    for (auto ann : decl->annotations) {
+        if (auto * valueAnn = dynamic_cast<ValueAnnotation*>(ann)) {
+            e->SetAttribute("fixed", valueAnn->value);
+        }
     }
 
     finish_type(e, type);
