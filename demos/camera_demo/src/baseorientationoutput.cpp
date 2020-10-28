@@ -21,9 +21,11 @@
 BaseOrientationOutput::BaseOrientationOutput(const Options& options) :
     OrientationOutput(),
     mVerbose(options.mVerbose),
-    mAngularPositionMin(options.mAngularPositionMin),
-    mAngularPositionMax(options.mAngularPositionMax),
-    mAngularPosition(0.0)
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
+    mAngularPosition(0.0, 0.0)
 {
 
 }
@@ -43,27 +45,31 @@ void BaseOrientationOutput::term()
 
 }
 
-float BaseOrientationOutput::getAngularPosition()
+PanTilt BaseOrientationOutput::getAngularPosition()
 {
-    float angularPosition;
+    PanTilt angularPosition;
     mLock.lock();
     angularPosition = mAngularPosition;
     mLock.unlock();
     return angularPosition;
 }
 
-bool BaseOrientationOutput::safelySetAngularPosition(float& angularPosition)
+bool BaseOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
 {
-    if (angularPosition < mAngularPositionMin)
-    {
-        angularPosition = mAngularPositionMin;
-    }
-    else if (angularPosition > mAngularPositionMax)
-    {
-        angularPosition = mAngularPositionMax;
-    }
+    return p1 == p2;
+}
 
-    if (mAngularPosition != angularPosition)
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+
+bool BaseOrientationOutput::safelySetAngularPosition(PanTilt& angularPosition)
+{
+    angularPosition.pan = MAX(angularPosition.pan, mPanAxisMin);
+    angularPosition.pan = MIN(angularPosition.pan, mPanAxisMax);
+    angularPosition.tilt = MAX(angularPosition.tilt, mTiltAxisMin);
+    angularPosition.tilt = MIN(angularPosition.tilt, mTiltAxisMax);
+
+    if (!equivalentPosition(mAngularPosition, angularPosition))
     {
         mAngularPosition = angularPosition;
         return true;
@@ -72,7 +78,7 @@ bool BaseOrientationOutput::safelySetAngularPosition(float& angularPosition)
     return false;
 }
 
-void BaseOrientationOutput::setAngularPosition(float angularPosition)
+void BaseOrientationOutput::setAngularPosition(PanTilt angularPosition)
 {
     mLock.lock();
 
@@ -92,11 +98,11 @@ void BaseOrientationOutput::setAngularPosition(float angularPosition)
     mLock.unlock();
 }
 
-void BaseOrientationOutput::updateAngularPosition(float positionUpdate)
+void BaseOrientationOutput::updateAngularPosition(PanTilt positionUpdate)
 {
     mLock.lock();
 
-    float angularPosition = mAngularPosition;
+    PanTilt angularPosition = mAngularPosition;
     angularPosition += positionUpdate;
 
     bool updated = safelySetAngularPosition(angularPosition);
@@ -118,7 +124,7 @@ void BaseOrientationOutput::updateAngularPosition(float positionUpdate)
     mLock.unlock();
 }
 
-bool BaseOrientationOutput::applyAngularPosition(float angularPosition)
+bool BaseOrientationOutput::applyAngularPosition(PanTilt angularPosition)
 {
     (void) angularPosition;
     return true;

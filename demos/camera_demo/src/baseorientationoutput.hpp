@@ -27,20 +27,23 @@ public:
     virtual int init() override;
     virtual void term() override;
 
-    virtual float getAngularPosition() override;
-    virtual void setAngularPosition(float angularPosition) override;
-    virtual void updateAngularPosition(float positionUpdate) override;
+    virtual PanTilt getAngularPosition() override;
+    virtual void setAngularPosition(PanTilt angularPosition) override;
+    virtual void updateAngularPosition(PanTilt positionUpdate) override;
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
     const bool mVerbose;
-    const float mAngularPositionMin;
-    const float mAngularPositionMax;
+    const float mPanAxisMin;
+    const float mPanAxisMax;
+    const float mTiltAxisMin;
+    const float mTiltAxisMax;
 
 protected:
-    virtual bool applyAngularPosition(float angularPosition);
+    virtual bool applyAngularPosition(PanTilt angularPosition);
 
 private:
     std::mutex mLock;
-    float mAngularPosition;
+    PanTilt mAngularPosition;
 
-    bool safelySetAngularPosition(float& angularPosition);
+    bool safelySetAngularPosition(PanTilt& angularPosition);
 };

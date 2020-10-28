@@ -3,9 +3,11 @@ module CameraDemo {
     struct OrientationOutputRequest {
         uint16 messageId;
         OrientationOutputReqType reqType;
-        float angularPosition;
+        float angularPositionPan;
+        float angularPositionTilt;
     };
     struct OrientationOutputResponse {
-        float angularPosition;
+        float angularPositionPan;
+        float angularPositionTilt;
     };
 };

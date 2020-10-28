@@ -24,13 +24,16 @@ const int OPT_CODEC     = 131;
 const int OPT_OUT_DIR   = 132;
 const int OPT_MAX_OUT   = 133;
 const int OPT_SLIDE     = 134;
-const int OPT_LIMIT     = 135;
-const int OPT_INC       = 136;
-const int OPT_LOGLEVEL  = 137;
-const int OPT_KBD       = 138;
-const int OPT_FREESPACE = 139;
-const int OPT_GAPS_REQ  = 140;
-const int OPT_GAPS_RSP  = 141;
+const int OPT_PAN_MIN   = 135;
+const int OPT_PAN_MAX   = 136;
+const int OPT_TILT_MIN  = 137;
+const int OPT_TILT_MAX  = 138;
+const int OPT_INC       = 139;
+const int OPT_LOGLEVEL  = 140;
+const int OPT_KBD       = 141;
+const int OPT_FREESPACE = 142;
+const int OPT_GAPS_REQ  = 143;
+const int OPT_GAPS_RSP  = 144;
 
 static struct argp_option options[] =
 {
@@ -55,7 +58,10 @@ static struct argp_option options[] =
     { "in_keyboard",  OPT_KBD,       NULL,          0, "read position input from keyboard",         0 },
     { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
     { "output",       'o',           "type",        0, "controller output (servo|print|none)",      0 },
-    { "output_limit", OPT_LIMIT,     "val",         0, "angular position bound",                    0 },
+    { "pan_min",      OPT_PAN_MIN,   "val",         0, "pan axis minimum angle",                    0 },
+    { "pan_max",      OPT_PAN_MAX,   "val",         0, "pan axis maximum angle",                    0 },
+    { "tilt_min",     OPT_TILT_MIN,  "val",         0, "tilt axis minimum angle",                   0 },
+    { "tilt_max",     OPT_TILT_MAX,  "val",         0, "tilt axis maximum angle",                   0 },
     { "output_incr",  OPT_INC,       "val",         0, "angular position increment",                0 },
     { "gaps_req",     OPT_GAPS_REQ,  "channel",     0, "gaps request channel",                      0 },
     { "gaps_rsp",     OPT_GAPS_RSP,  "channel",     0, "gaps response channel",                     0 },
@@ -230,13 +236,21 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mH264DecoderUrl = parseStreamUrl(ss.str(), state, false);
             break;
 
-        case OPT_LIMIT: {
-            float limit;
-            ss >> limit;
-            opt->mAngularPositionMin = -limit;
-            opt->mAngularPositionMax = limit;
+        case OPT_PAN_MIN:
+            ss >> opt->mPanAxisMin;
             break;
-        }
+
+        case OPT_PAN_MAX:
+            ss >> opt->mPanAxisMax;
+            break;
+
+        case OPT_TILT_MIN:
+            ss >> opt->mTiltAxisMin;
+            break;
+
+        case OPT_TILT_MAX:
+            ss >> opt->mTiltAxisMax;
+            break;
 
         case OPT_INC:
             ss >> opt->mAngularPositionIncrement;

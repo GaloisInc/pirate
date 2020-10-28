@@ -23,8 +23,10 @@ ColorTracking::ColorTracking(
     OrientationInput(angPosallbacks),
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
-    mAngMin(options.mAngularPositionMin),
-    mAngMax(options.mAngularPositionMax),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
     mAngIncrement(options.mAngularPositionIncrement),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
@@ -80,9 +82,12 @@ void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
 }
 
 int ColorTracking::process(FrameBuffer data, size_t length) {
-    int center, delta;
+    int x_center, y_center;
+    int x_delta, y_delta;
     int x_position, y_position;
-    int tolerance = mImageWidth / 10; // 10% tolerance
+    int x_tolerance = mImageWidth / 10; // 10% tolerance
+    int y_tolerance = mImageHeight / 10; // 10% tolerance
+    PanTilt update = PanTilt(0.0, 0.0);
 
     if (length != (mImageWidth * mImageHeight * 4)) {
         return -1;
@@ -95,18 +100,33 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
     }
 
     if (mImageSlidingWindow) {
-        float angularPosition = mCallbacks.mGet();
-        float fraction = (angularPosition - mAngMin) / (mAngMax - mAngMin);
-        center = mImageWidth * fraction;
+        PanTilt angularPosition = mCallbacks.mGet();
+        float fractionX = (angularPosition.pan - mPanAxisMin) / (mPanAxisMax - mPanAxisMin);
+        float fractionY = (angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
+        x_center = mImageWidth * fractionX;
+        y_center = mImageHeight * fractionY;
     } else {
-        center = mImageWidth / 2;
+        x_center = mImageWidth / 2;
+        y_center = mImageHeight / 2;
     }
 
-    delta = x_position - center;
-    if (delta > tolerance) {
-        mCallbacks.mUpdate(mAngIncrement);
-    } else if (delta < -tolerance) {
-        mCallbacks.mUpdate(-mAngIncrement);
+    x_delta = x_position - x_center;
+    y_delta = y_position - y_center;
+
+    if (x_delta > x_tolerance) {
+        update.pan = mAngIncrement;
+    } else if (x_delta < -x_tolerance) {
+        update.pan = -mAngIncrement;
+    }
+
+    if (y_delta > y_tolerance) {
+        update.tilt = mAngIncrement;
+    } else if (y_delta < -y_tolerance) {
+        update.tilt = -mAngIncrement;
+    }
+
+    if ((update.pan != 0.0) || (update.tilt != 0.0)) {
+        mCallbacks.mUpdate(update);
     }
 
     return 0;

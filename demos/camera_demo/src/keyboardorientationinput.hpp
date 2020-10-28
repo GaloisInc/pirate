@@ -37,8 +37,10 @@ private:
     const float mAngIncrement;
 
     enum eKeyCode {
-        LEFT  = 0x44,
-        RIGHT = 0x43
+        UP    = 0x41,
+        DOWN  = 0x42,
+        RIGHT = 0x43,
+        LEFT  = 0x44
     };
 
     struct termios mTermiosBackup;

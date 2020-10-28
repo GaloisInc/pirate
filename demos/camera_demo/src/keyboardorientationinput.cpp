@@ -89,6 +89,7 @@ void KeyboardOrientationInput::pollThread()
 {
     while (mPoll)
     {
+        PanTilt panTiltUpdate = PanTilt();
         fd_set fdSet;
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
@@ -121,11 +122,21 @@ void KeyboardOrientationInput::pollThread()
 
         switch (c)
         {
+            case UP:
+                panTiltUpdate.tilt = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
+            case DOWN:
+                panTiltUpdate.tilt = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
             case LEFT:
-                mCallbacks.mUpdate(-mAngIncrement);
+                panTiltUpdate.pan = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             case RIGHT:
-                mCallbacks.mUpdate(mAngIncrement);
+                panTiltUpdate.pan = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             default:
                 continue;

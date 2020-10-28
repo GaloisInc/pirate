@@ -93,9 +93,15 @@ int PiServoOrientationOutput::angleToServo(float angle)
     return -1.0 * slope * angle + off;
 }
 
-bool PiServoOrientationOutput::applyAngularPosition(float angularPosition)
+bool PiServoOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
 {
-    int rv = gpioServo(mServoPin, angleToServo(angularPosition));
+    // ignore changes in tilt angle
+    return p1.pan == p2.pan;
+}
+
+bool PiServoOrientationOutput::applyAngularPosition(PanTilt angularPosition)
+{
+    int rv = gpioServo(mServoPin, angleToServo(angularPosition.pan));
 
     if (rv < 0)
     {
