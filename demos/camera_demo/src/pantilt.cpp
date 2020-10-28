@@ -13,27 +13,19 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#pragma once
+#include "pantilt.hpp"
 
-#include "baseorientationoutput.hpp"
+std::ostream& operator<<(std::ostream& out, const PanTilt& pt) {
+    out << '(' << pt.pan
+        << ',' << pt.tilt
+        << ')';
+    return out;
+}
 
-class PiServoOrientationOutput : public BaseOrientationOutput
-{
-public:
-    PiServoOrientationOutput(int servoPin, const Options& options);
-    virtual ~PiServoOrientationOutput();
-
-    virtual int init() override;
-    virtual void term() override;
-
-    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
-
-private:
-    static int angleToServo(float angle);
-    virtual bool applyAngularPosition(PanTilt angularPosition) override;
-
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
-};
-
+bool operator==(const PanTilt &pt1, const PanTilt &pt2) {
+    return ((pt1.pan == pt2.pan) && (pt1.tilt == pt2.tilt));
+}
+ 
+bool operator!=(const PanTilt &pt1, const PanTilt &pt2) {
+    return !(pt1 == pt2);
+}

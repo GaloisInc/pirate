@@ -15,14 +15,16 @@
 
 #pragma once
 
+#include "pantilt.hpp"
+
 #include <functional>
 #include <mutex>
 
 struct CameraOrientationCallbacks
 {
-    using GetCallback = std::function<float()>;
-    using SetCallback = std::function<void(float)>;
-    using UpdateCallback = std::function<void(float)>;
+    using GetCallback = std::function<PanTilt()>;
+    using SetCallback = std::function<void(PanTilt)>;
+    using UpdateCallback = std::function<void(PanTilt)>;
 
     CameraOrientationCallbacks(
         GetCallback get,
@@ -47,9 +49,10 @@ public:
     virtual int init() = 0;
     virtual void term() = 0;
 
-    virtual float getAngularPosition() = 0;
-    virtual void setAngularPosition(float angularPosition) = 0;
-    virtual void updateAngularPosition(float positionUpdate) = 0;
+    virtual PanTilt getAngularPosition() = 0;
+    virtual void setAngularPosition(PanTilt angularPosition) = 0;
+    virtual void updateAngularPosition(PanTilt positionUpdate) = 0;
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) = 0;
 
     const CameraOrientationCallbacks& getCallbacks();
 

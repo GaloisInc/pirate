@@ -40,8 +40,10 @@ protected:
 
 private:
     CameraOrientationCallbacks mCallbacks;
-    const float                mAngMin;
-    const float                mAngMax;
+    const float                mPanAxisMin;
+    const float                mPanAxisMax;
+    const float                mTiltAxisMin;
+    const float                mTiltAxisMax;
     bool                       mImageSlidingWindow;
     Display*                   mDisplay;
     Window                     mWindow;

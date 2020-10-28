@@ -20,21 +20,25 @@ namespace CameraDemo {
 	struct OrientationOutputRequest {
 		uint16_t messageId __attribute__((aligned(2)));
 		OrientationOutputReqType reqType __attribute__((aligned(4)));
-		float angularPosition __attribute__((aligned(4)));
+		float angularPositionPan __attribute__((aligned(4)));
+		float angularPositionTilt __attribute__((aligned(4)));
 	};
 
 	struct OrientationOutputResponse {
-		float angularPosition __attribute__((aligned(4)));
+		float angularPositionPan __attribute__((aligned(4)));
+		float angularPositionTilt __attribute__((aligned(4)));
 	};
 
 	struct OrientationOutputRequest_wire {
 		unsigned char messageId[2] __attribute__((aligned(2)));
 		unsigned char reqType[4] __attribute__((aligned(4)));
-		unsigned char angularPosition[4] __attribute__((aligned(4)));
+		unsigned char angularPositionPan[4] __attribute__((aligned(4)));
+		unsigned char angularPositionTilt[4] __attribute__((aligned(4)));
 	};
 
 	struct OrientationOutputResponse_wire {
-		unsigned char angularPosition[4] __attribute__((aligned(4)));
+		unsigned char angularPositionPan[4] __attribute__((aligned(4)));
+		unsigned char angularPositionTilt[4] __attribute__((aligned(4)));
 	};
 
 	static_assert(sizeof(struct OrientationOutputRequest) == sizeof(struct OrientationOutputRequest_wire), "size of struct OrientationOutputRequest not equal to wire protocol struct");
@@ -59,16 +63,20 @@ namespace pirate {
 			const struct CameraDemo::OrientationOutputRequest* input = &val;
 			uint16_t field_messageId;
 			uint32_t field_reqType;
-			uint32_t field_angularPosition;
+			uint32_t field_angularPositionPan;
+			uint32_t field_angularPositionTilt;
 			memcpy(&field_messageId, &input->messageId, sizeof(uint16_t));
 			memcpy(&field_reqType, &input->reqType, sizeof(uint32_t));
-			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
+			memcpy(&field_angularPositionPan, &input->angularPositionPan, sizeof(uint32_t));
+			memcpy(&field_angularPositionTilt, &input->angularPositionTilt, sizeof(uint32_t));
 			field_messageId = htobe16(field_messageId);
 			field_reqType = htobe32(field_reqType);
-			field_angularPosition = htobe32(field_angularPosition);
+			field_angularPositionPan = htobe32(field_angularPositionPan);
+			field_angularPositionTilt = htobe32(field_angularPositionTilt);
 			memcpy(&output->messageId, &field_messageId, sizeof(uint16_t));
 			memcpy(&output->reqType, &field_reqType, sizeof(uint32_t));
-			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
+			memcpy(&output->angularPositionPan, &field_angularPositionPan, sizeof(uint32_t));
+			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 		}
 
 		static struct CameraDemo::OrientationOutputRequest fromBuffer(std::vector<char> const& buf) {
@@ -83,16 +91,20 @@ namespace pirate {
 			}
 			uint16_t field_messageId;
 			uint32_t field_reqType;
-			uint32_t field_angularPosition;
+			uint32_t field_angularPositionPan;
+			uint32_t field_angularPositionTilt;
 			memcpy(&field_messageId, &input->messageId, sizeof(uint16_t));
 			memcpy(&field_reqType, &input->reqType, sizeof(uint32_t));
-			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
+			memcpy(&field_angularPositionPan, &input->angularPositionPan, sizeof(uint32_t));
+			memcpy(&field_angularPositionTilt, &input->angularPositionTilt, sizeof(uint32_t));
 			field_messageId = be16toh(field_messageId);
 			field_reqType = be32toh(field_reqType);
-			field_angularPosition = be32toh(field_angularPosition);
+			field_angularPositionPan = be32toh(field_angularPositionPan);
+			field_angularPositionTilt = be32toh(field_angularPositionTilt);
 			memcpy(&output->messageId, &field_messageId, sizeof(uint16_t));
 			memcpy(&output->reqType, &field_reqType, sizeof(uint32_t));
-			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
+			memcpy(&output->angularPositionPan, &field_angularPositionPan, sizeof(uint32_t));
+			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 			return retval;
 		}
 	};
@@ -103,10 +115,14 @@ namespace pirate {
 			buf.resize(sizeof(struct CameraDemo::OrientationOutputResponse));
 			struct CameraDemo::OrientationOutputResponse_wire* output = (struct CameraDemo::OrientationOutputResponse_wire*) buf.data();
 			const struct CameraDemo::OrientationOutputResponse* input = &val;
-			uint32_t field_angularPosition;
-			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
-			field_angularPosition = htobe32(field_angularPosition);
-			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
+			uint32_t field_angularPositionPan;
+			uint32_t field_angularPositionTilt;
+			memcpy(&field_angularPositionPan, &input->angularPositionPan, sizeof(uint32_t));
+			memcpy(&field_angularPositionTilt, &input->angularPositionTilt, sizeof(uint32_t));
+			field_angularPositionPan = htobe32(field_angularPositionPan);
+			field_angularPositionTilt = htobe32(field_angularPositionTilt);
+			memcpy(&output->angularPositionPan, &field_angularPositionPan, sizeof(uint32_t));
+			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 		}
 
 		static struct CameraDemo::OrientationOutputResponse fromBuffer(std::vector<char> const& buf) {
@@ -119,10 +135,14 @@ namespace pirate {
 					std::to_string(sizeof(struct CameraDemo::OrientationOutputResponse));
 				throw std::length_error(error_msg);
 			}
-			uint32_t field_angularPosition;
-			memcpy(&field_angularPosition, &input->angularPosition, sizeof(uint32_t));
-			field_angularPosition = be32toh(field_angularPosition);
-			memcpy(&output->angularPosition, &field_angularPosition, sizeof(uint32_t));
+			uint32_t field_angularPositionPan;
+			uint32_t field_angularPositionTilt;
+			memcpy(&field_angularPositionPan, &input->angularPositionPan, sizeof(uint32_t));
+			memcpy(&field_angularPositionTilt, &input->angularPositionTilt, sizeof(uint32_t));
+			field_angularPositionPan = be32toh(field_angularPositionPan);
+			field_angularPositionTilt = be32toh(field_angularPositionTilt);
+			memcpy(&output->angularPositionPan, &field_angularPositionPan, sizeof(uint32_t));
+			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 			return retval;
 		}
 	};

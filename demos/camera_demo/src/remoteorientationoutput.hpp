@@ -36,9 +36,10 @@ public:
     virtual int init() override;
     virtual void term() override;
 
-    virtual float getAngularPosition() override;
-    virtual void setAngularPosition(float angularPosition) override;
-    virtual void updateAngularPosition(float positionUpdate) override;
+    virtual PanTilt getAngularPosition() override;
+    virtual void setAngularPosition(PanTilt angularPosition) override;
+    virtual void updateAngularPosition(PanTilt positionUpdate) override;
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
 private:
     const std::unique_ptr<OrientationOutput> mDelegate;
