@@ -106,7 +106,7 @@ void float64ScaledTo8UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 18446744073709551615ull)
+    if(scaledvalue >= ((double) 18446744073709551615ull))
         number = 18446744073709551615ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -134,7 +134,7 @@ void float64ScaledTo8UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 18446744073709551615ull)
+    if(scaledvalue >= ((double) 18446744073709551615ull))
         number = 18446744073709551615ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -163,14 +163,14 @@ void float64ScaledTo8SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 9223372036854775807ll)
+        if(scaledvalue >= ((double) 9223372036854775807ll))
             number = 9223372036854775807ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-9223372036854775807ll - 1))
+        if(scaledvalue <= ((double) (-9223372036854775807ll - 1)))
             number = (-9223372036854775807ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -198,14 +198,14 @@ void float64ScaledTo8SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 9223372036854775807ll)
+        if(scaledvalue >= ((double) 9223372036854775807ll))
             number = 9223372036854775807ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-9223372036854775807ll - 1))
+        if(scaledvalue <= ((double) (-9223372036854775807ll - 1)))
             number = (-9223372036854775807ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -232,7 +232,7 @@ void float64ScaledTo7UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 72057594037927935ull)
+    if(scaledvalue >= ((double) 72057594037927935ull))
         number = 72057594037927935ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -260,7 +260,7 @@ void float64ScaledTo7UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 72057594037927935ull)
+    if(scaledvalue >= ((double) 72057594037927935ull))
         number = 72057594037927935ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -289,14 +289,14 @@ void float64ScaledTo7SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 36028797018963967ll)
+        if(scaledvalue >= ((double) 36028797018963967ll))
             number = 36028797018963967ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-36028797018963967ll - 1))
+        if(scaledvalue <= ((double) (-36028797018963967ll - 1)))
             number = (-36028797018963967ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -324,14 +324,14 @@ void float64ScaledTo7SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 36028797018963967ll)
+        if(scaledvalue >= ((double) 36028797018963967ll))
             number = 36028797018963967ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-36028797018963967ll - 1))
+        if(scaledvalue <= ((double) (-36028797018963967ll - 1)))
             number = (-36028797018963967ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -358,7 +358,7 @@ void float64ScaledTo6UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 281474976710655ull)
+    if(scaledvalue >= ((double) 281474976710655ull))
         number = 281474976710655ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -386,7 +386,7 @@ void float64ScaledTo6UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 281474976710655ull)
+    if(scaledvalue >= ((double) 281474976710655ull))
         number = 281474976710655ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -415,14 +415,14 @@ void float64ScaledTo6SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 140737488355327ll)
+        if(scaledvalue >= ((double) 140737488355327ll))
             number = 140737488355327ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-140737488355327ll - 1))
+        if(scaledvalue <= ((double) (-140737488355327ll - 1)))
             number = (-140737488355327ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -450,14 +450,14 @@ void float64ScaledTo6SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 140737488355327ll)
+        if(scaledvalue >= ((double) 140737488355327ll))
             number = 140737488355327ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-140737488355327ll - 1))
+        if(scaledvalue <= ((double) (-140737488355327ll - 1)))
             number = (-140737488355327ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -484,7 +484,7 @@ void float64ScaledTo5UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 1099511627775ull)
+    if(scaledvalue >= ((double) 1099511627775ull))
         number = 1099511627775ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -512,7 +512,7 @@ void float64ScaledTo5UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint64_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 1099511627775ull)
+    if(scaledvalue >= ((double) 1099511627775ull))
         number = 1099511627775ull;
     else if(scaledvalue <= 0)
         number = 0;
@@ -541,14 +541,14 @@ void float64ScaledTo5SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 549755813887ll)
+        if(scaledvalue >= ((double) 549755813887ll))
             number = 549755813887ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-549755813887ll - 1))
+        if(scaledvalue <= ((double) (-549755813887ll - 1)))
             number = (-549755813887ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -576,14 +576,14 @@ void float64ScaledTo5SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 549755813887ll)
+        if(scaledvalue >= ((double) 549755813887ll))
             number = 549755813887ll;
         else
             number = (int64_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-549755813887ll - 1))
+        if(scaledvalue <= ((double) (-549755813887ll - 1)))
             number = (-549755813887ll - 1);
         else
             number = (int64_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -611,7 +611,7 @@ void float64ScaledTo4UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 4294967295uL)
+    if(scaledvalue >= ((double) 4294967295uL))
         number = 4294967295uL;
     else if(scaledvalue <= 0)
         number = 0;
@@ -639,7 +639,7 @@ void float64ScaledTo4UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 4294967295uL)
+    if(scaledvalue >= ((double) 4294967295uL))
         number = 4294967295uL;
     else if(scaledvalue <= 0)
         number = 0;
@@ -668,14 +668,14 @@ void float64ScaledTo4SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 2147483647)
+        if(scaledvalue >= ((double) 2147483647))
             number = 2147483647;
         else
             number = (int32_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-2147483647 - 1))
+        if(scaledvalue <= ((double) (-2147483647 - 1)))
             number = (-2147483647 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -703,14 +703,14 @@ void float64ScaledTo4SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 2147483647)
+        if(scaledvalue >= ((double) 2147483647))
             number = 2147483647;
         else
             number = (int32_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-2147483647 - 1))
+        if(scaledvalue <= ((double) (-2147483647 - 1)))
             number = (-2147483647 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -737,7 +737,7 @@ void float64ScaledTo3UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 16777215u)
+    if(scaledvalue >= ((double) 16777215u))
         number = 16777215u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -765,7 +765,7 @@ void float64ScaledTo3UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 16777215u)
+    if(scaledvalue >= ((double) 16777215u))
         number = 16777215u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -794,14 +794,14 @@ void float64ScaledTo3SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 8388607)
+        if(scaledvalue >= ((double) 8388607))
             number = 8388607;
         else
             number = (int32_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-8388607 - 1))
+        if(scaledvalue <= ((double) (-8388607 - 1)))
             number = (-8388607 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -829,14 +829,14 @@ void float64ScaledTo3SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 8388607)
+        if(scaledvalue >= ((double) 8388607))
             number = 8388607;
         else
             number = (int32_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-8388607 - 1))
+        if(scaledvalue <= ((double) (-8388607 - 1)))
             number = (-8388607 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -863,7 +863,7 @@ void float64ScaledTo2UnsignedBeBytes(double value, uint8_t* bytes, int* index, d
     uint16_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 65535u)
+    if(scaledvalue >= ((double) 65535u))
         number = 65535u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -891,7 +891,7 @@ void float64ScaledTo2UnsignedLeBytes(double value, uint8_t* bytes, int* index, d
     uint16_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 65535u)
+    if(scaledvalue >= ((double) 65535u))
         number = 65535u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -920,14 +920,14 @@ void float64ScaledTo2SignedBeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 32767)
+        if(scaledvalue >= ((double) 32767))
             number = 32767;
         else
             number = (int16_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-32767 - 1))
+        if(scaledvalue <= ((double) (-32767 - 1)))
             number = (-32767 - 1);
         else
             number = (int16_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -955,14 +955,14 @@ void float64ScaledTo2SignedLeBytes(double value, uint8_t* bytes, int* index, dou
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 32767)
+        if(scaledvalue >= ((double) 32767))
             number = 32767;
         else
             number = (int16_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-32767 - 1))
+        if(scaledvalue <= ((double) (-32767 - 1)))
             number = (-32767 - 1);
         else
             number = (int16_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -988,7 +988,7 @@ void float64ScaledTo1UnsignedBytes(double value, uint8_t* bytes, int* index, dou
     uint8_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 255u)
+    if(scaledvalue >= ((double) 255u))
         number = 255u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1016,14 +1016,14 @@ void float64ScaledTo1SignedBytes(double value, uint8_t* bytes, int* index, doubl
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 127)
+        if(scaledvalue >= ((double) 127))
             number = 127;
         else
             number = (int8_t)(scaledvalue + 0.5); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-127 - 1))
+        if(scaledvalue <= ((double) (-127 - 1)))
             number = (-127 - 1);
         else
             number = (int8_t)(scaledvalue - 0.5); // account for fractional truncation
@@ -1050,7 +1050,7 @@ void float32ScaledTo4UnsignedBeBytes(float value, uint8_t* bytes, int* index, fl
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 4294967295uL)
+    if(scaledvalue >= ((double) 4294967295uL))
         number = 4294967295uL;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1078,7 +1078,7 @@ void float32ScaledTo4UnsignedLeBytes(float value, uint8_t* bytes, int* index, fl
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 4294967295uL)
+    if(scaledvalue >= ((double) 4294967295uL))
         number = 4294967295uL;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1107,14 +1107,14 @@ void float32ScaledTo4SignedBeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 2147483647)
+        if(scaledvalue >= ((double) 2147483647))
             number = 2147483647;
         else
             number = (int32_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-2147483647 - 1))
+        if(scaledvalue <= ((double) (-2147483647 - 1)))
             number = (-2147483647 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1142,14 +1142,14 @@ void float32ScaledTo4SignedLeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 2147483647)
+        if(scaledvalue >= ((double) 2147483647))
             number = 2147483647;
         else
             number = (int32_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-2147483647 - 1))
+        if(scaledvalue <= ((double) (-2147483647 - 1)))
             number = (-2147483647 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1176,7 +1176,7 @@ void float32ScaledTo3UnsignedBeBytes(float value, uint8_t* bytes, int* index, fl
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 16777215u)
+    if(scaledvalue >= ((double) 16777215u))
         number = 16777215u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1204,7 +1204,7 @@ void float32ScaledTo3UnsignedLeBytes(float value, uint8_t* bytes, int* index, fl
     uint32_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 16777215u)
+    if(scaledvalue >= ((double) 16777215u))
         number = 16777215u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1233,14 +1233,14 @@ void float32ScaledTo3SignedBeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 8388607)
+        if(scaledvalue >= ((double) 8388607))
             number = 8388607;
         else
             number = (int32_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-8388607 - 1))
+        if(scaledvalue <= ((double) (-8388607 - 1)))
             number = (-8388607 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1268,14 +1268,14 @@ void float32ScaledTo3SignedLeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 8388607)
+        if(scaledvalue >= ((double) 8388607))
             number = 8388607;
         else
             number = (int32_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-8388607 - 1))
+        if(scaledvalue <= ((double) (-8388607 - 1)))
             number = (-8388607 - 1);
         else
             number = (int32_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1302,7 +1302,7 @@ void float32ScaledTo2UnsignedBeBytes(float value, uint8_t* bytes, int* index, fl
     uint16_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 65535u)
+    if(scaledvalue >= ((double) 65535u))
         number = 65535u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1330,7 +1330,7 @@ void float32ScaledTo2UnsignedLeBytes(float value, uint8_t* bytes, int* index, fl
     uint16_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 65535u)
+    if(scaledvalue >= ((double) 65535u))
         number = 65535u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1359,14 +1359,14 @@ void float32ScaledTo2SignedBeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 32767)
+        if(scaledvalue >= ((double) 32767))
             number = 32767;
         else
             number = (int16_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-32767 - 1))
+        if(scaledvalue <= ((double) (-32767 - 1)))
             number = (-32767 - 1);
         else
             number = (int16_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1394,14 +1394,14 @@ void float32ScaledTo2SignedLeBytes(float value, uint8_t* bytes, int* index, floa
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 32767)
+        if(scaledvalue >= ((double) 32767))
             number = 32767;
         else
             number = (int16_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-32767 - 1))
+        if(scaledvalue <= ((double) (-32767 - 1)))
             number = (-32767 - 1);
         else
             number = (int16_t)(scaledvalue - 0.5f); // account for fractional truncation
@@ -1427,7 +1427,7 @@ void float32ScaledTo1UnsignedBytes(float value, uint8_t* bytes, int* index, floa
     uint8_t number;
 
     // Make sure number fits in the range
-    if(scaledvalue >= 255u)
+    if(scaledvalue >= ((double) 255u))
         number = 255u;
     else if(scaledvalue <= 0)
         number = 0;
@@ -1455,14 +1455,14 @@ void float32ScaledTo1SignedBytes(float value, uint8_t* bytes, int* index, float 
     // Make sure number fits in the range
     if(scaledvalue >= 0)
     {
-        if(scaledvalue >= 127)
+        if(scaledvalue >= ((double) 127))
             number = 127;
         else
             number = (int8_t)(scaledvalue + 0.5f); // account for fractional truncation
     }
     else
     {
-        if(scaledvalue <= (-127 - 1))
+        if(scaledvalue <= ((double) (-127 - 1)))
             number = (-127 - 1);
         else
             number = (int8_t)(scaledvalue - 0.5f); // account for fractional truncation
