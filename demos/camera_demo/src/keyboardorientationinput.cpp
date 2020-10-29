@@ -26,6 +26,7 @@ KeyboardOrientationInput::KeyboardOrientationInput(
         const Options& options, CameraOrientationCallbacks angPosCallbacks) :
     OrientationInput(angPosCallbacks),
     mAngIncrement(options.mAngularPositionIncrement),
+    mTermiosInit(false),
     mPollThread(nullptr),
     mPoll(false)
 {
@@ -58,6 +59,7 @@ int KeyboardOrientationInput::init()
         std::perror("tcsetattr failed");
         return -1;
     }
+    mTermiosInit = true;
 
     // Start the reading thread
     mPoll = true;
@@ -77,11 +79,14 @@ void KeyboardOrientationInput::term()
         mPollThread = nullptr;
     }
 
-    // Restore stdio defaults
-    int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
-    if (rv)
+    if (mTermiosInit)
     {
-        std::perror("tcsetattr failed");
+        // Restore stdio defaults
+        int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
+        if (rv)
+        {
+            std::perror("tcsetattr failed");
+        }
     }
 }
 

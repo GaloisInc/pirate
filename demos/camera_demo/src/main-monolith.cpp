@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <signal.h>
+#include <sys/ptrace.h>
 #include <sys/signalfd.h>
 #include <unistd.h>
 
@@ -56,20 +57,36 @@ static int waitInterrupt(void* arg) {
 
 int main(int argc, char *argv[])
 {
-    int rv;
+    int rv = 0;
+    bool tracing = false;
     Options options;
     sigset_t set;
-    std::thread *signalThread;
+    struct sigaction newaction;
+    std::thread *signalThread = nullptr;
     std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
 
-    // block SIGINT for all threads except for the signalThread
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
+    if (ptrace(PTRACE_TRACEME, 0, 1, 0) < 0) {
+        tracing = true;
+    } else {
+        ptrace(PTRACE_DETACH, 0, 1, 0);
+    }
+
+    if (tracing) {
+        // allow SIGINT to continue working under gdb
+    } else {
+        // block SIGINT for all threads except for the signalThread
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        pthread_sigmask(SIG_BLOCK, &set, NULL);
+        newaction.sa_handler = SIG_IGN;
+        newaction.sa_flags = 0;
+        sigemptyset(&newaction.sa_mask);
+        sigaction(SIGINT, &newaction, NULL);
+    }
 
     parseArgs(argc, argv, &options);
 
-    OrientationOutput *orientationOutput;
+    OrientationOutput *orientationOutput = nullptr;
     std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
@@ -117,14 +134,14 @@ int main(int argc, char *argv[])
     rv = orientationOutput->init();
     if (rv != 0)
     {
-        return -1;
+        goto cleanup;
     }
 
     for (auto orientationInput : orientationInputs) {
         rv = orientationInput->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -132,31 +149,37 @@ int main(int argc, char *argv[])
         rv = frameProcessor->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
     rv = videoSource->init();
     if (rv != 0)
     {
-        videoSource->term();
-        return -1;
+        goto cleanup;
     }
 
-    signalThread = new std::thread(waitInterrupt, nullptr);
+    if (!tracing) {
+        signalThread = new std::thread(waitInterrupt, nullptr);
+    }
 
     while (!interrupted)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    signalThread->join();
-
-    delete signalThread;
-    delete videoSource;
+cleanup:
+    if (signalThread != nullptr) {
+        signalThread->join();
+        delete signalThread;
+    }
+    if (videoSource != nullptr) {
+        delete videoSource;
+    }
     frameProcessors.clear();
     orientationInputs.clear();
-    delete orientationOutput;
-
-    return 0;
+    if (orientationOutput != nullptr) {
+        delete orientationOutput;
+    }
+    return rv;
 }

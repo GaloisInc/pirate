@@ -28,9 +28,11 @@ public:
 
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
+protected:
+    virtual bool applyAngularPosition(PanTilt angularPosition) override;
+
 private:
     static int angleToServo(float angle);
-    virtual bool applyAngularPosition(PanTilt angularPosition) override;
 
     const int mServoPin;
     const bool mGpioLibInit;
