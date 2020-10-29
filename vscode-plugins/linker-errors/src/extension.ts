@@ -7,14 +7,17 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "linker-errors" is now active!');
 
   diagnosticCollection = vscode.languages.createDiagnosticCollection(
-    'pirate-linker'
+    'linker-errors'
   );
 
   let disposable = vscode.commands.registerCommand(
-    'linker-errors.helloWorld',
+    'linker-errors.runLinker',
     async () => {
       let lr: LR.LinkerRunner = new LR.LinkerRunner();
-      lr.runLinker(diagnosticCollection);
+      lr.runLinker(
+        vscode.workspace.getConfiguration('linker-errors'),
+        diagnosticCollection
+      );
     }
   );
 

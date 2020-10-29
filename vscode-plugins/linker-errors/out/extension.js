@@ -15,10 +15,10 @@ const LR = require("./linkerRunner");
 let diagnosticCollection;
 function activate(context) {
     console.log('Congratulations, your extension "linker-errors" is now active!');
-    diagnosticCollection = vscode.languages.createDiagnosticCollection('pirate-linker');
-    let disposable = vscode.commands.registerCommand('linker-errors.helloWorld', () => __awaiter(this, void 0, void 0, function* () {
+    diagnosticCollection = vscode.languages.createDiagnosticCollection('linker-errors');
+    let disposable = vscode.commands.registerCommand('linker-errors.runLinker', () => __awaiter(this, void 0, void 0, function* () {
         let lr = new LR.LinkerRunner();
-        lr.runLinker(diagnosticCollection);
+        lr.runLinker(vscode.workspace.getConfiguration('linker-errors'), diagnosticCollection);
     }));
     context.subscriptions.push(disposable);
     context.subscriptions.push(diagnosticCollection);

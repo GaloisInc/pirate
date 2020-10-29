@@ -1,51 +1,75 @@
 {
-	"name": "linker-errors",
-	"publisher": "pirateteam",
-	"displayName": "linker-errors",
-	"description": "Show Pirate linker errors in the IDE",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.49.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:linker-errors.helloWorld"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "linker-errors.helloWorld",
-				"title": "Hello World"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.3",
-		"@types/mocha": "^8.0.0",
-		"@types/node": "^12.11.7",
-		"@types/tmp": "^0.2.0",
-		"@types/vscode": "^1.49.0",
-		"@typescript-eslint/eslint-plugin": "^4.1.1",
-		"@typescript-eslint/parser": "^4.1.1",
-		"eslint": "^7.9.0",
-		"glob": "^7.1.6",
-		"mocha": "^8.1.3",
-		"typescript": "^4.0.2",
-		"vscode-test": "^1.4.0"
-	},
-	"dependencies": {
-		"lookpath": "^1.1.0",
-		"tmp": "^0.2.1"
-	}
+  "name": "linker-errors",
+  "publisher": "pirateteam",
+  "displayName": "Linker Errors",
+  "description": "Show Pirate linker errors in the IDE",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.49.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:linker-errors.runLinker"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "linker-errors.runLinker",
+        "title": "Linker Errors: Run the linker"
+      }
+    ],
+    "configuration": {
+      "title": "Linker Errors",
+      "properties": {
+        "linker-errors.cmake.cmakePath": {
+          "type": "string",
+          "default": "cmake",
+          "description": "The full path to CMake, if it isn't already on your PATH"
+        },
+        "linker-errors.cmake.cmakeFlags": {
+          "type": "array",
+          "default": [
+            "-G",
+            "\"Unix Makefiles\"",
+            "-DCMAKE_BUILD_TYPE=Debug"
+          ],
+          "description": "Flags to pass to CMake when configuring this project to get linker errors.  Note that if you remove the defaults, things will break."
+        },
+        "linker-errors.make.makePath": {
+          "type": "string",
+          "default": "make",
+          "description": "The full path to make, if it isn't already on your PATH"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.11.7",
+    "@types/tmp": "^0.2.0",
+    "@types/vscode": "^1.49.0",
+    "@typescript-eslint/eslint-plugin": "^4.1.1",
+    "@typescript-eslint/parser": "^4.1.1",
+    "eslint": "^7.9.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.1.3",
+    "typescript": "^4.0.2",
+    "vscode-test": "^1.4.0"
+  },
+  "dependencies": {
+    "lookpath": "^1.1.0",
+    "tmp": "^0.2.1"
+  }
 }

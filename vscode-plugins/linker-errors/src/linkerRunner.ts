@@ -5,7 +5,10 @@ import * as lookpath from 'lookpath';
 
 export class LinkerRunner {
   // The public entry point for the linker, which just needs a way to register diagnostics.
-  public async runLinker(diagnosticCollection: vscode.DiagnosticCollection) {
+  public async runLinker(
+    config: vscode.WorkspaceConfiguration,
+    diagnosticCollection: vscode.DiagnosticCollection
+  ) {
     const buildDir = tmp.dirSync();
     const opts: child_process.SpawnSyncOptions = {
       cwd: buildDir.name,
@@ -13,7 +16,12 @@ export class LinkerRunner {
       shell: true,
     };
 
-    let buildCommands = await this.runCmake(opts);
+    let buildCommands = await this.runCmake(
+      opts,
+      config.get('make.makePath'),
+      config.get('cmake.cmakePath'),
+      config.get('cmake.cmakeFlags')
+    );
     if (!buildCommands) {
       console.log(
         'Fatal error while running CMake prevented linker extension from running'
@@ -198,7 +206,10 @@ export class LinkerRunner {
   // Try to get the compiler/linker commands that cmake would have used to build
   // a project.
   private async runCmake(
-    opts: child_process.SpawnSyncOptions
+    opts: child_process.SpawnSyncOptions,
+    makePath: string | undefined,
+    cmakePath: string | undefined,
+    cmakeFlags: Array<string> | undefined
   ): Promise<Array<string> | undefined> {
     const folders = vscode.workspace.workspaceFolders;
 
@@ -211,18 +222,21 @@ export class LinkerRunner {
       console.log("Can't find cmake on the PATH");
       return undefined;
     }
-
-    let cmakeResult = child_process.spawnSync(
-      'cmake',
-      [
-        '-G',
-        '"Unix Makefiles"',
-        '-DCMAKE_BUILD_TYPE=Debug',
-        folders[0].uri.fsPath,
-      ],
+    if (!cmakePath) {
+      cmakePath = 'cmake';
+    }
+    if (!cmakeFlags) {
+      cmakeFlags = ['-G', '"Unix Makefiles"', '-DCMAKE_BUILD_TYPE=Debug'];
+    }
+    child_process.spawnSync(
+      cmakePath,
+      cmakeFlags.concat([folders[0].uri.fsPath]),
       opts
     );
-    let makeResult = child_process.spawnSync('make', ['--dry-run'], opts);
+    if (!makePath) {
+      makePath = 'make';
+    }
+    let makeResult = child_process.spawnSync(makePath, ['--dry-run'], opts);
     return makeResult.stdout.toString('utf8').split('\n');
   }
 }
