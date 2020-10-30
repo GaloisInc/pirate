@@ -44,6 +44,7 @@ private:
     };
 
     struct termios mTermiosBackup;
+    bool mTermiosInit;
 
     std::thread *mPollThread;
     bool mPoll;

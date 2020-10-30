@@ -22,7 +22,7 @@ enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, V
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
-enum OutputType { PiServoOutput, PrintOutput, NoneOutput };
+enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 
 using FrameBuffer = const unsigned char *;
 
@@ -54,6 +54,7 @@ struct Options
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
+        mTrilliumUrl(""),
         mPanAxisMin(-45.0),
         mPanAxisMax(45.0),
         mTiltAxisMin(-45.0),
@@ -93,6 +94,7 @@ struct Options
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
+    std::string mTrilliumUrl;
     float mPanAxisMin;
     float mPanAxisMax;
     float mTiltAxisMin;

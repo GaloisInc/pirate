@@ -36,14 +36,20 @@ set(SRCS
     src/orientationoutput.cpp
     src/baseorientationoutput.cpp
     src/remoteorientationoutput.cpp
+    src/trilliumorientationoutput.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
     src/orion-sdk/fielddecode.cpp
-    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/fieldencode.cpp
     src/orion-sdk/floatspecial.cpp
     src/orion-sdk/KlvParser.cpp
     src/orion-sdk/KlvTree.cpp
+    src/orion-sdk/OrionPublicPacket.cpp
+    src/orion-sdk/OrionPublicPacketShim.cpp
+    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/scaledencode.cpp
+    src/orion-sdk/TrilliumPacket.cpp
 )
 
 if (FREESPACE_LIB)
