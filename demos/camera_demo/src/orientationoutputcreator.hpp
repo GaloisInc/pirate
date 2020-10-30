@@ -18,6 +18,7 @@
 #include "options.hpp"
 #include "orientationoutput.hpp"
 #include "piservoorientationoutput.hpp"
+#include "trilliumorientationoutput.hpp"
 
 class OrientationOutputCreator
 {
@@ -33,6 +34,8 @@ public:
             case PiServoOutput:
                 return new PiServoOrientationOutput(PI_SERVO_PIN, options);
 #endif
+            case TrilliumOutput:
+                return new TrilliumOrientationOutput(options);
             case PrintOutput:
             case NoneOutput:
             default:

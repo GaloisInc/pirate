@@ -146,6 +146,11 @@ int VideoSensor::captureDisable()
 {
     int rv;
 
+    if (mFd < 0)
+    {
+        return 0;
+    }
+
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     int cmd = VIDIOC_STREAMOFF;
 

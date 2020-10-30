@@ -17,25 +17,19 @@
 
 #include "baseorientationoutput.hpp"
 
-class PiServoOrientationOutput : public BaseOrientationOutput
+class TrilliumOrientationOutput : public BaseOrientationOutput
 {
 public:
-    PiServoOrientationOutput(int servoPin, const Options& options);
-    virtual ~PiServoOrientationOutput();
+    TrilliumOrientationOutput(const Options& options);
+    virtual ~TrilliumOrientationOutput();
 
     virtual int init() override;
     virtual void term() override;
-
-    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
 protected:
     virtual bool applyAngularPosition(PanTilt angularPosition) override;
 
 private:
-    static int angleToServo(float angle);
-
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+    const std::string mTrilliumUrl;
+    int sockFd;
 };
-

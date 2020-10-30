@@ -33,7 +33,10 @@ XWinFrameProcessor::XWinFrameProcessor(const Options& options,
     mPanAxisMax(options.mPanAxisMax),
     mTiltAxisMin(options.mTiltAxisMin),
     mTiltAxisMax(options.mTiltAxisMax),
-    mImageSlidingWindow(options.mImageSlidingWindow)
+    mImageSlidingWindow(options.mImageSlidingWindow),
+    mDisplay(nullptr),
+    mImage(nullptr),
+    mImageBuffer(nullptr)
 {
 
 }
@@ -61,7 +64,6 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
     XSync(mDisplay, 0);
     return 0;
 }
-
 
 void XWinFrameProcessor::xwinDisplayTerminate() {
     if (mDisplay != nullptr) {
