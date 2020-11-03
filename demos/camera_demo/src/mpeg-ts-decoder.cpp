@@ -33,8 +33,8 @@
 #include "options.hpp"
 #include "mpeg-ts-decoder.hpp"
 
-#include "KlvParser.hpp"
-#include "KlvTree.hpp"
+#include "orion-sdk/KlvParser.hpp"
+#include "orion-sdk/KlvTree.hpp"
 
 MpegTsDecoder::MpegTsDecoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
@@ -328,7 +328,7 @@ int MpegTsDecoder::processVideoFrame() {
         return -1;
     }
 
-    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2);
+    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2, VideoData);
     if (rv) {
         return rv;
     }

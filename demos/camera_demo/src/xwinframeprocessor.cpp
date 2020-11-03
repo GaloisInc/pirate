@@ -124,8 +124,11 @@ void XWinFrameProcessor::term()
 }
 
 
-int XWinFrameProcessor::process(FrameBuffer data, size_t length)
+int XWinFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
+    if (dataStream != VideoData) {
+        return 0;
+    }
     if (length != (mImageWidth * mImageHeight * 4)) {
         std::cout << "xwindows unexpected frame length " << length << std::endl;
         return 1;

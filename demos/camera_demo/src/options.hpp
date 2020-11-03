@@ -22,6 +22,7 @@ enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, V
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream };
+enum DataStreamType { VideoData, MetaData };
 enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 
 using FrameBuffer = const unsigned char *;

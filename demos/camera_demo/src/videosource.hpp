@@ -45,5 +45,5 @@ protected:
     unsigned mIndex, mSnapshotIndex;
     time_t mSnapshotTime;
 
-    int process(FrameBuffer data, size_t length);
+    int process(FrameBuffer data, size_t length, DataStreamType dataStream);
 };
