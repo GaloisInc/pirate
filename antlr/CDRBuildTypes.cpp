@@ -70,6 +70,30 @@ static std::string missingRequiredMember(std::string name, IDLParser::Annotation
     " on line " + std::to_string(params->getStart()->getLine());
 }
 
+ValueAnnotation *CDRBuildTypes::buildValueAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
+  std::string value = "";
+  bool error = false;
+  if (params->const_exp() != nullptr) {
+    value = params->const_exp()->getText();
+  } else {
+    for (IDLParser::Annotation_appl_paramContext* param : params->annotation_appl_param()) {
+      if (param->ID()->getText() == "value") {
+        value = param->const_exp()->getText();
+      } else {
+        errors.insert(unknownMember("value", param));
+        error = true;
+      }
+    }
+  }
+  if (value.length() > 0) {
+    hasValidate = true;
+    return new ValueAnnotation(++annotationIds, value);
+  } else if (!error) {
+    errors.insert(missingRequiredMember("value", params));
+  }
+  return nullptr;
+}
+
 MinAnnotation *CDRBuildTypes::buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params) {
   std::string min = "";
   bool error = false;
@@ -170,7 +194,9 @@ antlrcpp::Any CDRBuildTypes::visitAnnotation_appl(IDLParser::Annotation_applCont
   std::string name = ctx->scoped_name()->getText();
   IDLParser::Annotation_appl_paramsContext *params = ctx->annotation_appl_params();
   AnnotationSpec *annotationSpec = nullptr;
-  if (name == "min") {
+  if (name == "value") {
+    annotationSpec = buildValueAnnotation(params);
+  } else if (name == "min") {
     annotationSpec = buildMinAnnotation(params);
   } else if (name == "max") {
     annotationSpec = buildMaxAnnotation(params);

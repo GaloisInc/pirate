@@ -17,6 +17,15 @@
 
 #include "CDRTypes.hpp"
 
+class ValueAnnotation : public AnnotationSpec {
+public:
+    std::string value;
+    ValueAnnotation(int id, std::string value) : AnnotationSpec(id), value(value) { }
+    virtual void cDeclareConstraint(std::ostream &ostream, std::string identifier) override;
+    virtual void cDeclareTransform(std::ostream &ostream, TypeSpec *typeSpec, std::string identifier) override { };
+    virtual ~ValueAnnotation() { };
+};
+
 class MinAnnotation : public AnnotationSpec {
 public:
     std::string min;
