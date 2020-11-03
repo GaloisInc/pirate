@@ -24,6 +24,7 @@ The following types of video sources are supported:
 
 * [Raspberry Pi Camera V2](https://www.raspberrypi.org/products/camera-module-v2)
 * Laptop or USB webcam
+* Trillium HD-series camera
 * MPEG-TS H.264 video stream
 * no video source
 
@@ -110,9 +111,13 @@ Embedded application based on camera, position input and position driver
       --gaps_rsp=channel     gaps response channel
       --in_freespace         read position input from freespace device
       --in_keyboard          read position input from keyboard
-  -o, --output=type          controller output (servo|print|none)
+  -o, --output=type          controller (servo|trillium|print|none)
       --output_incr=val      angular position increment
-      --output_limit=val     angular position bound
+      --pan_max=val          pan axis maximum angle
+      --pan_min=val          pan axis minimum angle
+      --tilt_max=val         tilt axis maximum angle
+      --tilt_min=val         tilt axis minimum angle
+      --trillium=url         trillium command url (host:port)
 
       --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output
