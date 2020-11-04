@@ -118,6 +118,10 @@ int main(int argc, char *argv[])
         FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
     }
 
+    if (options.mMetaDataProcessor) {
+        FrameProcessorCreator::add(MetaDataProcessor, frameProcessors, options, angPosCallbacks);
+    }
+
     if (options.mH264Encoder) {
         FrameProcessorCreator::add(H264Stream, frameProcessors, options, angPosCallbacks);
     }

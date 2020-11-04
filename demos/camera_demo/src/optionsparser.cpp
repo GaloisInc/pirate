@@ -19,22 +19,23 @@
 
 #include "options.hpp"
 
-const int OPT_THRESH    = 129;
-const int OPT_CODEC     = 130;
-const int OPT_OUT_DIR   = 131;
-const int OPT_MAX_OUT   = 132;
-const int OPT_SLIDE     = 133;
-const int OPT_TRILLIUM  = 134;
-const int OPT_PAN_MIN   = 135;
-const int OPT_PAN_MAX   = 136;
-const int OPT_TILT_MIN  = 137;
-const int OPT_TILT_MAX  = 138;
-const int OPT_INC       = 139;
-const int OPT_LOGLEVEL  = 140;
-const int OPT_KBD       = 141;
-const int OPT_FREESPACE = 142;
-const int OPT_GAPS_REQ  = 143;
-const int OPT_GAPS_RSP  = 144;
+const int OPT_THRESH    = 1100;
+const int OPT_METADATA  = 1200;
+const int OPT_CODEC     = 1300;
+const int OPT_OUT_DIR   = 1400;
+const int OPT_MAX_OUT   = 1500;
+const int OPT_SLIDE     = 1600;
+const int OPT_TRILLIUM  = 1700;
+const int OPT_PAN_MIN   = 1800;
+const int OPT_PAN_MAX   = 1900;
+const int OPT_TILT_MIN  = 2000;
+const int OPT_TILT_MAX  = 2100;
+const int OPT_INC       = 2200;
+const int OPT_LOGLEVEL  = 2300;
+const int OPT_KBD       = 2400;
+const int OPT_FREESPACE = 2500;
+const int OPT_GAPS_REQ  = 2600;
+const int OPT_GAPS_RSP  = 2700;
 
 static struct argp_option options[] =
 {
@@ -50,6 +51,7 @@ static struct argp_option options[] =
     { "threshold",    OPT_THRESH,    "val",         0, "color tracking threshold",                  0 },
     { "xwindows",     'X',           NULL,          0, "xwindows frame processor",                  0 },
     { "filesystem",   'F',           NULL,          0, "filesystem frame processor",                0 },
+    { "metadata",     OPT_METADATA,  NULL,          0, "metadata frame processor",                  0 },
     { "encoder",      'E',           "url",         0, "MPEG-TS H.264 encoder url (host:port)",     0 },
     { "codec",        OPT_CODEC,     "type",        0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
     { "out_dir",      OPT_OUT_DIR,   "path",        0, "image output directory",                    0 },
@@ -232,6 +234,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'F':
             opt->mFilesystemProcessor = true;
+            break;
+
+        case OPT_METADATA:
+            opt->mMetaDataProcessor = true;
             break;
 
         case 'E':

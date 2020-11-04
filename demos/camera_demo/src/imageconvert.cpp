@@ -162,6 +162,10 @@ int ImageConvert::jpegToRGB(FrameBuffer src, size_t srcLength) {
     jpeg_start_decompress(&cinfo);
     width = cinfo.output_width;
     depth = cinfo.num_components; //should always be 3
+    if (depth != 3) {
+        std::cout << "Expected 3 components and received " << depth << " components" << std::endl;
+        return -1;
+    }
     if ((cinfo.output_width != mImageWidth) || (cinfo.output_height != mImageHeight)) {
         std::cout << "Expected " << mImageWidth << " x " << mImageHeight << " resolution"
         << " and received " << cinfo.output_width << " x " << cinfo.output_height << std::endl;
