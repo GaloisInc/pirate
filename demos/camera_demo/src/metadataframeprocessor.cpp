@@ -169,6 +169,7 @@ int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamT
 
     std::memcpy(mImageBuffer, mMapBuffer, mMapWidth * mMapHeight * 4);
 
+    // show the location if it has been updated within the past 1000 milliseconds
     if ((nowMillis - mTimestampMillis) < 1000) {
         toMercatorProjection(mLatitude, mLongitude, xCenter, yCenter);
         paintSquare(xCenter, yCenter);
