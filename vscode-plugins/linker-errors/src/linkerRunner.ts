@@ -1,21 +1,33 @@
-import * as vscode from 'vscode';
 import * as child_process from 'child_process';
-import * as tmp from 'tmp';
+import * as fs from 'fs';
 import * as lookpath from 'lookpath';
+import * as path from 'path';
+import * as tmp from 'tmp';
+import * as vscode from 'vscode';
 
 export class LinkerRunner {
+  public isRunning: boolean = false;
+  public latestJSON: any = [];
+
   // The public entry point for the linker, which just needs a way to register diagnostics.
   public async runLinker(
     config: vscode.WorkspaceConfiguration,
     diagnosticCollection: vscode.DiagnosticCollection
   ) {
+    if (this.isRunning) {
+      console.log('Tried to run, but already running');
+      return;
+    }
+    console.log('Running linker');
+    this.isRunning = true;
+    diagnosticCollection.clear();
+
     const buildDir = tmp.dirSync();
     const opts: child_process.SpawnSyncOptions = {
       cwd: buildDir.name,
       encoding: 'utf8',
       shell: true,
     };
-
     let buildCommands = await this.runCmake(
       opts,
       config.get('make.makePath'),
@@ -45,6 +57,31 @@ export class LinkerRunner {
             diagnosticCollection.set(uriArray[0], newDiags);
           });
       }
+    }
+    this.isRunning = false;
+    this.updateJSON(buildDir.name);
+  }
+
+  private updateJSON(tmpPath: string) {
+    const jsonFile = path.join(tmpPath, 'enclaves.json');
+    if (fs.existsSync(jsonFile)) {
+      const jsonBuf = fs.readFileSync(jsonFile);
+      let jsonWithDuplicates = JSON.parse(jsonBuf.toString('utf8'));
+      let json: any[] = [];
+      for (let i = 0, len = jsonWithDuplicates.length; i < len; i++) {
+        let unique = true;
+        for (let j = 0, newLen = json.length; j < newLen; j++) {
+          if (jsonWithDuplicates[i].location === json[j].location) {
+            unique = false;
+          }
+        }
+        if (unique) {
+          json.push(jsonWithDuplicates[i]);
+        }
+      }
+      this.latestJSON = json;
+    } else {
+      console.log("Couldn't find JSON dump");
     }
   }
 
@@ -226,7 +263,13 @@ export class LinkerRunner {
       cmakePath = 'cmake';
     }
     if (!cmakeFlags) {
-      cmakeFlags = ['-G', '"Unix Makefiles"', '-DCMAKE_BUILD_TYPE=Debug'];
+      cmakeFlags = [
+        '-G',
+        '"Unix Makefiles"',
+        '-DCMAKE_BUILD_TYPE=Debug',
+        '-DCMAKE_C_FLAGS=-Wl,-pirate,enclaves.json',
+        // '-DCMAKE_CXX_FLAGS=-Wl,-pirate,enclaves_cxx.json',
+      ];
     }
     child_process.spawnSync(
       cmakePath,

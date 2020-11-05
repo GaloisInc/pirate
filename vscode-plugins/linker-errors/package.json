@@ -11,7 +11,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:linker-errors.runLinker"
+    "onCommand:linker-errors.runLinker",
+    "onLanguage:c",
+    "onLanguage:cpp"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -34,7 +36,9 @@
           "default": [
             "-G",
             "\"Unix Makefiles\"",
-            "-DCMAKE_BUILD_TYPE=Debug"
+            "-DCMAKE_BUILD_TYPE=Debug",
+            "-DCMAKE_C_FLAGS=-Wl,-pirate,enclaves_c.json",
+            "-DCMAKE_CXX_FLAGS=-Wl,-pirate,enclaves_cxx.json"
           ],
           "description": "Flags to pass to CMake when configuring this project to get linker errors.  Note that if you remove the defaults, things will break."
         },

@@ -10,14 +10,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LinkerRunner = void 0;
-const vscode = require("vscode");
 const child_process = require("child_process");
-const tmp = require("tmp");
+const fs = require("fs");
 const lookpath = require("lookpath");
+const path = require("path");
+const tmp = require("tmp");
+const vscode = require("vscode");
 class LinkerRunner {
+    constructor() {
+        this.isRunning = false;
+        this.latestJSON = [];
+    }
     // The public entry point for the linker, which just needs a way to register diagnostics.
     runLinker(config, diagnosticCollection) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.isRunning) {
+                console.log('Tried to run, but already running');
+                return;
+            }
+            console.log('Running linker');
+            this.isRunning = true;
+            diagnosticCollection.clear();
             const buildDir = tmp.dirSync();
             const opts = {
                 cwd: buildDir.name,
@@ -44,7 +57,32 @@ class LinkerRunner {
                     }));
                 }
             }
+            this.isRunning = false;
+            this.updateJSON(buildDir.name);
         });
+    }
+    updateJSON(tmpPath) {
+        const jsonFile = path.join(tmpPath, 'enclaves.json');
+        if (fs.existsSync(jsonFile)) {
+            const jsonBuf = fs.readFileSync(jsonFile);
+            let jsonWithDuplicates = JSON.parse(jsonBuf.toString('utf8'));
+            let json = [];
+            for (let i = 0, len = jsonWithDuplicates.length; i < len; i++) {
+                let unique = true;
+                for (let j = 0, newLen = json.length; j < newLen; j++) {
+                    if (jsonWithDuplicates[i].location === json[j].location) {
+                        unique = false;
+                    }
+                }
+                if (unique) {
+                    json.push(jsonWithDuplicates[i]);
+                }
+            }
+            this.latestJSON = json;
+        }
+        else {
+            console.log("Couldn't find JSON dump");
+        }
     }
     // Eliminate duplicate diagnostics, which requires looking just at the error
     // message and range since the whole object will generally compare as not being
@@ -185,7 +223,12 @@ class LinkerRunner {
                 cmakePath = 'cmake';
             }
             if (!cmakeFlags) {
-                cmakeFlags = ['-G', '"Unix Makefiles"', '-DCMAKE_BUILD_TYPE=Debug'];
+                cmakeFlags = [
+                    '-G',
+                    '"Unix Makefiles"',
+                    '-DCMAKE_BUILD_TYPE=Debug',
+                    '-DCMAKE_C_FLAGS=-Wl,-pirate,enclaves.json',
+                ];
             }
             child_process.spawnSync(cmakePath, cmakeFlags.concat([folders[0].uri.fsPath]), opts);
             if (!makePath) {
