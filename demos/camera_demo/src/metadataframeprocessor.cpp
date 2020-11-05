@@ -161,8 +161,8 @@ int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamT
         lat = KlvGetValueDouble(KLV_UAS_SENSOR_LAT, &success1);
         lon = KlvGetValueDouble(KLV_UAS_SENSOR_LON, &success2);
         if (success1 && success2) {
-            mLatitude = lat;
-            mLongitude = lon;
+            mLatitude = lat * 180.0 / M_PI;
+            mLongitude = lon * 180.0 / M_PI;
             mTimestampMillis = nowMillis;
         }
     }
