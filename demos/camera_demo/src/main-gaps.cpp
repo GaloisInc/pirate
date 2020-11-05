@@ -91,7 +91,7 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
             remotes.mGapsRequestReadGds.push_back(rv);
             msg << "Opened " << channelDesc << " for reading." << std::endl;
             std::cout << msg.str();
-            msg.clear();
+            msg.str(std::string());
         }
     }
 
@@ -105,7 +105,7 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
         remotes.mGapsResponseReadGd = rv;
         msg << "Opened " << channelDesc << " for reading." << std::endl;
         std::cout << msg.str();
-        msg.clear();
+        msg.str(std::string());
     }
 
     success = 0;
@@ -127,7 +127,7 @@ void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &succes
         remotes.mGapsRequestWriteGd = rv;
         msg << "Opened " << channelDesc << " for writing." << std::endl;
         std::cout << msg.str();
-        msg.clear();
+        msg.str(std::string());
     }
 
     if (options.mHasOutput) {
@@ -140,7 +140,7 @@ void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &succes
             remotes.mGapsResponseWriteGds.push_back(rv);
             msg << "Opened " << channelDesc << " for writing." << std::endl;
             std::cout << msg.str();
-            msg.clear();
+            msg.str(std::string());
         }
     }
 
