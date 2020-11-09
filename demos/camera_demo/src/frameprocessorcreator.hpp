@@ -24,6 +24,7 @@
 
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
+#include "metadataframeprocessor.hpp"
 #endif
 
 #if FFMPEG_PRESENT
@@ -47,6 +48,9 @@ public:
 #if XWIN_PRESENT
             case XWindows:
                 fp = new XWinFrameProcessor(options, angPosCallbacks);
+                break;
+            case MetaDataProcessor:
+                fp = new MetaDataFrameProcessor(options);
                 break;
 #endif
 #if FFMPEG_PRESENT

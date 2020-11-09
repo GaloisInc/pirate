@@ -45,5 +45,5 @@ private:
     void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 };

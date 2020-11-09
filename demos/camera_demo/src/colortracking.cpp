@@ -81,13 +81,17 @@ void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
     }
 }
 
-int ColorTracking::process(FrameBuffer data, size_t length) {
+int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataStream) {
     int x_center, y_center;
     int x_delta, y_delta;
     int x_position, y_position;
     int x_tolerance = mImageWidth / 10; // 10% tolerance
     int y_tolerance = mImageHeight / 10; // 10% tolerance
     PanTilt update = PanTilt(0.0, 0.0);
+
+    if (dataStream != VideoData) {
+        return 0;
+    }
 
     if (length != (mImageWidth * mImageHeight * 4)) {
         return -1;

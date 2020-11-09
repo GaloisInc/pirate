@@ -39,7 +39,7 @@ int VideoSource::init() {
 
 void VideoSource::term() { }
 
-int VideoSource::process(FrameBuffer data, size_t length) {
+int VideoSource::process(FrameBuffer data, size_t length, DataStreamType dataStream) {
     int rv;
     time_t currentTime;
 
@@ -47,7 +47,7 @@ int VideoSource::process(FrameBuffer data, size_t length) {
     for (size_t i = 0; i < mFrameProcessors.size(); i++) {
         auto current = mFrameProcessors[i];
         if (current->mVideoType == mVideoOutputType) {
-            rv = current->processFrame(data, length);
+            rv = current->processFrame(data, length, dataStream);
             if (rv) {
                 return rv;
             }
@@ -60,7 +60,7 @@ int VideoSource::process(FrameBuffer data, size_t length) {
             }
             convertedBuffer = mImageConvert.getBuffer(current->mVideoType, mIndex, &convertedLength);
             if (convertedBuffer != nullptr) {
-                rv = current->processFrame(convertedBuffer, convertedLength);
+                rv = current->processFrame(convertedBuffer, convertedLength, dataStream);
                 if (rv) {
                     return rv;
                 }

@@ -62,6 +62,7 @@ The following types of frame processors are supported:
 * sliding window image filter
 * xwindows display
 * MPEG-TS H.264 encoding
+* Trillium camera metadata processor
 
 The demo supports zero or more frame processors.
 
@@ -100,6 +101,7 @@ Embedded application based on camera, position input and position driver
   -C, --color_track=RRGGBB   color tracking (RGB hex)
   -E, --encoder=url          MPEG-TS H.264 encoder url (host:port)
   -F, --filesystem           filesystem frame processor
+      --metadata             metadata frame processor
       --out_count=val        image output maximum file count
       --out_dir=path         image output directory
       --sliding              sliding window image filter

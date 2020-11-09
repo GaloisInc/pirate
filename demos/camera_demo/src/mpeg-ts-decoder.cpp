@@ -33,9 +33,6 @@
 #include "options.hpp"
 #include "mpeg-ts-decoder.hpp"
 
-#include "KlvParser.hpp"
-#include "KlvTree.hpp"
-
 MpegTsDecoder::MpegTsDecoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
@@ -182,7 +179,7 @@ void MpegTsDecoder::term()
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-int MpegTsDecoder::parseDataFrame() {
+int MpegTsDecoder::processDataFrame() {
     // If we have a full metadata packet in memory, zero out the size and index
     if (mMetaDataBytes == mMetaDataSize) {
         mMetaDataBytes = mMetaDataSize = 0;
@@ -256,22 +253,8 @@ int MpegTsDecoder::parseDataFrame() {
         mMetaDataBytes += bytesToCopy;
     }
 
-    return 0;
-}
-
-int MpegTsDecoder::processDataFrame() {
     if ((mMetaDataSize > 0) && (mMetaDataBytes == mMetaDataSize)) {
-        uint64_t ts;
-        int success = 0;
-
-        if (mVerbose && (mIndex > 0) && ((mIndex % 100) == 0)) {
-            KlvNewData(mMetaData, mMetaDataSize);
-            ts = KlvGetValueUInt(KLV_UAS_TIME_STAMP, &success);
-            if (success) {
-                std::time_t t = ts / 1000000;
-                std::cout << "KLV metadata has timestamp of " << std::asctime(std::localtime(&t));
-            }
-        }
+        return process(mMetaData, mMetaDataSize, MetaData);
     }
 
     return 0;
@@ -328,7 +311,7 @@ int MpegTsDecoder::processVideoFrame() {
         return -1;
     }
 
-    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2);
+    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2, VideoData);
     if (rv) {
         return rv;
     }
@@ -351,10 +334,7 @@ void MpegTsDecoder::pollThread()
         index = mPkt.stream_index;
 
         if (index == mDataStreamNum) {
-            rv = parseDataFrame();
-            if (!rv) {
-                rv = processDataFrame();
-            }
+            rv = processDataFrame();
         } else if (index == mVideoStreamNum) {
             rv = processVideoFrame();
         }

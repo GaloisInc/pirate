@@ -16,13 +16,16 @@
 #pragma once
 
 #include <string>
-#include "frameprocessor.hpp"
+#include <X11/Xlib.h>
 
-class FileFrameProcessor : public FrameProcessor
+#include "frameprocessor.hpp"
+#include "imageconvert.hpp"
+
+class MetaDataFrameProcessor : public FrameProcessor
 {
 public:
-    FileFrameProcessor(const Options& options);
-    virtual ~FileFrameProcessor();
+    MetaDataFrameProcessor(const Options& options);
+    virtual ~MetaDataFrameProcessor();
 
     virtual int init() override;
     virtual void term() override;
@@ -31,10 +34,25 @@ protected:
     virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
-    std::string buildFilename(unsigned index);
+    Display*                   mDisplay;
+    Window                     mWindow;
+    XImage*                    mImage;
+    unsigned char*             mImageBuffer;
+    GC                         mContext;
+    XGCValues                  mContextVals;
 
-    const std::string mOutputDirectory;
-    const unsigned mImageOutputMaxFiles;
-    const bool mVerbose;
+    const unsigned  mMapWidth;
+    const unsigned  mMapHeight;
+    unsigned char*  mMapBuffer;
+
+    const unsigned  mSquareWidth;
+    const unsigned  mSquareHeight;
+
+    float mLatitude, mLongitude;
+    uint64_t mTimestampMillis;
+
+    void renderImage();
+    void toMercatorProjection(float lat, float lon, int& x, int& y);
+    void paintSquare(int xCenter, int yCenter);
 };
 

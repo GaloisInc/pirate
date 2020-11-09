@@ -541,7 +541,7 @@ void VideoSensor::pollThread()
         }
 
         // Process the frame
-        rv = process(mBuffers[buf.index].mStart, buf.bytesused);
+        rv = process(mBuffers[buf.index].mStart, buf.bytesused, VideoData);
         if (rv) {
             std::cout << "frame processor error " << rv << std::endl;
         }
