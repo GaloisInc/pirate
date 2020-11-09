@@ -145,8 +145,32 @@ corresponding to the desired enclave.
 
 The `-fdata-sections` and `-ffunction-sections` flags put each global variable and function
 their own sections. This allows the linker to drop unused definitions from the final executable
-which ensures their capability requirements will not need to be met when they are not
-referenced from the enclave's entry point.
+which ensures their capability requirements will not need to be met when they are not referenced
+from the enclave's entry point.
 
+Linker output
+-------------
+
+The `lld` linker has been modified to generate propagated constraint information. Error
+messages will mention callsites that generate constraint violations. In addition extra
+constraint propagation output can be obtained with the `-pirate` linker flag.
+
+Example: `lld -pirate output.json`
+
+JSON file format:
+
+```
+[ { "name": string, "enclave": string, "caps": [string], "location": string } ]
+```
+
+Upon successful linking the output JSON will contain a list of all
+the symbols included in the resulting output file that have some
+Pirate constraint. These constraints can either be explicitly provided
+or inferred by usage.
+
+- **name**: A symbol from the executable
+- **enclave**: Optional field listing the enclave restriction on this symbol
+- **caps**: A list of capabilities required by this symbol
+- **location**: A string using debugging information giving the source location of the symbol.
 
 
