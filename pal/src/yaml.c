@@ -112,14 +112,26 @@ void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
 {
     assert(sd);
 
+    char buf[8192], *bufp = buf;
+    size_t bufsz = sizeof buf;
+
     size_t i;
     for(i = 0; i < sd->error_count; ++i) {
         struct pal_yaml_error_stack *e;
-        for(e = sd->errors[i]; e; e = e->next)
-            error("%s%s\n", e == sd->errors[i] ? "" : "\t", e->err);
-        for(e = sd->context; e; e = e ->next)
-            error("\t%s\n", e->err);
+        for(e = sd->errors[i]; e; e = e->next) {
+            size_t s = snprintf(bufp, bufsz, "%s%s\n",
+                    e == sd->errors[i] ? "" : "\t", e->err);
+            bufsz -= s;
+            bufp += s;
+        }
+        for(e = sd->context; e; e = e ->next) {
+            size_t s = snprintf(bufp, bufsz, "\t%s\n", e->err);
+            bufsz -= s;
+            bufp += s;
+        }
     }
+
+    error(buf);
 }
 
 pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
@@ -881,41 +893,53 @@ static void load_resource_contents(struct rsc_contents *c,
         };
         if(pal_yaml_subdoc_find_enum((int*)&c->cc_channel_type,
                     channel_type_schema, sd,
-                    1, PAL_MAP_FIELD("channel_type")))
+                    1, PAL_MAP_FIELD("channel_type"))
+                == PAL_YAML_NOT_FOUND)
             pal_yaml_subdoc_error_pop(sd);
     }
     if(pal_yaml_subdoc_find_string(&c->cc_path, sd,
-                1, PAL_MAP_FIELD("path")))
+                1, PAL_MAP_FIELD("path"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_min_tx_size, sd,
-                1, PAL_MAP_FIELD("min_tx_size")))
+                1, PAL_MAP_FIELD("min_tx_size"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_mtu, sd,
-                1, PAL_MAP_FIELD("mtu")))
+                1, PAL_MAP_FIELD("mtu"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_buffer_size, sd,
-                1, PAL_MAP_FIELD("buffer_size")))
+                1, PAL_MAP_FIELD("buffer_size"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_string(&c->cc_host, sd,
-                1, PAL_MAP_FIELD("host")))
+                1, PAL_MAP_FIELD("host"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_max_tx_size, sd,
-                1, PAL_MAP_FIELD("max_tx_size")))
+                1, PAL_MAP_FIELD("max_tx_size"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_size, sd,
-                1, PAL_MAP_FIELD("packet_size")))
+                1, PAL_MAP_FIELD("packet_size"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_count, sd,
-                1, PAL_MAP_FIELD("packet_count")))
+                1, PAL_MAP_FIELD("packet_count"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_region, sd,
-                1, PAL_MAP_FIELD("region")))
+                1, PAL_MAP_FIELD("region"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_baud, sd,
-                1, PAL_MAP_FIELD("baud")))
+                1, PAL_MAP_FIELD("baud"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     if(pal_yaml_subdoc_find_unsigned(&c->cc_message_id, sd,
-                1, PAL_MAP_FIELD("message_id")))
+                1, PAL_MAP_FIELD("message_id"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     {
         pal_yaml_subdoc_t sess;
@@ -927,22 +951,27 @@ static void load_resource_contents(struct rsc_contents *c,
             TRY_ERRNO(s = calloc(1, sizeof *c->cc_session));
 
             if(pal_yaml_subdoc_find_unsigned(&s->sess_level, &sess,
-                        1, PAL_MAP_FIELD("level")))
+                        1, PAL_MAP_FIELD("level"))
+                    == PAL_YAML_NOT_FOUND)
                 pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_unsigned(&s->sess_src_id, &sess,
-                        1, PAL_MAP_FIELD("src_id")))
+                        1, PAL_MAP_FIELD("src_id"))
+                    == PAL_YAML_NOT_FOUND)
                 pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_unsigned(&s->sess_dst_id, &sess,
-                        1, PAL_MAP_FIELD("dst_id")))
+                        1, PAL_MAP_FIELD("dst_id"))
+                    == PAL_YAML_NOT_FOUND)
                 pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_unsigned_sequence(
                         &s->sess_messages,
                         &s->sess_messages_count, &sess,
-                        1, PAL_MAP_FIELD("messages")))
+                        1, PAL_MAP_FIELD("messages"))
+                    == PAL_YAML_NOT_FOUND)
                 pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_unsigned(
                         &s->sess_id, &sess,
-                        1, PAL_MAP_FIELD("sess_id")))
+                        1, PAL_MAP_FIELD("sess_id"))
+                    == PAL_YAML_NOT_FOUND)
                 pal_yaml_subdoc_error_pop(sd);
 
             c->cc_session = s;
@@ -953,12 +982,14 @@ static void load_resource_contents(struct rsc_contents *c,
     /* Trivial resources
      */
     if(pal_yaml_subdoc_find_string(&c->cc_string_value, sd,
-                1, PAL_MAP_FIELD("string_value")))
+                1, PAL_MAP_FIELD("string_value"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     {
         int64_t int_val;
         if(pal_yaml_subdoc_find_signed(&int_val, sd,
-                    1, PAL_MAP_FIELD("integer_value"))) {
+                    1, PAL_MAP_FIELD("integer_value"))
+                == PAL_YAML_NOT_FOUND) {
             pal_yaml_subdoc_error_pop(sd);
         } else {
             TRY_ERRNO(c->cc_integer_value
@@ -969,7 +1000,8 @@ static void load_resource_contents(struct rsc_contents *c,
     {
         bool bool_val;
         if(pal_yaml_subdoc_find_boolean(&bool_val, sd,
-                    1, PAL_MAP_FIELD("boolean_value"))) {
+                    1, PAL_MAP_FIELD("boolean_value"))
+                == PAL_YAML_NOT_FOUND) {
             pal_yaml_subdoc_error_pop(sd);
         } else {
             TRY_ERRNO(c->cc_boolean_value
@@ -981,7 +1013,8 @@ static void load_resource_contents(struct rsc_contents *c,
     /* File resource
      */
     if(pal_yaml_subdoc_find_string(&c->cc_file_path, sd,
-                1, PAL_MAP_FIELD("file_path")))
+                1, PAL_MAP_FIELD("file_path"))
+            == PAL_YAML_NOT_FOUND)
         pal_yaml_subdoc_error_pop(sd);
     {
         pal_yaml_enum_schema_t fflags_schema[] = {
@@ -1004,7 +1037,9 @@ static void load_resource_contents(struct rsc_contents *c,
         };
         int fflags;
         if(pal_yaml_subdoc_find_flags(&fflags, fflags_schema, sd,
-                    1, PAL_MAP_FIELD("file_flags"))) {
+                    1, PAL_MAP_FIELD("file_flags"))
+                == PAL_YAML_NOT_FOUND) {
+            pal_yaml_subdoc_error_pop(sd);
         } else {
             TRY_ERRNO(c->cc_file_flags
                     = malloc(sizeof *c->cc_file_flags));
@@ -1017,18 +1052,19 @@ struct top_level *load_yaml(const char *fname)
 {
     assert(fname != NULL);
 
-    pal_yaml_subdoc_t sd;
-    if(pal_yaml_subdoc_open(&sd, fname) != PAL_YAML_OK) {
-        pal_yaml_subdoc_log_errors(&sd);
+    struct top_level *tlp = calloc(1, sizeof *tlp);
+
+    pal_yaml_subdoc_t *sd = &tlp->tl_yaml;
+    if(pal_yaml_subdoc_open(sd, fname) != PAL_YAML_OK) {
+        pal_yaml_subdoc_log_errors(sd);
+        free(tlp);
         return NULL;
     }
-
-    struct top_level *tlp = calloc(1, sizeof *tlp);
 
     {
         pal_yaml_subdoc_t encs;
         pal_yaml_subdoc_find_sequence(
-                &encs, &tlp->tl_encs_count, &sd,
+                &encs, &tlp->tl_encs_count, sd,
                 1, PAL_MAP_FIELD("enclaves"));
         if(tlp->tl_encs_count > 0)
             tlp->tl_encs = calloc(tlp->tl_encs_count,
@@ -1041,16 +1077,19 @@ struct top_level *load_yaml(const char *fname)
             pal_yaml_subdoc_find_string(&e->enc_name, &encs,
                     2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
             if(pal_yaml_subdoc_find_string(&e->enc_path, &encs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path")))
-                pal_yaml_subdoc_error_pop(&sd);
+                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path"))
+                    == PAL_YAML_NOT_FOUND)
+                pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_string_sequence(
                         &e->enc_args, &e->enc_args_count, &encs,
-                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args")))
-                pal_yaml_subdoc_error_pop(&sd);
+                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args"))
+                    == PAL_YAML_NOT_FOUND)
+                pal_yaml_subdoc_error_pop(sd);
             if(pal_yaml_subdoc_find_string_sequence(
                         &e->enc_env, &e->enc_env_count, &encs,
-                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env")))
-                pal_yaml_subdoc_error_pop(&sd);
+                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"))
+                    == PAL_YAML_NOT_FOUND)
+                pal_yaml_subdoc_error_pop(sd);
         }
 
         pal_yaml_subdoc_close(&encs);
@@ -1059,7 +1098,7 @@ struct top_level *load_yaml(const char *fname)
     {
         pal_yaml_subdoc_t rscs;
         pal_yaml_subdoc_find_sequence(
-                &rscs, &tlp->tl_rscs_count, &sd,
+                &rscs, &tlp->tl_rscs_count, sd,
                 1, PAL_MAP_FIELD("resources"));
         if(tlp->tl_rscs_count > 0)
             tlp->tl_rscs = calloc(tlp->tl_rscs_count,
@@ -1075,8 +1114,13 @@ struct top_level *load_yaml(const char *fname)
             pal_yaml_subdoc_find_string_sequence(
                     &r->r_ids, &r->r_ids_count, &rscs,
                     2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
-            load_resource_contents(&r->r_contents, &sd);
+            pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
+                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("contents"));
+            // FIXME: This should be done by resource handlers.
+            load_resource_contents(&r->r_contents, &r->r_yaml);
         }
+
+        pal_yaml_subdoc_close(&rscs);
     }
 
     {
@@ -1086,22 +1130,52 @@ struct top_level *load_yaml(const char *fname)
             { "debug",   LOGLVL_DEBUG }
         };
         if(pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
-                    log_level_schema, &sd,
+                    log_level_schema, sd,
                     2, PAL_MAP_FIELD("config"),
-                       PAL_MAP_FIELD("log_level")))
-            pal_yaml_subdoc_error_pop(&sd);
+                       PAL_MAP_FIELD("log_level"))
+                == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
     }
 
-    if(pal_yaml_subdoc_error_count(&sd) > 0) {
-        pal_yaml_subdoc_log_errors(&sd);
+    if(pal_yaml_subdoc_error_count(sd) > 0) {
+        pal_yaml_subdoc_log_errors(sd);
         free_yaml(tlp);
         return NULL;
     }
 
+    pal_yaml_subdoc_close(sd); // FIXME: Get rid of this.
     return tlp;
 }
 
 void free_yaml(struct top_level *tlp)
 {
-    // TODO: Implement this
+    for(size_t i = 0; i < tlp->tl_encs_count; ++i) {
+        struct enclave *e = &tlp->tl_encs[i];
+        free(e->enc_name);
+        free(e->enc_path);
+        for(size_t i = 0; i < e->enc_args_count; ++i)
+            free(e->enc_args[i]);
+        free(e->enc_args);
+        for(size_t i = 0; i < e->enc_env_count; ++i)
+            free(e->enc_env[i]);
+        free(e->enc_env);
+    }
+    free(tlp->tl_encs);
+    for(size_t i = 0; i < tlp->tl_rscs_count; ++i) {
+        struct resource *r = &tlp->tl_rscs[i];
+        free(r->r_name);
+        free(r->r_type);
+        for(size_t i = 0; i < r->r_ids_count; ++i)
+            free(r->r_ids[i]);
+        free(r->r_ids);
+        free(r->r_contents.cc_string_value);
+        free(r->r_contents.cc_integer_value);
+        free(r->r_contents.cc_boolean_value);
+        free(r->r_contents.cc_file_path);
+        free(r->r_contents.cc_file_flags);
+        pal_yaml_subdoc_close(&r->r_yaml);
+    }
+    free(tlp->tl_rscs);
+    pal_yaml_subdoc_close(&tlp->tl_yaml);
+    free(tlp);
 }
