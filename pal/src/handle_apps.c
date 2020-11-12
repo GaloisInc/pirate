@@ -63,6 +63,11 @@ static struct resource *lookup_resource(char *app_name, char *rsc_name,
     return NULL;
 }
 
+/* Look up a resource handler from `handler_table` by type name.
+ *
+ * Return a pointer to the handler function if the type is found, or NULL,
+ * otherwise.
+ */
 static resource_handler_t *lookup_handler(const char *type)
 {
     size_t i;

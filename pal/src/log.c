@@ -2,7 +2,8 @@
 
 #include "log.h"
 
-enum log_level log_level = LOGLVL_DEFAULT;
+//enum log_level log_level = LOGLVL_DEFAULT;
+enum log_level log_level = LOGLVL_DEBUG;
 
 static void vlog(const char *prefix, enum log_level lvl,
         const char *fmt, va_list ap)

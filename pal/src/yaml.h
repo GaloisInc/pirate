@@ -223,6 +223,7 @@ struct resource {
     char **r_ids;
     size_t r_ids_count;
     struct rsc_contents r_contents; // FIXME: Make this pluggable
+    pal_yaml_subdoc_t r_yaml;
 };
 
 struct config {
@@ -235,6 +236,7 @@ struct top_level {
     struct resource *tl_rscs;
     size_t tl_rscs_count;
     struct config tl_cfg;
+    pal_yaml_subdoc_t tl_yaml;
 };
 
 struct top_level *load_yaml(const char *fname);
