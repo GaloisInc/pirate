@@ -13,13 +13,18 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <endian.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "pirate_common.h"
 #include "ge_eth.h"
 
@@ -203,25 +208,75 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
         param->message_id, mtu_str);
 }
 
+static int populate_address(struct addrinfo *addr, int port, int *addr_any) {
+    struct sockaddr_in* ip4_addr;
+    struct sockaddr_in6* ip6_addr;
+
+    switch (addr->ai_family) {
+        case AF_INET:
+            ip4_addr = ((struct sockaddr_in*) addr->ai_addr);
+            *addr_any = ip4_addr->sin_addr.s_addr == INADDR_ANY;
+            ip4_addr->sin_port = htons(port);
+            return 0;
+        case AF_INET6:
+            ip6_addr = ((struct sockaddr_in6*) addr->ai_addr);
+            *addr_any = memcmp((void*) &ip6_addr->sin6_addr, (void*) &in6addr_any, sizeof(struct in6_addr)) == 0;
+            ip6_addr->sin6_port = htons(port);
+            return 0;
+        default:
+            return -1;
+    }
+}
+
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in src_addr, dest_addr;
+    struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
+    int src_addr_any, dest_addr_any;
     int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
-        return -1;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = AI_NUMERICHOST;
+    src_addr = NULL;
+    dest_addr = NULL;
+
+    rv = getaddrinfo(param->reader_addr, NULL, &hints, &src_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
     }
 
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    src_addr.sin_port = htons(param->reader_port);
+    rv = getaddrinfo(param->writer_addr, NULL, &hints, &dest_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
 
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    dest_addr.sin_port = htons(param->writer_port);
+    if (src_addr->ai_family != dest_addr->ai_family) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_address(src_addr, param->reader_port, &src_addr_any);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_address(dest_addr, param->writer_port, &dest_addr_any);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    ctx->sock = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
+    if (ctx->sock < 0) {
+        goto end;
+    }
 
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
@@ -230,70 +285,113 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
-    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    rv = bind(ctx->sock, src_addr->ai_addr, src_addr->ai_addrlen);
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
-
-    if (dest_addr.sin_addr.s_addr != INADDR_ANY) {
-        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
+    if (!dest_addr_any) {
+        rv = connect(ctx->sock, dest_addr->ai_addr, dest_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
             close(ctx->sock);
             ctx->sock = -1;
             errno = err;
-            return -1;
+            goto end;
         }
     }
 
+end:
+    if (src_addr != NULL) {
+        freeaddrinfo(src_addr);
+    }
+    if (dest_addr != NULL) {
+        freeaddrinfo(dest_addr);
+    }
     return ctx->sock;
 }
 
 static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in src_addr, dest_addr;
+    struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
+    int src_addr_any, dest_addr_any;
     int nonblock = ctx->flags & O_NONBLOCK;
 
-    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
-        return -1;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = AI_NUMERICHOST;
+    src_addr = NULL;
+    dest_addr = NULL;
+
+    rv = getaddrinfo(param->writer_addr, NULL, &hints, &src_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
     }
 
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    src_addr.sin_port = htons(param->writer_port);
+    rv = getaddrinfo(param->reader_addr, NULL, &hints, &dest_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
 
-    memset(&dest_addr, 0, sizeof(dest_addr));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    dest_addr.sin_port = htons(param->reader_port);
+    if (src_addr->ai_family != dest_addr->ai_family) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
 
-    if (src_addr.sin_addr.s_addr != INADDR_ANY) {
-        rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    rv = populate_address(src_addr, param->writer_port, &src_addr_any);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_address(dest_addr, param->reader_port, &dest_addr_any);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    ctx->sock = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
+    if (ctx->sock < 0) {
+        goto end;
+    }
+
+    if (!src_addr_any) {
+        rv = bind(ctx->sock, src_addr->ai_addr, src_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
             close(ctx->sock);
             errno = err;
-            return -1;
+            goto end;
         }
     }
-    rv = connect(ctx->sock, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
+    rv = connect(ctx->sock, dest_addr->ai_addr, dest_addr->ai_addrlen);
     if (rv < 0) {
         err = errno;
         close(ctx->sock);
         ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
+end:
+    if (src_addr != NULL) {
+        freeaddrinfo(src_addr);
+    }
+    if (dest_addr != NULL) {
+        freeaddrinfo(dest_addr);
+    }
     return ctx->sock;
 }
 
