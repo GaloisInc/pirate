@@ -107,8 +107,8 @@ public:
         pirate_tcp_socket_param_t *param = &Reader.param.channel.tcp_socket;
 
         pirate_init_channel_param(TCP_SOCKET, &Reader.param);
-        snprintf(param->reader_addr, sizeof(param->reader_addr) - 1, "127.0.0.1");
-        snprintf(param->writer_addr, sizeof(param->writer_addr) - 1, "0.0.0.0");
+        snprintf(param->reader_addr, sizeof(param->reader_addr) - 1, "::1");
+        snprintf(param->writer_addr, sizeof(param->writer_addr) - 1, "::");
         param->reader_port = 26427;
         param->writer_port = 0;
         auto test_param = GetParam();
