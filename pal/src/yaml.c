@@ -877,6 +877,7 @@ static void load_resource_contents(struct rsc_contents *c,
 
     /* pirate_ and fd_channel
      */
+<<<<<<< HEAD
     {
         pal_yaml_enum_schema_t channel_type_schema[] = {
             {"device",      DEVICE},
@@ -978,6 +979,45 @@ static void load_resource_contents(struct rsc_contents *c,
             pal_yaml_subdoc_close(&sess);
         }
     }
+=======
+    CYAML_FIELD_ENUM("channel_type", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_channel_type,
+            channel_type_strings, CYAML_ARRAY_LEN(channel_type_strings)),
+    CYAML_FIELD_STRING_PTR("path",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_path, 1, PIRATE_LEN_NAME),
+    CYAML_FIELD_UINT("min_tx_size", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_min_tx_size),
+    CYAML_FIELD_UINT("mtu", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_mtu),
+    CYAML_FIELD_UINT("buffer_size", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_buffer_size),
+    CYAML_FIELD_STRING_PTR("reader_host",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_reader_host, 1, INET_ADDRSTRLEN),
+    CYAML_FIELD_UINT("reader_port", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_reader_port),
+    CYAML_FIELD_STRING_PTR("writer_host",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_writer_host, 1, INET_ADDRSTRLEN),
+    CYAML_FIELD_UINT("writer_port", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_writer_port),
+    CYAML_FIELD_UINT("max_tx_size", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_max_tx_size),
+    CYAML_FIELD_UINT("packet_size", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_packet_size),
+    CYAML_FIELD_UINT("packet_count", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_packet_count),
+    CYAML_FIELD_UINT("region", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_region),
+    CYAML_FIELD_UINT("baud", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_baud),
+    CYAML_FIELD_MAPPING_PTR("session",
+            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_session, session_field_schema),
+    CYAML_FIELD_UINT("message_id", CYAML_FLAG_OPTIONAL,
+            struct rsc_contents, cc_message_id),
+>>>>>>> 2ad9265ad610350ed653acf69c31db845604be19
 
     /* Trivial resources
      */

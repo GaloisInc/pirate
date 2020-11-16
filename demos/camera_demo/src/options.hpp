@@ -16,12 +16,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM };
+enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_NULL };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows, H264Stream };
-enum OutputType { PiServo, Print };
+enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor };
+enum DataStreamType { VideoData, MetaData };
+enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 
 using FrameBuffer = const unsigned char *;
 
@@ -30,8 +32,8 @@ struct Options
 {
     Options() :
         mVideoDevice("/dev/video0"),
-        mVideoInputType(VIDEO_JPEG),
-        mVideoOutputType(VIDEO_JPEG),
+        mVideoInputType(VIDEO_NULL),
+        mVideoOutputType(VIDEO_NULL),
         mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
@@ -45,17 +47,27 @@ struct Options
         mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
-        mOutputType(PiServo),
+        mOutputType(NoneOutput),
         mInputKeyboard(false),
         mInputFreespace(false),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
+        mMetaDataProcessor(false),
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
-        mAngularPositionLimit(45.0),
+        mTrilliumUrl(""),
+        mPanAxisMin(-45.0),
+        mPanAxisMax(45.0),
+        mTiltAxisMin(-45.0),
+        mTiltAxisMax(45.0),
+        mAngularPositionIncrement(1.0),
         mVerbose(false),
-        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/)
+        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
+        mHasInput(false),
+        mHasOutput(false),
+        mGapsRequestChannel(),
+        mGapsResponseChannel()
     {
 
     }
@@ -81,10 +93,20 @@ struct Options
     bool mInputFreespace;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
+    bool mMetaDataProcessor;
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
-    float mAngularPositionLimit;
+    std::string mTrilliumUrl;
+    float mPanAxisMin;
+    float mPanAxisMax;
+    float mTiltAxisMin;
+    float mTiltAxisMax;
+    float mAngularPositionIncrement;
     bool mVerbose;
     int mFFmpegLogLevel;
+    bool mHasInput;
+    bool mHasOutput;
+    std::vector<std::string> mGapsRequestChannel;
+    std::vector<std::string> mGapsResponseChannel;
 };

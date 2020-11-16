@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dfdl="http://www.ogf.org/dfdl/dfdl-1.0/" xmlns:idl="urn:idl:1.0" targetNamespace="urn:idl:1.0">
+  <xs:annotation>
+    <xs:appinfo source="http://www.ogf.org/dfdl/">
+      <dfdl:defineFormat name="defaults">
+        <dfdl:format alignment="1" alignmentUnits="bits" binaryBooleanFalseRep="0" binaryBooleanTrueRep="1" binaryFloatRep="ieee" binaryNumberCheckPolicy="lax" binaryNumberRep="binary" bitOrder="mostSignificantBitFirst" byteOrder="bigEndian" choiceLengthKind="implicit" encoding="utf-8" encodingErrorPolicy="replace" escapeSchemeRef="" floating="no" ignoreCase="no" initiatedContent="no" initiator="" leadingSkip="0" lengthKind="implicit" lengthUnits="bits" occursCountKind="implicit" prefixIncludesPrefixLength="no" representation="binary" separator="" separatorPosition="infix" sequenceKind="ordered" terminator="" textBidi="no" textPadKind="none" trailingSkip="0" truncateSpecifiedLengthString="no"/>
+      </dfdl:defineFormat>
+      <dfdl:format ref="idl:defaults"/>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:simpleType name="int16" dfdl:length="16" dfdl:lengthKind="explicit" dfdl:alignment="16">
+    <xs:restriction base="xs:integer"/>
+  </xs:simpleType>
+  <xs:simpleType name="uint8" dfdl:length="8" dfdl:lengthKind="explicit" dfdl:alignment="8">
+    <xs:restriction base="xs:nonNegativeInteger"/>
+  </xs:simpleType>
+  <xs:simpleType name="uint16" dfdl:length="16" dfdl:lengthKind="explicit" dfdl:alignment="16">
+    <xs:restriction base="xs:nonNegativeInteger"/>
+  </xs:simpleType>
+  <xs:element name="Command">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="sync0" type="idl:uint8" fixed="208"/>
+        <xs:element name="sync1" type="idl:uint8" fixed="13"/>
+        <xs:element name="id" type="idl:uint8" fixed="1"/>
+        <xs:element name="length" type="idl:uint8" fixed="7"/>
+        <xs:element name="pan" type="idl:int16"/>
+        <xs:element name="tilt" type="idl:int16"/>
+        <xs:element name="mode" type="idl:uint8" fixed="80"/>
+        <xs:element name="stabilized" type="idl:uint8" fixed="0"/>
+        <xs:element name="impulse" type="idl:uint8" fixed="0"/>
+        <xs:element name="checksum" type="idl:uint16"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

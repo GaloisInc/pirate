@@ -15,25 +15,27 @@
 
 #pragma once
 
-#include "orientationoutput.hpp"
+#include "baseorientationoutput.hpp"
 
-class PiServoOrientationOutput : public OrientationOutput
+class PiServoOrientationOutput : public BaseOrientationOutput
 {
 public:
-    PiServoOrientationOutput(int servoPin, float angLimit = DEFAULT_ANGLE_LIMIT,
-            bool verbose = false, bool gpioLibInit = true);
+    PiServoOrientationOutput(int servoPin, const Options& options);
     virtual ~PiServoOrientationOutput();
 
     virtual int init() override;
     virtual void term() override;
 
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
+
+protected:
+    virtual bool applyAngularPosition(PanTilt angularPosition) override;
+
 private:
     static int angleToServo(float angle);
-    virtual bool applyAngularPosition(float angularPosition) override;
 
     const int mServoPin;
     const bool mGpioLibInit;
-    static constexpr float DEFAULT_ANGLE_LIMIT = 30.0;
     static constexpr float SERVO_ANGLE_LIMIT = 90.0;
 };
 

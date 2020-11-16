@@ -23,9 +23,10 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        CameraOrientationCallbacks angPosCallbacks, float angIncrement) :
+        const Options& options, CameraOrientationCallbacks angPosCallbacks) :
     OrientationInput(angPosCallbacks),
-    mAngIncrement(angIncrement),
+    mAngIncrement(options.mAngularPositionIncrement),
+    mTermiosInit(false),
     mPollThread(nullptr),
     mPoll(false)
 {
@@ -58,6 +59,7 @@ int KeyboardOrientationInput::init()
         std::perror("tcsetattr failed");
         return -1;
     }
+    mTermiosInit = true;
 
     // Start the reading thread
     mPoll = true;
@@ -77,11 +79,14 @@ void KeyboardOrientationInput::term()
         mPollThread = nullptr;
     }
 
-    // Restore stdio defaults
-    int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
-    if (rv)
+    if (mTermiosInit)
     {
-        std::perror("tcsetattr failed");
+        // Restore stdio defaults
+        int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
+        if (rv)
+        {
+            std::perror("tcsetattr failed");
+        }
     }
 }
 
@@ -89,6 +94,7 @@ void KeyboardOrientationInput::pollThread()
 {
     while (mPoll)
     {
+        PanTilt panTiltUpdate = PanTilt();
         fd_set fdSet;
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
@@ -121,11 +127,21 @@ void KeyboardOrientationInput::pollThread()
 
         switch (c)
         {
+            case UP:
+                panTiltUpdate.tilt = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
+            case DOWN:
+                panTiltUpdate.tilt = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
             case LEFT:
-                mCallbacks.mUpdate(-mAngIncrement);
+                panTiltUpdate.pan = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             case RIGHT:
-                mCallbacks.mUpdate(mAngIncrement);
+                panTiltUpdate.pan = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             default:
                 continue;

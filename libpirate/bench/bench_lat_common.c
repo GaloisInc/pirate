@@ -196,7 +196,7 @@ static int bench_lat_open(bench_lat_t *bench, const char *config, int flags) {
     }
 
     err = errno;
-    fd = pirate_get_fd(gd);
+    fd = gd;
     errno = err;
     switch (param.channel_type) {
         case PIPE:

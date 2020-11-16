@@ -81,8 +81,7 @@ int pirate_device_get_channel_description(const void *_param, char *desc, int le
     return snprintf(desc, len, "device,%s%s%s", param->path, min_tx_str, mtu_str);
 }
 
-int pirate_device_open(void *_param, void *_ctx, int *server_fdp) {
-    (void) server_fdp;
+int pirate_device_open(void *_param, void *_ctx) {
     pirate_device_param_t *param = (pirate_device_param_t *)_param;
     device_ctx *ctx = (device_ctx *)_ctx;
     pirate_device_init_param(param);
@@ -98,7 +97,7 @@ int pirate_device_open(void *_param, void *_ctx, int *server_fdp) {
         return -1;
     }
 
-    return 0;
+    return ctx->fd;
 }
 
 int pirate_device_close(void *_ctx) {

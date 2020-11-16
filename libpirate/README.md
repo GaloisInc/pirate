@@ -40,11 +40,8 @@ channels.
 | serial         | Y | | | |
 | mercury        | Y | | | |
 | ge_eth         | Y | Y | Y | Y |
-| multiplex      | Y | Y <sup>&#8224;&#8224;</sup> | | |
 
 &#8224; pipe support nonblocking IO when mtu &#8804; 4096
-
-&#8224;&#8224; multiplex support nonblocking IO when all subchannels are nonblocking
 
 ## Usage
 
@@ -128,10 +125,11 @@ Unix domain socket communication. Path to Unix socket must be specified.
 ### TCP_SOCKET type
 
 ```
-"tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]"
+"tcp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,min_tx_size=N,mtu=N]"
 ```
 
 TCP socket communication. Host and port of the reader process must be specified.
+The writer may specify 0.0.0.0 for the address and 0 for the port.
 
 ### UDP_SOCKET type
 
@@ -140,6 +138,8 @@ TCP socket communication. Host and port of the reader process must be specified.
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.
+The writer may specify 0.0.0.0 for the address and 0 for the port.
+If the writer port is not 0 then the writer address must be not 0.0.0.0.
 
 ### SHMEM type
 

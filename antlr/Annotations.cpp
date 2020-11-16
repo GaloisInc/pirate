@@ -16,6 +16,15 @@
 #include "Annotations.hpp"
 #include "indent_facet.hpp"
 
+void ValueAnnotation::cDeclareConstraint(std::ostream &ostream, std::string identifier) {
+    ostream << "if" << " " << "(" << identifier << " " << "!=" << " " << value << ")";
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "return" << " " << "-1" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
 void MinAnnotation::cDeclareConstraint(std::ostream &ostream, std::string identifier) {
     ostream << "if" << " " << "(" << identifier << " " << "<" << " " << min << ")";
     ostream << " " << "{" << std::endl;

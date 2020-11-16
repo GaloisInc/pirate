@@ -4,6 +4,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 11)
 
+add_subdirectory(ticpp-master)
+
 if(NOT DEFINED ANTLR4_MODULE_PATH)
     message(FATAL_ERROR "ANTLR4_MODULE_PATH must be defined (eg. /usr/local/lib/cmake/antlr4)")
 endif(NOT DEFINED ANTLR4_MODULE_PATH)
@@ -16,7 +18,7 @@ set(CMAKE_MODULE_PATH ${ANTLR4_MODULE_PATH})
 set(IDL_CXX_FLAGS -Werror -Wall -Wextra -Wpedantic -Wno-attributes -Wno-unused-parameter)
 
 include(antlr4-runtime-config)
-include_directories(${ANTLR4_INCLUDE_DIR})
+include_directories(${ANTLR4_INCLUDE_DIR} ticpp-master)
 link_directories(${ANTLR4_LIB_DIR})
 
 include(antlr4-generator-config)
@@ -32,11 +34,12 @@ SET(CDR_SOURCES
     "ModuleDecl.cpp"
     "Annotations.cpp"
     "indent_facet.cpp"
+    "DFDLGenerator.cpp"
 )
 
 add_executable(CDRGenerator CDRGeneratorMain.cpp ${CDR_SOURCES} ${ANTLR4_SRC_FILES_IDL})
 target_compile_options(CDRGenerator PRIVATE ${IDL_CXX_FLAGS})
-target_link_libraries(CDRGenerator antlr4-runtime)
+target_link_libraries(CDRGenerator antlr4-runtime ticpp)
 
 if(PIRATE_UNIT_TEST)
     find_package(GTest REQUIRED)
@@ -45,7 +48,7 @@ if(PIRATE_UNIT_TEST)
     file(GLOB IDL_TEST_SRC test/*.cpp)
     add_executable(idl_test ${IDL_TEST_SRC} ${CDR_SOURCES} ${ANTLR4_SRC_FILES_IDL})
     target_compile_options(idl_test PRIVATE ${IDL_CXX_FLAGS})
-    target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread)
+    target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread ticpp)
 
     file(GLOB IDL_REGRESSION_TEST_SRC test/output/c/*.c)
     add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})

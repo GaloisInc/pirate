@@ -25,11 +25,18 @@
 #include <X11/Xutil.h>
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    std::shared_ptr<OrientationOutput> orientationOutput) :
+    CameraOrientationCallbacks angPosCallbacks) :
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
-    mOrientationOutput(orientationOutput),
-    mImageSlidingWindow(options.mImageSlidingWindow)
+    mCallbacks(angPosCallbacks),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
+    mImageSlidingWindow(options.mImageSlidingWindow),
+    mDisplay(nullptr),
+    mImage(nullptr),
+    mImageBuffer(nullptr)
 {
 
 }
@@ -58,7 +65,6 @@ int XWinFrameProcessor::xwinDisplayInitialize() {
     return 0;
 }
 
-
 void XWinFrameProcessor::xwinDisplayTerminate() {
     if (mDisplay != nullptr) {
         XDestroyImage(mImage); // frees mImageBuffer
@@ -74,17 +80,22 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
 void XWinFrameProcessor::slidingWindow() {
     int x, y, k;
 
-    float range = mOrientationOutput->mAngularPositionMax - mOrientationOutput->mAngularPositionMin;
-    float position = mOrientationOutput->getAngularPosition();
-    float percent = (position - mOrientationOutput->mAngularPositionMin) / range;
-    int center = mImageWidth * percent;
+    float x_range = mPanAxisMax - mPanAxisMin;
+    float y_range = mTiltAxisMax - mTiltAxisMin;
+    PanTilt position = mCallbacks.mGet();
+    float x_percent = (position.pan - mPanAxisMin) / x_range;
+    float y_percent = (position.tilt - mTiltAxisMin) / y_range;
+    int x_center = mImageWidth * x_percent;
+    int y_center = mImageHeight * y_percent;
     // min can go negative
-    int min = (center - mImageWidth / 4);
-    int max = (center + mImageWidth / 4);
+    int x_min = (x_center - mImageWidth / 3);
+    int x_max = (x_center + mImageWidth / 3);
+    int y_min = (y_center - mImageHeight / 3);
+    int y_max = (y_center + mImageHeight / 3);
 
     for(k = y = 0; y < (int) mImageHeight; y++) {
 	    for(x = 0; x < (int) mImageWidth; x++, k += 4) {
-            if ((x < min) || (x > max)) {
+            if ((x < x_min) || (x > x_max) || (y < y_min) || (y > y_max)) {
                 mImageBuffer[k+0]=0;
                 mImageBuffer[k+1]=0;
                 mImageBuffer[k+2]=0;
@@ -113,8 +124,11 @@ void XWinFrameProcessor::term()
 }
 
 
-int XWinFrameProcessor::process(FrameBuffer data, size_t length)
+int XWinFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
+    if (dataStream != VideoData) {
+        return 0;
+    }
     if (length != (mImageWidth * mImageHeight * 4)) {
         std::cout << "xwindows unexpected frame length " << length << std::endl;
         return 1;

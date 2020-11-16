@@ -91,7 +91,7 @@ Encodes information about an enclave
 .. code-block:: c
 
                 typedef struct {
-                    Elf64_Addr enc_name;
+                    Elf64_Word enc_name;
                     Elf64_Word enc_cap;
                     Elf64_Half enc_main;
                     Elf64_Half enc_padding;
@@ -117,9 +117,8 @@ Encodes information about capabilities.
 .. code-block:: c
 
                 typedef struct {
-                    Elf64_Addr cap_name;
+                    Elf64_Word cap_name;
                     Elf64_Word cap_parent;
-                    Elf64_Word cap_padding;
                 } Elf64_Pirate_cap;
 
 ``cap_name``

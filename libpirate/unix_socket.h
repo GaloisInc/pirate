@@ -26,7 +26,7 @@ typedef struct {
 
 int pirate_unix_socket_parse_param(char *str, void *_param);
 int pirate_unix_socket_get_channel_description(const void *_param, char *desc, int len);
-int pirate_unix_socket_open(void *_param, void *_ctx, int *server_fdp);
+int pirate_unix_socket_open(void *_param, void *_ctx);
 int pirate_unix_socket_close(void *_ctx);
 ssize_t pirate_unix_socket_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_unix_socket_write(const void *_param, void *_ctx, const void *buf, size_t count);

@@ -4,7 +4,8 @@ project(camera_demo)
 set(CMAKE_BUILD_TYPE Debug)
 
 # Targets
-set(TGT_CAMERA_DEMO camera_demo)
+set(TGT_CAMERA_DEMO_GAPS camera_demo_gaps)
+set(TGT_CAMERA_DEMO_MONOLITH camera_demo_monolith)
 
 # Build flags
 set(BUILD_FLAGS -std=c++11 -Wno-error=deprecated-declarations ${PIRATE_C_FLAGS})
@@ -18,28 +19,37 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-set(LIBS pthread)
+set(LIBS pthread pirate)
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
 endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 
 # Source files
-set(SRCS 
-    src/main.cpp
+set(SRCS
+    src/pantilt.cpp
+    src/optionsparser.cpp
     src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
     src/keyboardorientationinput.cpp
     src/orientationoutput.cpp
+    src/baseorientationoutput.cpp
+    src/remoteorientationoutput.cpp
+    src/trilliumorientationoutput.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
     src/orion-sdk/fielddecode.cpp
-    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/fieldencode.cpp
     src/orion-sdk/floatspecial.cpp
     src/orion-sdk/KlvParser.cpp
     src/orion-sdk/KlvTree.cpp
+    src/orion-sdk/OrionPublicPacket.cpp
+    src/orion-sdk/OrionPublicPacketShim.cpp
+    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/scaledencode.cpp
+    src/orion-sdk/TrilliumPacket.cpp
 )
 
 if (FREESPACE_LIB)
@@ -82,15 +92,20 @@ if (X11_LIB)
     message("-- X11 library found")
     set(BUILD_FLAGS -DXWIN_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${X11_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
+    set(SRCS ${SRCS} src/xwinframeprocessor.cpp src/metadataframeprocessor.cpp)
 else ()
     message("-- X11 library not found")
 endif (X11_LIB)
 
-add_executable(${TGT_CAMERA_DEMO} ${SRCS})
-target_link_libraries(${TGT_CAMERA_DEMO} ${LIBS})
-target_compile_options(${TGT_CAMERA_DEMO} PRIVATE ${BUILD_FLAGS})
-target_include_directories(${TGT_CAMERA_DEMO} PRIVATE src/orion-sdk)
+add_executable(${TGT_CAMERA_DEMO_GAPS} ${SRCS} src/main-gaps.cpp)
+target_link_libraries(${TGT_CAMERA_DEMO_GAPS} ${LIBS})
+target_compile_options(${TGT_CAMERA_DEMO_GAPS} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO_GAPS} PRIVATE src/orion-sdk)
+
+add_executable(${TGT_CAMERA_DEMO_MONOLITH} ${SRCS} src/main-monolith.cpp)
+target_link_libraries(${TGT_CAMERA_DEMO_MONOLITH} ${LIBS})
+target_compile_options(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE ${BUILD_FLAGS})
+target_include_directories(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE src/orion-sdk)
 
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)

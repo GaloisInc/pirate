@@ -57,8 +57,6 @@ void ChannelTest::SetUp()
     rv = sem_init(&nonblocking_sem, 0, 0);
     ASSERT_EQ(0, rv);
 #endif
-
-    pirate_reset_gd();
 }
 
 void ChannelTest::TearDown()
@@ -115,7 +113,7 @@ void ChannelTest::WriterChannelOpen()
     }
     Writer.gd = pirate_open_param(&Writer.param, flags);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
-    ASSERT_GE(Writer.gd, 0);
+    ASSERT_NE(Writer.gd, -1);
 
     WriterChannelPostOpen();
 
@@ -148,7 +146,7 @@ void ChannelTest::ReaderChannelOpen()
     }
     Reader.gd = pirate_open_param(&Reader.param, flags);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
-    ASSERT_GE(Reader.gd, 0);
+    ASSERT_NE(Reader.gd, -1);
 
     ReaderChannelPostOpen();
 
@@ -190,57 +188,29 @@ void ChannelTest::Run()
     ASSERT_EQ(Reader.param.channel_type, Writer.param.channel_type);
     ssize_t mtu = pirate_write_mtu_estimate(&Writer.param);
     ASSERT_GE(mtu, 0);
-    for(int child = 0; child <= 1; child++)
+    for (int nonblock = 0; nonblock <= 1; nonblock++)
     {
-        for (int nonblock = 0; nonblock <= 1; nonblock++)
+        nonblocking_IO = (nonblock == 1);
+        if (nonblocking_IO)
         {
-            child_open = (child == 1);
-            nonblocking_IO = (nonblock == 1);
-            if (nonblocking_IO)
+            if (pirate_nonblock_channel_type(Writer.param.channel_type, mtu))
             {
-                if (pirate_nonblock_channel_type(Writer.param.channel_type, mtu))
-                {
-                    nonblocking_IO_attempt = true;
-                }
-                else
-                {
-                    continue;
-                }
+                nonblocking_IO_attempt = true;
             }
-            if (!child_open && !pirate_pipe_channel_type(Writer.param.channel_type))
+            else
             {
                 continue;
             }
-            RunTestCase();
         }
+        RunTestCase();
     }
 }
 
 void ChannelTest::RunTestCase()
 {
     // re-init properties that are affected by
-    // child_open and nonblocking_IO
+    // nonblocking_IO
     ChannelInit();
-
-    if (!child_open)
-    {
-        int rv, gd[2] = {-1, -1};
-        int flags = O_RDWR;
-        if (nonblocking_IO) {
-            flags |= O_NONBLOCK;
-        }
-        rv = pirate_pipe_param(gd, &Writer.param, flags);
-        // memcpy() to keep reader and writer params in sync
-        // Not needed for correctness of execution
-        // Might be necessary if we compare these values in a test assertion
-        memcpy(&Reader.param.channel, &Writer.param.channel, sizeof(Writer.param.channel));
-        ASSERT_CROSS_PLATFORM_NO_ERROR();
-        ASSERT_EQ(0, rv);
-        ASSERT_GE(gd[0], 0);
-        ASSERT_GE(gd[1], 0);
-        Reader.gd = gd[0];
-        Writer.gd = gd[1];
-    }
 
 #ifdef _WIN32
     HANDLE  hThreadArray[2];
@@ -305,10 +275,8 @@ void ChannelTest::BarrierWait()
 void ChannelTest::WriterTest()
 {
     ssize_t offset = 0;
-    if (child_open)
-    {
-        WriterChannelOpen();
-    }
+
+    WriterChannelOpen();
 
     memset(&stats_wr, 0, sizeof(stats_wr));
 
@@ -350,10 +318,7 @@ void ChannelTest::WriterTest()
 
 void ChannelTest::ReaderTest()
 {
-    if (child_open)
-    {
-        ReaderChannelOpen();
-    }
+    ReaderChannelOpen();
 
     memset(&stats_rd, 0, sizeof(stats_rd));
 
@@ -409,18 +374,12 @@ void ChannelTest::ReaderTest()
 
 void HalfClosedTest::ReaderTest()
 {
-    if (child_open)
-    {
-        ReaderChannelOpen();
-    }
+    ReaderChannelOpen();
 }
 
 void HalfClosedTest::WriterTest()
 {
-    if (child_open)
-    {
-        WriterChannelOpen();
-    }
+    WriterChannelOpen();
 }
 
 void ClosedWriterTest::RunTestCase()

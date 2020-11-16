@@ -47,10 +47,7 @@ endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
-set(PIRATE_CXX_STATIC_LIB libpirate++_static)
-set(PIRATE_CXX_SHARED_LIB libpirate++_shared)
 set(PIRATE_APP_LIBS ${PIRATE_STATIC_LIB})
-set(PIRATE_APP_CXX_LIBS ${PIRATE_CXX_STATIC_LIB})
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_LIB_LIBS ${PIRATE_LIB_LIBS} pthread rt)
