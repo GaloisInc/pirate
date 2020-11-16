@@ -109,7 +109,7 @@ public:
         pirate_init_channel_param(TCP_SOCKET, &Reader.param);
         snprintf(param->reader_addr, sizeof(param->reader_addr) - 1, "::1");
         snprintf(param->writer_addr, sizeof(param->writer_addr) - 1, "::");
-        param->reader_port = 26427;
+        param->reader_port = 26428;
         param->writer_port = 0;
         auto test_param = GetParam();
         param->buffer_size = std::get<0>(test_param);
