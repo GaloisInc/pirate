@@ -19,7 +19,7 @@
  * inspected.
  */
 typedef int (resource_handler_t)(pal_env_t *env,
-        const struct app *app, const struct resource *rsc);
+        const struct app *app, struct resource *rsc);
 
 struct handler_table_entry {
     const char *type;
