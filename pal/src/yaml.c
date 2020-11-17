@@ -9,6 +9,7 @@
 #include "yaml.h"
 
 #define ALEN(_a) (sizeof(_a)/sizeof(*_a))
+#define ERROR_MAX (ALEN(((pal_yaml_subdoc_t*)0)->errors))
 
 #define TRY_ERRNO(_op) do{ \
     if(!(_op)) \
@@ -43,6 +44,32 @@ static void error_stack_push(struct pal_yaml_error_stack **top,
     *top = new_top;
 }
 
+static void error_stack_append(struct pal_yaml_error_stack **dst,
+        struct pal_yaml_error_stack *src1,
+        struct pal_yaml_error_stack *src2)
+{
+    assert(dst != NULL);
+
+    while(src1) {
+        TRY_ERRNO(*dst = malloc(sizeof **dst));
+
+        memcpy((*dst)->err, src1->err, sizeof src1->err);
+        (*dst)->next = NULL;
+
+        dst = &(*dst)->next;
+        src1 = src1->next;
+    }
+    while(src2) {
+        TRY_ERRNO(*dst = malloc(sizeof **dst));
+
+        memcpy((*dst)->err, src2->err, sizeof src2->err);
+        (*dst)->next = NULL;
+
+        dst = &(*dst)->next;
+        src2 = src2->next;
+    }
+}
+
 size_t pal_yaml_subdoc_error_count(pal_yaml_subdoc_t *sd)
 {
     assert(sd != NULL);
@@ -55,7 +82,7 @@ void pal_yaml_subdoc_error_context_push(pal_yaml_subdoc_t *sd,
     assert(sd != NULL);
     assert(fmt != NULL);
 
-    if(sd->error_count >= ALEN(sd->errors) - 1)
+    if(sd->error_count >= ERROR_MAX)
         return;
 
     va_list ap;
@@ -72,10 +99,8 @@ void pal_yaml_subdoc_error_push(pal_yaml_subdoc_t *sd,
     assert(sd != NULL);
     assert(fmt != NULL);
 
-    if(sd->error_count >= ALEN(sd->errors)) {
+    if(sd->error_count >= ERROR_MAX) {
         return;
-    } else if(sd->error_count == ALEN(sd->errors) - 1) {
-        pal_yaml_subdoc_error_context_push(sd, "Too many errors");
     } else {
         va_list ap;
         va_start(ap, fmt);
@@ -92,17 +117,15 @@ void pal_yaml_subdoc_error_pop(pal_yaml_subdoc_t *sd)
 {
     assert(sd != NULL);
 
-    if(sd->error_count > 0) {
-        error_stack_free(&sd->errors[sd->error_count - 1]);
-        --sd->error_count;
-    }
+    if(sd->error_count > 0)
+        error_stack_free(&sd->errors[--sd->error_count]);
 }
 
 void pal_yaml_subdoc_error_context_clear(pal_yaml_subdoc_t *sd)
 {
     assert(sd != NULL);
 
-    if(sd->error_count >= ALEN(sd->errors))
+    if(sd->error_count >= ERROR_MAX)
         return;
 
     error_stack_free(&sd->errors[sd->error_count]);
@@ -116,20 +139,22 @@ void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
     size_t bufsz = sizeof buf;
 
     size_t i;
-    for(i = 0; i < sd->error_count; ++i) {
+    for(i = 0; i < sd->error_count && i < ERROR_MAX; ++i) {
         struct pal_yaml_error_stack *e;
         for(e = sd->errors[i]; e; e = e->next) {
             size_t s = snprintf(bufp, bufsz, "%s%s\n",
-                    e == sd->errors[i] ? "" : "\t", e->err);
+                    e == sd->errors[i] ? "" : "\t\t", e->err);
             bufsz -= s;
             bufp += s;
         }
         for(e = sd->context; e; e = e ->next) {
-            size_t s = snprintf(bufp, bufsz, "\t%s\n", e->err);
+            size_t s = snprintf(bufp, bufsz, "\t\t%s\n", e->err);
             bufsz -= s;
             bufp += s;
         }
     }
+    if(sd->error_count >= ERROR_MAX)
+        snprintf(bufp, bufsz, "Too many errors\n");
 
     error(buf);
 }
@@ -147,7 +172,6 @@ pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
     memset(sd->errors, 0, sizeof sd->errors);
     sd->error_count = 0;
     sd->node = NULL;
-    sd->is_master = true;
     sd->context = NULL;
 
     if(!(fp = fopen(fname, "rb"))) {
@@ -182,18 +206,32 @@ pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
         return PAL_YAML_PARSER_ERROR;
     }
 
+    sd->doc_ref_count = malloc(sizeof *sd->doc_ref_count);
+    *sd->doc_ref_count = 1;
+
     return PAL_YAML_OK;
+}
+
+void pal_yaml_subdoc_clear_errors(pal_yaml_subdoc_t *sd)
+{
+    assert(sd != NULL);
+
+    pal_yaml_subdoc_error_context_clear(sd);
+
+    size_t i;
+    while(sd->error_count)
+        pal_yaml_subdoc_error_pop(sd);
 }
 
 void pal_yaml_subdoc_close(pal_yaml_subdoc_t *sd)
 {
     if(sd) {
-        if(sd->is_master)
+        if(--*sd->doc_ref_count == 0) {
             yaml_document_delete(&sd->doc);
+            free(sd->doc_ref_count);
+        }
 
-        size_t i;
-        for(i = 0; i < sd->error_count; ++i)
-            error_stack_free(&sd->errors[i]);
+        pal_yaml_subdoc_clear_errors(sd);
         error_stack_free(&sd->context);
 
         sd->node = NULL;
@@ -364,6 +402,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
@@ -382,15 +422,45 @@ pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_signed(int64_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
+        size_t sz, pal_yaml_subdoc_t *sd, size_t depth, ...)
 {
-    assert(val != NULL);
+    assert(str != NULL);
     assert(sd != NULL);
     assert(sd->node != NULL);
 
     va_list ap;
     va_start(ap, depth);
+
+    yaml_node_t *node;
+    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
+
+    va_end(ap);
+
+    if(res == PAL_YAML_OK) {
+        assert(node != NULL);
+
+        if(node->type != YAML_SCALAR_NODE) {
+            pal_yaml_subdoc_error_push(sd,
+                    "Expected string but got %s",
+                    node_type_strings[node->type]);
+            return PAL_YAML_TYPE_ERROR;
+        }
+
+        snprintf(str, sz, "%s", (char*)node->data.scalar.value);
+        pal_yaml_subdoc_error_context_clear(sd);
+        return PAL_YAML_OK;
+    } else {
+        return res;
+    }
+}
+
+static pal_yaml_result_t find_int(int64_t *val, size_t vsize,
+        pal_yaml_subdoc_t *sd, size_t depth, va_list ap)
+{
+    assert(val != NULL);
+    assert(sd != NULL);
+    assert(sd->node != NULL);
 
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
@@ -408,7 +478,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_signed(int64_t *val,
         char *endp;
         errno = 0;
         *val = strtoll((char *)node->data.scalar.value, &endp, 10);
-        if(!errno && !*endp) {
+        if(!errno && !*endp) { // TODO: Check bounds based on vsize
             pal_yaml_subdoc_error_context_clear(sd);
             return PAL_YAML_OK;
         } else {
@@ -416,7 +486,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_signed(int64_t *val,
                     "`%s' could not be parsed as a signed integer",
                     (char *)node->data.scalar.value,
                     errno ? strerror(errno)
-                          : "Extra characters at end");
+                          : "Contains non-numeric characters");
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
@@ -424,15 +494,88 @@ pal_yaml_result_t pal_yaml_subdoc_find_signed(int64_t *val,
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_unsigned(uint64_t *val,
+pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    int64_t val64;
+    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    int64_t val64;
+    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    int64_t val64;
+    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    int64_t val64;
+    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+static pal_yaml_result_t find_uint(uint64_t *val, size_t vsize,
+        pal_yaml_subdoc_t *sd, size_t depth, va_list ap)
 {
     assert(val != NULL);
     assert(sd != NULL);
     assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
 
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
@@ -450,7 +593,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_unsigned(uint64_t *val,
         char *endp;
         errno = 0;
         *val = strtoull((char *)node->data.scalar.value, &endp, 10);
-        if(!errno && !*endp) {
+        if(!errno && !*endp) { // TODO: Check bounds based on vsize
             pal_yaml_subdoc_error_context_clear(sd);
             return PAL_YAML_OK;
         } else {
@@ -459,7 +602,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_unsigned(uint64_t *val,
                     "unsigned integer: %s",
                     (char *)node->data.scalar.value,
                     errno ? strerror(errno)
-                          : "Extra characters at end");
+                          : "Contains non-numeric characters");
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
@@ -467,10 +610,86 @@ pal_yaml_result_t pal_yaml_subdoc_find_unsigned(uint64_t *val,
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_floating(double *val,
+pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...)
 {
     assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    uint64_t val64;
+    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    uint64_t val64;
+    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    uint64_t val64;
+    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(val != NULL);
+
+    va_list ap;
+    va_start(ap, depth);
+
+    uint64_t val64;
+    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
+            sd, depth, ap);
+
+    va_end(ap);
+
+    if(ret == PAL_YAML_OK)
+        *val = val64;
+    return ret;
+}
+
+pal_yaml_result_t pal_yaml_subdoc_find_double(double *valp,
+        pal_yaml_subdoc_t *sd, size_t depth, ...)
+{
+    assert(valp != NULL);
     assert(sd != NULL);
     assert(sd->node != NULL);
 
@@ -479,6 +698,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_floating(double *val,
 
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
+
+    va_end(ap);
 
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
@@ -492,16 +713,17 @@ pal_yaml_result_t pal_yaml_subdoc_find_floating(double *val,
 
         char *endp;
         errno = 0;
-        *val = strtod((char *)node->data.scalar.value, &endp);
+        double val = strtod((char *)node->data.scalar.value, &endp);
         if(!errno && !*endp) {
             pal_yaml_subdoc_error_context_clear(sd);
+            *valp = val;
             return PAL_YAML_OK;
         } else {
             pal_yaml_subdoc_error_push(sd,
                     "`%s' could not be parsed as a decimal number",
                     (char *)node->data.scalar.value,
                     errno ? strerror(errno)
-                          : "Extra characters at end");
+                          : "Contains non-numeric characters");
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
@@ -509,7 +731,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_floating(double *val,
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_boolean(bool *val,
+pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...)
 {
     assert(val != NULL);
@@ -521,6 +743,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_boolean(bool *val,
 
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
+
+    va_end(ap);
 
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
@@ -568,6 +792,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
@@ -611,6 +837,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
@@ -643,7 +871,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
                 return PAL_YAML_TYPE_ERROR;
             }
 
-            pal_yaml_enum_schema_t *e;
+            pal_yaml_enum_schema_t *e = enums;
             bool found = false;
             for(e = enums; e->name; ++e) {
                 if(!strcmp((char *)elem->data.scalar.value,
@@ -677,19 +905,17 @@ static void subdoc_from_node(pal_yaml_subdoc_t *dst,
     assert(sd != NULL);
 
     dst->doc = sd->doc;
+    dst->doc_ref_count = sd->doc_ref_count;
+    ++*dst->doc_ref_count;
+
     dst->node = node;
     strcpy(dst->filename, sd->filename);
-    dst->is_master = false;
     memset(dst->errors, 0, sizeof dst->errors);
     dst->error_count = 0;
+    dst->context = NULL;
 
-    if(sd->error_count <= 0
-            || sd->error_count >= ALEN(sd->errors)) {
-        dst->context = NULL;
-    } else {
-        dst->context = sd->errors[sd->error_count];
-        sd->errors[sd->error_count--] = NULL;
-    }
+    error_stack_append(&dst->context,
+            sd->errors[sd->error_count], sd->context);
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_sequence(
@@ -707,6 +933,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_sequence(
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
@@ -720,12 +948,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_sequence(
         subdoc_from_node(seq, node, sd);
         *len = node->data.sequence.items.top
                 - node->data.sequence.items.start;
-        /* Don't run pal_yaml_subdoc_error_context_clear here,
-         * because the context is being used by dst.
-         *
-         * TODO: Handle context for nested calls to
-         * pal_yaml_subdoc_find_subdoc
-         */
+        pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
         return res;
@@ -747,6 +970,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
@@ -763,82 +988,31 @@ pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
         pal_yaml_subdoc_t seq;
 
         subdoc_from_node(&seq, node, sd);
-        TRY_ERRNO(strseq = malloc(len * sizeof *strseq));
+        TRY_ERRNO(strseq = calloc(len, sizeof *strseq));
 
         size_t i;
-        for(i = 0; i < len; ++i) {
-            if(pal_yaml_subdoc_find_string(&strseq[i], &seq,
-                    1, PAL_SEQ_IDX(i)) != PAL_YAML_OK) {
-                size_t j = 0;
-                for(j = 0; j < i; ++j)
-                    free(strseq[j]);
-                free(strseq);
+        for(i = 0; i < len; ++i)
+            pal_yaml_subdoc_find_string(&strseq[i], &seq,
+                    1, PAL_SEQ_IDX(i));
 
-                pal_yaml_subdoc_error_push(sd,
-                        "Expected string but got %s",
-                        node_type_strings[node->type]);
-                return PAL_YAML_TYPE_ERROR;
-            }
-        }
+        if(seq.error_count > 0) {
+            size_t i;
+            for(i = 0; i < len; ++i)
+                free(strseq[i]);
+            free(strseq);
 
-        *lenp = len;
-        *strseqp = strseq;
-        pal_yaml_subdoc_error_context_clear(sd);
-        return PAL_YAML_OK;
-    } else {
-        return res;
-    }
-}
+            for(i = 0; i < seq.error_count
+                    && sd->error_count < ERROR_MAX; ++i)
+                error_stack_append(&sd->errors[sd->error_count++],
+                        seq.errors[i], NULL);
 
-pal_yaml_result_t pal_yaml_subdoc_find_unsigned_sequence(
-        uint64_t **valseqp, size_t *lenp, pal_yaml_subdoc_t *sd,
-        size_t depth, ...)
-{
-    assert(valseqp != NULL);
-    assert(lenp != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SEQUENCE_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected sequence but got %s",
-                    node_type_strings[node->type]);
             return PAL_YAML_TYPE_ERROR;
         }
 
-        size_t len = node->data.sequence.items.top
-                - node->data.sequence.items.start;
-        uint64_t *valseq;
-        pal_yaml_subdoc_t seq;
-
-        subdoc_from_node(&seq, node, sd);
-        TRY_ERRNO(valseq = malloc(len * sizeof *valseq));
-
-        size_t i;
-        for(i = 0; i < len; ++i) {
-            if(pal_yaml_subdoc_find_unsigned(&valseq[i], &seq,
-                    1, PAL_SEQ_IDX(i)) != PAL_YAML_OK) {
-                free(valseq);
-
-                pal_yaml_subdoc_error_push(sd,
-                        "Expected unsigned integer but got %s",
-                        node_type_strings[node->type]);
-                return PAL_YAML_TYPE_ERROR;
-            }
-        }
-
-        *lenp = len;
-        *valseqp = valseq;
+        pal_yaml_subdoc_close(&seq);
         pal_yaml_subdoc_error_context_clear(sd);
+        *lenp = len;
+        *strseqp = strseq;
         return PAL_YAML_OK;
     } else {
         return res;
@@ -858,233 +1032,16 @@ pal_yaml_result_t pal_yaml_subdoc_find_subdoc(pal_yaml_subdoc_t *dst,
     yaml_node_t *node;
     pal_yaml_result_t res = find_node(&node, sd, depth, ap);
 
+    va_end(ap);
+
     if(res == PAL_YAML_OK) {
         assert(node != NULL);
 
         subdoc_from_node(dst, node, sd);
+        pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
         return res;
-    }
-}
-
-/* FIXME: Integrate this into individual resource plugins.
- */
-static void load_resource_contents(struct rsc_contents *c,
-        pal_yaml_subdoc_t *sd)
-{
-    assert(c != NULL);
-
-    /* pirate_ and fd_channel
-     */
-<<<<<<< HEAD
-    {
-        pal_yaml_enum_schema_t channel_type_schema[] = {
-            {"device",      DEVICE},
-            {"pipe",        PIPE},
-            {"unix_socket", UNIX_SOCKET},
-            {"tcp_socket",  TCP_SOCKET},
-            {"udp_socket",  UDP_SOCKET},
-            {"shmem",       SHMEM},
-            {"udp_shmem",   UDP_SHMEM},
-            {"uio",         UIO_DEVICE},
-            {"serial",      SERIAL},
-            {"mercury",     MERCURY},
-            {"ge_eth",      GE_ETH},
-        };
-        if(pal_yaml_subdoc_find_enum((int*)&c->cc_channel_type,
-                    channel_type_schema, sd,
-                    1, PAL_MAP_FIELD("channel_type"))
-                == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-    }
-    if(pal_yaml_subdoc_find_string(&c->cc_path, sd,
-                1, PAL_MAP_FIELD("path"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_min_tx_size, sd,
-                1, PAL_MAP_FIELD("min_tx_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_mtu, sd,
-                1, PAL_MAP_FIELD("mtu"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_buffer_size, sd,
-                1, PAL_MAP_FIELD("buffer_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_string(&c->cc_host, sd,
-                1, PAL_MAP_FIELD("host"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_max_tx_size, sd,
-                1, PAL_MAP_FIELD("max_tx_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_size, sd,
-                1, PAL_MAP_FIELD("packet_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_count, sd,
-                1, PAL_MAP_FIELD("packet_count"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_region, sd,
-                1, PAL_MAP_FIELD("region"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_baud, sd,
-                1, PAL_MAP_FIELD("baud"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_message_id, sd,
-                1, PAL_MAP_FIELD("message_id"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        pal_yaml_subdoc_t sess;
-        if(pal_yaml_subdoc_find_subdoc(&sess, sd,
-                    1, PAL_MAP_FIELD("session"))) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            struct session *s;
-            TRY_ERRNO(s = calloc(1, sizeof *c->cc_session));
-
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_level, &sess,
-                        1, PAL_MAP_FIELD("level"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_src_id, &sess,
-                        1, PAL_MAP_FIELD("src_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_dst_id, &sess,
-                        1, PAL_MAP_FIELD("dst_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned_sequence(
-                        &s->sess_messages,
-                        &s->sess_messages_count, &sess,
-                        1, PAL_MAP_FIELD("messages"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(
-                        &s->sess_id, &sess,
-                        1, PAL_MAP_FIELD("sess_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-
-            c->cc_session = s;
-            pal_yaml_subdoc_close(&sess);
-        }
-    }
-=======
-    CYAML_FIELD_ENUM("channel_type", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_channel_type,
-            channel_type_strings, CYAML_ARRAY_LEN(channel_type_strings)),
-    CYAML_FIELD_STRING_PTR("path",
-            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_path, 1, PIRATE_LEN_NAME),
-    CYAML_FIELD_UINT("min_tx_size", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_min_tx_size),
-    CYAML_FIELD_UINT("mtu", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_mtu),
-    CYAML_FIELD_UINT("buffer_size", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_buffer_size),
-    CYAML_FIELD_STRING_PTR("reader_host",
-            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_reader_host, 1, INET_ADDRSTRLEN),
-    CYAML_FIELD_UINT("reader_port", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_reader_port),
-    CYAML_FIELD_STRING_PTR("writer_host",
-            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_writer_host, 1, INET_ADDRSTRLEN),
-    CYAML_FIELD_UINT("writer_port", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_writer_port),
-    CYAML_FIELD_UINT("max_tx_size", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_max_tx_size),
-    CYAML_FIELD_UINT("packet_size", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_packet_size),
-    CYAML_FIELD_UINT("packet_count", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_packet_count),
-    CYAML_FIELD_UINT("region", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_region),
-    CYAML_FIELD_UINT("baud", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_baud),
-    CYAML_FIELD_MAPPING_PTR("session",
-            CYAML_FLAG_POINTER_NULL | CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_session, session_field_schema),
-    CYAML_FIELD_UINT("message_id", CYAML_FLAG_OPTIONAL,
-            struct rsc_contents, cc_message_id),
->>>>>>> 2ad9265ad610350ed653acf69c31db845604be19
-
-    /* Trivial resources
-     */
-    if(pal_yaml_subdoc_find_string(&c->cc_string_value, sd,
-                1, PAL_MAP_FIELD("string_value"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        int64_t int_val;
-        if(pal_yaml_subdoc_find_signed(&int_val, sd,
-                    1, PAL_MAP_FIELD("integer_value"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_integer_value
-                    = malloc(sizeof *c->cc_integer_value));
-            *c->cc_integer_value = int_val;
-        }
-    }
-    {
-        bool bool_val;
-        if(pal_yaml_subdoc_find_boolean(&bool_val, sd,
-                    1, PAL_MAP_FIELD("boolean_value"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_boolean_value
-                    = malloc(sizeof *c->cc_boolean_value));
-            *c->cc_boolean_value = bool_val;
-        }
-    }
-
-    /* File resource
-     */
-    if(pal_yaml_subdoc_find_string(&c->cc_file_path, sd,
-                1, PAL_MAP_FIELD("file_path"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        pal_yaml_enum_schema_t fflags_schema[] = {
-            {"O_RDONLY",    O_RDONLY},
-            {"O_WRONLY",    O_WRONLY},
-            {"O_RDWR",      O_RDWR},
-
-            {"O_APPEND",    O_APPEND},
-            {"O_ASYNC",     O_ASYNC},
-            {"O_CLOEXEC",   O_CLOEXEC},
-            {"O_CREAT",     O_CREAT},
-            {"O_DIRECTORY", O_DIRECTORY},
-            {"O_DSYNC",     O_DSYNC},
-            {"O_EXCL",      O_EXCL},
-            {"O_NOCTTY",    O_NOCTTY},
-            {"O_NOFOLLOW",  O_NOFOLLOW},
-            {"O_NONBLOCK",  O_NONBLOCK},
-            {"O_SYNC",      O_SYNC},
-            {"O_TRUNC",     O_TRUNC},
-        };
-        int fflags;
-        if(pal_yaml_subdoc_find_flags(&fflags, fflags_schema, sd,
-                    1, PAL_MAP_FIELD("file_flags"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_file_flags
-                    = malloc(sizeof *c->cc_file_flags));
-            *c->cc_file_flags = fflags;
-        }
     }
 }
 
@@ -1094,9 +1051,9 @@ struct top_level *load_yaml(const char *fname)
 
     struct top_level *tlp = calloc(1, sizeof *tlp);
 
-    pal_yaml_subdoc_t *sd = &tlp->tl_yaml;
-    if(pal_yaml_subdoc_open(sd, fname) != PAL_YAML_OK) {
-        pal_yaml_subdoc_log_errors(sd);
+    pal_yaml_subdoc_t sd;
+    if(pal_yaml_subdoc_open(&sd, fname) != PAL_YAML_OK) {
+        pal_yaml_subdoc_log_errors(&sd);
         free(tlp);
         return NULL;
     }
@@ -1104,7 +1061,7 @@ struct top_level *load_yaml(const char *fname)
     {
         pal_yaml_subdoc_t encs;
         pal_yaml_subdoc_find_sequence(
-                &encs, &tlp->tl_encs_count, sd,
+                &encs, &tlp->tl_encs_count, &sd,
                 1, PAL_MAP_FIELD("enclaves"));
         if(tlp->tl_encs_count > 0)
             tlp->tl_encs = calloc(tlp->tl_encs_count,
@@ -1119,17 +1076,17 @@ struct top_level *load_yaml(const char *fname)
             if(pal_yaml_subdoc_find_string(&e->enc_path, &encs,
                         2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path"))
                     == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
+                pal_yaml_subdoc_error_pop(&encs);
             if(pal_yaml_subdoc_find_string_sequence(
                         &e->enc_args, &e->enc_args_count, &encs,
                         2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args"))
                     == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
+                pal_yaml_subdoc_error_pop(&encs);
             if(pal_yaml_subdoc_find_string_sequence(
                         &e->enc_env, &e->enc_env_count, &encs,
                         2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"))
                     == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
+                pal_yaml_subdoc_error_pop(&encs);
         }
 
         pal_yaml_subdoc_close(&encs);
@@ -1138,7 +1095,7 @@ struct top_level *load_yaml(const char *fname)
     {
         pal_yaml_subdoc_t rscs;
         pal_yaml_subdoc_find_sequence(
-                &rscs, &tlp->tl_rscs_count, sd,
+                &rscs, &tlp->tl_rscs_count, &sd,
                 1, PAL_MAP_FIELD("resources"));
         if(tlp->tl_rscs_count > 0)
             tlp->tl_rscs = calloc(tlp->tl_rscs_count,
@@ -1156,8 +1113,6 @@ struct top_level *load_yaml(const char *fname)
                     2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
             pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
                     2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("contents"));
-            // FIXME: This should be done by resource handlers.
-            load_resource_contents(&r->r_contents, &r->r_yaml);
         }
 
         pal_yaml_subdoc_close(&rscs);
@@ -1170,20 +1125,20 @@ struct top_level *load_yaml(const char *fname)
             { "debug",   LOGLVL_DEBUG }
         };
         if(pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
-                    log_level_schema, sd,
+                    log_level_schema, &sd,
                     2, PAL_MAP_FIELD("config"),
                        PAL_MAP_FIELD("log_level"))
                 == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
+            pal_yaml_subdoc_error_pop(&sd);
     }
 
-    if(pal_yaml_subdoc_error_count(sd) > 0) {
-        pal_yaml_subdoc_log_errors(sd);
+    if(pal_yaml_subdoc_error_count(&sd) > 0) {
+        pal_yaml_subdoc_log_errors(&sd);
         free_yaml(tlp);
-        return NULL;
+        tlp = NULL;
     }
 
-    pal_yaml_subdoc_close(sd); // FIXME: Get rid of this.
+    pal_yaml_subdoc_close(&sd);
     return tlp;
 }
 
@@ -1208,14 +1163,8 @@ void free_yaml(struct top_level *tlp)
         for(size_t i = 0; i < r->r_ids_count; ++i)
             free(r->r_ids[i]);
         free(r->r_ids);
-        free(r->r_contents.cc_string_value);
-        free(r->r_contents.cc_integer_value);
-        free(r->r_contents.cc_boolean_value);
-        free(r->r_contents.cc_file_path);
-        free(r->r_contents.cc_file_flags);
         pal_yaml_subdoc_close(&r->r_yaml);
     }
     free(tlp->tl_rscs);
-    pal_yaml_subdoc_close(&tlp->tl_yaml);
     free(tlp);
 }

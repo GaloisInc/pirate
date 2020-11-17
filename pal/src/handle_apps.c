@@ -86,6 +86,11 @@ static resource_handler_t *lookup_handler(const char *type)
  * Return 0 on success if the fd corresponding to the request could still
  * potentially be used. If an empty message is received, indicating the other
  * end has closed the connection, return -1.
+ *
+ * NB: Errors that indicate errors in the config file are treated as fatal,
+ * and will cause PAL to hang up on the current app. This include an app
+ * requesting an unknown resource or a resource of an incorrect or mismatched
+ * type, as well as failures in the called resource handler.
  */
 static int handle_event(struct epoll_event *event,
         struct resource *rscs, size_t rscs_count)
@@ -125,25 +130,37 @@ static int handle_event(struct epoll_event *event,
         plog(LOGLVL_INFO, "Received request for resource %s of type %s "
                 "from %s", name, type, app->name);
 
+        bool fatal = false;
+
         if(err)
             error("Encountered an error reading resource request from %s: %s",
                     app->name, err > 0 ? pal_strerror(err) : strerror(-err));
 
-        else if(!(rsc = lookup_resource(app->name, name, rscs, rscs_count)))
+        else if(!(rsc = lookup_resource(app->name, name, rscs, rscs_count))) {
             error("Received request for unknown resource named %s "
                     "of type %s from %s", name, type, app->name);
+            fatal = true;
+        }
 
-        else if(strcmp(rsc->r_type, type))
+        else if(strcmp(rsc->r_type, type)) {
             error("Type %s of resource %s requested by %s does not match "
                     "config (%s)", type, name, app->name, rsc->r_type);
+            fatal = true;
+        }
 
-        else if(!(handle = lookup_handler(type)))
+        else if(!(handle = lookup_handler(type))) {
             error("Received request for resource named %s of unknown type %s "
                     "from %s", name, type, app->name);
+            fatal = true;
+        }
 
-        else if(handle(&env, app, rsc))
+        else if(handle(&env, app, rsc)) {
             error("Handler failed for resource named %s of type %s requested "
                     "by %s", name, type, app->name);
+            if(pal_yaml_subdoc_error_count(&rsc->r_yaml) > 0)
+                pal_yaml_subdoc_log_errors(&rsc->r_yaml);
+            fatal = true;
+        }
 
         else if((err = pal_send_env(app->pipe_fd, &env, MSG_DONTWAIT)))
             error("Failed to send resource named %s of type %s to %s: %s",
@@ -156,6 +173,9 @@ static int handle_event(struct epoll_event *event,
         free(type);
         free(name);
         pal_free_env(&env);
+        pal_yaml_subdoc_clear_errors(&rsc->r_yaml);
+        if(fatal)
+            return -1;
     }
 
     return 0;

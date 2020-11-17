@@ -46,8 +46,9 @@ int main(int argc, char **argv, char **envp)
 
             apps[i].pid = 0;
             err = -1;
+        } else {
+            plog(LOGLVL_INFO, "Launched app %s", tlp->tl_encs[i].enc_name);
         }
-        plog(LOGLVL_INFO, "Launched app %s", tlp->tl_encs[i].enc_name);
     }
 
     if(err || handle_apps(apps, apps_count,

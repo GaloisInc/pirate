@@ -136,10 +136,15 @@ int launch(struct app *app, char *cfg_path,
             envp, envp_count);
     app->name = enc->enc_name;
 
-    if(set_cloexec(fds[PARENT_END]))
+    // Spawn the process
+    plog(LOGLVL_INFO, "Spawning executable %s as app %s", path, app->name);
+    if(set_cloexec(fds[PARENT_END])) {
         PERROR("set FD_CLOEXEC on pipe");
-    else if(posix_spawn(&app->pid, path, NULL, NULL, new_argv, new_envp))
+        return -1;
+    } else if(posix_spawn(&app->pid, path, NULL, NULL, new_argv, new_envp)) {
         PERROR("spawn process");
+        return -1;
+    }
 
     close(fds[CHILD_END]);
     return 0;

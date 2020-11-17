@@ -39,9 +39,9 @@ struct pal_yaml_error_stack {
 
 typedef struct pal_yaml_subdoc {
     yaml_document_t doc;
+    size_t *doc_ref_count;
     yaml_node_t *node;
     char filename[1024];
-    bool is_master; // Whether freeing should close yaml_document_t
 
     /* Each stack is a single error, with the context entries being
      * below it on the stack. Error context is pushed to
@@ -50,6 +50,11 @@ typedef struct pal_yaml_subdoc {
      */
     struct pal_yaml_error_stack *errors[512];
     size_t error_count;
+
+    /* Error context inherited from parent subdoc. This is appended
+     * to the end of the error stack for each error when the errors
+     * are logged.
+     */
     struct pal_yaml_error_stack *context;
 } pal_yaml_subdoc_t;
 
@@ -62,20 +67,40 @@ typedef enum pal_yaml_result {
 
 #define PAL_YAML_ENUM_END (pal_yaml_enum_schema_t){NULL, 0}
 
+/* Array of name/value pairs for pal_yaml_subdoc_find_flags and
+ * pal_yaml_subdoc_find_enums.
+ *
+ * Final entry must be PAL_YAML_ENUM_END.
+ */
 typedef struct pal_yaml_enum_schema {
     char *name;
     int value;
 } pal_yaml_enum_schema_t;
 
-void pal_yaml_subdoc_error_push(pal_yaml_subdoc_t *sd,
-        const char *fmt, ...);
+/* Add to the context of the current error. E.g., this is used
+ * to add lines such as "In field X of mapping at Y:Z".
+ */
 void pal_yaml_subdoc_error_context_push(pal_yaml_subdoc_t *sd,
         const char *fmt, ...);
+
+/* Clear the context of the current error.
+ */
 void pal_yaml_subdoc_error_context_clear(pal_yaml_subdoc_t *sd);
+
+/* Register an error message with the current context. After calling
+ * this function, the context will be empty and must be repopulated
+ * before pushing another error.
+ */
+void pal_yaml_subdoc_error_push(pal_yaml_subdoc_t *sd,
+        const char *fmt, ...);
 
 /* Remove the last error registered to a pal_yaml_subdoc_t.
  */
 void pal_yaml_subdoc_error_pop(pal_yaml_subdoc_t *sd);
+
+/* Clear all errors and error context from a pal_yaml_subdoc_t.
+ */
+void pal_yaml_subdoc_clear_errors(pal_yaml_subdoc_t *sd);
 
 /* Return the number of errors registered to a pal_yaml_subdoc_t.
  */
@@ -139,13 +164,27 @@ const char *pal_yaml_strerror(pal_yaml_result_t res);
  */
 pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
         pal_yaml_subdoc_t *sd, size_t depth, ...);
-pal_yaml_result_t pal_yaml_subdoc_find_signed(int64_t *val,
+pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
+        size_t sz, pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...);
-pal_yaml_result_t pal_yaml_subdoc_find_unsigned(uint64_t *val,
+pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...);
-pal_yaml_result_t pal_yaml_subdoc_find_floating(double *val,
+pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...);
-pal_yaml_result_t pal_yaml_subdoc_find_boolean(bool *val,
+pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_double(double *val,
+        pal_yaml_subdoc_t *sd, size_t depth, ...);
+pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
         pal_yaml_subdoc_t *sd, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
         pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
@@ -183,58 +222,11 @@ struct session {
     uint64_t sess_id;
 };
 
-struct rsc_contents {
-
-    /* pirate_ and fd_channel
-     */
-    channel_enum_t cc_channel_type;
-    char *cc_path;              // device, pipe, unix_socket, shmem, udp_shmem, uio, serial
-<<<<<<< HEAD
-    uint64_t cc_min_tx_size;    // device, pipe, unix_socket, tcp_socket
-    uint64_t cc_mtu;            // ALL
-    uint64_t cc_buffer_size;    // unix_socket, tcp_socket, udp_socket, shmem, udp_shmem
-    char *cc_host;              // tcp_socket, udp_socket, ge_eth
-    uint64_t cc_port;           // tcp_socket, udp_socket, ge_eth
-    uint64_t cc_max_tx_size;    // shmem, uio, serial
-    uint64_t cc_packet_size;      // udp_shmem
-    uint64_t cc_packet_count;     // udp_shmem
-    uint64_t cc_region;         // uio
-    uint64_t cc_baud;            // serial
-=======
-    uint32_t cc_min_tx_size;    // device, pipe, unix_socket, tcp_socket
-    uint32_t cc_mtu;            // ALL
-    uint32_t cc_buffer_size;    // unix_socket, tcp_socket, udp_socket, shmem, udp_shmem
-    char *cc_reader_host;       // tcp_socket, udp_socket, ge_eth
-    uint16_t cc_reader_port;    // tcp_socket, udp_socket, ge_eth
-    char *cc_writer_host;       // tcp_socket, udp_socket, ge_eth
-    uint16_t cc_writer_port;    // tcp_socket, udp_socket, ge_eth
-    uint32_t cc_max_tx_size;    // shmem, uio, serial
-    size_t cc_packet_size;      // udp_shmem
-    size_t cc_packet_count;     // udp_shmem
-    uint16_t cc_region;         // uio
-    speed_t cc_baud;            // serial
->>>>>>> 2ad9265ad610350ed653acf69c31db845604be19
-    struct session *cc_session; // mercury
-    uint64_t cc_message_id;     // ge_eth
-
-    /* Trivial resources
-     */
-    char *cc_string_value;
-    int64_t *cc_integer_value;
-    bool *cc_boolean_value;
-
-    /* File resource
-     */
-    char *cc_file_path;
-    int *cc_file_flags;
-};
-
 struct resource {
     char *r_name;
     char *r_type;
     char **r_ids;
     size_t r_ids_count;
-    struct rsc_contents r_contents; // FIXME: Make this pluggable
     pal_yaml_subdoc_t r_yaml;
 };
 
@@ -248,7 +240,6 @@ struct top_level {
     struct resource *tl_rscs;
     size_t tl_rscs_count;
     struct config tl_cfg;
-    pal_yaml_subdoc_t tl_yaml;
 };
 
 struct top_level *load_yaml(const char *fname);
