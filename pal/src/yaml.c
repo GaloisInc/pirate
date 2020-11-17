@@ -218,7 +218,6 @@ void pal_yaml_subdoc_clear_errors(pal_yaml_subdoc_t *sd)
 
     pal_yaml_subdoc_error_context_clear(sd);
 
-    size_t i;
     while(sd->error_count)
         pal_yaml_subdoc_error_pop(sd);
 }
@@ -390,7 +389,7 @@ static pal_yaml_result_t find_node(yaml_node_t **res,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(str != NULL);
     assert(sd != NULL);
@@ -418,12 +417,15 @@ pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
         pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
-        size_t sz, pal_yaml_subdoc_t *sd, size_t depth, ...)
+        size_t sz, pal_yaml_subdoc_t *sd, bool required,
+        size_t depth, ...)
 {
     assert(str != NULL);
     assert(sd != NULL);
@@ -451,12 +453,15 @@ pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
         pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 static pal_yaml_result_t find_int(int64_t *val, size_t vsize,
-        pal_yaml_subdoc_t *sd, size_t depth, va_list ap)
+        pal_yaml_subdoc_t *sd, bool required,
+        size_t depth, va_list ap)
 {
     assert(val != NULL);
     assert(sd != NULL);
@@ -490,12 +495,14 @@ static pal_yaml_result_t find_int(int64_t *val, size_t vsize,
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -504,7 +511,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
 
     int64_t val64;
     pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -514,7 +521,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -523,7 +530,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
 
     int64_t val64;
     pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -533,7 +540,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -542,7 +549,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
 
     int64_t val64;
     pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -552,7 +559,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -561,7 +568,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
 
     int64_t val64;
     pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -571,7 +578,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
 }
 
 static pal_yaml_result_t find_uint(uint64_t *val, size_t vsize,
-        pal_yaml_subdoc_t *sd, size_t depth, va_list ap)
+        pal_yaml_subdoc_t *sd, bool required,
+        size_t depth, va_list ap)
 {
     assert(val != NULL);
     assert(sd != NULL);
@@ -606,12 +614,14 @@ static pal_yaml_result_t find_uint(uint64_t *val, size_t vsize,
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -620,7 +630,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
 
     uint64_t val64;
     pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -630,7 +640,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -639,7 +649,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
 
     uint64_t val64;
     pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -649,7 +659,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -658,7 +668,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
 
     uint64_t val64;
     pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -668,7 +678,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
 
@@ -677,7 +687,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
 
     uint64_t val64;
     pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, depth, ap);
+            sd, required, depth, ap);
 
     va_end(ap);
 
@@ -687,7 +697,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_double(double *valp,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(valp != NULL);
     assert(sd != NULL);
@@ -727,12 +737,14 @@ pal_yaml_result_t pal_yaml_subdoc_find_double(double *valp,
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(val != NULL);
     assert(sd != NULL);
@@ -773,13 +785,15 @@ pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
             return PAL_YAML_TYPE_ERROR;
         }
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
         pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        size_t depth, ...)
+        bool required, size_t depth, ...)
 {
     assert(val != NULL);
     assert(enums != NULL);
@@ -818,13 +832,15 @@ pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
                 (char *)node->data.scalar.value);
         return PAL_YAML_TYPE_ERROR;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
         pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        size_t depth, ...)
+        bool required, size_t depth, ...)
 {
     assert(val != NULL);
     assert(enums != NULL);
@@ -893,6 +909,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
         *val = val_temp;
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
@@ -919,7 +937,8 @@ static void subdoc_from_node(pal_yaml_subdoc_t *dst,
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_sequence(
-        pal_yaml_subdoc_t *seq, size_t *len, pal_yaml_subdoc_t *sd,
+        pal_yaml_subdoc_t *seq, size_t *len,
+        pal_yaml_subdoc_t *sd, bool required,
         size_t depth, ...)
 {
     assert(seq != NULL);
@@ -951,12 +970,15 @@ pal_yaml_result_t pal_yaml_subdoc_find_sequence(
         pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
-        char ***strseqp, size_t *lenp, pal_yaml_subdoc_t *sd,
+        char ***strseqp, size_t *lenp,
+        pal_yaml_subdoc_t *sd, bool required,
         size_t depth, ...)
 {
     assert(strseqp != NULL);
@@ -993,7 +1015,7 @@ pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
         size_t i;
         for(i = 0; i < len; ++i)
             pal_yaml_subdoc_find_string(&strseq[i], &seq,
-                    1, PAL_SEQ_IDX(i));
+                    true, 1, PAL_SEQ_IDX(i));
 
         if(seq.error_count > 0) {
             size_t i;
@@ -1015,12 +1037,14 @@ pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
         *strseqp = strseq;
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
 
 pal_yaml_result_t pal_yaml_subdoc_find_subdoc(pal_yaml_subdoc_t *dst,
-        pal_yaml_subdoc_t *sd, size_t depth, ...)
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
 {
     assert(dst != NULL);
     assert(sd != NULL);
@@ -1041,6 +1065,8 @@ pal_yaml_result_t pal_yaml_subdoc_find_subdoc(pal_yaml_subdoc_t *dst,
         pal_yaml_subdoc_error_context_clear(sd);
         return PAL_YAML_OK;
     } else {
+        if(!required && res == PAL_YAML_NOT_FOUND)
+            pal_yaml_subdoc_error_pop(sd);
         return res;
     }
 }
@@ -1062,7 +1088,7 @@ struct top_level *load_yaml(const char *fname)
         pal_yaml_subdoc_t encs;
         pal_yaml_subdoc_find_sequence(
                 &encs, &tlp->tl_encs_count, &sd,
-                1, PAL_MAP_FIELD("enclaves"));
+                true, 1, PAL_MAP_FIELD("enclaves"));
         if(tlp->tl_encs_count > 0)
             tlp->tl_encs = calloc(tlp->tl_encs_count,
                     sizeof(*tlp->tl_encs));
@@ -1072,21 +1098,15 @@ struct top_level *load_yaml(const char *fname)
             struct enclave *e = &tlp->tl_encs[i];
 
             pal_yaml_subdoc_find_string(&e->enc_name, &encs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
-            if(pal_yaml_subdoc_find_string(&e->enc_path, &encs,
-                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(&encs);
-            if(pal_yaml_subdoc_find_string_sequence(
-                        &e->enc_args, &e->enc_args_count, &encs,
-                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(&encs);
-            if(pal_yaml_subdoc_find_string_sequence(
-                        &e->enc_env, &e->enc_env_count, &encs,
-                        2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(&encs);
+                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
+            pal_yaml_subdoc_find_string(&e->enc_path, &encs,
+                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path"));
+            pal_yaml_subdoc_find_string_sequence(
+                    &e->enc_args, &e->enc_args_count, &encs,
+                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args"));
+            pal_yaml_subdoc_find_string_sequence(
+                    &e->enc_env, &e->enc_env_count, &encs,
+                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"));
         }
 
         pal_yaml_subdoc_close(&encs);
@@ -1096,7 +1116,7 @@ struct top_level *load_yaml(const char *fname)
         pal_yaml_subdoc_t rscs;
         pal_yaml_subdoc_find_sequence(
                 &rscs, &tlp->tl_rscs_count, &sd,
-                1, PAL_MAP_FIELD("resources"));
+                true, 1, PAL_MAP_FIELD("resources"));
         if(tlp->tl_rscs_count > 0)
             tlp->tl_rscs = calloc(tlp->tl_rscs_count,
                     sizeof(*tlp->tl_rscs));
@@ -1105,14 +1125,14 @@ struct top_level *load_yaml(const char *fname)
         for(i = 0; i < tlp->tl_rscs_count; ++i) {
             struct resource *r = &tlp->tl_rscs[i];
             pal_yaml_subdoc_find_string(&r->r_name, &rscs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
+                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
             pal_yaml_subdoc_find_string(&r->r_type, &rscs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("type"));
+                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("type"));
             pal_yaml_subdoc_find_string_sequence(
                     &r->r_ids, &r->r_ids_count, &rscs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
+                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
             pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
-                    2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("contents"));
+                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("contents"));
         }
 
         pal_yaml_subdoc_close(&rscs);
@@ -1124,12 +1144,9 @@ struct top_level *load_yaml(const char *fname)
             { "info",    LOGLVL_INFO },
             { "debug",   LOGLVL_DEBUG }
         };
-        if(pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
-                    log_level_schema, &sd,
-                    2, PAL_MAP_FIELD("config"),
-                       PAL_MAP_FIELD("log_level"))
-                == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(&sd);
+        pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
+                log_level_schema, &sd,
+                false, 2, PAL_MAP_FIELD("config"), PAL_MAP_FIELD("log_level"));
     }
 
     if(pal_yaml_subdoc_error_count(&sd) > 0) {
