@@ -163,43 +163,44 @@ const char *pal_yaml_strerror(pal_yaml_result_t res);
  * for freeing this memory.
  */
 pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
-        size_t sz, pal_yaml_subdoc_t *sd, size_t depth, ...);
+        size_t sz, pal_yaml_subdoc_t *sd, bool required,
+        size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_double(double *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
         pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        size_t depth, ...);
+        bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
         pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        size_t depth, ...);
+        bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_sequence(
         pal_yaml_subdoc_t *seq, size_t *len, pal_yaml_subdoc_t *sd,
-        size_t depth, ...);
+        bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
         char ***strseqp, size_t *lenp, pal_yaml_subdoc_t *sd,
-        size_t depth, ...);
+        bool required, size_t depth, ...);
 pal_yaml_result_t pal_yaml_subdoc_find_subdoc(pal_yaml_subdoc_t *dst,
-        pal_yaml_subdoc_t *sd, size_t depth, ...);
+        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...);
 
 /* Config file data structure
  */

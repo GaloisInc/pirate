@@ -110,7 +110,7 @@ static int handle_event(struct epoll_event *event,
 
     if(event->events & EPOLLIN) {
         char *name = NULL, *type = NULL;
-        struct resource *rsc;
+        struct resource *rsc = NULL;
         pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
         int err;
 
