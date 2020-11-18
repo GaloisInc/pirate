@@ -6,10 +6,6 @@
 #include "launch.h"
 #include "yaml.h"
 
-/* Maximum number of resource types
- */
-#define HANDLER_TABLE_MAX 1024
-
 /* A resource handler should inspect the supplied `struct resource` and
  * fill in `env`, which is guaranteed to point to a `pal_env_t` initialized
  * with `EMPTY_PAL_ENV(PAL_RESOURCE)`.
@@ -21,11 +17,15 @@
 typedef int (resource_handler_t)(pal_env_t *env,
         const struct app *app, struct resource *rsc);
 
-struct handler_table_entry {
-    const char *type;
-    resource_handler_t *handler;
-};
-
-extern struct handler_table_entry handler_table[HANDLER_TABLE_MAX];
+int cstring_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc);
+int int64_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc);
+int bool_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc);
+int file_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc);
+int pirate_channel_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc);
 
 #endif // _PIRATE_PAL_HANDLERS_H

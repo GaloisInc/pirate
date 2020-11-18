@@ -16,34 +16,6 @@ project(pal)
 #endif(NOT YAML_LIB)
 
 ###
-# Adding libcyaml as an external project, ala
-# https://mirkokiefer.com/cmake-by-example-f95eb47d45b1
-###
-
-include(ExternalProject)
-ExternalProject_Add(project_libcyaml
-    GIT_REPOSITORY https://github.com/tlsa/libcyaml
-    GIT_TAG v1.0.2
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND make VARIANT=release
-    INSTALL_COMMAND make install
-    PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2
-    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2/lib/libcyaml.so
-)
-
-add_library(libcyaml SHARED IMPORTED)
-ExternalProject_Get_Property(project_libcyaml install_dir)
-set(CYAML_INSTALL_DIR ${install_dir})
-add_dependencies(libcyaml project_libcyaml)
-set_property(TARGET libcyaml
-    PROPERTY IMPORTED_LOCATION ${CYAML_INSTALL_DIR}/lib/libcyaml.so)
-
-install(DIRECTORY ${CYAML_INSTALL_DIR}/lib/ DESTINATION lib
-    USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "libcyaml.so*")
-
-###
 # libpal shared library
 ###
 
@@ -79,8 +51,8 @@ target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml pirate yaml)
-target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror)
+target_link_libraries(exepal pirate yaml dl)
+target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror SHELL:-export-dynamic)
 
 install(TARGETS exepal DESTINATION bin)
 install(FILES include/pal/pal.h DESTINATION include/pal)

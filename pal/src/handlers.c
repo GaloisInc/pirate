@@ -376,12 +376,3 @@ int pirate_channel_resource_handler(pal_env_t *env,
 
     return 0;
 }
-
-struct handler_table_entry handler_table[HANDLER_TABLE_MAX] = {
-    { "boolean",        &bool_resource_handler },
-    { "file",           &file_resource_handler },
-    { "integer",        &int64_resource_handler },
-    { "pirate_channel", &pirate_channel_resource_handler },
-    { "string",         &cstring_resource_handler },
-    { NULL,             NULL },
-};
