@@ -269,6 +269,7 @@ struct resource {
 
 struct config {
     enum log_level cfg_loglvl;
+    char *cfg_plugin_dir;
 };
 
 struct top_level {
