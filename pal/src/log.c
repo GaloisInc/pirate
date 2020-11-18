@@ -68,6 +68,6 @@ void warn(char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    vlog("WARNING", LOGLVL_DEFAULT, fmt, ap);
+    vlog("WARN", LOGLVL_DEFAULT, fmt, ap);
     va_end(ap);
 }

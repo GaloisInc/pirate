@@ -42,7 +42,7 @@ int main(int argc, char **argv, char **envp)
         fatal("In %s: plugin_directory `%s' must be an absolute path",
                 cfg_path, plugin_dir);
     load_resource_plugins(
-            plugin_dir ? plugin_dir : "/usr/lib/pirate/pal/plugins");
+            plugin_dir ? plugin_dir : "/usr/local/lib/pirate/pal/plugins");
 
     size_t apps_count = tlp->tl_encs_count;
     struct app apps[apps_count];

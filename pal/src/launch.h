@@ -1,17 +1,9 @@
 #ifndef _PIRATE_PAL_LAUNCH_H
 #define _PIRATE_PAL_LAUNCH_H
 
-#include <stdbool.h>
-#include <sys/types.h>
+#include <pal/resource.h>
 
 #include "yaml.h"
-
-struct app {
-    char *name;
-    int pipe_fd;
-    bool hangup;
-    pid_t pid;
-};
 
 /* Launch and enclave and save information about it in `app`.
  *
