@@ -1152,6 +1152,9 @@ struct top_level *load_yaml(const char *fname)
                 false, 2, PAL_MAP_FIELD("config"),
                           PAL_MAP_FIELD("log_level"));
     }
+    pal_yaml_subdoc_find_string(&tlp->tl_cfg.cfg_plugin_dir, &sd,
+            false, 2, PAL_MAP_FIELD("config"),
+                      PAL_MAP_FIELD("plugin_directory"));
 
     if(pal_yaml_subdoc_error_count(&sd) > 0) {
         pal_yaml_subdoc_log_errors(&sd);
@@ -1187,5 +1190,6 @@ void free_yaml(struct top_level *tlp)
         pal_yaml_subdoc_close(&r->r_yaml);
     }
     free(tlp->tl_rscs);
+    free(tlp->tl_cfg.cfg_plugin_dir);
     free(tlp);
 }

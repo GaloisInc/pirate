@@ -37,8 +37,12 @@ int main(int argc, char **argv, char **envp)
 
     plog(LOGLVL_DEBUG, "Read configuration from `%s'", cfg_path);
 
-    // TODO: Check config path is absolute
-    load_resource_plugins("/usr/lib/pirate/pal/plugins"); // TODO: Make configurable
+    char *plugin_dir = tlp->tl_cfg.cfg_plugin_dir;
+    if(plugin_dir && plugin_dir[0] != '/')
+        fatal("In %s: plugin_directory `%s' must be an absolute path",
+                cfg_path, plugin_dir);
+    load_resource_plugins(
+            plugin_dir ? plugin_dir : "/usr/lib/pirate/pal/plugins");
 
     size_t apps_count = tlp->tl_encs_count;
     struct app apps[apps_count];
