@@ -30,12 +30,15 @@ int main(int argc, char **argv, char **envp)
     cfg_path = argv[1];
 
     if(!(tlp = load_yaml(cfg_path)))
-        fatal("Failed to load yaml from %s", argv[0]);
+        fatal("Failed to load yaml from %s", cfg_path);
 
     if(tlp->tl_cfg.cfg_loglvl > log_level)
         log_level = tlp->tl_cfg.cfg_loglvl;
 
     plog(LOGLVL_DEBUG, "Read configuration from `%s'", cfg_path);
+
+    // TODO: Check config path is absolute
+    load_resource_plugins("/usr/lib/pirate/pal/plugins"); // TODO: Make configurable
 
     size_t apps_count = tlp->tl_encs_count;
     struct app apps[apps_count];
@@ -63,6 +66,6 @@ int main(int argc, char **argv, char **envp)
         wait(NULL);
 
     free_yaml(tlp);
-
+    free_resource_plugins();
     return -err;
 }

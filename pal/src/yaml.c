@@ -135,11 +135,11 @@ void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
 {
     assert(sd);
 
-    char buf[8192], *bufp = buf;
-    size_t bufsz = sizeof buf;
-
     size_t i;
     for(i = 0; i < sd->error_count && i < ERROR_MAX; ++i) {
+        char buf[8192], *bufp = buf;
+        size_t bufsz = sizeof buf;
+
         struct pal_yaml_error_stack *e;
         for(e = sd->errors[i]; e; e = e->next) {
             size_t s = snprintf(bufp, bufsz, "%s%s\n",
@@ -152,11 +152,12 @@ void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
             bufsz -= s;
             bufp += s;
         }
+
+        bufp[-1] = '\0';
+        error(buf);
     }
     if(sd->error_count >= ERROR_MAX)
-        snprintf(bufp, bufsz, "Too many errors\n");
-
-    error(buf);
+        error("Too many errors\n");
 }
 
 pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
@@ -1260,6 +1261,7 @@ struct top_level *load_yaml(const char *fname)
     pal_yaml_subdoc_t sd;
     if(pal_yaml_subdoc_open(&sd, fname) != PAL_YAML_OK) {
         pal_yaml_subdoc_log_errors(&sd);
+        pal_yaml_subdoc_clear_errors(&sd);
         free(tlp);
         return NULL;
     }
@@ -1312,7 +1314,8 @@ struct top_level *load_yaml(const char *fname)
                     &r->r_ids, &r->r_ids_count, &rscs,
                     true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
             pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
-                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("contents"));
+                    true, 2, PAL_SEQ_IDX(i),
+                             PAL_MAP_FIELD("contents"));
         }
 
         pal_yaml_subdoc_close(&rscs);
@@ -1326,7 +1329,8 @@ struct top_level *load_yaml(const char *fname)
         };
         pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
                 log_level_schema, &sd,
-                false, 2, PAL_MAP_FIELD("config"), PAL_MAP_FIELD("log_level"));
+                false, 2, PAL_MAP_FIELD("config"),
+                          PAL_MAP_FIELD("log_level"));
     }
 
     if(pal_yaml_subdoc_error_count(&sd) > 0) {

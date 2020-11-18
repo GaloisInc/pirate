@@ -1,7 +1,6 @@
 #ifndef _PIRATE_PAL_YAML_H
 #define _PIRATE_PAL_YAML_H
 
-#include <cyaml/cyaml.h>
 #include <libpirate.h>
 #include <stdbool.h>
 #include <stdint.h>

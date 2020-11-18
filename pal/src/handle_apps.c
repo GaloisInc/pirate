@@ -1,5 +1,7 @@
 #include <pal/envelope.h>
 
+#include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -11,6 +13,90 @@
 #include "handle_apps.h"
 #include "handlers.h"
 #include "log.h"
+
+/* Maximum number of resource types
+ */
+#define HANDLER_TABLE_MAX 1024
+#define HANDLER_TYPE_MAX 64
+
+static struct handler_table_entry {
+    char *type;
+    resource_handler_t *handler;
+    void *dlhandle;
+} handler_table[HANDLER_TABLE_MAX] = {
+    { "boolean",        &bool_resource_handler,           NULL },
+    { "file",           &file_resource_handler,           NULL },
+    { "integer",        &int64_resource_handler,          NULL },
+    { "pirate_channel", &pirate_channel_resource_handler, NULL },
+    { "string",         &cstring_resource_handler,        NULL },
+    { NULL,             NULL,                             NULL },
+};
+
+void load_resource_plugins(const char *dirpath)
+{
+    DIR *dir = opendir(dirpath);
+    if(!dir) {
+        warn("Failed to open plugin directory `%s'", dirpath);
+        return;
+    }
+
+    struct dirent *ent = NULL;
+    while((ent = readdir(dir))) {
+        const char *suffix = strrchr(ent->d_name, '.');
+        if(!suffix || strcmp(suffix, ".so"))
+            continue;
+
+        char name[strlen(ent->d_name) + 1 /*\0*/];
+        snprintf(name, sizeof name, "%.*s",
+                (int)(strlen(ent->d_name) - 3 /*.so*/), ent->d_name);
+
+        char path[strlen(dirpath) + 1 + strlen(ent->d_name) + 1 /*\0*/];
+        snprintf(path, sizeof path, "%s/%s", dirpath, ent->d_name);
+        plog(LOGLVL_DEBUG, "Found plugin for %s: %s", name, path);
+
+        void *dlhandle = dlopen(path, RTLD_NOW);
+        if(!dlhandle) {
+            warn("Failed to open plugin for %s from %s", name, path);
+            continue;
+        }
+
+        char hname[sizeof("handle_") + strlen(name)];
+        snprintf(hname, sizeof hname, "handle_%s", name);
+
+        resource_handler_t *handler =
+            (resource_handler_t*)(unsigned long)dlsym(dlhandle, hname);
+        if(!dlhandle) {
+            warn("Failed to find expected handler function %s in %s",
+                    hname, path);
+            dlclose(dlhandle);
+            continue;
+        }
+
+        size_t i = 0;
+        while(i < HANDLER_TABLE_MAX && handler_table[i++].type);
+        if(i >= HANDLER_TABLE_MAX) {
+            warn("Out of space in handler table");
+        } else {
+            handler_table[i].type = strdup(hname);
+            handler_table[i].handler = handler;
+            handler_table[i].dlhandle = dlhandle;
+
+            memset(&handler_table[++i], 0,
+                    sizeof(struct handler_table_entry));
+        }
+    }
+
+    closedir(dir);
+}
+
+void free_resource_plugins(void)
+{
+    for(size_t i = 0; i < HANDLER_TABLE_MAX && handler_table[i].type; ++i)
+        if(handler_table[i].dlhandle) {
+            dlclose(handler_table[i].dlhandle);
+            free(handler_table[i].type);
+        }
+}
 
 static int make_epfd(struct app *apps, size_t apps_count)
 {
