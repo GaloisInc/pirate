@@ -171,8 +171,8 @@ typedef struct {
 
 // TCP_SOCKET parameters
 typedef struct {
-    char reader_addr[INET_ADDRSTRLEN];
-    char writer_addr[INET_ADDRSTRLEN];
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
     short reader_port;
     short writer_port;
     unsigned buffer_size;
@@ -183,8 +183,8 @@ typedef struct {
 // UDP_SOCKET parameters
 #define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
-    char reader_addr[INET_ADDRSTRLEN];
-    char writer_addr[INET_ADDRSTRLEN];
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
     short reader_port;
     short writer_port;
     unsigned buffer_size;
@@ -252,8 +252,8 @@ typedef struct {
 // GE_ETH parameters
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char reader_addr[INET_ADDRSTRLEN];
-    char writer_addr[INET_ADDRSTRLEN];
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
     short reader_port;
     short writer_port;
     uint32_t message_id;

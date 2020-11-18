@@ -131,7 +131,7 @@ static int populate_address(struct addrinfo *addr, int port, int *addr_any) {
     }
 }
 
-static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
+int pirate_udp_socket_reader_open(pirate_udp_socket_param_t *param, common_ctx *ctx) {
     int err, rv;
     struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
     int src_addr_any, dest_addr_any;
@@ -145,79 +145,79 @@ static int udp_socket_reader_open(pirate_udp_socket_param_t *param, udp_socket_c
     rv = getaddrinfo(param->reader_addr, NULL, &hints, &src_addr);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = getaddrinfo(param->writer_addr, NULL, &hints, &dest_addr);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     if (src_addr->ai_family != dest_addr->ai_family) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = populate_address(src_addr, param->reader_port, &src_addr_any);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = populate_address(dest_addr, param->writer_port, &dest_addr_any);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
-    ctx->sock = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
+    ctx->fd = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
+    if (ctx->fd < 0) {
         goto end;
     }
 
     int enable = 1;
-    rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    rv = setsockopt(ctx->fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (rv < 0) {
         err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
+        close(ctx->fd);
+        ctx->fd = -1;
         errno = err;
         goto end;
     }
 
     if (param->buffer_size > 0) {
-        rv = setsockopt(ctx->sock, SOL_SOCKET, SO_RCVBUF,
+        rv = setsockopt(ctx->fd, SOL_SOCKET, SO_RCVBUF,
                         &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
             err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
+            close(ctx->fd);
+            ctx->fd = -1;
             errno = err;
             goto end;
         }
     }
 
-    rv = bind(ctx->sock, src_addr->ai_addr, src_addr->ai_addrlen);
+    rv = bind(ctx->fd, src_addr->ai_addr, src_addr->ai_addrlen);
     if (rv < 0) {
         err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
+        close(ctx->fd);
+        ctx->fd = -1;
         errno = err;
         goto end;
     }
     if (!dest_addr_any) {
-        rv = connect(ctx->sock, dest_addr->ai_addr, dest_addr->ai_addrlen);
+        rv = connect(ctx->fd, dest_addr->ai_addr, dest_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
+            close(ctx->fd);
+            ctx->fd = -1;
             errno = err;
             goto end;
         }
@@ -230,10 +230,10 @@ end:
     if (dest_addr != NULL) {
         freeaddrinfo(dest_addr);
     }
-    return ctx->sock;
+    return ctx->fd;
 }
 
-static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_ctx *ctx) {
+int pirate_udp_socket_writer_open(pirate_udp_socket_param_t *param, common_ctx *ctx) {
     int err, rv;
     struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
     int src_addr_any, dest_addr_any;
@@ -247,69 +247,69 @@ static int udp_socket_writer_open(pirate_udp_socket_param_t *param, udp_socket_c
     rv = getaddrinfo(param->writer_addr, NULL, &hints, &src_addr);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = getaddrinfo(param->reader_addr, NULL, &hints, &dest_addr);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     if (src_addr->ai_family != dest_addr->ai_family) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = populate_address(src_addr, param->writer_port, &src_addr_any);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
     rv = populate_address(dest_addr, param->reader_port, &dest_addr_any);
     if (rv != 0) {
         errno = EINVAL;
-        ctx->sock = -1;
+        ctx->fd = -1;
         goto end;
     }
 
-    ctx->sock = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
+    ctx->fd = socket(src_addr->ai_family, SOCK_DGRAM | nonblock, 0);
+    if (ctx->fd < 0) {
         goto end;
     }
 
     if (param->buffer_size > 0) {
-        rv = setsockopt(ctx->sock, SOL_SOCKET, SO_SNDBUF,
+        rv = setsockopt(ctx->fd, SOL_SOCKET, SO_SNDBUF,
                         &param->buffer_size,
                         sizeof(param->buffer_size));
         if (rv < 0) {
             err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
+            close(ctx->fd);
+            ctx->fd = -1;
             errno = err;
             goto end;
         }
     }
 
     if (!src_addr_any) {
-        rv = bind(ctx->sock, src_addr->ai_addr, src_addr->ai_addrlen);
+        rv = bind(ctx->fd, src_addr->ai_addr, src_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
-            close(ctx->sock);
+            close(ctx->fd);
             errno = err;
             goto end;
         }
     }
-    rv = connect(ctx->sock, dest_addr->ai_addr, dest_addr->ai_addrlen);
+    rv = connect(ctx->fd, dest_addr->ai_addr, dest_addr->ai_addrlen);
     if (rv < 0) {
         err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
+        close(ctx->fd);
+        ctx->fd = -1;
         errno = err;
         goto end;
     }
@@ -321,7 +321,7 @@ end:
     if (dest_addr != NULL) {
         freeaddrinfo(dest_addr);
     }
-    return ctx->sock;
+    return ctx->fd;
 }
 
 int pirate_udp_socket_open(void *_param, void *_ctx) {
@@ -349,9 +349,9 @@ int pirate_udp_socket_open(void *_param, void *_ctx) {
         return -1;
     }
     if (access == O_RDONLY) {
-        rv = udp_socket_reader_open(param, ctx);
+        rv = pirate_udp_socket_reader_open(param, (common_ctx*) ctx);
     } else {
-        rv = udp_socket_writer_open(param, ctx);
+        rv = pirate_udp_socket_writer_open(param, (common_ctx*) ctx);
     }
 
     return rv;
