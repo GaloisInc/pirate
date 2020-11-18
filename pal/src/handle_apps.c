@@ -11,20 +11,17 @@
 #include <unistd.h>
 
 #include "handle_apps.h"
-#include "handlers.h"
 #include "log.h"
 
 #define min(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 
 int cstring_resource_handler(pal_env_t *env,
-        const struct app *app, struct resource *rsc)
+        const struct app *app, pal_yaml_subdoc_t *sd)
 {
-    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
     int ret = 0;
     char *s = NULL;
 
-    if(pal_yaml_subdoc_find_string(&s, sd,
-                true, 1, PAL_MAP_FIELD("string_value")))
+    if(pal_yaml_subdoc_find_string(&s, sd, true, 0))
         ret = -1;
 
     else if(pal_add_to_env(env, s, strlen(s)))
@@ -35,13 +32,11 @@ int cstring_resource_handler(pal_env_t *env,
 }
 
 int int64_resource_handler(pal_env_t *env,
-        const struct app *app, struct resource *rsc)
+        const struct app *app, pal_yaml_subdoc_t *sd)
 {
-    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
     int64_t n;
 
-    if(pal_yaml_subdoc_find_int64(&n, sd,
-                true, 1, PAL_MAP_FIELD("integer_value")))
+    if(pal_yaml_subdoc_find_int64(&n, sd, true, 0))
         return -1;
 
     if(pal_add_to_env(env, &n, sizeof n))
@@ -51,13 +46,11 @@ int int64_resource_handler(pal_env_t *env,
 }
 
 int bool_resource_handler(pal_env_t *env,
-        const struct app *app, struct resource *rsc)
+        const struct app *app, pal_yaml_subdoc_t *sd)
 {
-    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
     bool b;
 
-    if(pal_yaml_subdoc_find_bool(&b, sd,
-                true, 1, PAL_MAP_FIELD("boolean_value")))
+    if(pal_yaml_subdoc_find_bool(&b, sd, true, 0))
         return -1;
 
     if(pal_add_to_env(env, &b, sizeof b))
@@ -67,9 +60,8 @@ int bool_resource_handler(pal_env_t *env,
 }
 
 int file_resource_handler(pal_env_t *env,
-        const struct app *app, struct resource *rsc)
+        const struct app *app, pal_yaml_subdoc_t *sd)
 {
-    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
     char *path = NULL;
     int flags = O_RDWR;
     int ret = 0;
@@ -341,7 +333,7 @@ static int handle_event(struct epoll_event *event,
             fatal = true;
         }
 
-        else if(handle(&env, app, rsc)) {
+        else if(handle(&env, app, &rsc->r_yaml)) {
             error("Handler failed for resource named %s of type %s requested "
                     "by %s", name, type, app->name);
             if(pal_yaml_subdoc_error_count(&rsc->r_yaml) > 0)

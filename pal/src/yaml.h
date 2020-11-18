@@ -17,13 +17,12 @@ struct enclave {
     size_t enc_env_count;
 };
 
-struct session {
-    uint64_t sess_level;
-    uint64_t sess_src_id;
-    uint64_t sess_dst_id;
-    uint64_t *sess_messages;
-    uint64_t sess_messages_count;
-    uint64_t sess_id;
+struct resource {
+    char *r_name;
+    char *r_type;
+    char **r_ids;
+    size_t r_ids_count;
+    pal_yaml_subdoc_t r_yaml;
 };
 
 struct config {

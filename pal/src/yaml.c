@@ -44,6 +44,25 @@ static void error_stack_push(struct pal_yaml_error_stack **top,
     *top = new_top;
 }
 
+static void error_stack_copy(struct pal_yaml_error_stack **dst,
+        struct pal_yaml_error_stack *src)
+{
+    assert(dst != NULL);
+
+    if(!src)
+        return;
+
+    if(src->next)
+        error_stack_copy(dst, src->next);
+
+    struct pal_yaml_error_stack *new;
+    TRY_ERRNO(new = malloc(sizeof *new));
+
+    new->next = *dst;
+    snprintf(new->err, sizeof new->err, "%s", src->err);
+    *dst = new;
+}
+
 static void error_stack_append(struct pal_yaml_error_stack **dst,
         struct pal_yaml_error_stack *src1,
         struct pal_yaml_error_stack *src2)
@@ -131,6 +150,13 @@ void pal_yaml_subdoc_error_context_clear(pal_yaml_subdoc_t *sd)
     error_stack_free(&sd->errors[sd->error_count]);
 }
 
+void pal_yaml_subdoc_copy_errors(pal_yaml_subdoc_t *dst,
+        pal_yaml_subdoc_t *src)
+{
+    for(size_t i = 0; i < src->error_count && i < ERROR_MAX; ++i)
+        error_stack_copy(&dst->errors[dst->error_count++], src->errors[i]);
+}
+
 void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
 {
     assert(sd);
@@ -215,18 +241,18 @@ pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
 
 void pal_yaml_subdoc_clear_errors(pal_yaml_subdoc_t *sd)
 {
-    assert(sd != NULL);
+    if(sd) {
+        pal_yaml_subdoc_error_context_clear(sd);
 
-    pal_yaml_subdoc_error_context_clear(sd);
-
-    while(sd->error_count)
-        pal_yaml_subdoc_error_pop(sd);
+        while(sd->error_count)
+            pal_yaml_subdoc_error_pop(sd);
+    }
 }
 
 void pal_yaml_subdoc_close(pal_yaml_subdoc_t *sd)
 {
     if(sd) {
-        if(--*sd->doc_ref_count == 0) {
+        if(sd->doc_ref_count && --*sd->doc_ref_count == 0) {
             yaml_document_delete(&sd->doc);
             free(sd->doc_ref_count);
         }
@@ -1291,6 +1317,7 @@ struct top_level *load_yaml(const char *fname)
                     false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"));
         }
 
+        pal_yaml_subdoc_copy_errors(&sd, &encs);
         pal_yaml_subdoc_close(&encs);
     }
 
@@ -1315,9 +1342,10 @@ struct top_level *load_yaml(const char *fname)
                     true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
             pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
                     true, 2, PAL_SEQ_IDX(i),
-                             PAL_MAP_FIELD("contents"));
+                             PAL_MAP_FIELD("value"));
         }
 
+        pal_yaml_subdoc_copy_errors(&sd, &rscs);
         pal_yaml_subdoc_close(&rscs);
     }
 

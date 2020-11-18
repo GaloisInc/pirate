@@ -48,8 +48,7 @@ int main(int argc, char **argv, char **envp)
     struct app apps[apps_count];
     for(i = 0; i < apps_count; ++i) {
         if(launch(&apps[i], cfg_path, &tlp->tl_encs[i], envp)) {
-            plog(LOGLVL_INFO, "Launching app %s failed",
-                    tlp->tl_encs[i].enc_name);
+            error("Launching app %s failed", tlp->tl_encs[i].enc_name);
 
             apps[i].pid = 0;
             err = -1;
