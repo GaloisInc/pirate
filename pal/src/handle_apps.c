@@ -14,6 +14,106 @@
 #include "handlers.h"
 #include "log.h"
 
+#define min(_a, _b) ((_a) < (_b) ? (_a) : (_b))
+
+int cstring_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc)
+{
+    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
+    int ret = 0;
+    char *s = NULL;
+
+    if(pal_yaml_subdoc_find_string(&s, sd,
+                true, 1, PAL_MAP_FIELD("string_value")))
+        ret = -1;
+
+    else if(pal_add_to_env(env, s, strlen(s)))
+        ret = -1;
+
+    free(s);
+    return ret;
+}
+
+int int64_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc)
+{
+    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
+    int64_t n;
+
+    if(pal_yaml_subdoc_find_int64(&n, sd,
+                true, 1, PAL_MAP_FIELD("integer_value")))
+        return -1;
+
+    if(pal_add_to_env(env, &n, sizeof n))
+        return -1;
+
+    return 0;
+}
+
+int bool_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc)
+{
+    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
+    bool b;
+
+    if(pal_yaml_subdoc_find_bool(&b, sd,
+                true, 1, PAL_MAP_FIELD("boolean_value")))
+        return -1;
+
+    if(pal_add_to_env(env, &b, sizeof b))
+        return -1;
+
+    return 0;
+}
+
+int file_resource_handler(pal_env_t *env,
+        const struct app *app, struct resource *rsc)
+{
+    pal_yaml_subdoc_t *sd = &rsc->r_yaml;
+    char *path = NULL;
+    int flags = O_RDWR;
+    int ret = 0;
+    int fd;
+
+    pal_yaml_enum_schema_t fflags_schema[] = {
+        {"O_RDONLY",    O_RDONLY},
+        {"O_WRONLY",    O_WRONLY},
+        {"O_RDWR",      O_RDWR},
+
+        {"O_APPEND",    O_APPEND},
+        {"O_ASYNC",     O_ASYNC},
+        {"O_CLOEXEC",   O_CLOEXEC},
+        {"O_CREAT",     O_CREAT},
+        {"O_DIRECTORY", O_DIRECTORY},
+        {"O_DSYNC",     O_DSYNC},
+        {"O_EXCL",      O_EXCL},
+        {"O_NOCTTY",    O_NOCTTY},
+        {"O_NOFOLLOW",  O_NOFOLLOW},
+        {"O_NONBLOCK",  O_NONBLOCK},
+        {"O_SYNC",      O_SYNC},
+        {"O_TRUNC",     O_TRUNC},
+        PAL_YAML_ENUM_END
+    };
+
+    pal_yaml_subdoc_find_string(&path, sd,
+                true, 1, PAL_MAP_FIELD("file_path"));
+    pal_yaml_subdoc_find_flags(&flags, fflags_schema, sd,
+                true, 1, PAL_MAP_FIELD("file_flags"));
+    if(pal_yaml_subdoc_error_count(sd) > 0)
+        ret = -1;
+
+    else if((fd = open(path, flags)) < 0)
+        ret = -1;
+    // TODO: Allow file creation modes to be set?
+    // TODO: Allow paths relative to config?
+
+    else if(pal_add_fd_to_env(env, fd))
+        ret = -1;
+
+    free(path);
+    return ret;
+}
+
 /* Maximum number of resource types
  */
 #define HANDLER_TABLE_MAX 1024
@@ -27,7 +127,6 @@ static struct handler_table_entry {
     { "boolean",        &bool_resource_handler,           NULL },
     { "file",           &file_resource_handler,           NULL },
     { "integer",        &int64_resource_handler,          NULL },
-    { "pirate_channel", &pirate_channel_resource_handler, NULL },
     { "string",         &cstring_resource_handler,        NULL },
     { NULL,             NULL,                             NULL },
 };
@@ -60,12 +159,12 @@ void load_resource_plugins(const char *dirpath)
             continue;
         }
 
-        char hname[sizeof("handle_") + strlen(name)];
-        snprintf(hname, sizeof hname, "handle_%s", name);
+        char hname[strlen(name) + sizeof("_resource_handler")];
+        snprintf(hname, sizeof hname, "%s_resource_handler", name);
 
         resource_handler_t *handler =
             (resource_handler_t*)(unsigned long)dlsym(dlhandle, hname);
-        if(!dlhandle) {
+        if(!handler) {
             warn("Failed to find expected handler function %s in %s",
                     hname, path);
             dlclose(dlhandle);
@@ -73,16 +172,18 @@ void load_resource_plugins(const char *dirpath)
         }
 
         size_t i = 0;
-        while(i < HANDLER_TABLE_MAX && handler_table[i++].type);
-        if(i >= HANDLER_TABLE_MAX) {
+        while(i < HANDLER_TABLE_MAX-1 && handler_table[i].type)
+            ++i;
+        if(i == HANDLER_TABLE_MAX-1) {
             warn("Out of space in handler table");
         } else {
-            handler_table[i].type = strdup(hname);
+            handler_table[i].type = strdup(name);
             handler_table[i].handler = handler;
             handler_table[i].dlhandle = dlhandle;
 
-            memset(&handler_table[++i], 0,
-                    sizeof(struct handler_table_entry));
+            handler_table[i+1].type = NULL;
+            handler_table[i+1].handler = NULL;
+            handler_table[i+1].dlhandle = NULL;
         }
     }
 
@@ -223,8 +324,8 @@ static int handle_event(struct epoll_event *event,
                     app->name, err > 0 ? pal_strerror(err) : strerror(-err));
 
         else if(!(rsc = lookup_resource(app->name, name, rscs, rscs_count))) {
-            error("Received request for unknown resource named %s "
-                    "of type %s from %s", name, type, app->name);
+            error("Unknown resource named %s of type %s from %s",
+                    name, type, app->name);
             fatal = true;
         }
 
