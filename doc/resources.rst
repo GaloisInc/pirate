@@ -4,7 +4,7 @@ Managed Resources
 Pirate provides facilities for the setting up communication channels
 and other resources prior to enclave execution.  This is done by
 defining resources in the program source files, and separately
-defining a application configuration file that describes how those
+defining an application configuration file that describes how those
 resources are configured for a particular environment.  This allows
 the application or library developer to be agnostic to how
 communication channels and other resources are ultimately configured,

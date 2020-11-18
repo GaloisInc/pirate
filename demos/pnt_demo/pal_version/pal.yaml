@@ -10,27 +10,22 @@ resources:
   - name: gps-to-uav
     ids: [ "orange/gps-to-uav-path", "green/gps-to-uav-path" ]
     type: string
-    contents:
-      string_value: "pipe,/tmp/gapsGU"
+    value: "pipe,/tmp/gapsGU"
   - name: uav-to-target-path
     ids: [ "orange/uav-to-target-path", "green/uav-to-target-path" ]
     type: string
-    contents:
-      string_value: "pipe,/tmp/gapsUT"
+    value: "pipe,/tmp/gapsUT"
   - name: rf-to-target-path
     ids: [ "orange/rf-to-target-path", "green/rf-to-target-path" ]
     type: string
-    contents:
-      string_value: "pipe,/tmp/gapsRT"
+    value: "pipe,/tmp/gapsRT"
   - name: timer-duration
     ids: [ "green/timer-duration" ]
     type: integer
-    contents:
-      integer_value: 0
+    value: 0
   - name: fixed-period
     ids: [ "orange/fixed-period" ]
     type: boolean
-    contents:
-      boolean_value: true
+    value: true
 config:
     log_level: debug
