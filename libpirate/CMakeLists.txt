@@ -79,6 +79,10 @@ if(PIRATE_UNIT_TEST)
     include_directories(BEFORE libpirate)
     link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
+    if(PIRATE_LLVM_UBUNTU)
+        add_definitions(-DPIRATE_LLVM_UBUNTU=1)
+    endif(PIRATE_LLVM_UBUNTU)
+
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
     set(GAPS_CHANNELS_TEST gaps_channels_test)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")

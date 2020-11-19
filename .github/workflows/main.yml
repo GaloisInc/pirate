@@ -236,6 +236,7 @@ jobs:
         cd build
         cmake -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
+              -DPIRATE_LLVM_UBUNTU=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               ..
         make
