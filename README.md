@@ -13,7 +13,7 @@ The main artifacts available are:
 Trying out the system is very easy -- we provide a [Docker
 image](https://hub.docker.com/r/pirateteam/ubuntu) with our tools,
 documentation, and demos preinstalled, and provide [online html
-documentation](https://pirate-annotations.readthedocs.io).  The docker
+documentation](https://pirate.azureedge.net).  The docker
 image can be installed and run by running
 
 ```
