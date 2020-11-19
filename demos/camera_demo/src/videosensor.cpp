@@ -33,6 +33,10 @@
 #include "options.hpp"
 #include "videosensor.hpp"
 
+#ifndef V4L2_PIX_FMT_PRIV_MAGIC
+#define V4L2_PIX_FMT_PRIV_MAGIC 0xfeedcafe
+#endif
+
 VideoSensor::VideoSensor(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
@@ -113,7 +117,7 @@ int VideoSensor::captureEnable()
     int rv;
 
     struct v4l2_buffer buf;
-        
+
     for (unsigned i = 0; i < BUFFER_COUNT; i++)
     {
         std::memset(&buf, 0, sizeof(buf));
@@ -359,7 +363,7 @@ int VideoSensor::initVideoDevice()
         std::perror("Failed to set the format configuration");
         return -1;
     }
-    
+
     if ((mFormat.fmt.pix.width != mOutputWidth) ||
         (mFormat.fmt.pix.height != mOutputHeight))
     {
@@ -434,7 +438,7 @@ int VideoSensor::uninitVideoDevice()
 int VideoSensor::initCaptureBuffers()
 {
     int rv;
-   
+
     // Request buffers
     std::memset(&mRequestBuffers, 0, sizeof(mRequestBuffers));
     mRequestBuffers.count = BUFFER_COUNT;
@@ -520,7 +524,7 @@ void VideoSensor::pollThread()
         {
             std::perror("Select failed");
             return;
-        } 
+        }
         else if (rv == 0)
         {
             std::perror("Timeout occured");

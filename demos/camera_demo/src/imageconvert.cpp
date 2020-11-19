@@ -154,7 +154,9 @@ int ImageConvert::jpegToRGB(FrameBuffer src, size_t srcLength) {
     cinfo.err = jpeg_std_error(&jerr);
 
     jpeg_create_decompress(&cinfo);
-    jpeg_mem_src(&cinfo, src, srcLength);
+    // Cast src to a (unsigned char*) for compatibility with libjpeg-turbo 1.2.1 and earlier.
+    // Needed for Centos 7 compatibility.
+    jpeg_mem_src(&cinfo, (unsigned char*) src, srcLength);
     jpeg_read_header(&cinfo, 1);
     cinfo.scale_num = 1;
     cinfo.scale_denom = 1;
