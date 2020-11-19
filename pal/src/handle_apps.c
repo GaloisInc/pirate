@@ -113,7 +113,7 @@ int file_resource_handler(pal_env_t *env,
 
 static struct handler_table_entry {
     char *type;
-    resource_handler_t *handler;
+    pal_resource_handler_t *handler;
     void *dlhandle;
 } handler_table[HANDLER_TABLE_MAX] = {
     { "boolean",        &bool_resource_handler,           NULL },
@@ -154,8 +154,8 @@ void load_resource_plugins(const char *dirpath)
         char hname[strlen(name) + sizeof("_resource_handler")];
         snprintf(hname, sizeof hname, "%s_resource_handler", name);
 
-        resource_handler_t *handler =
-            (resource_handler_t*)(unsigned long)dlsym(dlhandle, hname);
+        pal_resource_handler_t *handler =
+            (pal_resource_handler_t*)(unsigned long)dlsym(dlhandle, hname);
         if(!handler) {
             warn("Failed to find expected handler function %s in %s",
                     hname, path);
@@ -247,7 +247,7 @@ static struct resource *lookup_resource(char *app_name, char *rsc_name,
  * Return a pointer to the handler function if the type is found, or NULL,
  * otherwise.
  */
-static resource_handler_t *lookup_handler(const char *type)
+static pal_resource_handler_t *lookup_handler(const char *type)
 {
     size_t i;
 
@@ -275,7 +275,7 @@ static int handle_event(struct epoll_event *event,
         struct resource *rscs, size_t rscs_count)
 {
     struct app *app = (struct app *)event->data.ptr;
-    resource_handler_t *handle;
+    pal_resource_handler_t *handle;
 
     plog(LOGLVL_DEBUG, "Received an epoll event from %s", app->name);
 

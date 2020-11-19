@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <libpirate.h>
 
+#include <pal/envelope.h>
+
 
 #ifdef __cplusplus
 extern "C" {

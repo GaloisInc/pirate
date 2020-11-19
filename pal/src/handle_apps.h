@@ -15,8 +15,8 @@ int handle_apps(struct app *apps, size_t apps_count,
         struct resource *rscs, size_t rscs_count);
 
 /* Load all resource plugins from dirpath. Plugins are expected to be called
- * <resource_name>.so and to contain a function function called
- * <resource_name>_resource_handler().
+ * <resource_type>.so and to contain a function function called
+ * <resource_type>_resource_handler().
  *
  * A non-existent plugin directory or invalid plugin files result in warnings.
  */
