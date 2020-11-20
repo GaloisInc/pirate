@@ -20,7 +20,7 @@ void kill_apps(struct app *apps, size_t apps_count)
 
 int main(int argc, char **argv, char **envp)
 {
-    char *cfg_path;
+    char *cfg_path, *plugin_dir;
     struct top_level *tlp;
     int err = 0;
     size_t i;
@@ -37,12 +37,10 @@ int main(int argc, char **argv, char **envp)
 
     plog(LOGLVL_DEBUG, "Read configuration from `%s'", cfg_path);
 
-    char *plugin_dir = tlp->tl_cfg.cfg_plugin_dir;
-    if(plugin_dir && plugin_dir[0] != '/')
-        fatal("In %s: plugin_directory `%s' must be an absolute path",
-                cfg_path, plugin_dir);
-    load_resource_plugins(
-            plugin_dir ? plugin_dir : "/usr/local/lib/pirate/pal/plugins");
+    if(!(plugin_dir = get_plugin_dir(cfg_path, tlp)))
+        fatal("Unable to determine plugin directory");
+    load_resource_plugins(plugin_dir);
+    free(plugin_dir);
 
     size_t apps_count = tlp->tl_encs_count;
     struct app apps[apps_count];
