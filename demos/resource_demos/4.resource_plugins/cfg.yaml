@@ -1,0 +1,17 @@
+#!/usr/bin/env pal
+
+enclaves:
+- name: plugin_app
+resources:
+- name: my_foo_resource
+  type: foo
+  ids: 
+  - plugin_app/my_foo
+  value:
+    my_string: I'm a string
+    my_numbers:
+      my_double: 2.718281
+      my_short: 9001
+config:
+  log_level: debug
+  plugin_directory: plugins
