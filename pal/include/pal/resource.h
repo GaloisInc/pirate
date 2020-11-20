@@ -8,6 +8,10 @@
 
 #include <pal/envelope.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* YAML document parsing
  *
  * Note: These functions are defined in yaml.c. They are declared here in
@@ -223,5 +227,9 @@ struct app {
  */
 typedef int (pal_resource_handler_t)(pal_env_t *env,
         const struct app *app, pal_yaml_subdoc_t *rsc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PAL_RESOURCE_H */

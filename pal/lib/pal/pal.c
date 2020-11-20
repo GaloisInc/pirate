@@ -94,7 +94,6 @@ int get_integer_res(int fd, const char *name, int64_t *outp)
 int get_string_res(int fd, const char *name, char **outp)
 {
     int res = 0;
-    size_t size;
     pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
 
     if((res = pal_send_resource_request(fd, "string", name, 0)))
@@ -103,17 +102,8 @@ int get_string_res(int fd, const char *name, char **outp)
         ;
     else if(env.type != PAL_RESOURCE)
         res = 1;
-    else {
-        pal_env_iterator_t it = pal_env_iterator_start(&env);
-
-        size = pal_env_iterator_size(it);
-        if(!(*outp = malloc(size + 1)))
-            res = -errno;
-        else {
-            memcpy(*outp, pal_env_iterator_data(it), size);
-            (*outp)[size] = '\0';
-        }
-    }
+    else if(!(*outp = pal_env_iterator_strdup(pal_env_iterator_start(&env))))
+        res = -errno;
 
     pal_free_env(&env);
 
@@ -144,7 +134,6 @@ int get_file_res(int fd, const char *name, int *outp)
 int get_pirate_channel_cfg(int fd, const char *name, char **outp)
 {
     int res = 0;
-    size_t size;
     pal_env_t env = EMPTY_PAL_ENV(PAL_NO_TYPE);
 
     if((res = pal_send_resource_request(fd, "pirate_channel", name, 0)))
@@ -153,17 +142,8 @@ int get_pirate_channel_cfg(int fd, const char *name, char **outp)
         ;
     else if(env.type != PAL_RESOURCE)
         res = 1;
-    else {
-        pal_env_iterator_t it = pal_env_iterator_start(&env);
-
-        size = pal_env_iterator_size(it);
-        if(!(*outp = malloc(size + 1)))
-            res = -errno;
-        else {
-            memcpy(*outp, pal_env_iterator_data(it), size);
-            (*outp)[size] = '\0';
-        }
-    }
+    else if(!(*outp = pal_env_iterator_strdup(pal_env_iterator_start(&env))))
+        res = -errno;
 
     pal_free_env(&env);
 
