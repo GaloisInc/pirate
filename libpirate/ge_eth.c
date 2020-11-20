@@ -13,15 +13,21 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#define _GNU_SOURCE
+#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <endian.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "pirate_common.h"
 #include "ge_eth.h"
+#include "udp_socket.h"
 
 #pragma pack(1)
 typedef struct {
@@ -203,102 +209,10 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
         param->message_id, mtu_str);
 }
 
-static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
-    int err, rv;
-    struct sockaddr_in src_addr, dest_addr;
-    int nonblock = ctx->flags & O_NONBLOCK;
-
-    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
-        return -1;
-    }
-
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    src_addr.sin_port = htons(param->reader_port);
-
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    dest_addr.sin_port = htons(param->writer_port);
-
-    int enable = 1;
-    rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
-        errno = err;
-        return -1;
-    }
-
-    rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
-        errno = err;
-        return -1;
-    }
-
-    if (dest_addr.sin_addr.s_addr != INADDR_ANY) {
-        rv = connect(ctx->sock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in));
-        if (rv < 0) {
-            err = errno;
-            close(ctx->sock);
-            ctx->sock = -1;
-            errno = err;
-            return -1;
-        }
-    }
-
-    return ctx->sock;
-}
-
-static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
-    int err, rv;
-    struct sockaddr_in src_addr, dest_addr;
-    int nonblock = ctx->flags & O_NONBLOCK;
-
-    ctx->sock = socket(AF_INET, SOCK_DGRAM | nonblock, 0);
-    if (ctx->sock < 0) {
-        return -1;
-    }
-
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    src_addr.sin_port = htons(param->writer_port);
-
-    memset(&dest_addr, 0, sizeof(dest_addr));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    dest_addr.sin_port = htons(param->reader_port);
-
-    if (src_addr.sin_addr.s_addr != INADDR_ANY) {
-        rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
-        if (rv < 0) {
-            err = errno;
-            close(ctx->sock);
-            errno = err;
-            return -1;
-        }
-    }
-    rv = connect(ctx->sock, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        err = errno;
-        close(ctx->sock);
-        ctx->sock = -1;
-        errno = err;
-        return -1;
-    }
-
-    return ctx->sock;
-}
-
 int pirate_ge_eth_open(void *_param, void *_ctx) {
     pirate_ge_eth_param_t *param = (pirate_ge_eth_param_t *)_param;
+    pirate_udp_socket_param_t udp_param;
+
     ge_eth_ctx *ctx = (ge_eth_ctx *)_ctx;
     int rv = -1;
     int access = ctx->flags & O_ACCMODE;
@@ -321,10 +235,16 @@ int pirate_ge_eth_open(void *_param, void *_ctx) {
         return -1;
     }
 
+    memcpy(udp_param.reader_addr, param->reader_addr, sizeof(udp_param.reader_addr));
+    memcpy(udp_param.writer_addr, param->writer_addr, sizeof(udp_param.writer_addr));
+    udp_param.reader_port = param->reader_port;
+    udp_param.writer_port = param->writer_port;
+    udp_param.buffer_size = 0;
+    udp_param.mtu = 0;
     if (access == O_RDONLY) {
-        rv = ge_eth_reader_open(param, ctx);
+        rv = pirate_udp_socket_reader_open(&udp_param, (common_ctx*) ctx);
     } else if (access == O_WRONLY) {
-        rv = ge_eth_writer_open(param, ctx);
+        rv = pirate_udp_socket_writer_open(&udp_param, (common_ctx*) ctx);
     }
 
     return rv;

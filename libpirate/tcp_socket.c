@@ -13,16 +13,19 @@
  * Copyright 2019 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <time.h>
+#define _GNU_SOURCE
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "pirate_common.h"
 #include "tcp_socket.h"
 
@@ -117,28 +120,119 @@ int pirate_tcp_socket_get_channel_description(const void *_param, char *desc, in
         buffer_size_str, min_tx_str, mtu_str);
 }
 
+static int populate_port(struct addrinfo *addr, int port) {
+    struct sockaddr_in* ip4_addr;
+    struct sockaddr_in6* ip6_addr;
+
+    switch (addr->ai_family) {
+        case AF_INET:
+            ip4_addr = ((struct sockaddr_in*) addr->ai_addr);
+            ip4_addr->sin_port = htons(port);
+            return 0;
+        case AF_INET6:
+            ip6_addr = ((struct sockaddr_in6*) addr->ai_addr);
+            ip6_addr->sin6_port = htons(port);
+            return 0;
+        default:
+            return -1;
+    }
+}
+
+static int tcp_socket_match_ipv4(int server_fd, tcp_socket_ctx *ctx, struct sockaddr_in *dest_addr) {
+    int err;
+    struct sockaddr_in ip4_addr;
+    socklen_t addrlen = sizeof(struct sockaddr_in);
+    ctx->sock = accept(server_fd, (struct sockaddr *) &ip4_addr, &addrlen);
+    if (ctx->sock < 0) {
+        err = errno;
+        close(server_fd);
+        ctx->sock = -1;
+        errno = err;
+        return -1;
+    }
+    if ((dest_addr->sin_addr.s_addr != INADDR_ANY) && (dest_addr->sin_addr.s_addr != ip4_addr.sin_addr.s_addr)) {
+        return 0;
+    }
+    if ((dest_addr->sin_port != 0) && (dest_addr->sin_port != ip4_addr.sin_port)) {
+        return 0;
+    }
+    return 1;
+}
+
+static int tcp_socket_match_ipv6(int server_fd, tcp_socket_ctx *ctx, struct sockaddr_in6 *dest_addr) {
+    int err;
+    struct sockaddr_in6 ip6_addr;
+    socklen_t addrlen = sizeof(struct sockaddr_in6);
+    ctx->sock = accept(server_fd, (struct sockaddr *) &ip6_addr, &addrlen);
+    if (ctx->sock < 0) {
+        err = errno;
+        close(server_fd);
+        ctx->sock = -1;
+        errno = err;
+        return -1;
+    }
+    if ((memcmp((void*) &dest_addr->sin6_addr, (void*) &in6addr_any, sizeof(struct in6_addr)) != 0) &&
+        (memcmp((void*) &dest_addr->sin6_addr, (void*) &ip6_addr.sin6_addr, sizeof(struct in6_addr)) != 0)) {
+        return 0;
+    }
+    if ((dest_addr->sin6_port != 0) && (dest_addr->sin6_port != ip6_addr.sin6_port)) {
+        return 0;
+    }
+    return 1;
+}
+
 static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int err, rv;
     int server_fd;
-    struct sockaddr_in src_addr, dest_addr, client_addr;
+    struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
     struct linger lo;
 
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    src_addr.sin_port = htons(param->reader_port);
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = AI_NUMERICHOST;
+    src_addr = NULL;
+    dest_addr = NULL;
 
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    dest_addr.sin_port = htons(param->writer_port);
+    rv = getaddrinfo(param->reader_addr, NULL, &hints, &src_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = getaddrinfo(param->writer_addr, NULL, &hints, &dest_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_port(src_addr, param->reader_port);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_port(dest_addr, param->writer_port);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    if (src_addr->ai_family != dest_addr->ai_family) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
 
     lo.l_onoff = 1;
     lo.l_linger = 0;
 
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(src_addr->ai_family, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        return -1;
+        ctx->sock = -1;
+        goto end;
     }
 
     int enable = 1;
@@ -146,16 +240,18 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
     if (rv < 0) {
         err = errno;
         close(server_fd);
+        ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
     rv = setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
     if (rv < 0) {
         err = errno;
         close(server_fd);
+        ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
     if (param->buffer_size > 0) {
@@ -164,45 +260,46 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         if (rv < 0) {
             err = errno;
             close(server_fd);
+            ctx->sock = -1;
             errno = err;
-            return -1;
+            goto end;
         }
     }
 
-    rv = bind(server_fd, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+    rv = bind(server_fd, src_addr->ai_addr, src_addr->ai_addrlen);
     if (rv < 0) {
         err = errno;
         close(server_fd);
+        ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
     rv = listen(server_fd, 0);
     if (rv < 0) {
         err = errno;
         close(server_fd);
+        ctx->sock = -1;
         errno = err;
-        return -1;
+        goto end;
     }
 
     for (;;) {
-        int match = 1;
-        socklen_t addrlen = sizeof(struct sockaddr_in);
-        ctx->sock = accept(server_fd, (struct sockaddr *)&client_addr, &addrlen);
-        if (ctx->sock < 0) {
-            err = errno;
-            close(server_fd);
-            errno = err;
-            return -1;
+        switch (dest_addr->ai_family) {
+            case AF_INET:
+                rv = tcp_socket_match_ipv4(server_fd, ctx, (struct sockaddr_in*) dest_addr->ai_addr);
+                break;
+            case AF_INET6:
+                rv = tcp_socket_match_ipv6(server_fd, ctx, (struct sockaddr_in6*) dest_addr->ai_addr);
+                break;
+            default:
+                rv = -1;
+                errno = EINVAL;
+                break;
         }
-
-        if ((dest_addr.sin_addr.s_addr != 0) && (dest_addr.sin_addr.s_addr != client_addr.sin_addr.s_addr)) {
-            match = 0;
-        }
-        if ((dest_addr.sin_port != 0) && (dest_addr.sin_port != client_addr.sin_port)) {
-            match = 0;
-        }
-        if (match) {
+        if (rv < 0) {
+            goto end;
+        } else if (rv > 0) {
             break;
         }
         err = errno;
@@ -275,14 +372,21 @@ static int tcp_socket_reader_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         return -1;
     }
 
+end:
+    if (src_addr != NULL) {
+        freeaddrinfo(src_addr);
+    }
+    if (dest_addr != NULL) {
+        freeaddrinfo(dest_addr);
+    }
     return ctx->sock;
 }
 
-static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct sockaddr_in *dest_addr) {
+static int tcp_socket_writer_connect(tcp_socket_ctx *ctx, struct addrinfo* dest_addr) {
     int err, rv;
 
     err = errno;
-    rv = connect(ctx->sock, (struct sockaddr *) dest_addr, sizeof(struct sockaddr_in));
+    rv = connect(ctx->sock, dest_addr->ai_addr, dest_addr->ai_addrlen);
     if (rv < 0) {
         // ECONNREFUSED: the reader is not ready for connections
         // ECONNRESET: either scenario (1) or (2) from above has occurred
@@ -327,7 +431,7 @@ static int tcp_socket_writer_test(tcp_socket_ctx *ctx) {
         err = errno;
         close(ctx->sock);
         errno = err;
-        return rv;
+        return -1;
     }
 
     err = errno;
@@ -355,23 +459,52 @@ static int tcp_socket_writer_test(tcp_socket_ctx *ctx) {
 
 static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_ctx *ctx) {
     int err, rv;
-    struct sockaddr_in src_addr, dest_addr;
+    struct addrinfo hints, *src_addr = NULL, *dest_addr = NULL;
 
-    memset(&src_addr, 0, sizeof(struct sockaddr_in));
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr.s_addr = inet_addr(param->writer_addr);
-    src_addr.sin_port = htons(param->writer_port);
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = AI_NUMERICHOST;
+    src_addr = NULL;
+    dest_addr = NULL;
 
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(param->reader_addr);
-    dest_addr.sin_port = htons(param->reader_port);
+    rv = getaddrinfo(param->writer_addr, NULL, &hints, &src_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = getaddrinfo(param->reader_addr, NULL, &hints, &dest_addr);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_port(src_addr, param->writer_port);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    rv = populate_port(dest_addr, param->reader_port);
+    if (rv != 0) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
+
+    if (src_addr->ai_family != dest_addr->ai_family) {
+        errno = EINVAL;
+        ctx->sock = -1;
+        goto end;
+    }
 
     for (;;) {
 
-        ctx->sock = socket(AF_INET, SOCK_STREAM, 0);
+        ctx->sock = socket(src_addr->ai_family, SOCK_STREAM, 0);
         if (ctx->sock < 0) {
-            return -1;
+            goto end;
         }
 
         if (param->buffer_size > 0) {
@@ -380,22 +513,25 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
             if (rv < 0) {
                 err = errno;
                 close(ctx->sock);
+                ctx->sock = -1;
                 errno = err;
-                return -1;
+                goto end;
             }
         }
 
-        rv = bind(ctx->sock, (struct sockaddr *)&src_addr, sizeof(struct sockaddr_in));
+        rv = bind(ctx->sock, src_addr->ai_addr, src_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
             close(ctx->sock);
+            ctx->sock = -1;
             errno = err;
-            return -1;
+            goto end;
         }
 
-        rv = tcp_socket_writer_connect(ctx, &dest_addr);
+        rv = tcp_socket_writer_connect(ctx, dest_addr);
         if (rv < 0) {
-            return -1;
+            ctx->sock = -1;
+            goto end;
         } else if (rv == 0) {
             continue;
         }
@@ -403,14 +539,23 @@ static int tcp_socket_writer_open(pirate_tcp_socket_param_t *param, tcp_socket_c
         // on testing the connection.
         rv = tcp_socket_writer_test(ctx);
         if (rv < 0) {
-            return -1;
+            ctx->sock = -1;
+            goto end;
         } else if (rv == 0) {
             continue;
+        } else {
+            break;
         }
-        return ctx->sock;
     }
 
-    return -1;
+end:
+    if (src_addr != NULL) {
+        freeaddrinfo(src_addr);
+    }
+    if (dest_addr != NULL) {
+        freeaddrinfo(dest_addr);
+    }
+    return ctx->sock;
 }
 
 int pirate_tcp_socket_open(void *_param, void *_ctx) {
