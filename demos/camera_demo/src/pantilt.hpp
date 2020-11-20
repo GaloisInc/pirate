@@ -26,14 +26,6 @@ class PanTilt
         PanTilt(): pan(0.0), tilt(0.0) { }
         PanTilt(float pan, float tilt): pan(pan), tilt(tilt) { }
 
-    PanTilt& operator=(const PanTilt& other) {
-        if (this != &other) {
-            this->pan = other.pan;
-            this->tilt = other.tilt;
-        }
-        return *this;
-    }
-
     PanTilt& operator+=(const PanTilt& other) {
         this->pan += other.pan;
         this->tilt += other.tilt;
