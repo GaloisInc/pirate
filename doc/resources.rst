@@ -459,6 +459,7 @@ The only symbol required is a function of type
 ``pal/resource.h``:
 
 .. code-block:: c
+
     /* A resource handler should inspect the supplied
      * `pal_yaml_subdoc_t` fill in `env`, which is guaranteed to point
      * to a `pal_env_t` initialized with `EMPTY_PAL_ENV(PAL_RESOURCE)`.
@@ -476,6 +477,7 @@ functions from ``pal/resource.h``. The following is an example of a
 simple resource handler:
 
 .. code-block:: c
+
     #include <pal/envelope.h>
     #include <pal/resource.h>
 
@@ -523,6 +525,7 @@ other fields are required, as specified by the boolean fields of the
 ``my_short`` are nested within an object called ``my_numbers``.
 
 .. code-block:: yaml
+
     enclaves:
     - name: plugin_app
     resources:
@@ -542,6 +545,7 @@ shown below. The resulting shared object, ``foo.so`` should be placed in
 configured to look in for plugins.
 
 .. code-block:: sh
+
     clang -shared -fPIC -o foo.so foo.c
 
 Getting Resources from PAL
@@ -563,6 +567,7 @@ Loading the example ``foo`` resource above would look like the
 following:
 
 .. code-block:: c
+
     #include <pal/pal.h>
     #include <stdlib.h>
 
