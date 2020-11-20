@@ -137,7 +137,7 @@ configured for both enclaves with the following entry:
     - name: ui_to_host
       ids: [ "filter_ui_pal/ui_to_host", "filter_host_pal/ui_to_host" ]
       type: pirate_channel
-      contents:
+      value:
           channel_type: pipe
           path: /tmp/filter_ui_to_host
 
@@ -153,7 +153,7 @@ The format is :code:`<enclave_name>/<resource_name>`, where
 :code:`pirate_resource` as annotated in the source.
 
 The :code:`type` field indicates the resource type, and the subfields of
-:code:`contents` vary depending on its value. For more information about
+:code:`value` vary depending on its value. For more information about
 resource types, see the `resources section <resources.rst>_`.
 
 Running the Application
