@@ -40,7 +40,7 @@ set_target_properties(pirate_channel_plugin
 target_include_directories(pirate_channel_plugin PRIVATE include)
 target_link_libraries(pirate_channel_plugin ${PIRATE_APP_LIBS})
 set_property(TARGET pirate_channel_plugin PROPERTY PREFIX "")
-target_compile_options(pirate_channel_plugin PRIVATE SHELL:-Wall SHELL:-Werror SHELL:-g)
+target_compile_options(pirate_channel_plugin PRIVATE SHELL:-Wall SHELL:-Werror)
 
 install(TARGETS pirate_channel_plugin DESTINATION lib/pirate/pal/plugins)
 
@@ -59,7 +59,7 @@ add_executable(exepal
 set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
 target_include_directories(exepal PRIVATE include)
 target_link_libraries(exepal yaml dl)
-target_compile_options(exepal PRIVATE -Wall -Werror -g -export-dynamic)
+target_compile_options(exepal PRIVATE -Wall -Werror)
 target_link_options(exepal PRIVATE
     SHELL:-Wl,-export-dynamic # Allows plugins to access symbols defined in pal
 )
