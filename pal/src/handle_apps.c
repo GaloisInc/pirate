@@ -123,6 +123,33 @@ static struct handler_table_entry {
     { NULL,             NULL,                             NULL },
 };
 
+char *get_plugin_dir(const char *cfg_path, struct top_level *tlp)
+{
+    char *pdir = tlp->tl_cfg.cfg_plugin_dir
+        ? tlp->tl_cfg.cfg_plugin_dir : DEFAULT_PLUGIN_DIR;
+
+    if(pdir[0] == '/')      // Plugin dir path is absolute
+        return strdup(pdir);
+
+    char *cfg_base = strchr(cfg_path, '/');
+    char *abs_pdir = NULL;
+    if(!cfg_base) {         // Config path is relative
+        size_t abs_pdir_len = 2 + strlen(pdir) + 1;
+        if(!(abs_pdir = malloc(abs_pdir_len)))
+            return NULL;
+        snprintf(abs_pdir, abs_pdir_len, "./%s", pdir);
+    } else {                // Config path is absolute
+        int cfg_dir_len = (int)(cfg_base - cfg_path);
+        size_t abs_pdir_len = cfg_dir_len + 1 + strlen(pdir) + 1;
+        if(!(abs_pdir = malloc(abs_pdir_len)))
+            return NULL;
+        snprintf(abs_pdir, abs_pdir_len, "%.*s/%s",
+                cfg_dir_len, cfg_path, pdir);
+    }
+
+    return abs_pdir;
+}
+
 void load_resource_plugins(const char *dirpath)
 {
     DIR *dir = opendir(dirpath);
