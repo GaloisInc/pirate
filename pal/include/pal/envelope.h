@@ -126,18 +126,73 @@ int pal_recv_resource_request(int sock,
 /*
  * Helper functions for iterating through the data elements in a
  * `pal_env_t`.
+ *
+ * For example, if the env is expected to contain a collection of strings, you
+ * might iterate through it as follows:
+ * 
+ *      char *my_strings[1024];
+ *      size_t sz = 0;
+ *
+ *      pal_env_iterator_t it = pal_env_iterator_start(env);
+ *      while(it < pal_env_iterator_end(env) && sz < 1024) {
+ *          my_strings[sz++] = pal_env_iterator_strdup(it);
+ *          it = pal_env_iterator_next(it);
+ *      }
  */
 
 typedef void *pal_env_iterator_t;
 
+/* Returns an iterator pointing to the first element of a pal_env_t.
+ *
+ * This function never fails.
+ */
 pal_env_iterator_t pal_env_iterator_start(pal_env_t *env);
 
+/* Returns an iterator pointing to one element past the end of a pal_env_t.
+ *
+ * This function never fails.
+ */
 pal_env_iterator_t pal_env_iterator_end(pal_env_t *env);
 
+/* Returns the size of the element the iterator currently points to.
+ *
+ * This function never fails.
+ */
 pal_env_size_t pal_env_iterator_size(pal_env_iterator_t it);
 
+/* Returns a pointer to the data of the element that the iterator currently
+ * points to.
+ *
+ * NB: If the data pointed to is a string, it will not be zero-terminated. The
+ * pal_env_iteratir_str* functions described below make it easier to deal with
+ * this.
+ */
 void * pal_env_iterator_data(pal_env_iterator_t it);
 
+/* Create a copy of the data pointed to by the iterator, assuming it is a
+ * character string. The returned string is dynamically allocated, and the
+ * caller is responsible for freeing it.
+ *
+ * Returns a pointer to the resulting string on success. On failure, returns
+ * NULL and sets errno.
+ */
+char *pal_env_iterator_strdup(pal_env_iterator_t it);
+
+/* Copy the data pointed to by the iterator, assuming it is a character
+ * string. The buf argument must point to at least sz bytes of space. Returns
+ * buf.
+ *
+ * NB: Unlike standard strncpy, this function will copy at most sz-1 bytes
+ * into buf and will ensure that the resulting string is zero-terminated.
+ *
+ * This function never fails.
+ */
+char *pal_env_iterator_strncpy(char *buf, pal_env_iterator_t it, size_t sz);
+
+/* Advance the iterator to the next element.
+ *
+ * This function never fails.
+ */
 pal_env_iterator_t pal_env_iterator_next(pal_env_iterator_t it);
 
 #ifdef __cplusplus
