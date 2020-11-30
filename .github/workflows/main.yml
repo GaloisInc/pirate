@@ -7,7 +7,7 @@ on:
 jobs:
   # This task builds the HTML documentation using sphinx.
   docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build documentation
@@ -20,37 +20,104 @@ jobs:
       with:
         name: doc
         path: build/doc
+  # This is the main build repo
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [runner, clang, clang-shmem, gcc, pirate-clang, centos7]
+        include:
+          - name: runner
+            packager: apt-get
+            extra-packages: clang
+            cc: clang
+            extra-cmake: -DGAPS_DISABLE=ON
+            sudo: sudo
+          - name: clang
+            container: ubuntu:focal
+            packager: apt-get
+            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            cc: clang
+            extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
+            upload-artifact: true
+          - name: clang-shmem
+            container: ubuntu:focal
+            packager: apt-get
+            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            cc: clang
+            extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON -DPIRATE_SHMEM_FEATURE=ON
+          - name: gcc
+            container: ubuntu:focal
+            packager: apt-get
+            extra-packages: g++ wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            cc: gcc
+            extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
+          - name: pirate-clang
+            container: docker://pirateteam/llvm-ubuntu:latest
+            packager: apt-get
+            extra-packages: git libssl-dev libjpeg-dev libx11-dev
+            cc: clang
+            extra-cmake: -DIPV6_TESTS=OFF
+          - name: centos7
+            container: docker://pirateteam/llvm-centos7-x86_64
+            packager: yum
+            cc: clang
+            extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+    runs-on: ubuntu-20.04
+    container: ${{matrix.container}}
     steps:
     - uses: actions/checkout@v2
-    - name: update apt sources
+    - name: Install dependencies via apt-get
+      if: matrix.packager == 'apt-get'
       run: |
-        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
-    - name: install dependencies
+        ${{matrix.sudo}} apt-get update
+        ${{matrix.sudo}} DEBIAN_FRONTEND=noninteractive TZ=UTC \
+           apt-get install --no-install-recommends -y \
+           ${{matrix.extra-packages}} \
+           valgrind libyaml-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+    - name: Install dependencies via yum
+      if: matrix.packager == 'yum'
       run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-    - name: googletest
+        # Install epel repo
+        yum install -y epel-release
+        # Install git, wget, libgcc and libstdc++
+        yum install -y \
+           git wget cmake3 \
+           devtoolset-7-gcc devtoolset-7-libstdc++-devel \
+           valgrind\
+           libyaml-devel-0.1.4-11.el7_0.x86_64 \
+           openssl11 openssl11-devel \
+           libjpeg-devel libX11-devel
+        echo "/opt/rh/devtoolset-7/root/bin" >> $GITHUB_PATH
+        echo "/opt/rh/llvm-toolset-7/root/bin" >> $GITHUB_PATH
+        mkdir -p /root/bin
+        ln -s /usr/bin/cmake3 /root/bin/cmake
+        ln -s /usr/bin/openssl11 /root/bin/openssl
+        echo "/root/bin" >> $GITHUB_PATH
+    - name: Build googletest
       run: |
+        echo "$PATH"
         mkdir ~/googletest
         cd ~/googletest
         wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
         cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
         cmake --build . --target install
-    - name: build Mercury loopback
+    # We can only install the Mercury loopback on the non-docker builds.
+    - name: Build and install Mercury loopback
+      if: matrix.name == 'runner'
       run: |
         cd devices/mercury/loopback_ilip
-        sudo make
+        make
         sudo insmod gaps_ilip.ko
         test -c /dev/gaps_ilip_0_root || exit 1
-    - name: build libpirate
+    - name: Build libpirate
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
+        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
+              ${{matrix.extra-cmake}} \
+              -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
               -DGTEST_ROOT:PATH=$HOME/googletest \
-              -DGAPS_DISABLE=ON \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
               -DPIRATE_LAUNCHER=OFF \
@@ -58,32 +125,41 @@ jobs:
               ..
         make
         make install
-    - name: Make libpirate artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: libpirate
-        path: dist/libpirate
     - name: Build Launcher
       run: |
         mkdir -p build-pal
         cd build-pal
         CFLAGS="-I$GITHUB_WORKSPACE/dist/libpirate/include" \
           LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
-          cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal ../pal
+          cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
+                ${{matrix.extra-cmake}} \
+                -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal \
+                ../pal
         make install
-    - name: Make launcher artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: pal
-        path: dist/pal
     - name: Build libpirategetopt
       run: |
         mkdir -p build-getopt
         cd build-getopt
-        cmake -DCMAKE_INSTALL_PREFIX=../dist/libpirategetopt ../libpirategetopt
+        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
+              ${{matrix.extra-cmake}} \
+              -DCMAKE_INSTALL_PREFIX=../dist/libpirategetopt \
+              ../libpirategetopt
         make install
+    - name: Make libpirate artifact
+      uses: actions/upload-artifact@v1
+      if: matrix.upload-artifact
+      with:
+        name: libpirate
+        path: dist/libpirate
+    - name: Make launcher artifact
+      uses: actions/upload-artifact@v1
+      if: matrix.upload-artifact
+      with:
+        name: pal
+        path: dist/pal
     - name: Make libpirategetopt artifact
       uses: actions/upload-artifact@v1
+      if: matrix.upload-artifact
       with:
         name: libpirategetopt
         path: dist/libpirategetopt
@@ -96,19 +172,24 @@ jobs:
     - name: build benchmarks
       run: |
         cd build
-        cmake -DGAPS_BENCH=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
+              ${{matrix.extra-cmake}} \
+              -DGAPS_BENCH=ON \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
-    - name: build demos with GAPS_DISABLE=ON
+    - name: build demos
       run: |
         cd build
-        cmake -DGAPS_DEMOS=ON -DGAPS_DISABLE=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+        cmake -DGAPS_DEMOS=ON \
+              ${{matrix.extra-cmake}} \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
     - name: time_demo tests
       run: |
         cd build/demos/time_demo/test
         ./ts_test.sh
   windows-build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
     - name: googletest
@@ -142,121 +223,8 @@ jobs:
       run: |
         cd build/libpirate/Release
         ./gaps_channels_test.exe
-  shmem:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: update apt sources
-      run: |
-        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
-    - name: install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends -y clang valgrind
-    - name: googletest
-      run: |
-        mkdir ~/googletest
-        cd ~/googletest
-        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
-        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest \
-              -D CMAKE_BUILD_TYPE=Release \
-              googletest-release-1.10.0
-        cmake --build . --target install
-    - name: build Mercury loopback
-      run: |
-        cd devices/mercury/loopback_ilip
-        make
-        sudo insmod gaps_ilip.ko
-        test -c /dev/gaps_ilip_0_root || exit 1
-    - name: build libpirate
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
-              -DPIRATE_UNIT_TEST=ON \
-              -DGAPS_DISABLE=ON \
-              -DPIRATE_SHMEM_FEATURE=ON \
-              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-              -DPIRATE_LAUNCHER=OFF \
-              -DPIRATE_GETOPT=OFF \
-              ..
-        make
-    - name: libpirate tests
-      timeout-minutes: 5
-      run: |
-        cd build/libpirate
-        ./gaps_channels_test
-        make valgrind
-  gcc:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: build libpirate
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DCMAKE_C_COMPILER="gcc" \
-              -DGAPS_DISABLE=ON \
-              -DPIRATE_LAUNCHER=OFF \
-              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make
-    - name: build benchmarks
-      run: |
-        cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DGAPS_BENCH=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make
-    - name: build demos
-      run: |
-        cd build
-        cmake -DCMAKE_C_COMPILER="gcc" -DGAPS_DISABLE=ON -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make
-  # This makes sure we can build the GAPS test on the image
-  gaps:
-    runs-on: ubuntu-latest
-    container: docker://pirateteam/llvm-ubuntu:latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: update apt sources
-      run: |
-        sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
-    - name: install dependencies
-      run: |
-        apt-get update
-        apt-get install --no-install-recommends -y git libjpeg-dev libssl-dev libx11-dev libyaml-dev
-    - name: googletest
-      run: |
-        mkdir ~/googletest
-        cd ~/googletest
-        wget -qO - https://github.com/google/googletest/archive/release-1.10.0.tar.gz | tar -xz
-        cmake -D CMAKE_INSTALL_PREFIX:PATH=$HOME/googletest -D CMAKE_BUILD_TYPE=Release googletest-release-1.10.0
-        cmake --build . --target install
-    - name: build libpirate
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DGTEST_ROOT:PATH=$HOME/googletest \
-              -DPIRATE_UNIT_TEST=ON \
-              -DPIRATE_LLVM_UBUNTU=ON \
-              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-              ..
-        make
-    - name: libpirate tests
-      timeout-minutes: 5
-      run: |
-        cd build/libpirate
-        ./gaps_channels_test
-        make valgrind
-    - name: Build demos
-      run: |
-        cd build
-        cmake -DGAPS_DEMOS=ON -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
-        make
-    - name: time_demo tests
-      run: |
-        cd build/demos/time_demo/test
-        ./ts_test.sh
-  # This builds the docker image
-  docker-build:
+  # This assembles the docker images
+  assemble-docker-images:
     runs-on: ubuntu-latest
     needs: [docs, build]
     steps:
@@ -286,6 +254,7 @@ jobs:
         cp -a demos images/ubuntu
         docker build -t pirateteam/ubuntu images/ubuntu
         docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
+
     - name: Make pirateteam/ubuntu artifact
       uses: actions/upload-artifact@v1
       with:
@@ -294,10 +263,12 @@ jobs:
     - name: Build demos on pirateteam/ubuntu
       run: |
         mkdir -p build
+        # Run cmake
         docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
                    -w /root/build \
                    pirateteam/ubuntu \
                    cmake ../pirate/demos
+        # Run make
         docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
                    -w /root/build \
                    pirateteam/ubuntu \
@@ -312,11 +283,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: update apt sources
-      run: |
-        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
     - name: install dependencies
       run: |
+        sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
         sudo apt-get update
         sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev uuid-dev default-jre-headless
     - name: googletest
@@ -382,4 +351,3 @@ jobs:
     - name: Package extension
       working-directory: vscode-plugins/architecture
       run: vsce package
-      

@@ -206,7 +206,7 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
 }
 
 TEST(ChannelUdpSocketTest, WriterAddressAndPortIPv6) {
-#if !defined(_WIN32) && !defined(PIRATE_LLVM_UBUNTU)
+#if !defined(_WIN32) && !defined(DISABLE_IPV6_TESTS)
     char buf[80];
     int gd_r1, gd_r2;
     int gd_w1, gd_w2;

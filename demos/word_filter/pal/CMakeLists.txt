@@ -10,7 +10,6 @@ set(LOW "filter_ui")
 # Build flags
 set(BUILD_FLAGS "-Werror" "-Wall" "-Wextra" "-Wpedantic" "-Wno-zero-length-array" "-O0")
 set(BUILD_FLAGS ${BUILD_FLAGS} "-ffunction-sections" "-fdata-sections" "--target=x86_64-pc-linux-elf")
-# set(BUILD_FLAGS ${BUILD_FLAGS} "SHELL:-Xclang -load" "SHELL:-Xclang PropagateEnclaves.so")
 
 # Source files
 SET(SRCS "filter.c")
