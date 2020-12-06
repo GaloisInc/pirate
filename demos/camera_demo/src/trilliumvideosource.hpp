@@ -15,20 +15,28 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
 
-class TrilliumOrientationOutput : public BaseOrientationOutput
+#include <stdint.h>
+
+#include "imageconvert.hpp"
+#include "frameprocessor.hpp"
+#include "options.hpp"
+#include "videosource.hpp"
+#include "mpeg-ts-decoder.hpp"
+
+class TrilliumVideoSource : public MpegTsDecoder
 {
 public:
-    TrilliumOrientationOutput(const Options& options);
-    virtual ~TrilliumOrientationOutput();
+    TrilliumVideoSource(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
+    virtual ~TrilliumVideoSource();
 
     virtual int init() override;
     virtual void term() override;
-
-protected:
-    virtual bool applyAngularPosition(PanTilt angularPosition) override;
-
 private:
     const std::string mTrilliumUrl;
     int mSockFd;
