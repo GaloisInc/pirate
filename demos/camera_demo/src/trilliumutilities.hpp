@@ -15,21 +15,6 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include <string>
 
-class TrilliumOrientationOutput : public BaseOrientationOutput
-{
-public:
-    TrilliumOrientationOutput(const Options& options);
-    virtual ~TrilliumOrientationOutput();
-
-    virtual int init() override;
-    virtual void term() override;
-
-protected:
-    virtual bool applyAngularPosition(PanTilt angularPosition) override;
-
-private:
-    const std::string mTrilliumUrl;
-    int mSockFd;
-};
+int trilliumConnectUDPSocket(std::string trilliumUrl, int& sockFd);

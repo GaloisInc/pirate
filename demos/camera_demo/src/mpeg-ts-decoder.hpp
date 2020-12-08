@@ -43,8 +43,10 @@ public:
     virtual int init() override;
     virtual void term() override;
 
-private:
+protected:
     const std::string mH264Url;
+
+private:
     int mFFmpegLogLevel;
     int mInputWidth;
     int mInputHeight;
