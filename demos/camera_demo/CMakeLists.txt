@@ -37,6 +37,7 @@ set(SRCS
     src/baseorientationoutput.cpp
     src/remoteorientationoutput.cpp
     src/trilliumorientationoutput.cpp
+    src/trilliumutilities.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
@@ -67,6 +68,7 @@ if (FFMPEG_LIBS)
     set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/mpeg-ts-encoder.cpp)
     set(SRCS ${SRCS} src/mpeg-ts-decoder.cpp)
+    set(SRCS ${SRCS} src/trilliumvideosource.cpp)
 else ()
     message("-- Ffmpeg libraries not found")
 endif (FFMPEG_LIBS)

@@ -25,14 +25,16 @@ bash session in the root account.  The `pirate` directory contains the
 demos, and HTML documentaton.  The compiler toolchain and `libpirate`
 are pre-installed in `/usr/local`.
 
-If you are not able to run Docker in your environment, we provide
-precompiled versions of [`libpirate`](https://github.com/GaloisInc/pirate/actions)
-and [`pirate-llvm`](https://github.com/GaloisInc/pirate-llvm/actions)
-as part of continuous integration.
+If you are not able to run Docker in your environment, we provide tarball
+archives of the most recent `master` builds for Linux versions:
 
-Finally, the `pirate-llvm` [repository](https://github.com/GaloisInc/pirate-llvm) has
-links to instructions for building it, and instructions for building the
-other components are available below.
+ * [Centos 7](https://pirate.azureedge.net/dist/pirate-centos7.tgz)
+ * [Ubuntu 20.04](https://pirate.azureedge.net/dist/pirate-ubuntu.tgz)
+
+We also upload [artifacts](https://github.com/GaloisInc/pirate/actions)
+of our libraries as part of continuous integration.  
+
+If you want to build the source yourself, the `pirate-llvm` [repository](https://github.com/GaloisInc/pirate-llvm) has links to instructions for building it, and instructions for building the other components are available below.
 
 This material is based upon work supported by the Defense Advanced
 Research Projects Agency (DARPA) under Contract No. HR0011-19-C-0103.

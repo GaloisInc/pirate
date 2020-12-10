@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "trilliumorientationoutput.hpp"
+#include "trilliumutilities.hpp"
 
 #include "orion-sdk/OrionPublicPacket.hpp"
 #include "orion-sdk/OrionPublicPacketShim.hpp"
@@ -30,7 +31,7 @@
 TrilliumOrientationOutput::TrilliumOrientationOutput(const Options& options) :
     BaseOrientationOutput(options),
     mTrilliumUrl(options.mTrilliumUrl),
-    sockFd(-1)
+    mSockFd(-1)
 {
 }
 
@@ -41,56 +42,13 @@ TrilliumOrientationOutput::~TrilliumOrientationOutput()
 
 int TrilliumOrientationOutput::init()
 {
-    std::string host = "";
-    int port = 0, rv;
-    struct sockaddr_in dest_addr;
-
-    if (mTrilliumUrl == "") {
-        std::cerr << "Missing required argument --trillium url" << std::endl;
-        return -1;
-    }
-
-    std::size_t found = mTrilliumUrl.find(':');
-
-    if (found == std::string::npos) {
-        host = mTrilliumUrl;
-        port = UDP_IN_PORT;
-    } else {
-        host = mTrilliumUrl.substr(0, found);
-        port = stoi(mTrilliumUrl.substr(found + 1));
-    }
-
-    if ((host == "") || (port == 0)) {
-        std::cerr << "unable to parse trillium url " << mTrilliumUrl << std::endl;
-        return -1;
-    }
-
-    std::cout << "Connecting to trillium camera at " << host << ":" << port << std::endl;
-
-    sockFd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockFd < 0) {
-        perror("Error creating socket");
-        return -1;
-    }
-
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(host.c_str());
-    dest_addr.sin_port = htons(port);
-
-    rv = connect(sockFd, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        perror("Error connecting socket");
-        return -1;
-    }
-
-    return 0;
+    return trilliumConnectUDPSocket(mTrilliumUrl, mSockFd);
 }
 
 void TrilliumOrientationOutput::term()
 {
-    if (sockFd >= 0) {
-        close(sockFd);
+    if (mSockFd >= 0) {
+        close(mSockFd);
     }
 }
 
@@ -101,7 +59,7 @@ bool TrilliumOrientationOutput::applyAngularPosition(PanTilt angularPosition)
     OrionPkt_t pktOut;
     ssize_t rv;
 
-    if (sockFd < 0) {
+    if (mSockFd < 0) {
         return false;
     }
 
@@ -114,7 +72,7 @@ bool TrilliumOrientationOutput::applyAngularPosition(PanTilt angularPosition)
 
     encodeOrionCmdPacket(&pktOut, &orionCmd);
 
-    rv = send(sockFd, (void*) &pktOut, pktOut.Length + ORION_PKT_OVERHEAD, 0);
+    rv = send(mSockFd, (void*) &pktOut, pktOut.Length + ORION_PKT_OVERHEAD, 0);
     if (rv < 0) {
         perror("Trillium send command error");
         return false;
