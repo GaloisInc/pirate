@@ -25,7 +25,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [runner, clang, clang-shmem, gcc, pirate-clang, centos7]
         include:
           - name: runner
             packager: apt-get
@@ -33,36 +32,37 @@ jobs:
             cc: clang
             extra-cmake: -DGAPS_DISABLE=ON
             sudo: sudo
-          - name: clang
+          - name: standard-clang
             container: ubuntu:focal
             packager: apt-get
             extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
             cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
-            upload-artifact: true
-          - name: clang-shmem
+          - name: standard-clang-shmem
             container: ubuntu:focal
             packager: apt-get
             extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
             cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON -DPIRATE_SHMEM_FEATURE=ON
-          - name: gcc
+          - name: standard-gcc
             container: ubuntu:focal
             packager: apt-get
             extra-packages: g++ wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
             cc: gcc
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
-          - name: pirate-clang
+          - name: pirate-ubuntu
             container: docker://pirateteam/llvm-ubuntu:latest
             packager: apt-get
             extra-packages: git libssl-dev libjpeg-dev libx11-dev
             cc: clang
             extra-cmake: -DIPV6_TESTS=OFF
-          - name: centos7
+            upload-artifact: true
+          - name: pirate-centos7
             container: docker://pirateteam/llvm-centos7-x86_64
             packager: yum
             cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+            upload-artifact: true
     runs-on: ubuntu-20.04
     container: ${{matrix.container}}
     steps:
@@ -144,25 +144,13 @@ jobs:
               ${{matrix.extra-cmake}} \
               -DCMAKE_INSTALL_PREFIX=../dist/libpirategetopt \
               ../libpirategetopt
-        make install
-    - name: Make libpirate artifact
+        make install      
+    - name: Make library artifact
       uses: actions/upload-artifact@v1
       if: matrix.upload-artifact
       with:
-        name: libpirate
-        path: dist/libpirate
-    - name: Make launcher artifact
-      uses: actions/upload-artifact@v1
-      if: matrix.upload-artifact
-      with:
-        name: pal
-        path: dist/pal
-    - name: Make libpirategetopt artifact
-      uses: actions/upload-artifact@v1
-      if: matrix.upload-artifact
-      with:
-        name: libpirategetopt
-        path: dist/libpirategetopt
+        name: ${{matrix.name}}-dist
+        path: dist
     - name: libpirate tests
       timeout-minutes: 5
       run: |
@@ -224,8 +212,106 @@ jobs:
         cd build/libpirate/Release
         ./gaps_channels_test.exe
   # This assembles the docker images
+  assemble-tar:
+    needs: [docs, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: pirate-ubuntu
+            packager: apt-get
+            container: docker://pirateteam/llvm-ubuntu
+          - name: pirate-centos7
+            packager: yum
+            container: docker://pirateteam/llvm-centos7-x86_64
+    runs-on: ubuntu-20.04
+    container: ${{matrix.container}}
+    steps:
+    - name: Install dependencies via apt-get
+      if: matrix.packager == 'apt-get'
+      run: |
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive TZ=UTC \
+        apt-get install --no-install-recommends -y \
+          ca-certificates curl apt-transport-https lsb-release gnupg
+        # Download and install the Microsoft signing key:
+        curl -sL https://packages.microsoft.com/keys/microsoft.asc |
+          gpg --dearmor |
+          tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+        # Add the Azure CLI software repository
+        AZ_REPO=$(lsb_release -cs)
+        echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" > /etc/apt/sources.list.d/azure-cli.list
+        # Install azure-cli
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive TZ=UTC \
+          apt-get install --no-install-recommends -y azure-cli
+    - name: Install dependencies via yum
+      if: matrix.packager == 'yum'
+      run: |
+        # Import the Microsoft repository key
+        rpm --import https://packages.microsoft.com/keys/microsoft.asc
+        # Create local azure-cli repository information
+        cat << EOF > /etc/yum.repos.d/azure-cli.repo
+        [azure-cli]
+        name=Azure CLI
+        baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+        enabled=1
+        gpgcheck=1
+        gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+        EOF
+        ls -l /etc/yum.repos.d
+        # Install git, wget, libgcc and libstdc++
+        yum install -y azure-cli
+    - name: Get libraries
+      uses: actions/download-artifact@v1
+      with:
+        name: ${{matrix.name}}-dist
+        path: dist
+    - name: Get documentation
+      uses: actions/download-artifact@v1
+      with:
+        name: doc
+        path: doc
+    - name: Make archive
+      run: |
+        mkdir -p ${{matrix.name}}/bin
+        
+        cd ${{matrix.name}}/bin
+        # Add clang-pirate
+        cp -a /usr/local/bin/clang-10 clang-pirate
+        ln -s clang-pirate clang
+        ln -s clang clang-cl
+        ln -s clang clang-cpp
+        ln -s clang cc
+        ln -s clang-pirate clang++
+        ln -s clang++ c++
+        # Add lld-pirate
+        cp -a /usr/local/bin/lld lld-pirate
+        ln -s lld-pirate ld.lld-pirate
+        ln -s lld-pirate ld
+        cd ../..
+        
+        cp -a dist/libpirate/include ${{matrix.name}}
+        cp -a dist/libpirate/lib     ${{matrix.name}}
+        cp -a doc/html ${{matrix.name}}/doc
+
+        tar cvfz ${{matrix.name}}.tgz ${{matrix.name}}
+    - name: Make artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{matrix.name}}
+        path: ${{matrix.name}}.tgz
+    - name: Upload distribution
+      if: github.ref == 'master'
+      run: |
+        az storage blob upload \
+          --account-name pirateteam \
+          --account-key ${{ secrets.AZURE_ACCOUNT }} \
+          -c \$web \
+          -f ${{matrix.name}}.tgz \
+          -n dist/${{matrix.name}}.tgz
   assemble-docker-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: [docs, build]
     steps:
     - uses: actions/checkout@v2
@@ -237,24 +323,16 @@ jobs:
     - name: Get libpirate
       uses: actions/download-artifact@v1
       with:
-        name: libpirate
-        path: images/ubuntu/libpirate
-    - name: Get libpirategetopt
-      uses: actions/download-artifact@v1
-      with:
-        name: libpirategetopt
-        path: images/ubuntu/libpirategetopt
-    - name: Get PAL
-      uses: actions/download-artifact@v1
-      with:
-        name: pal
-        path: images/ubuntu/pal
+        name: pirate-ubuntu-dist
+        path: dist
     - name: Build pirateteam/ubuntu
       run: |
-        cp -a demos images/ubuntu
+        cp -a dist/libpirate       images/ubuntu
+        cp -a dist/libpirategetopt images/ubuntu
+        cp -a dist/pal             images/ubuntu
+        cp -a demos                images/ubuntu
         docker build -t pirateteam/ubuntu images/ubuntu
         docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
-
     - name: Make pirateteam/ubuntu artifact
       uses: actions/upload-artifact@v1
       with:
