@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pyyaml = "*"
+networkx = "*"
+cerberus = "*"
+
+[dev-packages]
+pylint = "*"
+mypy = "*"
+autopep8 = "*"
+docformatter = "*"
+
+[requires]
+python_version = "3.6"

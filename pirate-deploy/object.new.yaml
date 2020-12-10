@@ -1,0 +1,45 @@
+#! /usr/bin/env pirate-deploy
+# This script is used to pack the files into enclaves
+
+enclaves:
+  - name: orange
+    path: ./pnt_pal_orange
+    agents:
+      - name: rfs
+      - name: uav
+    resources:
+      - id: fixed-period
+        type: boolean
+        value: true
+    location: "ip=192.168.0.1"
+
+  - name: green
+    path: ./pnt_pal_green
+    agents:
+      - name: gps
+      - name: tgt
+    resources:
+      - id: timer-duration
+        type: integer
+        value: 0
+
+# Are timers resources?
+timers:
+  - frequency: 10ms
+    target: gps.read
+  - frequency: 10ms
+    target: rfs.read
+
+# Routes are resources in PAL, do we want them separate here?
+routes:
+  - source: gps.onPositionUpdate
+    target: tgt.onGpsPositionChange
+  - source: gps.onPositionUpdate
+    target: uav.onGpsPositionChange
+  - source: rfs.onDistanceUpdate
+    target: tgt.setDistance
+  - source: uav.onUpdateTrack
+    target: tgt.setUAVLocation
+
+config:
+  log_level: debug
