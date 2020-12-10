@@ -46,8 +46,10 @@ struct rsc_contents {
     uint32_t cc_min_tx_size;    // device, pipe, unix_socket, tcp_socket
     uint32_t cc_mtu;            // ALL
     uint32_t cc_buffer_size;    // unix_socket, tcp_socket, udp_socket, shmem, udp_shmem
-    char *cc_host;              // tcp_socket, udp_socket, ge_eth
-    uint16_t cc_port;           // tcp_socket, udp_socket, ge_eth
+    char *cc_reader_host;       // tcp_socket, udp_socket, ge_eth
+    uint16_t cc_reader_port;    // tcp_socket, udp_socket, ge_eth
+    char *cc_writer_host;       // tcp_socket, udp_socket, ge_eth
+    uint16_t cc_writer_port;    // tcp_socket, udp_socket, ge_eth
     uint32_t cc_max_tx_size;    // shmem, uio, serial
     size_t cc_packet_size;      // udp_shmem
     size_t cc_packet_count;     // udp_shmem

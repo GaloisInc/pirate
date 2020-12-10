@@ -25,7 +25,7 @@ class ColorTracking : public OrientationInput, public FrameProcessor
 {
 public:
     ColorTracking(const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback);
+        CameraOrientationCallbacks angPosCallbacks);
     virtual ~ColorTracking();
 
     virtual int init() override;
@@ -33,6 +33,10 @@ public:
 
 private:
     const bool           mVerbose;
+    const float          mPanAxisMin;
+    const float          mPanAxisMax;
+    const float          mTiltAxisMin;
+    const float          mTiltAxisMax;
     const float          mAngIncrement;
     const bool           mImageSlidingWindow;
     const unsigned char  mImageTrackingRGB[3];
@@ -41,7 +45,5 @@ private:
     void computeTracking(int* x_pos, int *y_pos, FrameBuffer data);
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
-
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 };

@@ -19,11 +19,15 @@
 
 ColorTracking::ColorTracking(
         const Options& options,
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback) :
-    OrientationInput(angPosUpdateCallback, -options.mAngularPositionLimit, options.mAngularPositionLimit),
-    FrameProcessor(RGBX, options.mImageWidth, options.mImageHeight),
+        CameraOrientationCallbacks angPosallbacks) :
+    OrientationInput(angPosallbacks),
+    FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
-    mAngIncrement(1.0),
+    mPanAxisMin(options.mPanAxisMin),
+    mPanAxisMax(options.mPanAxisMax),
+    mTiltAxisMin(options.mTiltAxisMin),
+    mTiltAxisMax(options.mTiltAxisMax),
+    mAngIncrement(options.mAngularPositionIncrement),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mImageTrackingRGB{options.mImageTrackingRGB[0], options.mImageTrackingRGB[1], options.mImageTrackingRGB[2]},
     mImageTrackingThreshold(options.mImageTrackingThreshold)
@@ -43,12 +47,6 @@ int ColorTracking::init()
 void ColorTracking::term()
 {
 
-}
-
-unsigned char* ColorTracking::getFrame(unsigned index, VideoType videoType) {
-    (void) index;
-    (void) videoType;
-    return nullptr;
 }
 
 void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
@@ -83,10 +81,17 @@ void ColorTracking::computeTracking(int* x_pos, int *y_pos, FrameBuffer data) {
     }
 }
 
-int ColorTracking::process(FrameBuffer data, size_t length) {
-    int center, delta;
+int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataStream) {
+    int x_center, y_center;
+    int x_delta, y_delta;
     int x_position, y_position;
-    int tolerance = mImageWidth / 10; // 10% tolerance
+    int x_tolerance = mImageWidth / 10; // 10% tolerance
+    int y_tolerance = mImageHeight / 10; // 10% tolerance
+    PanTilt update = PanTilt(0.0, 0.0);
+
+    if (dataStream != VideoData) {
+        return 0;
+    }
 
     if (length != (mImageWidth * mImageHeight * 4)) {
         return -1;
@@ -97,19 +102,36 @@ int ColorTracking::process(FrameBuffer data, size_t length) {
         // object not found
         return 0;
     }
-    float angularPosition = getAngularPosition();
+
     if (mImageSlidingWindow) {
-        float range = mAngularPositionMax - mAngularPositionMin;
-        float percent = (angularPosition - mAngularPositionMin) / range;
-        center = mImageWidth * percent;
+        PanTilt angularPosition = mCallbacks.mGet();
+        float fractionX = (angularPosition.pan - mPanAxisMin) / (mPanAxisMax - mPanAxisMin);
+        float fractionY = (angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
+        x_center = mImageWidth * fractionX;
+        y_center = mImageHeight * fractionY;
     } else {
-        center = mImageWidth / 2;
+        x_center = mImageWidth / 2;
+        y_center = mImageHeight / 2;
     }
-    delta = x_position - center;
-    if (delta > tolerance) {
-        setAngularPosition(angularPosition + mAngIncrement);
-    } else if (delta < -tolerance) {
-        setAngularPosition(angularPosition - mAngIncrement);
+
+    x_delta = x_position - x_center;
+    y_delta = y_position - y_center;
+
+    if (x_delta > x_tolerance) {
+        update.pan = mAngIncrement;
+    } else if (x_delta < -x_tolerance) {
+        update.pan = -mAngIncrement;
     }
-    return 1;
+
+    if (y_delta > y_tolerance) {
+        update.tilt = mAngIncrement;
+    } else if (y_delta < -y_tolerance) {
+        update.tilt = -mAngIncrement;
+    }
+
+    if ((update.pan != 0.0) || (update.tilt != 0.0)) {
+        mCallbacks.mUpdate(update);
+    }
+
+    return 0;
 }

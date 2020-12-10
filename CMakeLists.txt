@@ -15,6 +15,7 @@ option(GAPS_DISABLE "Disable compilation with GAPS annotations" OFF)
 option(SINGLE_BINARY "Create a single binary across enclaves" OFF)
 option(PIRATE_SHMEM_FEATURE "support shared memory channels" OFF)
 option(PIRATE_UNIT_TEST "Enable compilation of PIRATE unit tests" OFF)
+option(IPV6_TESTS "Enable ipv6 unit tests" ON)
 option(GAPS_DEMOS "Enable compilation of all GAPS demo applications" OFF)
 option(CHANNEL_DEMO "Enable compilation of GAPS channel application" OFF)
 option(PNT_DEMO "Enable compilation of pnt application" OFF)
@@ -47,10 +48,7 @@ endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
-set(PIRATE_CXX_STATIC_LIB libpirate++_static)
-set(PIRATE_CXX_SHARED_LIB libpirate++_shared)
 set(PIRATE_APP_LIBS ${PIRATE_STATIC_LIB})
-set(PIRATE_APP_CXX_LIBS ${PIRATE_CXX_STATIC_LIB})
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_LIB_LIBS ${PIRATE_LIB_LIBS} pthread rt)
@@ -75,11 +73,11 @@ include_directories(BEFORE libpirate)
 link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
 # Build application launcher
-if (PIRATE_LAUNCHER)
+if (PIRATE_LAUNCHER OR (RESOURCE_DEMOS OR GAPS_DEMOS) AND NOT GAPS_DISABLE)
     add_subdirectory(pal)
     include_directories(BEFORE pal/include)
     link_directories(BEFORE ${CMAKE_BINARY_DIR}/pal)
-endif(PIRATE_LAUNCHER)
+endif(PIRATE_LAUNCHER OR (RESOURCE_DEMOS OR GAPS_DEMOS) AND NOT GAPS_DISABLE)
 
 # Build getopt library for working with resources.
 if (PIRATE_GETOPT)

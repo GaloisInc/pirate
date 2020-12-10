@@ -30,8 +30,9 @@ private:
   int annotationIds;
   bool hasValidate;
   bool hasTransform;
-  MinAnnotation* buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params);
-  MaxAnnotation* buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  ValueAnnotation* buildValueAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  MinAnnotation*   buildMinAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  MaxAnnotation*   buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:

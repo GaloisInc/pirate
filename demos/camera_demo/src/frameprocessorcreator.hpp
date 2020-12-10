@@ -20,29 +20,55 @@
 #include "orientationinput.hpp"
 #include "orientationoutput.hpp"
 #include "fileframeprocessor.hpp"
+#include "videosource.hpp"
 
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
+#include "metadataframeprocessor.hpp"
+#endif
+
+#if FFMPEG_PRESENT
+#include "mpeg-ts-encoder.hpp"
 #endif
 
 class FrameProcessorCreator {
 public:
-    static FrameProcessor * get(FrameProcessorType processorType,
+    static void add(
+        FrameProcessorType processorType,
+        std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const Options& options,
-        std::shared_ptr<OrientationOutput> orientationOutput,
-        const ImageConvert& imageConvert)
+        CameraOrientationCallbacks angPosCallbacks)
     {
-        (void) orientationOutput;
-        (void) imageConvert;
+        (void) angPosCallbacks;
+
+        FrameProcessor *fp = nullptr;
+
         switch (processorType)
         {
 #if XWIN_PRESENT
             case XWindows:
-                return new XWinFrameProcessor(options, orientationOutput, imageConvert);
+                fp = new XWinFrameProcessor(options, angPosCallbacks);
+                break;
+            case MetaDataProcessor:
+                fp = new MetaDataFrameProcessor(options);
+                break;
+#endif
+#if FFMPEG_PRESENT
+            case H264Stream:
+                fp = new MpegTsEncoder(options);
+                break;
 #endif
             case Filesystem:
+                fp = new FileFrameProcessor(options);
+                break;
             default:
-                return new FileFrameProcessor(options);
+                std::cout << "Skipping unknown frame processor." << std::endl;
+                break;
+        }
+        if (fp != nullptr)
+        {
+            std::shared_ptr<FrameProcessor> frameProcessor = std::shared_ptr<FrameProcessor>(fp);
+            frameProcessors.push_back(frameProcessor);
         }
     }
 };

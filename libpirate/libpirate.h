@@ -28,8 +28,7 @@ extern "C" {
 #endif
 
 #define PIRATE_LEN_NAME 64
-#define PIRATE_NUM_ENCLAVES 16
-#define PIRATE_NUM_CHANNELS 64
+#define PIRATE_NUM_CHANNELS 32
 #define PIRATE_IOV_MAX 16
 
 #define PIRATE_DEFAULT_MIN_TX 512
@@ -67,16 +66,20 @@ typedef enum {
 
     // The gaps channel is implemented by using TCP sockets.
     // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port
-    //  - buffer_size - TCP socket buffer size
-    //  - min_tx_size - minimum transmit size (bytes)
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
+    //  - buffer_size  - TCP socket buffer size
+    //  - min_tx_size  - minimum transmit size (bytes)
     TCP_SOCKET,
 
-    // The gaps channel is implemented by using TCP sockets.
-    // Configuration parameters - pirate_tcp_socket_param_t
-    //  - addr        - IP address, if empty then 127.0.0.1 is used
-    //  - port        - IP port
+    // The gaps channel is implemented by using UDP sockets.
+    // Configuration parameters - pirate_udp_socket_param_t
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
     //  - buffer_size - UDP socket buffer size
     UDP_SOCKET,
 
@@ -124,18 +127,13 @@ typedef enum {
 
     // The gaps channel for GRC Ethernet devices
     // Configuration parameters - pirate_ge_eth_param_t
-    //  - addr       - IP address, if empty then 127.0.0.1 is used
-    //  - port       - IP port
+    //  - reader_addr  - IP address on read end
+    //  - reader_port  - IP port on read end
+    //  - writer_addr  - IP address on write end (or 0.0.0.0)
+    //  - writer_port  - IP port on write end (or 0)
     //  - message_id - send/receive message ID
     //  - mtu        - maximum frame length, default 1454
     GE_ETH,
-
-    // The gaps channel that multiplexes over one
-    // or more component gaps channels. A write-only multiplex
-    // channel will send one request to each of its
-    // component channels. A read-only multiplex channel
-    // will poll its component channels for data.
-    MULTIPLEX,
 
    // Number of GAPS channel types
     PIRATE_CHANNEL_TYPE_COUNT
@@ -172,21 +170,23 @@ typedef struct {
 } pirate_unix_seqpacket_param_t;
 
 // TCP_SOCKET parameters
-#define PIRATE_DEFAULT_TCP_IP_ADDR                 "127.0.0.1"
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
     unsigned min_tx;
 } pirate_tcp_socket_param_t;
 
 // UDP_SOCKET parameters
-#define PIRATE_DEFAULT_UDP_IP_ADDR                 "127.0.0.1"
 #define PIRATE_DEFAULT_UDP_PACKET_SIZE             65535u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     unsigned buffer_size;
     unsigned mtu;
 } pirate_udp_socket_param_t;
@@ -250,27 +250,19 @@ typedef struct {
 } pirate_mercury_param_t;
 
 // GE_ETH parameters
-#define PIRATE_DEFAULT_GE_ETH_IP_ADDR  "127.0.0.1"
 #define PIRATE_DEFAULT_GE_ETH_MTU      1454u
 typedef struct {
-    char addr[INET_ADDRSTRLEN];
-    short port;
+    char reader_addr[INET6_ADDRSTRLEN];
+    char writer_addr[INET6_ADDRSTRLEN];
+    short reader_port;
+    short writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
 
-#define PIRATE_MULTIPLEX_NUM_CHANNELS 16
-typedef struct {
-    char unused;
-} pirate_multiplex_param_t;
-
 typedef struct {
     channel_enum_t channel_type;
-    uint8_t listener;
-    uint8_t control;
     uint8_t drop;
-    size_t src_enclave; // 1-based offset into enclaves name array
-    size_t dst_enclave; // 0 is the empty value
     union {
         pirate_device_param_t           device;
         pirate_pipe_param_t             pipe;
@@ -284,7 +276,6 @@ typedef struct {
         pirate_serial_param_t           serial;
         pirate_mercury_param_t          mercury;
         pirate_ge_eth_param_t           ge_eth;
-        pirate_multiplex_param_t        multiplex;
     } channel;
 } pirate_channel_param_t;
 
@@ -299,22 +290,6 @@ typedef struct {
 //
 // API
 //
-
-// Registers the names of the enclaves.
-//
-// Enclaves must be declared if the "listen" or "yield" features
-// of librate are used. See pirate_listen() for additional
-// documentation.
-//
-// Parameters
-//  count        - number of enclaves that are declared
-//  ...          - enclave names
-//
-// Return:
-//  0 on success
-// -1 on failure, errno is set to E2BIG if greater than PIRATE_NUM_ENCLAVES are declared
-
-int pirate_declare_enclaves(int count, ...);
 
 // Sets channel properties to the default values.
 // The default value is represented by the zero value.
@@ -364,14 +339,14 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  DEVICE        device,path[,min_tx_size=N,mtu=N]\n"                                      \
     "  PIPE          pipe,path[,min_tx_size=N,mtu=N]\n"                                        \
     "  UNIX SOCKET   unix_socket,path[,buffer_size=N,min_tx_size=N,mtu=N]\n"                   \
-    "  TCP SOCKET    tcp_socket,reader addr,reader port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
-    "  UDP SOCKET    udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]\n"               \
+    "  TCP SOCKET    tcp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,min_tx_size=N,mtu=N]\n" \
+    "  UDP SOCKET    udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]\n"               \
     "  SHMEM         shmem,path[,buffer_size=N,max_tx_size=N,mtu=N]\n"                         \
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
     "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
     "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
     "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
-    "  GE_ETH        ge_eth,reader addr,reader port,msg_id[,mtu=N]\n"
+    "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
 //
@@ -413,8 +388,14 @@ int pirate_get_channel_description(int gd, char *str, int len);
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 //
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// The return value is -1 if an error occurred (in which case,
+// errno is set appropriately). Otherwise the return value represents
+// a successful open.
+//
+// If the return value is a nonnegative integer then the gaps
+// descriptor is also a valid unix file descriptor.
+// If the return value is a negative integer less than -1 then
+// the gaps descriptor is not a file descriptor.
 
 int pirate_open_parse(const char *param, int flags);
 
@@ -425,127 +406,21 @@ int pirate_open_parse(const char *param, int flags);
 //
 // The argument flags must have access mode O_RDONLY or O_WRONLY.
 //
-// The return value is a unique gaps descriptor, or -1 if an
-// error occurred (in which case, errno is set appropriately).
+// The return value is -1 if an error occurred (in which case,
+// errno is set appropriately). Otherwise the return value represents
+// a successful open.
+//
+// If the return value is a nonnegative integer then the gaps
+// descriptor is also a valid unix file descriptor.
+// If the return value is a negative integer less than -1 then
+// the gaps descriptor is not a file descriptor.
 
 int pirate_open_param(pirate_channel_param_t *param, int flags);
-
-typedef enum {
-    // Channel type cannot be used as a component of a multiplex channel.
-    // Examples: multiplex channel.
-    MULTIPLEX_INVALID,
-    // Channel type associates exactly one producer and one consumer.
-    // Examples: unix pipe, mercury device.
-    MULTIPLEX_EXACTLY_ONE,
-    // Channel type associates one consumer with one or more producers.
-    // A separate file descriptor is opened for each incoming producer
-    // connection.
-    // Examples: tcp socket, unix socket.
-    MULTIPLEX_ONE_OR_MORE,
-    // Channel type associates one consumer with one or more producers.
-    // A single file descriptor is opened for all incoming producer
-    // conections.
-    // Examples: udp socket, ge ethernet channel.
-    MULTIPLEX_MANY
-} multiplex_enum_t;
-
-// Returns the multiplex type associated with the input channel type.
-
-multiplex_enum_t pirate_multiplex_channel_type(channel_enum_t channel_type);
-
-// Opens the gaps channel specified by the parameter value and
-// associates the gaps channel as a component of the multiplex
-// channel. The count argument is the number of expected
-// connections.
-//
-// The following conditions must be satisfied or an errno of
-// EINVAL will be returned:
-//
-//  - mutiplex_gd must refer to a valid gaps channel of multiplex channel type
-//  - count must be nonzero
-//  - the flags argument must equal the flags of the multiplex channel
-//  - if the access mode of flags is O_WRONLY then count must be one
-//  - if the multiplex type of the new channel is MULTIPLEX_EXACTLY_ONE
-//    then count must be one
-//
-// The return value is 0 on success, or -1 if an
-// error occurred (in which case, errno is set appropriately).
-
-int pirate_multiplex_open_param(int multiplex_gd, pirate_channel_param_t *param, int flags, size_t count);
-
-
-// Opens the gaps channel specified by the parameter string and
-// associates the gaps channel as a component of the multiplex
-// channel. The count argument is the number of expected
-// connections.
-//
-// The following conditions must be satisfied or an errno of
-// EINVAL will be returned:
-//
-//  - mutiplex_gd must refer to a valid gaps channel of multiplex channel type
-//  - count must be nonzero
-//  - the flags argument must equal the flags of the multiplex channel
-//  - if the access mode of flags is O_WRONLY then count must be one
-//  - if the multiplex type of the new channel is MULTIPLEX_EXACTLY_ONE
-//    then count must be one
-//
-// The return value is 0 on success, or -1 if an
-// error occurred (in which case, errno is set appropriately).
-
-int pirate_multiplex_open_parse(int multiplex_gd, const char *param, int flags, size_t count);
-
-// Returns 1 if the channel type supports the
-// pirate_pipe_param() and pirate_pipe_parse()
-// functions. Otherwise return 0.
-
-int pirate_pipe_channel_type(channel_enum_t channel_type);
 
 // Returns 1 if the channel type supports the
 // O_NONBLOCK flag to pirate_open(). Otherwise return 0.
 
 int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
-
-// Opens both ends of the gaps channel specified by the
-// parameter value. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags);
-
-// Opens both ends of the gaps channel specified by the
-// parameter string. See pipe() system call. Some channel
-// types cannot be opened for both reading and writing.
-//
-// The caller is responsible for closing the reader and the writer.
-//
-// On success, zero is returned. On error, -1 is returned,
-// and errno is set appropriately. If the channel type
-// does not support this functionality then errno is set
-// to ENOSYS.
-//
-// The argument flags must have access mode O_RDWR.
-
-int pirate_pipe_parse(int gd[2], const char *param, int flags);
-
-//
-// Returns the underlying file descriptor of the gaps
-// channel if the gaps channel is implemented using
-// a file descriptor.
-//
-// On success, the file descriptor is returned.
-// On error -1 is returned, and errno is set appropriately.
-// errno is ENODEV if the gaps channel is not implemented
-// using a file descriptor.
-
-int pirate_get_fd(int gd);
 
 // Returns a reference to the read and write statistics
 // associated with the gaps descriptor.
@@ -592,44 +467,6 @@ ssize_t pirate_write_mtu(int gd);
 // -1 is returned, and errno is set appropriately.
 
 int pirate_close(int gd);
-
-// Listen for incoming requests and incoming control messages.
-
-// Listen on all O_RDONLY channels that are listener channels.
-// A listener channel is identified with the configuration parameter
-// "listener=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,listener=1" is the
-// configuration string for a Unix pipe listener channel.
-//
-// Also listen on all O_RDONLY channels that are control channels.
-// A control channel is identified with the configuration parameter
-// "control=1". For example, "pipe,/tmp/gaps,src=foo,dst=bar,control=1" is the
-// configuration string for a Unix pipe control channel.
-//
-// Yield and control channels must specify the source and
-// destination enclaves using the "src=" and "dst=" configuration
-// parameters.
-//
-// When a listener channel receives data then all registered listeners
-// on the listener channel are called. After the listeners
-// have run then a control message is written to the
-// sender of the data. Then continue to listen.
-//
-// When a control channel receives data then consume
-// the control message and resume execution (return 0).
-//
-// If a listener channel has both ends in the same enclave
-// (opened with pirate_pipe_param() or pirate_pipe_parse())
-// then resume execution after running all the listeners.
-
-int pirate_listen();
-
-// Send a control message to the enclave identified
-// by the enclave name. A call to pirate_yield()
-// should usually be followed by a call to
-// pirate_listen(). The call to pirate_listen() should
-// be omitted when the process is expected to terminate.
-
-int pirate_yield(const char *enclave);
 
 #ifdef __cplusplus
 }

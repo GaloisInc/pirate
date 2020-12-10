@@ -19,7 +19,7 @@ FrameProcessor::FrameProcessor(VideoType videoType, unsigned width, unsigned hei
     mVideoType(videoType),
     mImageWidth(width),
     mImageHeight(height),
-    mIndex(0)
+    mVideoIndex(0)
 {
 
 }
@@ -29,9 +29,11 @@ FrameProcessor::~FrameProcessor()
 
 }
 
-int FrameProcessor::processFrame(FrameBuffer data, size_t length)
+int FrameProcessor::processFrame(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
-    mIndex++;
-    return process(data, length);
+    if (dataStream == VideoData) {
+        mVideoIndex++;
+    }
+    return process(data, length, dataStream);
 }
 

@@ -16,11 +16,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-enum VideoType { JPEG, YUYV, RGBX };
+enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_TRILLIUM, VIDEO_NULL };
+enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows };
-enum OutputType { PiServo, Print };
+enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor };
+enum DataStreamType { VideoData, MetaData };
+enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 
 using FrameBuffer = const unsigned char *;
 
@@ -29,49 +32,81 @@ struct Options
 {
     Options() :
         mVideoDevice("/dev/video0"),
-        mVideoType(JPEG),
+        mVideoInputType(VIDEO_NULL),
+        mVideoOutputType(VIDEO_NULL),
+        mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
         mImageHorizontalFlip(false),
         mImageVerticalFlip(false),
-        mImageMonochrome(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
         mFrameRateNumerator(1),
-        mFrameRateDenominator(1),
+        mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
         mImageOutputMaxFiles(100),
-        mOutputType(PiServo),
-        mInputType(Freespace),
+        mOutputType(NoneOutput),
+        mInputKeyboard(false),
+        mInputFreespace(false),
         mFilesystemProcessor(false),
         mXWinProcessor(false),
-        mAngularPositionLimit(45.0),
-        mVerbose(false)
+        mMetaDataProcessor(false),
+        mH264Encoder(false),
+        mH264EncoderUrl(""),
+        mH264DecoderUrl(""),
+        mTrilliumUrl(""),
+        mPanAxisMin(-45.0),
+        mPanAxisMax(45.0),
+        mTiltAxisMin(-45.0),
+        mTiltAxisMax(45.0),
+        mAngularPositionIncrement(1.0),
+        mVerbose(false),
+        mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
+        mHasInput(false),
+        mHasOutput(false),
+        mGapsRequestChannel(),
+        mGapsResponseChannel()
     {
 
     }
 
     std::string mVideoDevice;
-    VideoType mVideoType;
+    VideoType mVideoInputType;
+    VideoType mVideoOutputType;
+    CodecType mEncoderCodecType;
     unsigned mImageWidth;
     unsigned mImageHeight;
     bool mImageHorizontalFlip;
     bool mImageVerticalFlip;
-    bool mImageMonochrome;
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
-    unsigned mFrameRateNumerator;
-    unsigned mFrameRateDenominator;
+    const unsigned mFrameRateNumerator;
+    const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
     unsigned mImageOutputMaxFiles;
     OutputType mOutputType;
-    InputType mInputType;
+    bool mInputKeyboard;
+    bool mInputFreespace;
     bool mFilesystemProcessor;
     bool mXWinProcessor;
-    float mAngularPositionLimit;
+    bool mMetaDataProcessor;
+    bool mH264Encoder;
+    std::string mH264EncoderUrl;
+    std::string mH264DecoderUrl;
+    std::string mTrilliumUrl;
+    float mPanAxisMin;
+    float mPanAxisMax;
+    float mTiltAxisMin;
+    float mTiltAxisMax;
+    float mAngularPositionIncrement;
     bool mVerbose;
+    int mFFmpegLogLevel;
+    bool mHasInput;
+    bool mHasOutput;
+    std::vector<std::string> mGapsRequestChannel;
+    std::vector<std::string> mGapsResponseChannel;
 };

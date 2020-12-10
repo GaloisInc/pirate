@@ -46,8 +46,15 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
 
     char opt[128];
     const char *name = "ge_eth";
-    const char *addr = "1.2.3.4";
-    const short port = 0x4242;
+    const char *addr1 = "1.2.3.4";
+    const short port1 = 0x4242;
+#ifdef _WIN32
+    const char *addr2 = "0.0.0.0";
+    const short port2 = 0;
+#else
+    const char *addr2 = "5.6.7.8";
+    const short port2 = 0x4243;
+#endif
     const uint32_t message_id = 0x4745;
     const uint32_t mtu = 42;
 
@@ -57,35 +64,51 @@ TEST(ChannelGeEthTest, ConfigurationParser) {
     ASSERT_EQ(-1, rv);
     CROSS_PLATFORM_RESET_ERROR();
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s", name, addr1);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
     CROSS_PLATFORM_RESET_ERROR();
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr, port);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d", name, addr1, port1);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
     ASSERT_EQ(-1, rv);
     CROSS_PLATFORM_RESET_ERROR();
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u", name, addr, port, message_id);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%s", name, addr1, port1, addr2);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
+    ASSERT_EQ(-1, rv);
+    CROSS_PLATFORM_RESET_ERROR();
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%s,%d", name, addr1, port1, addr2, port2);
+    rv = pirate_parse_channel_param(opt, &param);
+    ASSERT_CROSS_PLATFORM_ERROR(EINVAL, WSAEINVAL);
+    ASSERT_EQ(-1, rv);
+    CROSS_PLATFORM_RESET_ERROR();
+
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%s,%d,%u", name, addr1, port1, addr2, port2, message_id);
     rv = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(GE_ETH, param.channel_type);
-    ASSERT_STREQ(addr, ge_eth_param->addr);
-    ASSERT_EQ(port, ge_eth_param->port);
+    ASSERT_STREQ(addr1, ge_eth_param->reader_addr);
+    ASSERT_EQ(port1, ge_eth_param->reader_port);
+    ASSERT_STREQ(addr2, ge_eth_param->writer_addr);
+    ASSERT_EQ(port2, ge_eth_param->writer_port);
     ASSERT_EQ(message_id, ge_eth_param->message_id);
     ASSERT_EQ(0u, ge_eth_param->mtu);
 
-    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%u,mtu=%u", name, addr, port, message_id, mtu);
+    snprintf(opt, sizeof(opt) - 1, "%s,%s,%d,%s,%d,%u,mtu=%u", name, addr1, port1, addr2, port2, message_id, mtu);
     rv  = pirate_parse_channel_param(opt, &param);
     ASSERT_CROSS_PLATFORM_NO_ERROR();
     ASSERT_EQ(0, rv);
     ASSERT_EQ(GE_ETH, param.channel_type);
-    ASSERT_STREQ(addr, ge_eth_param->addr);
-    ASSERT_EQ(port, ge_eth_param->port);
+    ASSERT_STREQ(addr1, ge_eth_param->reader_addr);
+    ASSERT_EQ(port1, ge_eth_param->reader_port);
+    ASSERT_STREQ(addr2, ge_eth_param->writer_addr);
+    ASSERT_EQ(port2, ge_eth_param->writer_port);
     ASSERT_EQ(message_id, ge_eth_param->message_id);
     ASSERT_EQ(mtu, ge_eth_param->mtu);
 }
@@ -98,8 +121,10 @@ public:
         pirate_ge_eth_param_t *param = &Reader.param.channel.ge_eth;
 
         pirate_init_channel_param(GE_ETH, &Reader.param);
-        snprintf(param->addr, sizeof(param->addr) - 1, PIRATE_DEFAULT_UDP_IP_ADDR);
-        param->port = 0x4745;
+        snprintf(param->reader_addr, sizeof(param->reader_addr) - 1, "127.0.0.1");
+        snprintf(param->writer_addr, sizeof(param->writer_addr) - 1, "0.0.0.0");
+        param->reader_port = 0x4745;
+        param->writer_port = 0;
         param->message_id = 0x5F475243;
         unsigned mtu = GetParam();
         if (mtu) {

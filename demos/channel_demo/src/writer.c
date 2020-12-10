@@ -110,11 +110,7 @@ static int writer_init(writer_t *writer) {
         return -1;
     }
 
-    fd = pirate_get_fd(writer->gd);
-    if (fd <= 0) {
-        log_msg(ERROR, "Failed to get channel descriptor");
-        return -1;
-    }
+    fd = writer->gd;
 
     switch (param.channel_type) {
 

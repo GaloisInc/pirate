@@ -28,8 +28,7 @@ public:
     virtual void term() override;
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) override;
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
     std::string buildFilename(unsigned index);

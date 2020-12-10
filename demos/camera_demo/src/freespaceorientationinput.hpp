@@ -27,9 +27,7 @@ class FreespaceOrientationInput : public OrientationInput
 {
 public:
     FreespaceOrientationInput(
-            AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-            float angPosMin = -AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
-            float angPosMax =  AngularPosition<float>::DEFAULT_ANG_POS_LIMIT,
+            CameraOrientationCallbacks angPosCallbacks,
             unsigned periodUs = DEFAULT_PERIOD_US);
     virtual ~FreespaceOrientationInput();
 
@@ -59,12 +57,11 @@ private:
     // Simple weighted average FIR is used for smoothing
     static constexpr unsigned FIR_LEN = 8;   // must be power of 2
     static const float FIR_COEFFS[FIR_LEN];
-    float mPrevAngPos[FIR_LEN];
-    unsigned mFilterIndex;
-    float weightedFilter(float angularPosition);
+    float mPrevPan[FIR_LEN], mPrevTilt[FIR_LEN];
+    unsigned mPanIndex, mTiltIndex;
+    float weightedFilter(float angularPosition, float previous[], unsigned &index);
     static inline unsigned nextFirIndex(unsigned index)
     {
         return (++index) & (FIR_LEN - 1);
     }
 };
-

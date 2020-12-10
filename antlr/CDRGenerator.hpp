@@ -20,7 +20,8 @@
 typedef enum TargetLanguage {
     UNKNOWN,
     C_LANG,
-    CPP_LANG
+    CPP_LANG,
+    DFDL_LANG
 } target_t;
 
 std::string target_as_string(TargetLanguage target);

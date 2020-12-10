@@ -65,6 +65,9 @@ using Req = FixedString<80>;
 using Rsp = FixedString<80>;
 struct CensorService : public BidirService<CensorService, Req, Rsp> {
     Rsp impl(Req str) {
+        if (str.str == "failure") {
+          throw std::exception();
+        }
         censor(str.str);
         return str;
     }

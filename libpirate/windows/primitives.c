@@ -72,20 +72,6 @@ static inline int pirate_channel_type_valid(channel_enum_t t) {
     return 0;
 }
 
-int pirate_enclave_cmpfunc(const void *a, const void *b) {
-    char *s1 = *(char**) a;
-    char *s2 = *(char**) b;
-    if ((s1[0] == 0) && (s2[0] == 0)) {
-        return 0;
-    } else if (s1[0] == 0) {
-        return 1;
-    } else if (s2[0] == 0) {
-        return -1;
-    } else {
-        return strncmp(s1, s2, PIRATE_LEN_NAME);
-    }
-}
-
 void pirate_init_channel_param(channel_enum_t channel_type, pirate_channel_param_t *param) {
     memset(param, 0, sizeof(*param));
     param->channel_type = channel_type;
@@ -141,26 +127,6 @@ int pirate_get_channel_param(int gd, pirate_channel_param_t *param) {
     return 0;
 }
 
-pirate_channel_param_t *pirate_get_channel_param_ref(int gd) {
-    pirate_channel_t *channel = NULL;
-
-    if ((channel = pirate_get_channel(gd)) == NULL) {
-        return NULL;
-    }
-
-    return &channel->param;
-}
-
-common_ctx *pirate_get_common_ctx_ref(int gd) {
-    pirate_channel_t *channel = NULL;
-
-    if ((channel = pirate_get_channel(gd)) == NULL) {
-        return NULL;
-    }
-
-    return &channel->ctx.common;
-}
-
 int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *desc, int len) {
     pirate_get_channel_description_t unparse_func;
     if (pirate_channel_type_valid(param->channel_type) != 0) {
@@ -195,11 +161,6 @@ static int pirate_next_gd() {
         return -1;
     }
     return next;
-}
-
-// Declared in libpirate_internal.h for testing purposes only
-void pirate_reset_gd() {
-    next_gd = 0;
 }
 
 static int pirate_open(pirate_channel_t *channel) {
@@ -268,10 +229,6 @@ int pirate_open_parse(const char *param, int flags) {
     return pirate_open_param(&vals, flags);
 }
 
-int pirate_pipe_channel_type(channel_enum_t channel_type) {
-    return 0;
-}
-
 int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     (void) mtu;
 
@@ -282,21 +239,6 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu) {
     default:
         return 0;
     }
-}
-
-int pirate_pipe_param(int gd[2], pirate_channel_param_t *param, int flags) {
-    SetLastError(WSAEOPNOTSUPP);
-    return -1;
-}
-
-int pirate_pipe_parse(int gd[2], const char *param, int flags) {
-    pirate_channel_param_t vals;
-
-    if (pirate_parse_channel_param(param, &vals) < 0) {
-        return -1;
-    }
-
-    return pirate_pipe_param(gd, &vals, flags);
 }
 
 int pirate_close(int gd) {

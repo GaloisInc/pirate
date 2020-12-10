@@ -84,11 +84,7 @@ static int reader_init(reader_t *reader) {
         return -1;
     }
 
-    fd = pirate_get_fd(reader->common.gd);
-    if (fd <= 0) {
-        log_msg(ERROR, "Failed to get channel descriptor");
-        return -1;
-    }
+    fd = reader->common.gd;
 
     switch (param.channel_type) {
 

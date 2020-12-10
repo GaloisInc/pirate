@@ -18,6 +18,7 @@
 #include "options.hpp"
 #include "orientationoutput.hpp"
 #include "piservoorientationoutput.hpp"
+#include "trilliumorientationoutput.hpp"
 
 class OrientationOutputCreator
 {
@@ -30,14 +31,15 @@ public:
         switch (options.mOutputType)
         {
 #ifdef PIGPIO_PRESENT
-            case PiServo:
-                return new PiServoOrientationOutput(PI_SERVO_PIN,
-                    options.mAngularPositionLimit, options.mVerbose);
+            case PiServoOutput:
+                return new PiServoOrientationOutput(PI_SERVO_PIN, options);
 #endif
-            case Print:
+            case TrilliumOutput:
+                return new TrilliumOrientationOutput(options);
+            case PrintOutput:
+            case NoneOutput:
             default:
-                return new OrientationOutput(options.mAngularPositionLimit, options.mVerbose);
+                return new BaseOrientationOutput(options);
         }
-
     }
 };

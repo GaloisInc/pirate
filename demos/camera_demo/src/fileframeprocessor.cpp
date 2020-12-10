@@ -24,7 +24,7 @@
 #include "fileframeprocessor.hpp"
 
 FileFrameProcessor::FileFrameProcessor(const Options& options) :
-    FrameProcessor(options.mVideoType, options.mImageWidth, options.mImageHeight),
+    FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
     mOutputDirectory(options.mImageOutputDirectory),
     mImageOutputMaxFiles(options.mImageOutputMaxFiles),
     mVerbose(options.mVerbose)
@@ -47,23 +47,20 @@ void FileFrameProcessor::term()
 
 }
 
-unsigned char* FileFrameProcessor::getFrame(unsigned index, VideoType videoType) {
-    (void) index;
-    (void) videoType;
-    return nullptr;
-}
-
 std::string FileFrameProcessor::buildFilename(unsigned index) {
     std::stringstream ss;
 
     ss << mOutputDirectory << "/capture_" 
        << std::setfill('0') << std::setw(4) << index;
     switch (mVideoType) {
-        case JPEG:
+        case VIDEO_JPEG:
             ss << ".jpg";
             break;
-        case YUYV:
+        case VIDEO_YUYV:
             ss << ".raw";
+            break;
+        case VIDEO_H264:
+            ss << ".h264";
             break;
         default:
             std::cout << "Unknown video type " << mVideoType << std::endl;
@@ -73,10 +70,13 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
     return ss.str();
 }
 
-int FileFrameProcessor::process(FrameBuffer data, size_t length)
+int FileFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
+    if (dataStream != VideoData) {
+        return 0;
+    }
     // Save the image file
-    std::string filename = buildFilename(mIndex);
+    std::string filename = buildFilename(mVideoIndex);
     if (filename.empty())
     {
         return -1;
@@ -98,8 +98,8 @@ int FileFrameProcessor::process(FrameBuffer data, size_t length)
         return -1;
     }
 
-    if ((mImageOutputMaxFiles > 0) && (mIndex > mImageOutputMaxFiles)) {
-        unsigned prevIndex = mIndex - mImageOutputMaxFiles;
+    if ((mImageOutputMaxFiles > 0) && (mVideoIndex > mImageOutputMaxFiles)) {
+        unsigned prevIndex = mVideoIndex - mImageOutputMaxFiles;
         std::string prevFilename = buildFilename(prevIndex);
         if (!prevFilename.empty()) {
             remove(prevFilename.c_str());

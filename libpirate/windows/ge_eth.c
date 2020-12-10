@@ -154,13 +154,25 @@ int pirate_ge_eth_parse_param(char *str, void *_param) {
         SetLastError(WSAEINVAL);
         return -1;
     }
-    strncpy_s(param->addr, sizeof(param->addr) - 1, ptr, _TRUNCATE);
+    strncpy_s(param->reader_addr, sizeof(param->reader_addr) - 1, ptr, _TRUNCATE);
 
     if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         SetLastError(WSAEINVAL);
         return -1;
     }
-    param->port = strtos(ptr, NULL, 10);
+    param->reader_port = strtos(ptr, NULL, 10);
+
+    if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    strncpy_s(param->writer_addr, sizeof(param->writer_addr) - 1, ptr, _TRUNCATE);
+
+    if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    param->writer_port = strtos(ptr, NULL, 10);
 
     if ((ptr = strtok_s(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         SetLastError(WSAEINVAL);
@@ -194,8 +206,10 @@ int pirate_ge_eth_get_channel_description(const void *_param, char *desc, int le
     if ((param->mtu != 0) && (param->mtu != PIRATE_DEFAULT_GE_ETH_MTU)) {
         snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
     }
-    return snprintf(desc, len, "ge_eth,%s,%u,%u%s", param->addr,
-        param->port, param->message_id, mtu_str);
+    return snprintf(desc, len, "ge_eth,%s,%u,%s,%u,%u%s",
+        param->reader_addr, param->reader_port,
+        param->writer_addr, param->writer_port,
+        param->message_id, mtu_str);
 }
 
 static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
@@ -210,8 +224,8 @@ static int ge_eth_reader_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
-    InetPton(AF_INET, param->addr, &addr.sin_addr.s_addr);
-    addr.sin_port = htons(param->port);
+    InetPton(AF_INET, param->reader_addr, &addr.sin_addr.s_addr);
+    addr.sin_port = htons(param->reader_port);
 
     int enable = 1;
     rv = setsockopt(ctx->sock, SOL_SOCKET, SO_REUSEADDR, (char*) &enable, sizeof(int));
@@ -259,8 +273,8 @@ static int ge_eth_writer_open(pirate_ge_eth_param_t *param, ge_eth_ctx *ctx) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    InetPton(AF_INET, param->addr, &addr.sin_addr.s_addr);
-    addr.sin_port = htons(param->port);
+    InetPton(AF_INET, param->reader_addr, &addr.sin_addr.s_addr);
+    addr.sin_port = htons(param->reader_port);
     rv = connect(ctx->sock, (const struct sockaddr*) &addr, sizeof(addr));
     if (rv == SOCKET_ERROR) {
         err = GetLastError();
@@ -291,7 +305,15 @@ int pirate_ge_eth_open(void *_param, void *_ctx) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_ge_eth_init_param(param);
-    if (param->port <= 0) {
+    if (param->reader_port <= 0) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    if (strncmp(param->writer_addr, "0.0.0.0", strlen("0.0.0.0")) != 0) {
+        SetLastError(WSAEINVAL);
+        return -1;
+    }
+    if (param->writer_port != 0) {
         SetLastError(WSAEINVAL);
         return -1;
     }

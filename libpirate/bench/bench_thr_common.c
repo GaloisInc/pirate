@@ -190,7 +190,7 @@ static int bench_thr_open(bench_thr_t *bench, int flags) {
     }
 
     err = errno;
-    fd = pirate_get_fd(bench->test_ch.gd);
+    fd = bench->test_ch.gd;
     errno = err;
     switch (param.channel_type) {
         case PIPE:

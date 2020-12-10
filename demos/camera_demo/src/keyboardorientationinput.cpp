@@ -23,10 +23,10 @@
 #include <iostream>
 
 KeyboardOrientationInput::KeyboardOrientationInput(
-        AngularPosition<float>::UpdateCallback angPosUpdateCallback,
-        float angPosMin, float angPosMax, float angIncrement) :
-    OrientationInput(angPosUpdateCallback, angPosMin, angPosMax),
-    mAngIncrement(angIncrement),
+        const Options& options, CameraOrientationCallbacks angPosCallbacks) :
+    OrientationInput(angPosCallbacks),
+    mAngIncrement(options.mAngularPositionIncrement),
+    mTermiosInit(false),
     mPollThread(nullptr),
     mPoll(false)
 {
@@ -40,7 +40,7 @@ KeyboardOrientationInput::~KeyboardOrientationInput()
 
 int KeyboardOrientationInput::init()
 {
-    // Setup stdin to be read one key at a time 
+    // Setup stdin to be read one key at a time
     int rv = tcgetattr(0, &mTermiosBackup);
     if (rv)
     {
@@ -59,11 +59,12 @@ int KeyboardOrientationInput::init()
         std::perror("tcsetattr failed");
         return -1;
     }
+    mTermiosInit = true;
 
     // Start the reading thread
     mPoll = true;
     mPollThread = new std::thread(&KeyboardOrientationInput::pollThread, this);
-    
+
     return 0;
 }
 
@@ -78,11 +79,14 @@ void KeyboardOrientationInput::term()
         mPollThread = nullptr;
     }
 
-    // Restore stdio defaults
-    int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
-    if (rv)
+    if (mTermiosInit)
     {
-        std::perror("tcsetattr failed");
+        // Restore stdio defaults
+        int rv = tcsetattr(0, TCSANOW, &mTermiosBackup);
+        if (rv)
+        {
+            std::perror("tcsetattr failed");
+        }
     }
 }
 
@@ -90,10 +94,11 @@ void KeyboardOrientationInput::pollThread()
 {
     while (mPoll)
     {
+        PanTilt panTiltUpdate = PanTilt();
         fd_set fdSet;
         FD_ZERO(&fdSet);
         FD_SET(0, &fdSet); // stdin
-        
+
         struct timeval timeout;
         timeout.tv_sec = 0;
         timeout.tv_usec = 100000;
@@ -105,7 +110,7 @@ void KeyboardOrientationInput::pollThread()
             std::perror("select failed");
             mPoll = false;
             return;
-        } 
+        }
         else if (rv == 0)
         {
             continue;       // Timeout
@@ -120,20 +125,26 @@ void KeyboardOrientationInput::pollThread()
             return;
         }
 
-        float angularPosition = getAngularPosition();
         switch (c)
         {
+            case UP:
+                panTiltUpdate.tilt = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
+            case DOWN:
+                panTiltUpdate.tilt = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
+                break;
             case LEFT:
-                angularPosition -= mAngIncrement;
+                panTiltUpdate.pan = -mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             case RIGHT:
-                angularPosition += mAngIncrement;
+                panTiltUpdate.pan = mAngIncrement;
+                mCallbacks.mUpdate(panTiltUpdate);
                 break;
             default:
                 continue;
         }
-
-        setAngularPosition(angularPosition);
     }
 }
-

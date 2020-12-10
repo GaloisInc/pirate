@@ -26,28 +26,22 @@
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
+#include "videosource.hpp"
 
-class VideoSensor
+class VideoSensor : public VideoSource
 {
 public:
-    VideoSensor(const Options& options, const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors, const ImageConvert& imageConvert);
+    VideoSensor(const Options& options,
+        const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors);
     virtual ~VideoSensor();
 
-    virtual int init();
-    virtual void term();
+    virtual int init() override;
+    virtual void term() override;
 
-    virtual int captureEnable();
-    virtual int captureDisable();
 private:
-    const std::vector<std::shared_ptr<FrameProcessor>>& mFrameProcessors;
-    const ImageConvert& mImageConvert;
-    
     const std::string mDevicePath;
-    const VideoType mVideoType;
     const bool mFlipHorizontal;
     const bool mFlipVertical;
-    unsigned mImageWidth;
-    unsigned mImageHeight;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
 
@@ -76,6 +70,8 @@ private:
     int uninitVideoDevice();
     int initCaptureBuffers();
     int releaseCaptureBuffers();
+    int captureEnable();
+    int captureDisable();
 
     std::thread *mPollThread;
     bool mPoll;

@@ -15,28 +15,48 @@
 
 #pragma once
 
-#include "orientation.hpp"
+#include "pantilt.hpp"
 
-using OrientationUpdateCallback = AngularPosition<float>::UpdateCallback;
+#include <functional>
+#include <mutex>
 
-class OrientationOutput : public AngularPosition<float>
+struct CameraOrientationCallbacks
 {
-public:
-    OrientationOutput(float angularPositionLimit = DEFAULT_ANG_POS_LIMIT,
-                        bool verbose = false);
-    virtual ~OrientationOutput();
+    using GetCallback = std::function<PanTilt()>;
+    using SetCallback = std::function<void(PanTilt)>;
+    using UpdateCallback = std::function<void(PanTilt)>;
 
-    virtual int init();
-    virtual void term();
+    CameraOrientationCallbacks(
+        GetCallback get,
+        SetCallback set,
+        UpdateCallback update) :
+        mGet(get), mSet(set), mUpdate(update)
+    {
 
-    virtual bool setAngularPosition(float angularPosition) override;
+    }
 
-    const OrientationUpdateCallback& getUpdateCallback(); 
-protected:
-    const bool mVerbose;
-private:
-    static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
-
-    const OrientationUpdateCallback mUpdateCallback;
+    GetCallback mGet;
+    SetCallback mSet;
+    UpdateCallback mUpdate;
 };
 
+class OrientationOutput
+{
+public:
+    OrientationOutput();
+    virtual ~OrientationOutput();
+
+    virtual int init() = 0;
+    virtual void term() = 0;
+
+    virtual PanTilt getAngularPosition() = 0;
+    virtual void setAngularPosition(PanTilt angularPosition) = 0;
+    virtual void updateAngularPosition(PanTilt positionUpdate) = 0;
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) = 0;
+
+    const CameraOrientationCallbacks& getCallbacks();
+
+    static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
+private:
+    const CameraOrientationCallbacks mCallbacks;
+};

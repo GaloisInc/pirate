@@ -56,7 +56,7 @@ set_target_properties(libpal_shared
 target_include_directories(libpal_shared PRIVATE include)
 target_link_libraries(libpal_shared pirate)
 set_property(TARGET libpal_shared PROPERTY PREFIX "")
-target_compile_options(libpal_shared PRIVATE SHELL:-Wall SHELL:-Werror)
+target_compile_options(libpal_shared PRIVATE -Wall -Werror)
 
 install(TARGETS libpal_shared DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/pal DESTINATION include)
@@ -79,8 +79,8 @@ target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml pirate)
-target_compile_options(exepal PRIVATE SHELL:-Wall SHELL:-Werror)
+target_link_libraries(exepal libcyaml pirate pthread rt)
+Target_compile_options(exepal PRIVATE -Wall -Werror)
 
 install(TARGETS exepal DESTINATION bin)
 install(FILES include/pal/pal.h DESTINATION include/pal)

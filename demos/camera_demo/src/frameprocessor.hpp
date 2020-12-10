@@ -27,15 +27,14 @@ public:
 
     virtual int init() = 0;
     virtual void term() = 0;
-    int processFrame(FrameBuffer data, size_t length);
-    virtual unsigned char* getFrame(unsigned index, VideoType videoType) = 0;
+    int processFrame(FrameBuffer data, size_t length, DataStreamType dataStream);
 
     const VideoType mVideoType;
     const unsigned  mImageWidth;
     const unsigned  mImageHeight;
 
 protected:
-    unsigned    mIndex;
-    virtual int process(FrameBuffer data, size_t length) = 0;
+    unsigned    mVideoIndex;
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) = 0;
 
 };

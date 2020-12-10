@@ -20,12 +20,10 @@
 #include <iostream>
 #include "piservoorientationoutput.hpp"
 
-PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, float angLimit,
-        bool verbose, bool gpioLibInit) :
-    OrientationOutput(angLimit, verbose),
+PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, const Options& options) :
+    BaseOrientationOutput(options),
     mServoPin(servoPin),
-    mGpioLibInit(gpioLibInit)
-
+    mGpioLibInit(true)
 {
 
 }
@@ -85,20 +83,6 @@ void PiServoOrientationOutput::term()
     }
 }
 
-bool PiServoOrientationOutput::setAngularPosition(float angularPosition)
-{
-    OrientationOutput::setAngularPosition(angularPosition);
-    int rv = gpioServo(mServoPin, angleToServo(getAngularPosition()));
-
-    if (rv < 0)
-    {
-        std::perror("Failed to set servo position");
-        return false;
-    }
-
-    return true;
-}
-
 int PiServoOrientationOutput::angleToServo(float angle)
 {
     static const float slope =
@@ -107,4 +91,23 @@ int PiServoOrientationOutput::angleToServo(float angle)
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
     // Fip the sign. The camera is mounted upside-down.
     return -1.0 * slope * angle + off;
+}
+
+bool PiServoOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
+{
+    // ignore changes in tilt angle
+    return p1.pan == p2.pan;
+}
+
+bool PiServoOrientationOutput::applyAngularPosition(PanTilt angularPosition)
+{
+    int rv = gpioServo(mServoPin, angleToServo(angularPosition.pan));
+
+    if (rv < 0)
+    {
+        std::perror("Failed to set servo position");
+        return false;
+    }
+
+    return true;
 }
