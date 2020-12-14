@@ -37,7 +37,7 @@
 
 static struct udphdr* locate_udpheader(struct xdp_md *ctx) {
    void *data = (void *)(long)ctx->data;
-   void *data_end = (void *)(long)ctx->data_end;
+   const void *data_end = (void *)(long)ctx->data_end;
    struct ethhdr *eth = data;
    // bounds check for BPF virtual machine
    if ((void*)eth + sizeof(*eth) <= data_end) {
@@ -47,7 +47,7 @@ static struct udphdr* locate_udpheader(struct xdp_md *ctx) {
          if (ip->protocol == IPPROTO_UDP) {
             struct udphdr *udp = (void*)ip + sizeof(*ip);
             // bounds check for BPF virtual machine 
-            if ((void*)udp + sizeof(*udp) <= data_end) {
+            if ((void*)udp + sizeof(*udp) < data_end) {
                return udp;
             }
          }
@@ -56,33 +56,48 @@ static struct udphdr* locate_udpheader(struct xdp_md *ctx) {
    return NULL;
 }
 
+static uint8_t* klv_get_length(uint8_t *pData, uint64_t *pLength, void* data_end) {
+   if (((void*) pData) > data_end) {
+      return pData;
+   }
+   /*
+   if (*pData & 0x80) {
+      int bytes = *pData & 0x7F;
+      pData++;
+      *pLength = 0;
+      for (int i = 0; (bytes > 0) && (i < 4) && (pLength <= data_end); i++, bytes--) {
+         *pLength |= ((uint64_t)*pData) << (bytes * 8);
+         pData++;
+      }
+      */
+   *pLength = *pData;
+   return pData;
+}
+
 int mpegts_filter(struct xdp_md *ctx) {
-   uint8_t mpeg_adapt_payload = 0;
-   uint8_t mpeg_payload_only = 0;   
-   void *data_end = (void*)(long)ctx->data_end;
-   struct udphdr* udp_header = locate_udpheader(ctx);
+   const void *data_end = (void*)(long)ctx->data_end;
+   const struct udphdr* udp_header = locate_udpheader(ctx);
    if (udp_header == NULL) {
       return XDP_PASS;
    }
-   void *packet_body = (void*)udp_header + sizeof(struct udphdr);
-   for (int i = 0; i < 8; i++) {
-      void* packet_end = packet_body + MPEG_TS_PACKET_SIZE;
+   #pragma clang loop unroll(full)
+   for (size_t i = 0; i < 7; i++) {
+      const void* packet_body = (void*)udp_header + sizeof(struct udphdr) + i * MPEG_TS_PACKET_SIZE;
+      const void* packet_end = packet_body + MPEG_TS_PACKET_SIZE;
       uint16_t up_to_pid; /* First 16 bits after sync_byte up to and including PID. */
       uint8_t  after_pid;
-      uint8_t* packet_bytes = (uint8_t*) packet_body;
-      uint8_t* packet_payload;
+      const uint8_t* packet_bytes = (uint8_t*) packet_body;
 
       uint16_t pid;
       uint8_t  adaptation_field_control;
+      uint16_t total_length = 0;
+      uint8_t  offset = 34;
 
       // if we do not have a complete MPEG-TS packet then stop
       // bounds check for BPF virtual machine
-      if (packet_end > data_end) {
+      if ((packet_end - 1) > data_end) {
          break;
       }
-
-      // prepare packet_body for the next iteration of the loop
-      packet_body += MPEG_TS_PACKET_SIZE;
 
       // if the MPEG-TS sync byte is invalid then skip this packet
       if (packet_bytes[0] != MPEG_TS_SYNC_BYTE) {
@@ -96,31 +111,53 @@ int mpegts_filter(struct xdp_md *ctx) {
       if (pid != METADATA_PID) {
          continue;
       }
-      switch (adaptation_field_control) {
-         case 1:
-            // no adaptation field, payload only 
-            packet_payload = packet_bytes + 4;
-            mpeg_payload_only = 1;
-            break;
-         case 3:
-            // adaptation field followed by payload
-            packet_payload = packet_bytes + 4 + packet_bytes[4];
-            mpeg_adapt_payload = 1;
-            break;
-         default:
-            // packet does not contain any data
-            continue;
-      }
-      // bounds check for BPF virtual machine
-      if (((void*) packet_payload) >= packet_end) {
+      if (adaptation_field_control != 1) {
          continue;
       }
-   }
-   if (mpeg_payload_only) {
-       bpf_trace_printk("got a mpeg-ts payload only packet\n");
-   }
-   if (mpeg_adapt_payload) {
-       bpf_trace_printk("got a mpeg-ts adaptation and payload packet\n");
+      // 4 bytes for the MPEG TS header
+      // 9 bytes for the required PES packet header information
+      // 5 bytes of additional PES header
+      // 16 bytes of mystery KLV data that is skipped
+      if (((void*) (packet_bytes + offset)) >= packet_end) {
+         return XDP_DROP;
+      }
+      if (packet_bytes[offset] < 0x80) {
+         total_length = packet_bytes[offset];
+         offset++;
+      } else if (packet_bytes[offset] == 0x81) {
+         if (((void*) (packet_bytes + offset + 1)) < packet_end) {
+            total_length = packet_bytes[offset + 1];
+         }
+         offset += 2;
+      } else if (packet_bytes[offset] == 0x82) {
+         if (((void*) (packet_bytes + offset + 2)) < packet_end) {
+            total_length = packet_bytes[offset + 1];
+            total_length <<= 8;
+            total_length += packet_bytes[offset + 2];
+         }
+         offset += 3;
+      } else if (packet_bytes[offset] == 0x83) {
+         if (((void*) (packet_bytes + offset + 3)) < packet_end) {
+            total_length = packet_bytes[offset + 1];
+            total_length <<= 8;
+            total_length += packet_bytes[offset + 2];
+            total_length <<= 8;
+            total_length += packet_bytes[offset + 3];
+         }
+         offset += 4;
+      } else {
+         bpf_trace_printk("unexpected KLV length prefix %d\n", packet_bytes[offset]);
+         return XDP_DROP;
+      }
+      if (((void*) (packet_bytes + offset)) >= packet_end) {
+         return XDP_PASS;
+      }
+      bpf_trace_printk("KLV total length %d\n", total_length);
+      bpf_trace_printk("KLV key %d\n", packet_bytes[offset]);
+      // This is an assumption that the latitude and longitude
+      // are present in the first metadata MPEG-TS packet that is
+      // inside the UDP packet.
+      return XDP_PASS;
    }
    return XDP_PASS;
 }
