@@ -154,6 +154,81 @@ int mpegts_filter(struct xdp_md *ctx) {
       }
       bpf_trace_printk("KLV total length %d\n", total_length);
       bpf_trace_printk("KLV key %d\n", packet_bytes[offset]);
+      offset++;
+      if (((void*) (packet_bytes + offset)) >= packet_end) {
+         return XDP_PASS;
+      }
+      uint8_t value_length = packet_bytes[offset];
+      bpf_trace_printk("KLV value length %d\n", value_length);
+      switch (value_length) {
+         case 0:
+            offset += 1;
+            break;
+         case 1:
+            offset += 2;
+            break;
+         case 2:
+            offset += 3;
+            break;
+         case 3:
+            offset += 4;
+            break;
+         case 4:
+            offset += 5;
+            break;
+         case 5:
+            offset += 6;
+            break;
+         case 6:
+            offset += 7;
+            break;
+         case 7:
+            offset += 8;
+            break;
+         case 8:
+            offset += 8;
+            offset += 1;
+            break;
+         case 9:
+            offset += 8;
+            offset += 2;
+            break;
+         case 10:
+            offset += 8;
+            offset += 3;
+            break;
+         case 11:
+            offset += 8;
+            offset += 4;
+            break;
+         case 12:
+            offset += 8;
+            offset += 5;
+            break;
+         case 13:
+            offset += 8;
+            offset += 6;
+            break;
+         case 14:
+            offset += 8;
+            offset += 7;
+            break;
+         case 15:
+            offset += 8;
+            offset += 8;
+            break;
+         case 16:
+            offset += 8;
+            offset += 8;
+            offset += 1;
+            break;
+         default:
+            return XDP_DROP;
+      }
+      if (((void*) (packet_bytes + offset)) >= packet_end) {
+         return XDP_PASS;
+      }      
+      bpf_trace_printk("KLV key %d\n", packet_bytes[offset]);
       // This is an assumption that the latitude and longitude
       // are present in the first metadata MPEG-TS packet that is
       // inside the UDP packet.
