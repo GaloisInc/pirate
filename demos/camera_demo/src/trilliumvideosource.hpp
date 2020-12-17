@@ -38,6 +38,6 @@ public:
     virtual int init() override;
     virtual void term() override;
 private:
-    const std::string mTrilliumUrl;
+    const std::string mTrilliumIpAddress;
     int mSockFd;
 };

@@ -13,12 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include <cstring>
 
 #include "trilliumorientationoutput.hpp"
 #include "trilliumutilities.hpp"
@@ -30,7 +25,7 @@
 
 TrilliumOrientationOutput::TrilliumOrientationOutput(const Options& options) :
     BaseOrientationOutput(options),
-    mTrilliumUrl(options.mTrilliumUrl),
+    mTrilliumIpAddress(options.mTrilliumIpAddress),
     mSockFd(-1)
 {
 }
@@ -42,12 +37,13 @@ TrilliumOrientationOutput::~TrilliumOrientationOutput()
 
 int TrilliumOrientationOutput::init()
 {
-    return trilliumConnectUDPSocket(mTrilliumUrl, mSockFd);
+    return trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
 }
 
 void TrilliumOrientationOutput::term()
 {
-    if (mSockFd >= 0) {
+    if (mSockFd >= 0)
+    {
         close(mSockFd);
     }
 }
@@ -55,27 +51,21 @@ void TrilliumOrientationOutput::term()
 
 bool TrilliumOrientationOutput::applyAngularPosition(PanTilt angularPosition)
 {
-    OrionCmd_t orionCmd;
-    OrionPkt_t pktOut;
-    ssize_t rv;
+    OrionCmd_t cmd;
+    OrionPkt_t pkt;
 
-    if (mSockFd < 0) {
+    if (mSockFd < 0)
+    {
         return false;
     }
 
-    orionCmd.Target[0] = deg2radf(angularPosition.pan);
-    orionCmd.Target[1] = deg2radf(angularPosition.tilt);
-    orionCmd.Mode = ORION_MODE_POSITION;
-    // TODO test the camera with orionCmd.Stabilized = 1
-    orionCmd.Stabilized = 0;
-    orionCmd.ImpulseTime = 0;
+    std::memset(&cmd, 0, sizeof(cmd));
+    cmd.Target[0] = deg2radf(angularPosition.pan);
+    cmd.Target[1] = deg2radf(angularPosition.tilt);
+    cmd.Mode = ORION_MODE_POSITION;
+    cmd.Stabilized = 0;
+    cmd.ImpulseTime = 0;
 
-    encodeOrionCmdPacket(&pktOut, &orionCmd);
-
-    rv = send(mSockFd, (void*) &pktOut, pktOut.Length + ORION_PKT_OVERHEAD, 0);
-    if (rv < 0) {
-        perror("Trillium send command error");
-        return false;
-    }
-    return true;
+    encodeOrionCmdPacket(&pkt, &cmd);
+    return trilliumPktSend(mSockFd, pkt) == 0;
 }

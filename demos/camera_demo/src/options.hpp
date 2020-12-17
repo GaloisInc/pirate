@@ -56,7 +56,7 @@ struct Options
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
-        mTrilliumUrl(""),
+        mTrilliumIpAddress(""),
         mPanAxisMin(-45.0),
         mPanAxisMax(45.0),
         mTiltAxisMin(-45.0),
@@ -97,7 +97,7 @@ struct Options
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
-    std::string mTrilliumUrl;
+    std::string mTrilliumIpAddress;
     float mPanAxisMin;
     float mPanAxisMax;
     float mTiltAxisMin;

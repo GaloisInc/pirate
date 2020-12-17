@@ -30,6 +30,6 @@ protected:
     virtual bool applyAngularPosition(PanTilt angularPosition) override;
 
 private:
-    const std::string mTrilliumUrl;
+    const std::string mTrilliumIpAddress;
     int mSockFd;
 };
