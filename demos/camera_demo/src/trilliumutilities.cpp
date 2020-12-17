@@ -34,6 +34,7 @@ int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
     uint32_t address = INADDR_BROADCAST;
     struct sockaddr_in sock_addr;
     int enable = 1;
+    struct timeval tv;
 
     // Validate the address
     rv = inet_pton(AF_INET, trilliumIpAddress.c_str(), &address);
@@ -82,6 +83,15 @@ int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
     {
         std::cerr << "Connect failed" << std::endl;
         goto err;
+    }
+
+    // Set the receive timeout to 1 second
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    if (setsockopt(sockFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+    {
+        std::cerr << "Failed to set socket receive timeout" << std::endl;
+        return -1;
     }
 
     // Success

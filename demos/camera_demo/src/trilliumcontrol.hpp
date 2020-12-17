@@ -16,12 +16,13 @@
 #pragma once
 
 #include "baseorientationoutput.hpp"
+#include "orion-sdk/OrionPublicPacketShim.hpp"
 
-class TrilliumOrientationOutput : public BaseOrientationOutput
+class TrilliumControl : public BaseOrientationOutput
 {
 public:
-    TrilliumOrientationOutput(const Options& options);
-    virtual ~TrilliumOrientationOutput();
+    TrilliumControl(const Options& options);
+    virtual ~TrilliumControl();
 
     virtual int init() override;
     virtual void term() override;
@@ -32,4 +33,12 @@ protected:
 private:
     const std::string mTrilliumIpAddress;
     int mSockFd;
+
+    const bool mVerbose;
+    std::thread *mReceiveThread;
+    bool mReceive;
+    void reveiveThread();
+    static void processTrilliumPacket(OrionPkt_t& pkt);
+    static void processSoftwareDiagnostics(OrionPkt_t& pkt);
+    static void processGeolocateTelemetry(OrionPkt_t& pkt);
 };
