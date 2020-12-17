@@ -44,6 +44,7 @@ TrilliumControl::~TrilliumControl()
 int TrilliumControl::init()
 {
     int rv = -1;
+    PanTilt initialPos(0.0, 0.0);
 
     rv = trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
     if (rv != 0)
@@ -53,6 +54,16 @@ int TrilliumControl::init()
 
     mReceive = true;
     mReceiveThread = new std::thread(&TrilliumControl::reveiveThread, this);
+
+    // Trillium needs to be told twice
+    for (int i = 0 ; i < 2; i++)
+    {
+        if (!applyAngularPosition(initialPos))
+        {
+            return -1;
+        }
+        usleep(1000);
+    }
 
     return 0;
 }
