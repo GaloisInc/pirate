@@ -91,7 +91,7 @@ int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
     if (setsockopt(sockFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
     {
         std::cerr << "Failed to set socket receive timeout" << std::endl;
-        return -1;
+        goto err;
     }
 
     // Success
