@@ -36,7 +36,7 @@ set(SRCS
     src/orientationoutput.cpp
     src/baseorientationoutput.cpp
     src/remoteorientationoutput.cpp
-    src/trilliumorientationoutput.cpp
+    src/trilliumcontrol.cpp
     src/trilliumutilities.cpp
     src/videosource.cpp
     src/videosensor.cpp
