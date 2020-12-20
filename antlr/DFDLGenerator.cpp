@@ -40,7 +40,7 @@ add_element(Node *parent, char const* name)
 void
 set_defaults(Element* defaults)
 {
-    defaults->SetAttribute("alignment", "1");
+    defaults->SetAttribute("alignment", "8");
     defaults->SetAttribute("alignmentUnits", "bits");
     defaults->SetAttribute("binaryBooleanFalseRep", "0");
     defaults->SetAttribute("binaryBooleanTrueRep", "1");
@@ -84,7 +84,6 @@ add_primitive_type(
     simpleType->SetAttribute("name", name);
     simpleType->SetAttribute("dfdl:length", size);
     simpleType->SetAttribute("dfdl:lengthKind", "explicit");
-    simpleType->SetAttribute("dfdl:alignment", size);
     add_element(simpleType, "xs:restriction")->SetAttribute("base", type);
 }
 
@@ -93,14 +92,14 @@ add_primitive_types(Element* schema)
 {
     add_primitive_type(schema, "float", "xs:float", "32");
     add_primitive_type(schema, "double", "xs:double", "64");
-    add_primitive_type(schema, "int8", "xs:integer", "8");
-    add_primitive_type(schema, "int16", "xs:integer", "16");
+    add_primitive_type(schema, "int8", "xs:byte", "8");
+    add_primitive_type(schema, "int16", "xs:short", "16");
     add_primitive_type(schema, "int32", "xs:integer", "32");
-    add_primitive_type(schema, "int64", "xs:integer", "64");
-    add_primitive_type(schema, "uint8", "xs:nonNegativeInteger", "8");
-    add_primitive_type(schema, "uint16", "xs:nonNegativeInteger", "16");
-    add_primitive_type(schema, "uint32", "xs:nonNegativeInteger", "32");
-    add_primitive_type(schema, "uint64", "xs:nonNegativeInteger", "64");
+    add_primitive_type(schema, "int64", "xs:long", "64");
+    add_primitive_type(schema, "uint8", "xs:unsignedByte", "8");
+    add_primitive_type(schema, "uint16", "xs:unsignedShort", "16");
+    add_primitive_type(schema, "uint32", "xs:unsingedInteger", "32");
+    add_primitive_type(schema, "uint64", "xs:unsignedLong", "64");
     add_primitive_type(schema, "boolean", "xs:boolean", "8");
 }
 
@@ -148,53 +147,6 @@ type_size(TypeSpec* type)
             return acc;
         }
         default: not_implemented("type_size of unspecified type");
-    }
-}
-
-int
-type_alignment(TypeSpec* type)
-{
-    if (auto * typeref = dynamic_cast<TypeReference*>(type)) {
-        return type_alignment(typeref->child);
-    }
-
-    switch (type->typeOf()) {
-        case CDRTypeOf::ENUM_T: not_implemented("type_alignment of enum");
-        case CDRTypeOf::LONG_DOUBLE_T: not_implemented("type_alignment of enum");
-        case CDRTypeOf::MODULE_T: not_implemented("type_alignment of module");
-        case CDRTypeOf::ERROR_T: not_implemented("type_alignment of error");
-        case CDRTypeOf::FLOAT_T: return 32;
-        case CDRTypeOf::DOUBLE_T: return 64;
-        case CDRTypeOf::TINY_T: return 8;
-        case CDRTypeOf::SHORT_T: return 16;
-        case CDRTypeOf::LONG_T: return 32;
-        case CDRTypeOf::LONG_LONG_T: return 64;
-        case CDRTypeOf::UNSIGNED_TINY_T: return 8;
-        case CDRTypeOf::UNSIGNED_SHORT_T: return 16;
-        case CDRTypeOf::UNSIGNED_LONG_T: return 32;
-        case CDRTypeOf::UNSIGNED_LONG_LONG_T: return 64;
-        case CDRTypeOf::CHAR_T: return 8;
-        case CDRTypeOf::BOOL_T: return 8;
-        case CDRTypeOf::OCTET_T: return 8;
-        case CDRTypeOf::UNION_T:
-        {
-            auto u = static_cast<UnionTypeSpec*>(type);
-            int acc = 8;
-            for (auto m : u->members) {
-                acc = std::max(acc, type_alignment(m->typeSpec));
-            }
-            return acc;
-        }
-        case CDRTypeOf::STRUCT_T:
-        {
-            auto s = static_cast<StructTypeSpec*>(type);
-            if (s->members.empty()) {
-                return 8;
-            } else {
-                return type_alignment(s->members[0]->typeSpec);
-            }
-        }
-        default: not_implemented("type_alignment of unspecified type");
     }
 }
 
@@ -307,7 +259,6 @@ finish_type(Element* e, TypeSpec* typeSpec)
             data->SetAttribute("name", "data");
             data->SetAttribute("dfdl:length", type_size(u));
             data->SetAttribute("dfdl:lengthKind", "explicit");
-            data->SetAttribute("dfdl:alignment", type_alignment(u));
 
             auto unionelement = add_element(data, "xs:complexType");
             auto unionchoice = add_element(unionelement, "xs:choice");
