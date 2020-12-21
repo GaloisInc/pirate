@@ -94,11 +94,11 @@ add_primitive_types(Element* schema)
     add_primitive_type(schema, "double", "xs:double", "64");
     add_primitive_type(schema, "int8", "xs:byte", "8");
     add_primitive_type(schema, "int16", "xs:short", "16");
-    add_primitive_type(schema, "int32", "xs:integer", "32");
+    add_primitive_type(schema, "int32", "xs:int", "32");
     add_primitive_type(schema, "int64", "xs:long", "64");
     add_primitive_type(schema, "uint8", "xs:unsignedByte", "8");
     add_primitive_type(schema, "uint16", "xs:unsignedShort", "16");
-    add_primitive_type(schema, "uint32", "xs:unsingedInteger", "32");
+    add_primitive_type(schema, "uint32", "xs:unsignedInt", "32");
     add_primitive_type(schema, "uint64", "xs:unsignedLong", "64");
     add_primitive_type(schema, "boolean", "xs:boolean", "8");
 }
