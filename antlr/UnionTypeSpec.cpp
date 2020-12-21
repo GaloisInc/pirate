@@ -80,7 +80,7 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
         Declarator* declarator = member->declarator;
         int num_bytes = bitsSize(member->typeSpec->cTypeBits());
         if (num_bytes == 0) {
-            ostream << member->typeSpec->cTypeName() << " ";
+            ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
