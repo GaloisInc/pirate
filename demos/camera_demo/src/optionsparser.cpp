@@ -61,7 +61,7 @@ static struct argp_option options[] =
     { "in_keyboard",  OPT_KBD,       NULL,          0, "read position input from keyboard",         0 },
     { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
     { "output",       'o',           "type",        0, "controller (servo|trillium|print|none)",    0 },
-    { "trillium",     OPT_TRILLIUM,  "url",         0, "trillium command url (host:port)",          0 },
+    { "trillium",     OPT_TRILLIUM,  "addr",        0, "trillium command IP address",               0 },
     { "pan_min",      OPT_PAN_MIN,   "val",         0, "pan axis minimum angle",                    0 },
     { "pan_max",      OPT_PAN_MAX,   "val",         0, "pan axis maximum angle",                    0 },
     { "tilt_min",     OPT_TILT_MIN,  "val",         0, "tilt axis minimum angle",                   0 },
@@ -255,7 +255,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
 
         case OPT_TRILLIUM:
-            ss >> opt->mTrilliumUrl;
+            ss >> opt->mTrilliumIpAddress;
             break;
 
         case OPT_PAN_MIN:

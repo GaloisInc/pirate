@@ -128,11 +128,11 @@ void KeyboardOrientationInput::pollThread()
         switch (c)
         {
             case UP:
-                panTiltUpdate.tilt = -mAngIncrement;
+                panTiltUpdate.tilt = mAngIncrement;
                 mCallbacks.mUpdate(panTiltUpdate);
                 break;
             case DOWN:
-                panTiltUpdate.tilt = mAngIncrement;
+                panTiltUpdate.tilt = -mAngIncrement;
                 mCallbacks.mUpdate(panTiltUpdate);
                 break;
             case LEFT:

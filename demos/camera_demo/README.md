@@ -89,11 +89,11 @@ Usage: camera_demo_monolith [OPTION...]
 Embedded application based on camera, position input and position driver
 
  video options:
-  -d, --video_device=device  video device
+  -d, --video_device=device  video device file path
   -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
   -f, --flip=v|h             horizontal or vertical image flip
   -H, --height=pixels        image height
-  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|none)
+  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|trillium|none)
   -W, --width=pixels         image width
 
  frame processor options:
@@ -119,7 +119,7 @@ Embedded application based on camera, position input and position driver
       --pan_min=val          pan axis minimum angle
       --tilt_max=val         tilt axis maximum angle
       --tilt_min=val         tilt axis minimum angle
-      --trillium=url         trillium command url (host:port)
+      --trillium=addr        trillium command IP address
 
       --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output
@@ -155,6 +155,11 @@ The following playback settings introduce minimal latency:
 
 ```
 mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
+```
+
+## Using the Trillium HD25 Camera with Keyboard Controls
+```
+./demos/camera_demo/camera_demo_monolith -t trillium --decoder [decoder IP address]:[decoder UDP port] --trillium [camera IP address] --in_keyboard --output trillium --xwindow
 ```
 
 ## Raspberry Pi Setup
