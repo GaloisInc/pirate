@@ -16,5 +16,8 @@
 #pragma once
 
 #include <string>
+#include "orion-sdk/OrionPublicPacketShim.hpp"
 
-int trilliumConnectUDPSocket(std::string trilliumUrl, int& sockFd);
+int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd);
+int trilliumPktSend(int sockFd, OrionPkt_t& pkt);
+int trilliumPktRecv(int sockFd, OrionPkt_t& pkt);

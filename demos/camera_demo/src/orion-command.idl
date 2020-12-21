@@ -27,4 +27,36 @@ module Orion {
 
 		uint16 checksum;
 	};
+
+	struct VideoSettings {
+		@value(208)
+		uint8 sync0;
+
+		@value(13)
+		uint8 sync1;
+
+		@value(98)
+		uint8 id;
+
+		uint8 destIp[4];
+
+		uint16 port;
+
+		@value(0)
+		uint32 bitrate;
+
+		@value(0)
+		int8 ttl;
+
+		@value(0)
+		uint8 streamType;
+
+		@value(0)
+		uint8 mjpegQuality;
+
+		@value(0)
+		uint8 saveSettingsAndTsPacketCount;
+
+		uint16 checksum;
+	};
 };

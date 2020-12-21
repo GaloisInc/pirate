@@ -31,7 +31,7 @@
 TrilliumVideoSource::TrilliumVideoSource(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     MpegTsDecoder(options, frameProcessors),
-    mTrilliumUrl(options.mTrilliumUrl),
+    mTrilliumIpAddress(options.mTrilliumIpAddress),
     mSockFd(-1)
 {
 }
@@ -43,17 +43,20 @@ TrilliumVideoSource::~TrilliumVideoSource()
 
 int TrilliumVideoSource::init()
 {
-    uint8_t octets[4];
-    OrionNetworkVideo_t videoSettings;
-    OrionPkt_t pktOut;
-    std::string decoderUrl = mH264Url;
+    int rv = -1;
     std::string host = "";
-    int rv, port = 0;
+    uint32_t host_addr = 0;
+    short port = 0;
+    std::string decoderUrl = mH264Url;
+    OrionNetworkVideo_t videoSettings;
+    OrionPkt_t pkt;
 
-    if (decoderUrl.empty()) {
+    if (decoderUrl.empty())
+    {
         std::cerr << "decoder url must be specified on the command-line" << std::endl;
         return 1;
     }
+
     if (decoderUrl.find("udp://") == 0)
     {
         decoderUrl = decoderUrl.substr(6);
@@ -61,37 +64,63 @@ int TrilliumVideoSource::init()
 
     std::size_t found = decoderUrl.find(':');
 
-    if (found == std::string::npos) {
+    if (found == std::string::npos)
+    {
         std::cerr << "decoder url must be host:port" << std::endl;
         return 1;
-    } else {
+    }
+    else
+    {
         host = decoderUrl.substr(0, found);
         port = std::stoi(decoderUrl.substr(found + 1));
     }
 
-    rv = trilliumConnectUDPSocket(mTrilliumUrl, mSockFd);
-    if (rv != 0) {
+    rv = inet_pton(AF_INET, host.c_str(), &host_addr);
+    if (rv != 1)
+    {
+        std::cerr << "Invalid address format: " << host << std::endl;
+        return -1;
+    }
+
+    // Video stream enable command and packet
+    videoSettings.DestIp        = ntohl(host_addr);
+    videoSettings.Port          = port;
+    videoSettings.Bitrate       = 0;
+    videoSettings.Ttl           = 0;
+    videoSettings.StreamType    = STREAM_TYPE_H264;
+    videoSettings.MjpegQuality  = 0;
+    videoSettings.SaveSettings  = 0;
+    videoSettings.TsPacketCount = 0;
+    encodeOrionNetworkVideoPacketStructure(&pkt, &videoSettings);
+
+    // Prepare Trillum UDP command socket
+    rv = trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
+    if (rv != 0)
+    {
         return rv;
     }
 
-    memset(&videoSettings, 0, sizeof(videoSettings));
-    videoSettings.Port = port;
-    videoSettings.StreamType = STREAM_TYPE_H264;
+    // Trillium needs to be told twice to start the video stream,
+    // especially after powerup.
+    // A proper approach involves sending multiple requests
+    // until a response is received. Since camera commands are
+    // one-way in some configurations, we cannot rely on receiving
+    // feedback from the camera.
 
-    // See https://github.com/trilliumeng/orion-sdk/blob/master/Examples/VideoPlayer/VideoPlayer.c
-    if (sscanf(host.c_str(), "%3hhu.%3hhu.%3hhu.%3hhu", &octets[0], &octets[1], &octets[2], &octets[3]) != 4) {
-        std::cerr << "decoder url must be ipv4 address" << std::endl;
-        return 1;
-    }
-    int index = 0;
-    videoSettings.DestIp = uint32FromBeBytes(octets, &index);
+    for (int i = 0; i < 2; i++)
+    {
+        rv = trilliumPktSend(mSockFd, pkt);
+        if (rv != 0)
+        {
+            return rv;
+        }
 
-    encodeOrionNetworkVideoPacketStructure(&pktOut, &videoSettings);
-    rv = send(mSockFd, (void*) &pktOut, pktOut.Length + ORION_PKT_OVERHEAD, 0);
-    if (rv < 0) {
-        perror("Trillium video settings send command error");
-        return 1;
+        usleep(1000);
     }
+
+    // Trillum UDP command socket is no longer needed
+    close(mSockFd);
+    mSockFd = -1;
 
     return MpegTsDecoder::init();
 }
