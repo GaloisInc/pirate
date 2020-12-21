@@ -5,38 +5,34 @@
 
 
 struct Union_Array_Field {
-	int16_t tag __attribute__((aligned(2)));
+	int16_t tag;
 	union {
-		uint8_t a __attribute__((aligned(1)));
-		int32_t b[10] __attribute__((aligned(4)));
-		float c[1][2][3] __attribute__((aligned(4)));
+		uint8_t a;
+		int32_t b[10];
+		float c[1][2][3];
 	} data;
 };
 
 struct Struct_Array_Field {
-	uint8_t a __attribute__((aligned(1)));
-	int32_t b[10] __attribute__((aligned(4)));
-	float c[1][2][3][4][5][6] __attribute__((aligned(4)));
+	uint8_t a;
+	int32_t b[10];
+	float c[1][2][3][4][5][6];
 };
 
 struct Union_Array_Field_wire {
 	unsigned char tag[2];
 	union {
-		unsigned char a[1] __attribute__((aligned(1)));
-		unsigned char b[10][4] __attribute__((aligned(4)));
-		unsigned char c[1][2][3][4] __attribute__((aligned(4)));
+		unsigned char a[1];
+		unsigned char b[10][4];
+		unsigned char c[1][2][3][4];
 	} data;
-};
+} __attribute__((packed)) ;
 
 struct Struct_Array_Field_wire {
-	unsigned char a[1] __attribute__((aligned(1)));
-	unsigned char b[10][4] __attribute__((aligned(4)));
-	unsigned char c[1][2][3][4][5][6][4] __attribute__((aligned(4)));
-};
-
-static_assert(sizeof(struct Union_Array_Field) == sizeof(struct Union_Array_Field_wire), "size of Union_Array_Field not equal to wire protocol size"
-);
-static_assert(sizeof(struct Struct_Array_Field) == sizeof(struct Struct_Array_Field_wire), "size of struct Struct_Array_Field not equal to wire protocol struct");
+	unsigned char a[1];
+	unsigned char b[10][4];
+	unsigned char c[1][2][3][4][5][6][4];
+} __attribute__((packed)) ;
 
 void encode_union_array_field(struct Union_Array_Field* input, struct Union_Array_Field_wire* output) {
 	uint16_t tag;

@@ -20,16 +20,14 @@ namespace EnumType {
 	};
 
 	struct Week_Interval {
-		DayOfWeek begin __attribute__((aligned(4)));
-		DayOfWeek end __attribute__((aligned(4)));
+		DayOfWeek begin;
+		DayOfWeek end;
 	};
 
 	struct Week_Interval_wire {
-		unsigned char begin[4] __attribute__((aligned(4)));
-		unsigned char end[4] __attribute__((aligned(4)));
-	};
-
-	static_assert(sizeof(struct Week_Interval) == sizeof(struct Week_Interval_wire), "size of struct Week_Interval not equal to wire protocol struct");
+		unsigned char begin[4];
+		unsigned char end[4];
+	} __attribute__((packed)) ;
 }
 
 namespace pirate {

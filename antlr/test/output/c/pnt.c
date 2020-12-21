@@ -5,31 +5,28 @@
 
 
 struct Position {
-	double x __attribute__((aligned(8)));
-	double y __attribute__((aligned(8)));
-	double z __attribute__((aligned(8)));
+	double x;
+	double y;
+	double z;
 };
 
 struct Distance {
-	double x __attribute__((aligned(8)));
-	double y __attribute__((aligned(8)));
-	double z __attribute__((aligned(8)));
+	double x;
+	double y;
+	double z;
 };
 
 struct Position_wire {
-	unsigned char x[8] __attribute__((aligned(8)));
-	unsigned char y[8] __attribute__((aligned(8)));
-	unsigned char z[8] __attribute__((aligned(8)));
-};
+	unsigned char x[8];
+	unsigned char y[8];
+	unsigned char z[8];
+} __attribute__((packed)) ;
 
 struct Distance_wire {
-	unsigned char x[8] __attribute__((aligned(8)));
-	unsigned char y[8] __attribute__((aligned(8)));
-	unsigned char z[8] __attribute__((aligned(8)));
-};
-
-static_assert(sizeof(struct Position) == sizeof(struct Position_wire), "size of struct Position not equal to wire protocol struct");
-static_assert(sizeof(struct Distance) == sizeof(struct Distance_wire), "size of struct Distance not equal to wire protocol struct");
+	unsigned char x[8];
+	unsigned char y[8];
+	unsigned char z[8];
+} __attribute__((packed)) ;
 
 void encode_position(struct Position* input, struct Position_wire* output) {
 	uint64_t field_x;

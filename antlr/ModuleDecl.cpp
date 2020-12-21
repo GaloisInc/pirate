@@ -56,13 +56,6 @@ void ModuleDecl::cDeclareAnnotationTransform(std::ostream &ostream) {
     }
 }
 
-void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
-    ostream << std::endl;
-    for (TypeSpec* definition : definitions) {
-        definition->cDeclareAsserts(ostream);
-    }
-}
-
 void ModuleDecl::cppDeclareFunctions(std::ostream &ostream) {
     for (TypeSpec* definition : definitions) {
         definition->cppDeclareFunctions(ostream);

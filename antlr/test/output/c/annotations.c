@@ -7,42 +7,38 @@
 
 
 struct Annotation_Struct_Example {
-	int32_t u __attribute__((aligned(4)));
-	float v __attribute__((aligned(4)));
-	double x __attribute__((aligned(8)));
-	double y __attribute__((aligned(8)));
-	double z __attribute__((aligned(8)));
+	int32_t u;
+	float v;
+	double x;
+	double y;
+	double z;
 };
 
 struct Annotation_Union_Example {
-	int16_t tag __attribute__((aligned(2)));
+	int16_t tag;
 	union {
-		int16_t a __attribute__((aligned(2)));
-		int32_t b __attribute__((aligned(4)));
-		float c __attribute__((aligned(4)));
+		int16_t a;
+		int32_t b;
+		float c;
 	} data;
 };
 
 struct Annotation_Struct_Example_wire {
-	unsigned char u[4] __attribute__((aligned(4)));
-	unsigned char v[4] __attribute__((aligned(4)));
-	unsigned char x[8] __attribute__((aligned(8)));
-	unsigned char y[8] __attribute__((aligned(8)));
-	unsigned char z[8] __attribute__((aligned(8)));
-};
+	unsigned char u[4];
+	unsigned char v[4];
+	unsigned char x[8];
+	unsigned char y[8];
+	unsigned char z[8];
+} __attribute__((packed)) ;
 
 struct Annotation_Union_Example_wire {
 	unsigned char tag[2];
 	union {
-		unsigned char a[2] __attribute__((aligned(2)));
-		unsigned char b[4] __attribute__((aligned(4)));
-		unsigned char c[4] __attribute__((aligned(4)));
+		unsigned char a[2];
+		unsigned char b[4];
+		unsigned char c[4];
 	} data;
-};
-
-static_assert(sizeof(struct Annotation_Struct_Example) == sizeof(struct Annotation_Struct_Example_wire), "size of struct Annotation_Struct_Example not equal to wire protocol struct");
-static_assert(sizeof(struct Annotation_Union_Example) == sizeof(struct Annotation_Union_Example_wire), "size of Annotation_Union_Example not equal to wire protocol size"
-);
+} __attribute__((packed)) ;
 
 void encode_annotation_struct_example(struct Annotation_Struct_Example* input, struct Annotation_Struct_Example_wire* output) {
 	uint32_t field_u;

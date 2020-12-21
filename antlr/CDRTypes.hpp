@@ -59,7 +59,7 @@ enum class CDRBits {
 };
 
 std::string bitsCType(CDRBits cdrBits);
-uint8_t bitsAlignment(CDRBits cdrBits);
+uint8_t bitsSize(CDRBits cdrBits);
 std::string bitsSerialize(CDRBits cdrBits);
 std::string bitsDeserialize(CDRBits cdrBits);
 
@@ -73,13 +73,12 @@ public:
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
-    virtual void cDeclareAsserts(std::ostream &ostream) { }
     virtual void cDeclareAnnotationValidate(std::ostream &ostream) = 0;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) = 0;
     virtual void cppDeclareHeader(std::ostream &ostream) { }
     virtual void cppTypeDecl(std::ostream &ostream) = 0;
     virtual void cppTypeDeclWire(std::ostream &ostream) = 0;
-    virtual void cppDeclareAsserts(std::ostream &ostream) { }
+    virtual void cpp(std::ostream &ostream) { }
     virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons

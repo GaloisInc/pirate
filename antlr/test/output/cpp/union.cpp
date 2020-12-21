@@ -12,25 +12,22 @@
 namespace UnionType {
 
 	struct Union_Example {
-		int16_t tag __attribute__((aligned(2)));
+		int16_t tag;
 		union {
-			uint8_t a __attribute__((aligned(1)));
-			int32_t b __attribute__((aligned(4)));
-			float c __attribute__((aligned(4)));
+			uint8_t a;
+			int32_t b;
+			float c;
 		} data;
 	};
 
 	struct Union_Example_wire {
 		unsigned char tag[2];
 		union {
-			unsigned char a[1] __attribute__((aligned(1)));
-			unsigned char b[4] __attribute__((aligned(4)));
-			unsigned char c[4] __attribute__((aligned(4)));
+			unsigned char a[1];
+			unsigned char b[4];
+			unsigned char c[4];
 		} data;
-	};
-
-	static_assert(sizeof(struct Union_Example) == sizeof(struct Union_Example_wire), "size of Union_Example not equal to wire protocol size"
-	);
+	} __attribute__((packed)) ;
 }
 
 namespace pirate {

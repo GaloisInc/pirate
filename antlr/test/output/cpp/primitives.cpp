@@ -12,50 +12,48 @@
 namespace Primitives {
 
 	struct Primitives {
-		float float_val __attribute__((aligned(4)));
-		double double_val __attribute__((aligned(8)));
-		int16_t short_val __attribute__((aligned(2)));
-		int16_t int16_val __attribute__((aligned(2)));
-		int32_t long_val __attribute__((aligned(4)));
-		int32_t int32_val __attribute__((aligned(4)));
-		int64_t long_long_val __attribute__((aligned(8)));
-		int64_t int64_val __attribute__((aligned(8)));
-		uint16_t unsigned_short_val __attribute__((aligned(2)));
-		uint16_t uint16_val __attribute__((aligned(2)));
-		uint32_t unsigned_long_val __attribute__((aligned(4)));
-		uint32_t uint32_val __attribute__((aligned(4)));
-		uint64_t unsigned_long_long_val __attribute__((aligned(8)));
-		uint64_t uint64_val __attribute__((aligned(8)));
-		char char_val __attribute__((aligned(1)));
-		int8_t int8_val __attribute__((aligned(1)));
-		uint8_t bool_val __attribute__((aligned(1)));
-		uint8_t octet_val __attribute__((aligned(1)));
-		uint8_t uint8_val __attribute__((aligned(1)));
+		float float_val;
+		double double_val;
+		int16_t short_val;
+		int16_t int16_val;
+		int32_t long_val;
+		int32_t int32_val;
+		int64_t long_long_val;
+		int64_t int64_val;
+		uint16_t unsigned_short_val;
+		uint16_t uint16_val;
+		uint32_t unsigned_long_val;
+		uint32_t uint32_val;
+		uint64_t unsigned_long_long_val;
+		uint64_t uint64_val;
+		char char_val;
+		int8_t int8_val;
+		uint8_t bool_val;
+		uint8_t octet_val;
+		uint8_t uint8_val;
 	};
 
 	struct Primitives_wire {
-		unsigned char float_val[4] __attribute__((aligned(4)));
-		unsigned char double_val[8] __attribute__((aligned(8)));
-		unsigned char short_val[2] __attribute__((aligned(2)));
-		unsigned char int16_val[2] __attribute__((aligned(2)));
-		unsigned char long_val[4] __attribute__((aligned(4)));
-		unsigned char int32_val[4] __attribute__((aligned(4)));
-		unsigned char long_long_val[8] __attribute__((aligned(8)));
-		unsigned char int64_val[8] __attribute__((aligned(8)));
-		unsigned char unsigned_short_val[2] __attribute__((aligned(2)));
-		unsigned char uint16_val[2] __attribute__((aligned(2)));
-		unsigned char unsigned_long_val[4] __attribute__((aligned(4)));
-		unsigned char uint32_val[4] __attribute__((aligned(4)));
-		unsigned char unsigned_long_long_val[8] __attribute__((aligned(8)));
-		unsigned char uint64_val[8] __attribute__((aligned(8)));
-		unsigned char char_val[1] __attribute__((aligned(1)));
-		unsigned char int8_val[1] __attribute__((aligned(1)));
-		unsigned char bool_val[1] __attribute__((aligned(1)));
-		unsigned char octet_val[1] __attribute__((aligned(1)));
-		unsigned char uint8_val[1] __attribute__((aligned(1)));
-	};
-
-	static_assert(sizeof(struct Primitives) == sizeof(struct Primitives_wire), "size of struct Primitives not equal to wire protocol struct");
+		unsigned char float_val[4];
+		unsigned char double_val[8];
+		unsigned char short_val[2];
+		unsigned char int16_val[2];
+		unsigned char long_val[4];
+		unsigned char int32_val[4];
+		unsigned char long_long_val[8];
+		unsigned char int64_val[8];
+		unsigned char unsigned_short_val[2];
+		unsigned char uint16_val[2];
+		unsigned char unsigned_long_val[4];
+		unsigned char uint32_val[4];
+		unsigned char unsigned_long_long_val[8];
+		unsigned char uint64_val[8];
+		unsigned char char_val[1];
+		unsigned char int8_val[1];
+		unsigned char bool_val[1];
+		unsigned char octet_val[1];
+		unsigned char uint8_val[1];
+	} __attribute__((packed)) ;
 }
 
 namespace pirate {

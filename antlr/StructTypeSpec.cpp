@@ -47,7 +47,6 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             if (cpp) {
                 ostream << member->typeSpec->cppTypeName();
             } else {
@@ -57,9 +56,6 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
-            }
-            if (alignment > 0) {
-                ostream << " " << "__attribute__((aligned(" << alignment << ")))";
             }
             ostream << ";" << std::endl;
         }
@@ -74,8 +70,8 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            if (alignment == 0) {
+            int num_bytes = bitsSize(member->typeSpec->cTypeBits());
+            if (num_bytes == 0) {
                 ostream << member->typeSpec->cTypeName() << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
@@ -87,24 +83,13 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
                 for (int dim : declarator->dimensions) {
                     ostream << "[" << dim << "]";
                 }
-                ostream << "[" << alignment << "]";
-                ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+                ostream << "[" << num_bytes << "]";
             }
             ostream << ";" << std::endl;
         }
     }
     ostream << indent_manip::pop;
-    ostream << "}" << ";" << std::endl;
-}
-
-void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
-    ostream << "static_assert" << "(";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
-    ostream << " " << "==" << " ";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
-    ostream << "," << " ";
-    ostream << "\"" << "size of struct " << identifier << " not equal to wire protocol struct" << "\"";
-    ostream << ")" << ";" << std::endl;
+    ostream << "}" << " " << "__attribute__((packed))" << " " <<  ";" << std::endl;
 }
 
 void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {

@@ -43,15 +43,11 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    int tagAlign = bitsAlignment(switchType->cTypeBits());
-    ostream << switchType->cTypeName() << " " << "tag";
-    ostream << " " << "__attribute__((aligned(" << tagAlign << ")))";
-    ostream << ";" << std::endl;
+    ostream << switchType->cTypeName() << " " << "tag" << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
         if (cpp) {
             ostream << member->typeSpec->cppTypeName();
         } else {
@@ -61,9 +57,6 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
         ostream << declarator->identifier;
         for (int dim : declarator->dimensions) {
             ostream << "[" << dim << "]";
-        }
-        if (alignment > 0) {
-            ostream << " " << "__attribute__((aligned(" << alignment << ")))";
         }
         ostream << ";" << std::endl;
     }
@@ -77,16 +70,16 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    int tagAlign = bitsAlignment(switchType->cTypeBits());
+    int tag_num_bytes = bitsSize(switchType->cTypeBits());
     ostream << "unsigned" << " " << "char" << " " << "tag";
-    ostream << "[" << tagAlign << "]";
+    ostream << "[" << tag_num_bytes << "]";
     ostream << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        if (alignment == 0) {
+        int num_bytes = bitsSize(member->typeSpec->cTypeBits());
+        if (num_bytes == 0) {
             ostream << member->typeSpec->cTypeName() << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
@@ -98,24 +91,14 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
-            ostream << "[" << alignment << "]";
-            ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+            ostream << "[" << num_bytes << "]";
         }
         ostream << ";" << std::endl;
     }
     ostream << indent_manip::pop;
     ostream << "}" << " " << "data" << ";" << std::endl;
     ostream << indent_manip::pop;
-    ostream << "}" << ";" << std::endl;
-}
-
-void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
-    ostream << "static_assert" << "(";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
-    ostream << " " << "==" << " ";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
-    ostream << "," << " " << "\"" << "size of " << identifier << " not equal to wire protocol size" << "\"" << std::endl;
-    ostream << ")" << ";" << std::endl;
+    ostream << "}" << " " << "__attribute__((packed))" << " " <<  ";" << std::endl;
 }
 
 void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {

@@ -39,7 +39,6 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDe
     ostream << std::endl;
     moduleDecl->cTypeDecl(ostream);
     moduleDecl->cTypeDeclWire(ostream);
-    moduleDecl->cDeclareAsserts(ostream);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
     moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
     if (buildTypes.hasValidateAnnotations()) {
@@ -67,7 +66,6 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, Module
     moduleDecl->cppDeclareHeader(ostream);
     moduleDecl->cppTypeDecl(ostream);
     moduleDecl->cppTypeDeclWire(ostream);
-    moduleDecl->cppDeclareAsserts(ostream);
     moduleDecl->cppDeclareFooter(ostream);
     cppPirateNamespaceHeader(ostream);
     moduleDecl->cppDeclareFunctions(ostream);

@@ -34,11 +34,9 @@ public:
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
-    virtual void cDeclareAsserts(std::ostream &ostream) override;
     virtual void cppDeclareHeader(std::ostream &ostream) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
     virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
-    virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
     virtual void cppDeclareFooter(std::ostream &ostream) override;
     void addDefinition(TypeSpec* definition);
