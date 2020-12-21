@@ -78,7 +78,6 @@ public:
     virtual void cppDeclareHeader(std::ostream &ostream) { }
     virtual void cppTypeDecl(std::ostream &ostream) = 0;
     virtual void cppTypeDeclWire(std::ostream &ostream) = 0;
-    virtual void cpp(std::ostream &ostream) { }
     virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
