@@ -260,10 +260,18 @@ int main(int argc, char *argv[]) {
     while (npackets < options.num_packets) {
         struct timespec tspec;        
         uint64_t nanos;
-        ssize_t nbytes = recv(recvSock, data, UINT16_MAX, 0);
-        if (nbytes < 0) {
-            perror("receive error");
-            goto cleanup;
+        ssize_t nbytes;
+        while (1) {
+            nbytes = recv(recvSock, data, UINT16_MAX, MSG_DONTWAIT);
+            if (nbytes < 0) {
+                if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                    continue;
+                }
+                perror("receive error");
+                goto cleanup;
+            } else {
+                break;
+            }
         }
         if (options.record_receive) {
             clock_gettime(CLOCK_MONOTONIC, &tspec);
