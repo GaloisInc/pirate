@@ -1,27 +1,17 @@
-
-
-
-/** Description of input or output port on service. */
-interface Port {
-	/** Name of port.  Names for ports should be unique on a service.  */
-	readonly name:string;
-}
-
 export const enum Tag {
-	VisitServiceClass = "visitServiceClass"
+	VisitURI = "visitURI"
 }
 
 /** Base interface for commands given to extension. */
-export interface ViewRequest {
-	readonly tag: Tag;
-}
+export type ViewRequest = VisitURI
 
 /**
- *  Class for commands to visit a service.
- *
- * `kind` should be "visitService".
+ *  Class for commands to visit a URI in the editor.
  */
-export interface VisitServiceClass extends ViewRequest {
-	/** Name of class to visit. */
-	readonly name:string;
+export interface VisitURI {
+	readonly tag: Tag.VisitURI
+
+	readonly filename: string;
+	readonly line: number;
+	readonly column: number;
 }
