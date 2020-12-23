@@ -64,7 +64,7 @@ static error_t parseOpt(int key, char* arg, struct argp_state* state) {
  
     switch (key) {
         case OPT_INPUT_ADDR:
-            strncpy(opt->src_addr, arg, INET6_ADDRSTRLEN);
+            strncpy(opt->src_addr, arg, INET6_ADDRSTRLEN-1);
             break;
         case OPT_INPUT_PORT:
             opt->src_port = strtoul(arg, &endptr, 10);
@@ -73,7 +73,7 @@ static error_t parseOpt(int key, char* arg, struct argp_state* state) {
             }
             break;
         case OPT_OUTPUT_ADDR:
-            strncpy(opt->dst_addr, arg, INET6_ADDRSTRLEN);
+            strncpy(opt->dst_addr, arg, INET6_ADDRSTRLEN-1);
             break;
         case OPT_OUTPUT_PORT:
             opt->dst_port = strtoul(arg, &endptr, 10);
@@ -176,6 +176,22 @@ static int validateArgs(options_t* opt) {
         default:
             fprintf(stderr, "unexpected address family %d\n", opt->src_addrinfo->ai_family);
             return 1;
+    }
+
+    if (dst_addr) {
+        switch (opt->dst_addrinfo->ai_family) {
+            case AF_INET:
+                ip4_addr = ((struct sockaddr_in*) opt->dst_addrinfo->ai_addr);
+                ip4_addr->sin_port = htons(opt->dst_port);
+                break;
+            case AF_INET6:
+                ip6_addr = ((struct sockaddr_in6*) opt->dst_addrinfo->ai_addr);
+                ip6_addr->sin6_port = htons(opt->dst_port);
+                break;
+            default:
+                fprintf(stderr, "unexpected address family %d\n", opt->dst_addrinfo->ai_family);
+                return 1;
+        }
     }
 
     if (opt->num_packets == 0) {
