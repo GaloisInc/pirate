@@ -1,20 +1,20 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
-import { getNonce } from './util';
-import * as fs from "fs";
-import * as Model from "./model";
-import * as R from "../shared/viewRequests";
-import * as U from "../shared/modelUpdates";
+import * as path from 'path'
+import * as vscode from 'vscode'
+import { getNonce } from './util'
+import * as fs from "fs"
+import * as R from "../shared/viewRequests"
+import * as U from "../shared/modelUpdates"
+import { parseArchitectureFile } from './parser'
+import { rawListeners } from 'process'
+
 /**
  * Bring up a window to show the text document beside this window.
  */
-function showDocument(loc: Model.FileLocation) {
-	const uri = vscode.Uri.parse(loc.uri, false);
-	if (uri) {
-		const pos = new vscode.Position(loc.line, loc.column);
-		const range = new vscode.Range(pos, pos);
-		vscode.window.showTextDocument(uri, {viewColumn: vscode.ViewColumn.Beside, selection: range});
-	}
+function showDocument(loc: R.VisitURI) {
+	const uri = vscode.Uri.file(loc.filename)
+	const pos = new vscode.Position(loc.line, loc.column)
+	const range = new vscode.Range(pos, pos)
+	vscode.window.showTextDocument(uri, {viewColumn: vscode.ViewColumn.Beside, selection: range})
 }
 
 /**
@@ -23,29 +23,14 @@ function showDocument(loc: Model.FileLocation) {
 export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new ProjectEditorProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider('pirate.graph', provider);
-		return providerRegistration;
+		const provider = new ProjectEditorProvider(context)	
+        const providerRegistration = vscode.window.registerCustomEditorProvider('pirate.graph', provider)
+		return providerRegistration
 	}
 
 	constructor(private readonly context: vscode.ExtensionContext) {
 
 	}
-
-	/*
-
-
-
-	public newChannel(webview: vscode.Webview, s: ModelChannel):ModelChannel {
-		let cmd:NewChannel = {
-			tag: WebviewCommandTag.NewChannel,
-			source: { serviceName: s., portName: "" },
-			target: { serviceName: "", portName: "" },
-		};
-		webview.postMessage(cmd);
-		return s;
-	}
-	*/
 
 	/**
 	 * Called when our custom editor is opened.
@@ -62,126 +47,47 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 			// And restrict the webview to only loading content.
 			localResourceRoots: [
 				vscode.Uri.file(path.join(this.context.extensionPath, 'webview-static')),
-				vscode.Uri.file(path.join(this.context.extensionPath, 'out', 'webview', 'webview'))
+				vscode.Uri.file(path.join(this.context.extensionPath, 'out', 'webview'))
 			]
-		};
+		}
 
-		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+		const c = vscode.window.createOutputChannel('pirate')
 
-		const system = new Model.Configuration(e => webviewPanel.webview.postMessage(e));
-
-		const gps = new Model.Service(
-			system,
-			'GPS',
-			{
-				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-			  	line: 30,
-			  	column: 6
-			},
-			{
-				left: 50,
-				top: 50,
-				width: 200,
-				height: 100,
-			},
-			'green');
-		const gpsPort = new Model.OutPort(
-			gps,
-			"sensorData",
-			{
-				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-			  	line: 30,
-			  	column: 6
-			},
-			U.Border.Bottom,
-			90
-		);
-		const target = new Model.Service(
-			system,
-			'Target',
-			{
-				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-				line: 30,
-				column: 6
-			},
-			{
-				left: 50,
-				top: 200,
-				width: 200,
-				height: 100,
-			},
-			'green');
-		const rfSensor = new Model.Service(
-			system,
-			'RFSensor',
-			{
-				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-				line: 64,
-				column: 6
-			},
-			{
-				left:   300,
-				top:     50,
-				width:  200,
-				height: 100
-			},
-			'orange');
-		const rfPort = new Model.OutPort(
-			rfSensor,
-			"sensor",
-			{
-				uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-			  	line: 30,
-			  	column: 6
-			},
-			U.Border.Bottom,
-			90
-		);
-		const uav = new Model.Service(
-				system,
-				'UAV',
-				{
-					uri: 'file:///home/jhendrix/repos/gaps/vscode-plugin/pirate/examples/pnt/sensors.h',
-					line: 30,
-					column: 6
-				},
-				{
-					left: 300,
-					top: 200,
-					width: 200,
-					height: 100,
-				},
-				'orange');
+		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview)
 
 		// Receive message from the webview.
 		webviewPanel.webview.onDidReceiveMessage((e:R.ViewRequest) => {
 			switch (e.tag) {
-			case R.Tag.VisitServiceClass:
-				const cmd = e as R.VisitServiceClass;
-				// Get service associated with name, note this theoretically may
-				// be deleted by the time we receive the request, we ignore
-				// requests to show undefined services silently.
-				const s = system.findService(cmd.name);
-				if (s) {
-					showDocument(s.classDefinition);
-				}
-				break;
-			default:
-				console.log('Unknown request from view: ' + e.tag);
-				break;
+			case R.Tag.VisitURI:
+				showDocument(e)
+				break
 			}
-		});
+		})
 
 		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
 			if (e.document.uri.toString() === document.uri.toString()) {
 				//updateWebview();
 			}
-		});
+		})
 
 		// Make sure we get rid of the listener when our editor is closed.
 		webviewPanel.onDidDispose(() => {
-			changeDocumentSubscription.dispose();
-		});
+			changeDocumentSubscription.dispose()
+		})
+
+		const bytes = document.getText()
+		try {
+			const res = parseArchitectureFile(bytes, {tabstopWidth: 8})
+			for (const e of res.errors)
+				c.appendLine(e.start.line + ':' + e.start.column + ': ' + e.message)
+			if (res.value) {
+				const  m : U.SetSystemLayout = { tag: U.Tag.SetSystemLayout, system: res.value }
+				webviewPanel.webview.postMessage(m)
+			}
+		} catch (e) {
+			c.appendLine('Exception thrown: ' + e)
+		}
+		
 	}
 
 	/**
@@ -189,14 +95,14 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 	 */
 	private getHtmlForWebview(webview: vscode.Webview): string {
 		// Local path to script and css for the webview
-		const cssDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.css');
-		const cssResource    = webview.asWebviewUri(vscode.Uri.file(cssDiskPath));
-		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview', 'pirateYMLEditor.js');
-		const scriptResource = webview.asWebviewUri(vscode.Uri.file(scriptDiskPath));
-		const htmlBodyDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.html');
-		const htmlBodyContents    = fs.readFileSync(htmlBodyDiskPath, 'utf8');
+		const cssDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.css')
+		const cssResource    = webview.asWebviewUri(vscode.Uri.file(cssDiskPath))
+		const scriptDiskPath = path.join(this.context.extensionPath, 'out', 'webview', 'webview', 'pirateYMLEditor.js')
+		const scriptResource = webview.asWebviewUri(vscode.Uri.file(scriptDiskPath))
+		const htmlBodyDiskPath    = path.join(this.context.extensionPath, 'webview-static', 'pirateYMLEditor.html')
+		const htmlBodyContents    = fs.readFileSync(htmlBodyDiskPath, 'utf8')
 		// Use a nonce to whitelist which scripts can be run
-		const nonce = getNonce();
+		const nonce = getNonce()
 
 		return /* html */`
 			<!DOCTYPE html>
@@ -213,6 +119,6 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 			${htmlBodyContents}
 			<script type="module" nonce="${nonce}" src="${scriptResource}" />
 			</body>
-			</html>`;
+			</html>`
 	}
 }
