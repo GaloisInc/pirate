@@ -84,7 +84,7 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 				const  m : U.SetSystemLayout = { tag: U.Tag.SetSystemLayout, system: res.value }
 				webviewPanel.webview.postMessage(m)
 			}
-		} catch (e:any) {
+		} catch (e) {
 			c.appendLine('Exception thrown: ' + e)
 		}
 		
