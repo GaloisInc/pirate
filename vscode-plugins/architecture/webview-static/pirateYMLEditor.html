@@ -1,4 +1,5 @@
-<svg width=600 height=600 id="panel">
+<span style="background-color: var(--vscode-sideBar-background); position: absolute; overflow-x: auto; top: 0in; bottom: 0in; left: 0in; right: 2in">
+  <svg viewbox="0 0 600 600" id="panel" style="background-color: var(--vscode-editor-background); width: 6in; margin: 1in">
     <defs>
         <g id ="inPort" class="port">
             <rect width="20" height="20"  style="fill: yellow; stroke: green; stroke-width: 2;"/>
@@ -12,4 +13,8 @@
     <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
            <path d="M 0 0 L 10 5 L 0 10 z" />
     </marker>
-</svg>
+  </svg>
+</span>
+<span id="controls" style="position: absolute; background-color: darkgray; right: 0in; width: 2in; top: 0in; bottom: 0in; overflow-y: clip">
+    <div id="lasterrormsg">No error message</div>
+</span>

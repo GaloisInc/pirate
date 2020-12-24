@@ -36,6 +36,9 @@ class System {
     }
 
     setSystemLayout(m:A.SystemLayout):void {
+        // Dispose existing components
+        this.#actors.forEach((a,nm,m) => a.dispose())
+
         for (const a of m.actors) {
             var av = new ActorView(this, this.#svg, a)
             this.#actors.set(a.name.value, av)
@@ -246,7 +249,6 @@ class ActorView {
         innerSVG.appendChild(rect)
         innerSVG.appendChild(contentObject)
         svg.appendChild(innerSVG)
-
         for (const p of a.inPorts) {
             const pv = new PortView(this, this.#innerSVG, PortDir.In, p)
             this.#ports.set(p.name.value, pv)
@@ -255,6 +257,12 @@ class ActorView {
             const pv = new PortView(this, this.#innerSVG, PortDir.Out, p)
             this.#ports.set(p.name.value, pv)
         }
+
+     }
+
+     /** Remove all components from SVG */
+     dispose() {
+         this.#innerSVG.remove()
      }
 
      get left()   { return this.#coords.left }
@@ -383,6 +391,9 @@ function setPortElementPosition(svg:SVGSVGElement, elt:SVGUseElement, bbox:DOMRe
 class PortView {
     // Channels connected to this port.
     #channels:Channel[] = []
+    // Element we created for port
+
+    readonly elt:SVGUseElement
 
     /**
      * Create a new port.
@@ -390,9 +401,10 @@ class PortView {
     constructor(sys:ActorView, svg:SVGSVGElement, dir:PortDir, p:A.Port) {
         const portType = dir
         const elt = document.createElementNS(svgns, 'use') as SVGUseElement
-
         elt.setAttributeNS('', 'href', '#inPort')
         svg.appendChild(elt)
+        this.elt = elt
+
         var bbox = elt.getBBox()
 
         setPortElementPosition(svg, elt, bbox, portType, p.border.value, p.offset.value)

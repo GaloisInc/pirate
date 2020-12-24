@@ -3,6 +3,7 @@ import { Actor, Port } from "../shared/architecture"
 import * as A from "../shared/architecture"
 
 import * as lexer from './lexer'
+import { Tag } from "../shared/viewRequests"
 
 export { TextPosition as Position }
 export type Options = lexer.Options
@@ -25,7 +26,13 @@ class ParserStream {
         this.#lexer = new lexer.Lexer(value, options)
     }
 
-    errors: Error[] = []
+    get lexer() { return this.#lexer }
+
+    #errors: Error[] = []
+
+    get errors() { return this.#errors }
+
+    hasErrors():boolean { return this.#errors.length > 0 }
 
     pushError(t:TextRange, msg:string) {
         this.errors.push({
@@ -40,25 +47,14 @@ class ParserStream {
 }
 
 function consumeOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined { 
-    let t = p.next()
-    switch (t.kind) {
-    case '#end':
-        p.pushError(t, "Unexpected end of stream.")
-        return undefined
-    case '#error':
-        p.pushError(t, t.message)
-        return undefined
-    case '#operator':
-        if (t.value === v) return t
-        p.pushError(t, "Unexpected operator '" + t.value + "'")
-        return undefined
-    case '#keyword':
-        p.pushError(t, "Unexpected keyword '" + t.value + "'")
-        return undefined
-    default:
-        p.pushError(t, "Expected '" + v + "'")
-        return undefined
+    let t = p.peek()
+    if (t.kind === '#operator' && t.value === v) {
+        p.next()
+        return t
     }
+    
+    p.pushError(t, "Expected '" + v + "'")
+    return undefined
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -71,17 +67,19 @@ function parseFailure(p:ParserStream, t:TextRange, msg:string) : undefined {
     return undefined
 }
 
+/**
+ * If the next element in stream is an identifier, then it parses it.
+ * 
+ * Otherwise, it leaves the stream unchanged and returns undefined
+ */
 const identParser : Parser<lexer.Identifier> = (p: ParserStream) => {
-    let t = p.next()
+    let t = p.peek()
     switch (t.kind) {
-    case '#end':
-        return parseFailure(p, t, "Unexpected end of stream.")
-    case '#error':
-        return parseFailure(p, t, t.message)
     case '#keyword':
+        p.next()
         return t
     default:
-        return parseFailure(p, t, "Expected identifier.")
+        return undefined
     }
 }
 
@@ -126,6 +124,8 @@ const stringParser: Parser<A.TextLocated<string>> = (p:ParserStream) => {
         p.pushError(t, "Expected string literal.")
         return undefined
     }
+    for (const e of t.errors)
+        p.pushError(e, e.message)
     return mkLocated(t, t.value) 
 }
 
@@ -168,7 +168,6 @@ function enumParser(choices:string[]): Parser<A.TextLocated<string>> {
         return mkLocated(t, t.value) 
     }
 }
-
 
 /**
  * Parse a location
@@ -228,29 +227,38 @@ interface ObjectField {
             ) => boolean
 }
 
-
-function reqObjField<T>(nm: string, tp:Parser<T>):ObjectField {
+function reqObjField<T>(nm: string, tp:Parser<T>, lexName?: string):ObjectField {
     return { 
         fieldName: nm, 
-        lexName: nm, 
+        lexName: lexName ? lexName : nm, 
         arity: Arity.Required, 
         setter: (p: ParserStream, obj:any, key:lexer.Identifier) => {
-            if (!consumeOperator(p, ':')) return false
-
             if (obj[nm] !== undefined) {
                 p.pushError(key, nm + " already defined.")
                 return false
             }
 
+            if (!consumeOperator(p, ':')) {
+                obj[nm] = null
+                p.lexer.skipToNewLine()
+                return false
+            }
+
             const r = tp(p)
-        
+            if (r === undefined) {
+                obj[nm] = null
+                p.lexer.skipToNewLine()
+                return false
+            }
+
             if (!consumeOperator(p, ';')) {
                 obj[nm] = null
+                p.lexer.skipToNewLine()
                 return false
             }
             
             obj[nm] = r
-            return (r !== undefined)
+            return true
         }
     }
 }
@@ -276,46 +284,75 @@ function objectType(fields: ObjectField[],
                     fieldName: string,
                     tkn: lexer.Identifier): boolean {                    
     const name = identParser(p)
-    if (!name) return false
-    if (!consumeOperator(p, '{')) return false
+    if (!name) {
+        p.lexer.skipToNewLine
+        return false
+    }
+    if (!consumeOperator(p, '{')) {
+        p.lexer.skipToNewLine
+        return false
+    }
 
+    // Initialize partial object
     let partial: any = {name: mkLocated(name, name.value)}
     for (const c of fields) {
         if (c.arity === Arity.Array) 
             partial[c.fieldName] = []
     }
     
-    let reading:boolean = true
-    while (reading) {
+    let rcurly:lexer.OperatorToken|undefined = undefined
+    let errorCount = p.errors.length
+
+    while (!rcurly) {
 
         let t = p.peek()
         // Keep parsing while we get keywords
-        if (t.kind !== '#keyword') break
-
-        let read:boolean = false
-        for (const c of fields) {
-            if (t.value === c.lexName) {
-                p.next() // Read keyword
-
-                read = c.setter(p, partial, t)
+        switch (t.kind) {
+        case '#end':
+            p.pushError(t, 'Unexpected end of stream')
+            return false
+        case '#keyword':
+            {
+                let found = false
+                for (const c of fields) {
+                    if (t.value !== c.lexName) continue
+                    found = true
+                    p.next() // Read keyword
+                    c.setter(p, partial, t)
+                    break
+                }
+                if (!found) {
+                    p.pushError(t, 'Unknown keyword ' + t.value)
+                    p.lexer.skipToNewLine()
+                }
                 break
             }
+        case '#operator':
+            if (t.value === '}') {
+                p.next()
+                rcurly = t
+                break
+            }
+        default:
+            p.pushError(t, 'Unexpected token')
+            p.lexer.skipToNewLine()
+            break
         }
-        if (!read) break
-
     }
 
-    const rcurly = consumeOperator(p, '}')
-    if (!rcurly) return false
+    if (p.errors.length > errorCount) return false
 
     // Check fields are defined.
-    let r : TextRange = { start: tkn.start, end: tkn.end }
+    let r : TextRange = { start: tkn.start, end: rcurly.end }
+    let hasUndefined = false 
     for (const c of fields) {
-        if (c.arity === Arity.Required && !partial[c.fieldName]) {
-            if (partial[c.fieldName] === undefined) p.pushError(r, "Missing " + c.lexName + ".")
-            return false
-        }    
+        if (c.arity === Arity.Required && partial[c.fieldName] === undefined) {
+            hasUndefined = true
+            p.pushError(r, "Missing " + c.lexName + ".")
+        }
     }
+    if (hasUndefined) return false
+
     obj[fieldName].push(partial)
     return true
 }    
@@ -353,37 +390,66 @@ const busType: ObjectField[] = [
  * @param choices List of keyword actions to match against.
  * @returns true if a match is found
  */
-function matchKeyword(p: ParserStream, partial: any, choices: ObjectField[]): boolean {
-    let t = p.peek()
-    // Keep parsing while we get keywords
-    if (t.kind !== '#keyword') return false
+function topLevelDecls(p: ParserStream, partial: any, choices: ObjectField[]): any {
+    let recovering: Boolean = false
+    let e : lexer.EndToken|undefined = undefined
+    while (!e) {
 
-    for (const c of choices) {
-        if (t.value === c.lexName) {
-            p.next() // Read keyword
-
-            return c.setter(p, partial, t)
+        let t = p.next()
+        switch (t.kind) {
+        case '#keyword':
+            let found = false
+            for (const c of choices) {
+                if (t.value === c.lexName) {
+                    found = true
+                    recovering = !c.setter(p, partial, t)
+                    break
+                }
+            }
+            if (!found && !recovering) {
+                p.pushError(t, 'Unexpected identifier ' + t.value)
+                recovering = true
+            }
+            break
+        case '#end':
+            e = t
+            break
+        case '#error':
+            if (!recovering) {
+                p.pushError(t, t.message)
+                recovering = true
+            }
+            break
+        default:
+            if (!recovering) {
+                p.pushError(t, 'Expected top level declaration.')
+                recovering = true
+            }
+            break
         }
     }
-    return false
+
+    let r : TextRange = { start: e.start, end: e.end }
+    if (p.hasErrors()) return false
+
+    let complete:boolean = true
+    for (const c of choices) {
+        if (c.arity === Arity.Required) {
+            const v = partial[c.fieldName]
+            complete = v && complete
+            if (v === undefined)
+                p.pushError(r, 'Missing ' + c.lexName + '.')
+        }
+    }
+    return complete  
 }  
 
 function matchOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined { 
     let t = p.peek()
-    switch (t.kind) {
-    case '#end':
-        return undefined
-    case '#error':
-        return undefined
-    case '#operator':
-        if (t.value === v) {
-            p.next()
-            return t
-        }
-        return undefined
-    case '#keyword':
-        return undefined
-    default:
+    if (t.kind === '#operator' && t.value === v) {
+        p.next()
+        return t
+    } else {
         return undefined
     }
 }
@@ -399,7 +465,6 @@ const endpointParser : Parser<A.Endpoint> = (p:ParserStream) => {
     } else {
         return { type: A.EndpointType.Bus, bus: x.value }
     }
-
 }
 
 /**
@@ -409,53 +474,32 @@ function consumeLayout(p:ParserStream): A.SystemLayout|null {
     const start = p.peek()
 
     let partial: any = {actors: [], buses: [], connections: []}
-    let cont: Boolean = true
-    while (cont) {
-        const r = matchKeyword(p, partial, [
-            reqObjField('width', numberParser),
-            reqObjField('height', numberParser),
-            arrayObjField('actors', 'actor', actorType),
-            arrayObjField('buses', 'bus', busType),
-            {
-                fieldName: 'connections',
-                lexName: 'connect',
-                arity: Arity.Array,
-                setter: (p, partial, tkn) => {
 
-                    const x = endpointParser(p)
-                    if (!x) return false
-                    const y = endpointParser(p)
-                    if (!y) return false
-                    if (!consumeOperator(p, ';')) return false
-                    partial.connections.push({ source: x, target: y })
-                    return true
-                }
+    const d = topLevelDecls(p, partial, [
+        reqObjField('pagewidth', stringParser),
+        reqObjField('pageheight', stringParser),
+        reqObjField('width', numberParser),
+        reqObjField('height', numberParser),
+        arrayObjField('actors', 'actor', actorType),
+        arrayObjField('buses', 'bus', busType),
+        {
+            fieldName: 'connections',
+            lexName: 'connect',
+            arity: Arity.Array,
+            setter: (p, partial, tkn) => {
+
+                const x = endpointParser(p)
+                if (!x) return false
+                const y = endpointParser(p)
+                if (!y) return false
+                if (!consumeOperator(p, ';')) return false
+                partial.connections.push({ source: x, target: y })
+                return true
             }
-        ])
-        if (!r) break
-    }
+        }
+    ])
 
-    const t = p.next()
-    switch (t.kind) {
-    case '#end':
-        break
-    default:
-        p.pushError(t, "Unexpected character after system layout.")
-        break
-    }
-
-    let r : TextRange = { start: start.start, end: t.end }
-    if (!partial.width) {
-        if (partial.width === undefined) p.pushError(r, "Missing width.")
-        return null
-    }
-    if (!partial.height) {
-        if (partial.height === undefined) p.pushError(r, "Missing height.")
-        return null
-    }
-    
-
-    return partial
+    return d ? partial : null
 }
 
 

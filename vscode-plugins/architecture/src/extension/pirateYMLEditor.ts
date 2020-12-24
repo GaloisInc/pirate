@@ -6,6 +6,7 @@ import * as R from "../shared/viewRequests"
 import * as U from "../shared/modelUpdates"
 import { parseArchitectureFile } from './parser'
 import { rawListeners } from 'process'
+import { TextPosition } from '../shared/position'
 
 /**
  * Bring up a window to show the text document beside this window.
@@ -17,20 +18,50 @@ function showDocument(loc: R.VisitURI) {
 	vscode.window.showTextDocument(uri, {viewColumn: vscode.ViewColumn.Beside, selection: range})
 }
 
+
 /**
  * Provider for PIRATE project files.
  */
 export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new ProjectEditorProvider(context)	
+		const c = vscode.window.createOutputChannel('pirate')
+		const provider = new ProjectEditorProvider(context, c)	
         const providerRegistration = vscode.window.registerCustomEditorProvider('pirate.graph', provider)
-		return providerRegistration
+		return vscode.Disposable.from(providerRegistration, new vscode.Disposable(c.dispose))
 	}
 
-	constructor(private readonly context: vscode.ExtensionContext) {
+	#dc = vscode.languages.createDiagnosticCollection('PIRATE')
+
+	constructor(private readonly context: vscode.ExtensionContext, 
+		        private readonly c: vscode.OutputChannel) {
 
 	}
+
+	private updateWebviewSystemLayout(document: vscode.TextDocument,
+	                                  webviewPanel: vscode.WebviewPanel): void {
+
+		const bytes = document.getText()
+		try {
+			const res = parseArchitectureFile(bytes, {tabstopWidth: 8})
+			let diagnostics : vscode.Diagnostic[] = []
+			for (const e of res.errors) {
+				const start = new vscode.Position(e.start.line-1, e.start.column-1)
+				const end = new vscode.Position(e.end.line-1, e.end.column)
+				const r : vscode.Range = new vscode.Range(start, end)
+				const d = new vscode.Diagnostic(r, e.message)
+				diagnostics.push(d)
+				this.c.appendLine(e.start.line + ':' + e.start.column + ': ' + e.message)
+			}
+			this.#dc.set(document.uri, diagnostics)
+			if (res.value) {
+				const  m : U.SetSystemLayout = { tag: U.Tag.SetSystemLayout, system: res.value }
+				webviewPanel.webview.postMessage(m)
+			}
+		} catch (e) {			
+			this.c.appendLine('Exception thrown: ' + e)
+		}								
+	 }
 
 	/**
 	 * Called when our custom editor is opened.
@@ -51,8 +82,6 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 			]
 		}
 
-		const c = vscode.window.createOutputChannel('pirate')
-
 		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview)
 
 		// Receive message from the webview.
@@ -65,29 +94,16 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 		})
 
 		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-			if (e.document.uri.toString() === document.uri.toString()) {
-				//updateWebview();
-			}
+			if (e.document.uri.toString() !== document.uri.toString())
+				return false
+			this.updateWebviewSystemLayout(document, webviewPanel)
 		})
-
 		// Make sure we get rid of the listener when our editor is closed.
 		webviewPanel.onDidDispose(() => {
 			changeDocumentSubscription.dispose()
 		})
 
-		const bytes = document.getText()
-		try {
-			const res = parseArchitectureFile(bytes, {tabstopWidth: 8})
-			for (const e of res.errors)
-				c.appendLine(e.start.line + ':' + e.start.column + ': ' + e.message)
-			if (res.value) {
-				const  m : U.SetSystemLayout = { tag: U.Tag.SetSystemLayout, system: res.value }
-				webviewPanel.webview.postMessage(m)
-			}
-		} catch (e) {
-			c.appendLine('Exception thrown: ' + e)
-		}
-		
+		this.updateWebviewSystemLayout(document, webviewPanel)
 	}
 
 	/**
@@ -115,7 +131,6 @@ export class ProjectEditorProvider implements vscode.CustomTextEditorProvider {
 				<link nonce="${nonce}" href="${cssResource}" rel="stylesheet">
 			</head>
 			<body nonce="${nonce}">
-			<div id="lasterrormsg">No error message</div>
 			${htmlBodyContents}
 			<script type="module" nonce="${nonce}" src="${scriptResource}" />
 			</body>

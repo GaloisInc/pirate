@@ -1,3 +1,6 @@
+pageheight: "100em";
+pagewidth: "100em";
+
 height: 600;
 width: 600;
 

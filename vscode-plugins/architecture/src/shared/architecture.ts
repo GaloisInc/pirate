@@ -80,6 +80,8 @@ export interface Connection {
 }
 
 export interface SystemLayout {
+    readonly pagewidth: TextLocated<string>
+    readonly pageheight: TextLocated<string>
     readonly width: TextLocated<number>
     readonly height: TextLocated<number>
     readonly actors: Actor[]
