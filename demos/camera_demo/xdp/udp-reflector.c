@@ -93,9 +93,9 @@ static error_t parseOpt(int key, char* arg, struct argp_state* state) {
             }
             break;
         case OPT_BLOCK_MODE:
-            if (strncmp(arg, "0", 2)) {
+            if (!strncmp(arg, "0", 2)) {
                 opt->blockingMode = EnableBlocking;
-            } else if (strncmp(arg, "1", 2)) {
+            } else if (!strncmp(arg, "1", 2)) {
                 opt->blockingMode = DisableBlocking;
             } else {
                 argp_error(state, "'nonblocking' argument must be 0 or 1");
