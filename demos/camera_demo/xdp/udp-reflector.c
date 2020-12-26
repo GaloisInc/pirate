@@ -30,21 +30,25 @@
 #define OPT_OUTPUT_ADDR  (1200)
 #define OPT_OUTPUT_PORT  (1300)
 #define OPT_MAX_PACKETS  (1400)
-#define OPT_RECORD_RECV  (1500)
-#define OPT_RECORD_SEND  (1600)
+#define OPT_BLOCK_MODE   (1500)
+#define OPT_RECORD_RECV  (1600)
+#define OPT_RECORD_SEND  (1700)
 
 #define DATAPOINTS_ARRAY_SIZE (1 << 20)
 
 static struct argp_option options[] = {
-    { "src_addr",       OPT_INPUT_ADDR,  "ip",  0, "source address",             0 },
-    { "src_port",       OPT_INPUT_PORT,  "num", 0, "source port",                0 },
-    { "dst_addr",       OPT_OUTPUT_ADDR, "ip",  0, "destination address",        0 },
-    { "dst_port",       OPT_OUTPUT_PORT, "num", 0, "destination port",           0 },
-    { "num_packets",    OPT_MAX_PACKETS, "num", 0, "max number of packets",      0 },
-    { "record_receive", OPT_RECORD_RECV, NULL,  0, "record packet receive time", 0 },
-    { "record_send",    OPT_RECORD_SEND, NULL,  0, "record packet send time",    0 },
-    { NULL,             0 ,              NULL,  0, NULL,                         0 },
+    { "src_addr",       OPT_INPUT_ADDR,  "ip",    0, "source address",             0 },
+    { "src_port",       OPT_INPUT_PORT,  "num",   0, "source port",                0 },
+    { "dst_addr",       OPT_OUTPUT_ADDR, "ip",    0, "destination address",        0 },
+    { "dst_port",       OPT_OUTPUT_PORT, "num",   0, "destination port",           0 },
+    { "num_packets",    OPT_MAX_PACKETS, "num",   0, "max number of packets",      0 },
+    { "nonblocking",    OPT_BLOCK_MODE,  "[0|1]", 0, "enable nonblocking reads",   0 },
+    { "record_receive", OPT_RECORD_RECV, NULL,    0, "record packet receive time", 0 },
+    { "record_send",    OPT_RECORD_SEND, NULL,    0, "record packet send time",    0 },
+    { NULL,             0 ,              NULL,    0, NULL,                         0 },
 };
+
+enum BlockingMode { UndefinedBlocking, EnableBlocking, DisableBlocking };
 
 typedef struct {
     uint32_t src_port;
@@ -56,6 +60,7 @@ typedef struct {
     uint64_t num_packets;
     uint8_t record_receive;
     uint8_t record_send;
+    enum BlockingMode blockingMode;
 } options_t;
 
 static error_t parseOpt(int key, char* arg, struct argp_state* state) {
@@ -85,6 +90,15 @@ static error_t parseOpt(int key, char* arg, struct argp_state* state) {
             opt->num_packets = strtoull(arg, &endptr, 10);
             if (*endptr) {
                 argp_error(state, "max number of packets '%s' cannot be parsed", arg);
+            }
+            break;
+        case OPT_BLOCK_MODE:
+            if (strncmp(arg, "0", 2)) {
+                opt->blockingMode = EnableBlocking;
+            } else if (strncmp(arg, "1", 2)) {
+                opt->blockingMode = DisableBlocking;
+            } else {
+                argp_error(state, "'nonblocking' argument must be 0 or 1");
             }
             break;
         case OPT_RECORD_RECV:
@@ -126,6 +140,10 @@ static int validateArgs(options_t* opt) {
 
     if (opt->src_port == 0) {
         fprintf(stderr, "source port argument is required\n");
+        return 1;
+    }
+    if (opt->blockingMode == UndefinedBlocking) {
+        fprintf(stderr, "nonblocking enable or disable argument is required\n");
         return 1;
     }
     if (opt->src_port > UINT16_MAX) {
@@ -262,7 +280,11 @@ int main(int argc, char *argv[]) {
         uint64_t nanos;
         ssize_t nbytes;
         while (1) {
-            nbytes = recv(recvSock, data, UINT16_MAX, MSG_DONTWAIT);
+            int recvFlags = 0;
+            if (options.blockingMode == DisableBlocking) {
+                recvFlags |= MSG_DONTWAIT;
+            }
+            nbytes = recv(recvSock, data, UINT16_MAX, recvFlags);
             if (nbytes < 0) {
                 if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
                     continue;

@@ -10,3 +10,10 @@ iptables commands
 iptables -t nat -A PREROUTING -p UDP -i eno1 -d 192.168.26.1 --dport 15004 -j DNAT --to-destination 192.168.26.10:15005
 iptables -t nat -A POSTROUTING -o eno1 -j SNAT --to 192.168.26.1
 ```
+
+ethernet settings
+
+```
+ethtool -A eno1 autoneg off rx off tx off
+ethtool -C eno1 rx-usecs 0
+```
