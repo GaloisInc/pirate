@@ -119,7 +119,7 @@ Embedded application based on camera, position input and position driver
       --pan_min=val          pan axis minimum angle
       --tilt_max=val         tilt axis maximum angle
       --tilt_min=val         tilt axis minimum angle
-      --trillium=addr        trillium command IP address
+      --trillium=addr        trillium camera IP address
 
       --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output

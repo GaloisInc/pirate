@@ -57,6 +57,12 @@ int TrilliumVideoSource::init()
         return 1;
     }
 
+    if (mTrilliumIpAddress.empty())
+    {
+        std::cerr << "trillium address must be specified on the command-line" << std::endl;
+        return 1;
+    }
+
     if (decoderUrl.find("udp://") == 0)
     {
         decoderUrl = decoderUrl.substr(6);
