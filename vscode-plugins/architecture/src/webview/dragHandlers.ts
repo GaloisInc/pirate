@@ -53,8 +53,8 @@ function addSVGDragHandlers(container:SVGSVGElement, innerSVG:DragableSVGElement
             evt.stopImmediatePropagation()
             const CTM = container.getScreenCTM() as DOMMatrix
             // Get left
-            let left = dragOffset.rx + (evt.pageX - dragOffset.px) / CTM.a
-            let top  = dragOffset.ry + (evt.pageY - dragOffset.py) / CTM.d
+            let left = Math.round(dragOffset.rx + (evt.pageX - dragOffset.px) / CTM.a)
+            let top  = Math.round(dragOffset.ry + (evt.pageY - dragOffset.py) / CTM.d)
             drag({left: left, top: top})
          }
     };

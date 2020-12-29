@@ -1,7 +1,6 @@
-pageheight: "100em";
-pagewidth: "100em";
+pageheight: "4in";
+pagewidth: "6in";
 
-height: 600;
 width: 600;
 
 actor GPS {
@@ -31,8 +30,8 @@ connect GPS.sensorData GPS_data;
 
 actor RFSensor {
   location: "pnt/sensors.h:64:6";
-  left:   300;
-  top:     50;
+  left:   350;
+  top:    50;
   width:  200;
   height: 100;
   color: "#F79646";
@@ -56,8 +55,8 @@ connect RFSensor.sensorData RFSensor_data;
 
 actor UAV {
   location: "pnt/sensors.h:30:6";
-  left:   300;
-  top:    200;
+  left:   350;
+  top:    250;
   width:  200;
   height: 100;
   color: "#F79646";
@@ -79,9 +78,9 @@ connect RFSensor_data UAV.gps;
 
 actor Target {
   location: "pnt/sensors.h:30:6";
-  left:    50;
-  top:    200;
+  left:   50;
   width:  200;
+  top:    250;
   height: 100;
   color: "#009646";
 
@@ -94,7 +93,7 @@ actor Target {
   in_port rf {
     location: "pnt/sensors.h:30:6";
     border: top;
-    offset: 30;
+    offset: 120;
   }
 
   in_port uav {    

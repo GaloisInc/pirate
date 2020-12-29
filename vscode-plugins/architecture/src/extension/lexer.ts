@@ -1,8 +1,4 @@
-import { endianness } from 'os'
-import { mainModule } from 'process'
-import { start } from 'repl'
-import { runInThisContext } from 'vm'
-import { TextPosition, TextRange } from '../shared/position'
+import { TextPosition, TextRange } from './position'
 
 export interface Identifier extends TextRange {
     readonly kind: '#keyword'
@@ -44,8 +40,6 @@ export type Token = Identifier|OperatorToken|NumberLiteral|StringLiteral|EndToke
 
 /**
  * Read digits from string starting from end.
- * @param x 
- * @param y 
  */
 export function readDigitsRev(s:string, endOff:number): { count: number, value: number } {
     const start = endOff
@@ -60,6 +54,22 @@ export function readDigitsRev(s:string, endOff:number): { count: number, value: 
         c = s.charAt(endOff)
     }
     return { count: start - endOff, value: value}
+}
+
+/**
+ * Read digits from string starting from index.
+ */
+export function readDigits(s:string, o:number): { count: number, value: number } {
+    const start = o
+    let value = 0
+    let c = s.charAt(o)
+    while ('0' <= c && c <= '9') {
+        const d = (c as any) - ('0' as any)
+        value = 10 * value + d
+        o++
+        c = s.charAt(o)
+    }
+    return { count: o - start, value: value}
 }
 
 export interface Options {
@@ -77,14 +87,8 @@ function isAlpha(c: string): boolean {
 /**
  * Return error token for unexpected character.
  */
-function unexpectedStringChar(p: TextPosition, msg:string): StringError {
-    return { start: p, end: p, message: msg }
-}
-/**
- * Return error token for unexpected character.
- */
-function unexpectedChar(p: TextPosition, msg:string): ErrorToken {
-    return { kind: '#error', start: p, end: p, message: msg }
+function unexpectedChar(start: TextPosition, end: TextPosition, msg:string): ErrorToken {
+    return { kind: '#error', start: start, end: end, message: msg }
 }
 
 export class Lexer {
@@ -95,20 +99,23 @@ export class Lexer {
 
     #next: Token
 
-    #index: number
-    #line: number
-    #column: number
+    #position: TextPosition
+
+//    #index: number
+//    #line: number
+//    #column: number
 
     constructor(input: string, options: Options) {
         this.#input = input
         this.#options = options
-        this.#index = 0
-        this.#line = 1
-        this.#column = 1
+        this.#position = { index: 0, line: 0, column: 0 }
 
         this.#next = this.getNext()
     }
 
+    /**
+     * Reads a string literal after first double quot e scanned.
+     */
     private readStringLit(index: number, line: number, col: number): StringLiteral {
         const input = this.#input
         const start = { index: index, line: line, column: col }                        
@@ -123,10 +130,8 @@ export class Lexer {
             // End of string literal
             case '"':
                 {
-                    const end = { index: index, line: line, column: col }
-                    this.#index = index + 1
-                    this.#line = line
-                    this.#column = col + 1                
+                    const end = { index: index+1, line: line, column: col+1 }
+                    this.#position = end
                     return { kind: '#string', start: start, end: end, value: value, errors: errors }
                 }
             // End of file
@@ -134,28 +139,29 @@ export class Lexer {
                 {
                     const end = { index: index, line: line, column: col }
                     errors.push({ start: start, end: end, message: "Unterminated string literal." })
-                    this.#index = index
-                    this.#line = line
-                    this.#column = col
+                    this.#position = end
                     return { kind: '#string', start: start, end: end, value: value, errors: errors }
                 }
             case '\t':
                 {
-                    errors.push(unexpectedStringChar({ index: index, line: line, column: col }, "Unescaped tab characters not allowed in strings."))
+                    const start = { index: index, line: line, column: col }
+                    index = index+1
+                    col = this.advanceTab(col+1)
+                    const end = { index: index, line: line, column: col }
+                    errors.push({start: start, end: end, message: "Unescaped tab characters not allowed in strings."})
                     value = value + '\t'
-                    let r = this.advanceTab({index: index+1, column: col+1})
-                    index = r.index
-                    col = r.column
                 }
                 break
             case '\r':
             case '\n':
                 {
-                    errors.push(unexpectedStringChar({ index: index, line: line, column: col },  "Unterminated string literal."))
-                    const end = { index: index, line: line, column: col } 
-                    this.#index = index + 1
-                    this.#line = line + 1
-                    this.#column = 1
+                    const start = { index: index, line: line, column: col }
+                    index = index + 1
+                    line = line + 1
+                    col = 0
+                    const end = { index: index, line: line, column: col }
+                    errors.push({start: start, end: end, message: "Unterminated string literal."})                    
+                    this.#position = end
                     return { kind: '#string', start: start, end: end, value: value, errors: errors }
                }
             // Escape sequence
@@ -206,48 +212,41 @@ export class Lexer {
                 break
             default:
                 index++
+                col++
                 value = value + d
                 break
             }
         }
     }
 
-    private advanceTab(p:{index: number, column: number}) : {index: number, column: number} {
+    private advanceTab(column: number) : number {
         const tabstop = this.#options.tabstopWidth
-        const oldCol = p.column
-        const newCol = tabstop * Math.ceil(oldCol / tabstop) + 1
-        return {
-            index: p.index + (newCol - oldCol),
-            column: newCol
-        }
-
+        return tabstop * Math.ceil(column / tabstop) + 1
     }
 
     private getNext(): Token {
         const input = this.#input
         const tabstop = this.#options.tabstopWidth
-        let index = this.#index
-        let line = this.#line
-        let col = this.#column
+        let index = this.#position.index
+        let line = this.#position.line
+        let col = this.#position.column
 
         while (true) {
             const c = input.charAt(index)
             if (c === '') {
-                this.#index = index
-                this.#line = line  
-                this.#column = col
                 const p = { index: index, line: line, column: col }  
+                this.#position = p
                 return { kind: '#end', start: p, end: p }
             } else if (c === ' ') {
                 ++index; ++col
             } else if (c === '\r') {
                 index += input.charAt(index+1) === '\n' ? 2 : 1
                 ++line
-                col = 1 
+                col = 0 
             } else if (c === '\n') {
                 ++index
                 ++line
-                col = 1
+                col = 0
             } else if (c === '\t') {
                 const oldCol = col
                 col = tabstop * Math.ceil(col / tabstop) + 1
@@ -255,10 +254,10 @@ export class Lexer {
             } else if (c === '/') {
                 // If the next character is not / then, we have an invalid character
                 if (input.charAt(index+1) !== '/') {
-                    this.#index = index+2
-                    this.#line = line  
-                    this.#column = col+2
-                    return unexpectedChar({ index: index, line: line, column: col }, "Unexpected character '/'")
+                    let start = { index: index, line: line, column: col }
+                    let end = { index: index+2, line: line, column: col+2 }
+                    this.#position = end
+                    return unexpectedChar(start, end, "Unexpected character '/'")
                 }
                 // Check for comment that reads to end of line
                 index += 2
@@ -267,10 +266,8 @@ export class Lexer {
                     const c = input.charAt(index)
                     switch (input.charAt(index)) {
                     case '':
-                        this.#index = index
-                        this.#line = line  
-                        this.#column = col
                         const p = { index: index, line: line, column: col }
+                        this.#position = p
                         return { kind: '#end', start: p, end: p }    
                     case '\r':
                         index += input.charAt(index+1) === '\n' ? 2 : 1
@@ -284,54 +281,45 @@ export class Lexer {
                         ++index
                     }
                 }
+                // Advance to next line
+                line++
+                col = 0
                 // Continue to read next character
             } else if (isAlpha(c)) {
                 // Read Keyword
                 const startIndex = index
-                let d = input.charAt(index+1)
-                while (isAlpha(d) || '0' <= d && d <= '9' || ['_'].indexOf(d) !== -1) {
-                    ++index
-                    d = input.charAt(index+1)
-                }
-                this.#index = index+1
-                this.#line = line
-                this.#column = col + index + 1 - startIndex
                 const start = { index: startIndex, line: line, column: col }
-                const end = { index: index, line: line, column: col + index - startIndex }
-                const v = input.substr(startIndex, index + 1 - startIndex)
+                let d = input.charAt(++index)
+                while (isAlpha(d) || '0' <= d && d <= '9' || ['_'].indexOf(d) !== -1)
+                    d = input.charAt(++index)
+                const end = { index: index, line: line, column: col + (index - startIndex) }
+                this.#position = end
+                const v = input.substr(startIndex, index - startIndex)
                 return { kind: '#keyword', start: start, end: end, value: v}
             } else if ('0' <= c && c <= '9') {
                 // Read a number literal
-                let value: number = (c as any) - ('0' as any)
-                const startIndex = index
-                let d = input.charAt(index+1)
-                while ('0' <= d && d <= '9') {
-                    value = 10 * value + ((d as any) - ('0' as any))
-                    ++index
-                    d = input.charAt(index+1)
-                }
-                const start = { index: startIndex, line: line, column: col }
-                const end = { index: index, line: line, column: col + index - startIndex }
-                this.#index = index+1
-                this.#line = line
-                this.#column = col + index + 1 - startIndex
+                const start = { index: index, line: line, column: col }
+                let r = readDigits(input, index)
+                const value  = r.value
+                index += r.count
+                col   += r.count
+                const end = { index: index, line: line, column: col }
+                this.#position = end
                 return { kind: '#number', start: start, end: end, value: value}
-
             } else if (c === '"') {
                 return this.readStringLit(index, line, col)
             } else if ([';', '{', '}', ':', '.'].indexOf(c) !== -1) {
                 // Operator
-                const p = { index: index, line: line, column: col }
-                const value = input.substr(index, 1)
-                this.#index = index+1
-                this.#line = line
-                this.#column = col+1
-                return { kind: '#operator', start: p, end: p, value: value}
+                const start = { index: index, line: line, column: col }
+                const end = { index: index+1, line: line, column: col+1 }
+                this.#position = end
+                return { kind: '#operator', start: start, end: end, value: c}
             } else {
-                return unexpectedChar({ index: index, line: line, column: col }, "Unexpected character '" + c + "'")
+                let start = { index: index, line: line, column: col }
+                let end = { index: index+1, line: line, column: col+1 }
+                return unexpectedChar(start, end, "Unexpected character '" + c + "'")
             }
         }
-        
     }
 
     peek(): Token {
@@ -351,11 +339,12 @@ export class Lexer {
      */
     skipToNewLine() : void {
         const input = this.#input
-        let index = this.#index
+        const p = this.#position
+        let index = p.index
         // Read to end of string, carriage return or newline
         while (['', '\r', '\n'].indexOf(input.charAt(index)) === -1)
             ++index
-        this.#index = index
+        this.#position = { index: index, line: p.line, column: p.column }
         this.#next = this.getNext()
     }
 }

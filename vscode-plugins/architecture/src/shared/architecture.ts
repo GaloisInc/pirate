@@ -1,9 +1,3 @@
-import { TextRange } from "./position.js"
-
-export interface TextLocated<T> extends TextRange {
-    value: T
-}
-
 export interface SourceLocation {
     readonly filename: string
     readonly line: number
@@ -17,21 +11,35 @@ export const enum Border {
     Bottom = 'bottom'
 }
 
-export interface Port {
-    readonly name: TextLocated<string>
-    readonly location: TextLocated<SourceLocation>
-    readonly border: TextLocated<Border>
-    readonly offset: TextLocated<number>
+export interface StringField {
+    value: string
 }
 
+/**
+ * A value whose source location is tracked so we can
+ * efficiently update the underlying document when it changes.
+ */
+export interface TrackedValue<T> {
+    readonly locationId: number
+    readonly value: T
+}
+
+export interface Port {
+    readonly name: StringField
+    readonly location: SourceLocation
+    readonly border: TrackedValue<Border>
+    readonly offset: TrackedValue<number>
+}
+
+
 export interface Actor {
-    readonly name: TextLocated<string>
-    readonly location: TextLocated<SourceLocation>
-    readonly left: TextLocated<number>
-    readonly top: TextLocated<number>
-    readonly width: TextLocated<number>
-    readonly height: TextLocated<number>
-    readonly color: TextLocated<string>
+    readonly name: StringField
+    readonly location: SourceLocation
+    readonly left: TrackedValue<number>
+    readonly top: TrackedValue<number>
+    readonly width: TrackedValue<number>
+    readonly height: TrackedValue<number>
+    readonly color: StringField
     readonly inPorts: Port[]
     readonly outPorts: Port[]
 }
@@ -50,12 +58,12 @@ export const enum BusOrientation {
  * All messages sent on any input ports are forwarded to output ports.
  */
 export interface Bus {
-    readonly name: TextLocated<string>
-    readonly orientation: TextLocated<BusOrientation>
-    readonly left:   TextLocated<number>
-    readonly top:    TextLocated<number>
-    readonly height: TextLocated<number>
-    readonly width:  TextLocated<number>
+    readonly name: StringField
+    readonly orientation: TrackedValue<BusOrientation>
+    readonly left:   TrackedValue<number>
+    readonly top:    TrackedValue<number>
+    readonly height: TrackedValue<number>
+    readonly width:  TrackedValue<number>
 }
 
 export const enum EndpointType { Port = 'port', Bus = 'bus' }
@@ -79,11 +87,23 @@ export interface Connection {
     readonly target : Endpoint
 }
 
+export const enum Units {
+    IN = "in",
+    CM = "cm"
+}
+
+/**
+ * Length with units
+ */
+export interface Length {
+    readonly value: number
+    readonly units: Units
+}
+
 export interface SystemLayout {
-    readonly pagewidth: TextLocated<string>
-    readonly pageheight: TextLocated<string>
-    readonly width: TextLocated<number>
-    readonly height: TextLocated<number>
+    readonly pagewidth: Length
+    readonly pageheight: Length
+    readonly width: TrackedValue<number>
     readonly actors: Actor[]
     readonly buses: Bus[]
     readonly connections: Connection[]
