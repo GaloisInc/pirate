@@ -46,6 +46,12 @@ int TrilliumControl::init()
     int rv = -1;
     PanTilt initialPos(0.0, 0.0);
 
+    if (mTrilliumIpAddress.empty())
+    {
+        std::cerr << "trillium address must be specified on the command-line" << std::endl;
+        return -1;
+    }
+
     rv = trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
     if (rv != 0)
     {
