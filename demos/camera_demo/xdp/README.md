@@ -17,3 +17,9 @@ ethernet settings
 ethtool -A eno1 autoneg off rx off tx off
 ethtool -C eno1 rx-usecs 0
 ```
+
+linux kernel settings
+
+```
+GRUB_CMDLINE_LINUX_DEFAULT="processor.max_cstate=1 idle=poll"
+```
