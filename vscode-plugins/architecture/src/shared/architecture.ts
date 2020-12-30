@@ -1,8 +1,17 @@
+
+/** Integer that identifies a source locations in the document. */
+export type TrackIndex = number
+
+/** Integer that identifies a file location in the underlying document. */
+export type LocationIndex = number
+
+/*
 export interface SourceLocation {
-    readonly filename: string
+    readonly fileId: string
     readonly line: number
     readonly column: number
 }
+*/
 
 export const enum Border {
     Left = 'left',
@@ -20,20 +29,20 @@ export interface StringField {
  * efficiently update the underlying document when it changes.
  */
 export interface TrackedValue<T> {
-    readonly trackId: number
+    readonly trackId: TrackIndex
     readonly value: T
 }
 
 export interface Port {
     readonly name: StringField
-    readonly location: SourceLocation
+    readonly location: LocationIndex
     readonly border: TrackedValue<Border>
     readonly offset: TrackedValue<number>
 }
 
 export interface Actor {
     readonly name: StringField
-    readonly location: SourceLocation
+    readonly location: LocationIndex
     readonly left: TrackedValue<number>
     readonly top: TrackedValue<number>
     readonly width: TrackedValue<number>

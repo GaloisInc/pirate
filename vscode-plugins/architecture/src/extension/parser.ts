@@ -18,8 +18,21 @@ function mkLocated<T>(r:TextRange, v:T): TextLocated<T> {
     return { start: r.start, end: r.end, value: v }
 }
 
-interface Tracker {
-    track : (r:TextRange) => number|undefined
+export interface SourceLocation {
+    readonly filename: string
+    readonly line: number
+    readonly column: number
+}
+
+export interface Tracker {
+    /** Given a text range in file, this return an index that will persisently refer to range. */
+    track(r:TextRange) : A.TrackIndex|undefined
+
+    /**
+     * Given a text range and source location this returns a location index to persistently
+     * refer to range.
+     */
+    location(r:TextRange, loc:SourceLocation) : A.LocationIndex|undefined
 }
 
 class ParserStream {
@@ -287,7 +300,7 @@ function trackedEnumField(choices:string[]): Parser<TrackedValue<string>> {
 /**
  * Parse a location
  */
-const locationField: Parser<A.SourceLocation> = (p:ParserStream) => {
+const locationField: Parser<A.LocationIndex> = (p:ParserStream) => {
     const t = stringParser(p)
     if (t === undefined) return undefined
 
@@ -320,13 +333,13 @@ const locationField: Parser<A.SourceLocation> = (p:ParserStream) => {
 
     const filename = v.slice(0, lastIdx)
 
-    const loc: A.SourceLocation = {
+    const loc: SourceLocation = {
         filename: filename,
         line: linePair.value,
         column: colPair.value
     }
 
-    return loc
+    return p.tracker.location(t, loc)
 }
 
 const enum Arity { Required, Array }
@@ -624,14 +637,12 @@ function consumeLayout(p:ParserStream): A.SystemModel|undefined {
     ])
 }
 
+export interface ParseResult {
+    value: A.SystemModel | undefined
+    errors: Error[]
+}
 
-
-export type ParseResult = { value: A.SystemModel | undefined
-                          , errors: Error[]
-                          }
-
-
-export function parseArchitectureFile(tracker: Tracker, text: string): ParseResult {
+export function parseArchitectureFile(text: string, tracker: Tracker): ParseResult {
     const p = new ParserStream(text, tracker)
     const r = consumeLayout(p)
     return {

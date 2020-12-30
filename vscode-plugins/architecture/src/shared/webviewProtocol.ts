@@ -1,10 +1,10 @@
-import { SystemModel } from './architecture.js'
+import * as A from './architecture.js'
 
 // Namespace for types used in multiple protocol directions.
 export namespace common {
-	export interface ModifyString {
+	export interface TrackUpdate {
 		/** Index of tracked change */
-		readonly trackIndex: number
+		readonly trackIndex: A.TrackIndex
 		/** Value to use for replacement. */
 		readonly newText: string
 	}
@@ -35,15 +35,13 @@ export namespace extension {
 		/**
 		 * New value for system layout
 		 */
-		readonly system: SystemModel
+		readonly system: A.SystemModel
 	}
-
-	export type ModifyString = common.ModifyString
 
 	/** Notify webview that some tracked regions were modified. */
 	export interface DocumentEdited {
 		readonly tag: Tag.DocumentEdited
-		readonly edits: readonly ModifyString[]
+		readonly edits: readonly common.TrackUpdate[]
 	}
 }
 
@@ -64,17 +62,13 @@ export namespace webview {
 	export interface VisitURI {
 		readonly tag: Tag.VisitURI
 
-		readonly filename: string;
-		readonly line: number;
-		readonly column: number;
+		readonly locationIdx: A.LocationIndex
 	}
-
-	export type ModifyString = common.ModifyString
 
 	/** Request extension modify the underlying document for webview. */
 	export interface UpdateDocument {
 		readonly tag: Tag.UpdateDocument
-		readonly changes: readonly ModifyString[]
+		readonly edits: readonly common.TrackUpdate[]
 	}
 
 	/**

@@ -1,19 +1,19 @@
 import * as A from "../shared/architecture.js"
 import * as D from "./dragHandlers.js"
-import { webview } from "../shared/webviewProtocol.js"
+import { common, webview } from "../shared/webviewProtocol.js"
 
 import * as svg from './svg.js'
 
 export type TrackedIndex = number
 
 export class ChangeSet {
-    #changes: webview.ModifyString[] = []
+    #edits: common.TrackUpdate[] = []
 
     replace(locationId: number, newText: number|string): void {
-        this.#changes.push({trackIndex: locationId, newText: newText.toString()})
+        this.#edits.push({trackIndex: locationId, newText: newText.toString()})
     }
 
-    get changes() { return this.#changes }
+    get edits() { return this.#edits }
 }
 
 export interface SystemServices {
@@ -304,9 +304,7 @@ export class ActorView {
         visitClass.onclick = e => {
             const cmd:webview.VisitURI = {
                 tag: webview.Tag.VisitURI,
-                filename: loc.filename,
-                line: loc.line,
-                column: loc.column
+                locationIdx: loc
             }
             sys.sendToExtension(cmd)
         }

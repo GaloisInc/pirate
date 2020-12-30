@@ -134,8 +134,8 @@ class Webview implements SystemServices {
     }
 
     sendUpdateDoc(s: ChangeSet) {
-        if (s.changes.length > 0) {
-            let msg:webview.UpdateDocument = {tag: webview.Tag.UpdateDocument, changes: s.changes }
+        if (s.edits.length > 0) {
+            let msg:webview.UpdateDocument = {tag: webview.Tag.UpdateDocument, edits: s.edits }
             this.sendToExtension(msg)
         }
     }
@@ -157,7 +157,7 @@ class Webview implements SystemServices {
         })
     }
 
-    documentEdited(edits:readonly common.ModifyString[]) {
+    documentEdited(edits:readonly common.TrackUpdate[]) {
         for (const e of edits) {
             const listener = this.#trackListeners.get(e.trackIndex)
             if (listener)
