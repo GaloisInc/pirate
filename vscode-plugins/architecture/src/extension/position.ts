@@ -1,4 +1,3 @@
-
 /**
  * A position including character index, line and column.
  */
@@ -7,7 +6,7 @@ export interface TextPosition {
      * 0-based index of character within string.
      */
     readonly index: number
-    
+
     /**
      * 0-based index indicating line
      */
@@ -16,7 +15,7 @@ export interface TextPosition {
     /**
      * 0-based index indicating column.
      */
-    readonly column: number
+    readonly character: number
 }
 
 /**

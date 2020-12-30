@@ -20,7 +20,7 @@ export interface StringField {
  * efficiently update the underlying document when it changes.
  */
 export interface TrackedValue<T> {
-    readonly locationId: number
+    readonly trackId: number
     readonly value: T
 }
 
@@ -30,7 +30,6 @@ export interface Port {
     readonly border: TrackedValue<Border>
     readonly offset: TrackedValue<number>
 }
-
 
 export interface Actor {
     readonly name: StringField
@@ -54,16 +53,16 @@ export const enum BusOrientation {
 
 /**
  * A bus connects one or more input ports to one or more output ports.
- * 
+ *
  * All messages sent on any input ports are forwarded to output ports.
  */
 export interface Bus {
     readonly name: StringField
-    readonly orientation: TrackedValue<BusOrientation>
-    readonly left:   TrackedValue<number>
-    readonly top:    TrackedValue<number>
-    readonly height: TrackedValue<number>
-    readonly width:  TrackedValue<number>
+    readonly orientation: BusOrientation
+    readonly left:   number
+    readonly top:    number
+    readonly height: number
+    readonly width:  number
 }
 
 export const enum EndpointType { Port = 'port', Bus = 'bus' }
@@ -100,10 +99,10 @@ export interface Length {
     readonly units: Units
 }
 
-export interface SystemLayout {
+export interface SystemModel {
     readonly pagewidth: Length
     readonly pageheight: Length
-    readonly width: TrackedValue<number>
+    readonly width: number
     readonly actors: Actor[]
     readonly buses: Bus[]
     readonly connections: Connection[]

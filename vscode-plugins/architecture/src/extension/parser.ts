@@ -1,13 +1,11 @@
-import * as vscode from 'vscode'
+//import * as vscode from 'vscode'
 
 import { TextLocated, TextPosition, TextRange } from "./position"
 import { TrackedValue, StringField } from "../shared/architecture"
 import * as A from "../shared/architecture"
 import * as lexer from './lexer'
-import {TrackedDocument} from './changeTracker'
 
 export { TextPosition as Position }
-export type Options = lexer.Options
 
 /**
  * Error from parser
@@ -20,12 +18,16 @@ function mkLocated<T>(r:TextRange, v:T): TextLocated<T> {
     return { start: r.start, end: r.end, value: v }
 }
 
+interface Tracker {
+    track : (r:TextRange) => number|undefined
+}
+
 class ParserStream {
     #lexer: lexer.Lexer
 
-    constructor(uri: vscode.Uri, value: string, options: lexer.Options, log:(msg:string) => void) {
-        this.#lexer = new lexer.Lexer(value, options)
-        this.doc = new TrackedDocument(uri, log)
+    constructor(value: string, tracker:Tracker) {
+        this.#lexer = new lexer.Lexer(value)
+        this.tracker = tracker
     }
 
     get lexer() { return this.#lexer }
@@ -34,7 +36,7 @@ class ParserStream {
 
     get errors() { return this.#errors }
 
-    readonly doc: TrackedDocument
+    readonly tracker: Tracker
 
     hasErrors():boolean { return this.#errors.length > 0 }
 
@@ -50,19 +52,17 @@ class ParserStream {
     next(): lexer.Token { return this.#lexer.next() }
 
     mkTracked<T>(r:TextRange, v:T): TrackedValue<T> {
-        let l = this.doc.markLocation(r.start.line, r.start.column, r.end.line, r.end.column)
-        let locId = l ? l.index : 0
-        return { locationId: locId, value: v }
-    }    
+        return { trackId: this.tracker.track(r) ?? -1, value: v }
+    }
 }
 
-function consumeOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined { 
+function consumeOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined {
     let t = p.peek()
     if (t.kind === '#operator' && t.value === v) {
         p.next()
         return t
     }
-    
+
     p.pushError(t, "Expected '" + v + "'")
     return undefined
 }
@@ -79,7 +79,7 @@ function parseFailure(p:ParserStream, t:TextRange, msg:string) : undefined {
 
 /**
  * If the next element in stream is an identifier, then it parses it.
- * 
+ *
  * Otherwise, it leaves the stream unchanged and returns undefined
  */
 const identParser : Parser<lexer.Identifier> = (p: ParserStream) => {
@@ -95,9 +95,9 @@ const identParser : Parser<lexer.Identifier> = (p: ParserStream) => {
 
 
 /**
- * Parse a number field 
+ * Parse a number field
  */
-const numberField: Parser<TrackedValue<number>> = (p:ParserStream) => {
+const numberField: Parser<number> = (p:ParserStream) => {
 
     let t = p.next()
     switch (t.kind) {
@@ -113,11 +113,34 @@ const numberField: Parser<TrackedValue<number>> = (p:ParserStream) => {
         p.pushError(t, "Expected numeric literal.")
         return undefined
     }
-    return p.mkTracked(t, t.value) 
+    return t.value
+}
+
+
+/**
+ * Parse a number field that has tracking information so it can be updated.
+ */
+const trackedNumberField: Parser<TrackedValue<number>> = (p:ParserStream) => {
+
+    let t = p.next()
+    switch (t.kind) {
+    case '#end':
+        p.pushError(t, "Unexpected end of stream.")
+        return undefined
+    case '#error':
+        p.pushError(t, t.message)
+        return undefined
+    case '#number':
+        break
+    default:
+        p.pushError(t, "Expected numeric literal.")
+        return undefined
+    }
+    return p.mkTracked(t, t.value)
 }
 
 /**
- * Parse a string field 
+ * Parse a string field
  */
 const stringParser: Parser<TextLocated<string>> = (p:ParserStream) => {
     let t = p.next()
@@ -136,11 +159,11 @@ const stringParser: Parser<TextLocated<string>> = (p:ParserStream) => {
     }
     for (const e of t.errors)
         p.pushError(e, e.message)
-    return mkLocated(t, t.value) 
+    return mkLocated(t, t.value)
 }
 
 /**
- * Parse a string field 
+ * Parse a string field
  */
 const stringField: Parser<StringField> = (p:ParserStream) => {
     const r = stringParser(p)
@@ -149,14 +172,14 @@ const stringField: Parser<StringField> = (p:ParserStream) => {
 }
 
 /**
- * Parse a string field 
+ * Parse a string field
  */
 const lengthParser: Parser<A.Length> = (p:ParserStream) => {
     const t = stringParser(p)
     if (t === undefined) return undefined
 
     // Read column from end
-    const token = t.value 
+    const token = t.value
     const num = lexer.readDigits(token, 0)
     if (num.count === 0) {
         p.pushError(t, "Expected units to start with number.")
@@ -174,7 +197,7 @@ const lengthParser: Parser<A.Length> = (p:ParserStream) => {
         const frac = lexer.readDigits(token, idx)
         if (frac.count === 0) {
             p.pushError(t, "Invalid fractional part.")
-            return undefined    
+            return undefined
         }
         idx += frac.count
         value = value + frac.value / 10 ** frac.count
@@ -184,7 +207,7 @@ const lengthParser: Parser<A.Length> = (p:ParserStream) => {
     let unitsString = token.slice(idx)
     if (unitsString === "") {
         p.pushError(t, "Units missing: " + choicesMessage(choices))
-        return undefined    
+        return undefined
     } else if (choices.indexOf(unitsString) === -1) {
         p.pushError(t, "Could not parse units: " + choicesMessage(choices))
         return undefined
@@ -201,12 +224,41 @@ function choicesMessage(choices:string[]): string {
         return "Expected '" + choices[0] + "'."
     default:
         let v = "Expected '" + choices[0]
-        for (let i = 1; i < choices.length - 1; ++i) 
+        for (let i = 1; i < choices.length - 1; ++i)
             v = v + "', '" + choices[i]
         return v + "' or '" + choices[choices.length-1] + "'."
     }
 }
-function enumField(choices:string[]): Parser<TrackedValue<string>> {
+
+/** A enum with a finite number of choices encoded as a keyword */
+function enumField(choices:string[]): Parser<string> {
+    return (p: ParserStream) => {
+        let t = p.next()
+        let v:string
+        switch (t.kind) {
+        case '#end':
+            return parseFailure(p, t, "Unexpected end of stream.")
+        case '#error':
+            p.pushError(t, t.message)
+            return undefined
+        case '#keyword':
+            break
+        default:
+            p.pushError(t, choicesMessage(choices))
+            return undefined
+        }
+
+        if (choices.indexOf(t.value) === -1) {
+            p.pushError(t, choicesMessage(choices))
+            return undefined
+        }
+
+        return t.value
+    }
+}
+
+/** A tracked enum with a finite number of choices encoded as a keyword */
+function trackedEnumField(choices:string[]): Parser<TrackedValue<string>> {
     return (p: ParserStream) => {
         let t = p.next()
         let v:string
@@ -240,7 +292,7 @@ const locationField: Parser<A.SourceLocation> = (p:ParserStream) => {
     if (t === undefined) return undefined
 
     // Read column from end
-    const v = t.value 
+    const v = t.value
     let lastIdx = v.length - 1
     const colPair = lexer.readDigitsRev(v, lastIdx)
     if (colPair.count === 0) {
@@ -291,10 +343,10 @@ interface ObjectField {
 }
 
 function reqObjField<T>(nm: string, tp:Parser<T>, lexName?: string):ObjectField {
-    return { 
-        fieldName: nm, 
-        lexName: lexName ? lexName : nm, 
-        arity: Arity.Required, 
+    return {
+        fieldName: nm,
+        lexName: lexName ? lexName : nm,
+        arity: Arity.Required,
         setter: (p: ParserStream, obj:any, key:lexer.Identifier) => {
             if (obj[nm] !== undefined) {
                 p.pushError(key, nm + " already defined.")
@@ -319,7 +371,7 @@ function reqObjField<T>(nm: string, tp:Parser<T>, lexName?: string):ObjectField 
                 p.lexer.skipToNewLine()
                 return false
             }
-            
+
             obj[nm] = r
             return true
         }
@@ -327,8 +379,8 @@ function reqObjField<T>(nm: string, tp:Parser<T>, lexName?: string):ObjectField 
 }
 
 function arrayObjField(fieldName: string, lexName: string, fields: ObjectField[]): ObjectField {
-    return { 
-        fieldName: fieldName, 
+    return {
+        fieldName: fieldName,
         lexName: lexName,
         arity: Arity.Array,
         setter: (p: ParserStream, o:any, k:lexer.Identifier) => objectType(fields, p, o, fieldName, k)
@@ -339,10 +391,10 @@ interface Partial {
     [index: string]: any;
 }
 
-  
+
 /**
  * Call one of matches if next token is a keyword that matches.
- * 
+ *
  * @param fields List of keyword actions to match against.
  * @returns true if a match is found
  */
@@ -350,7 +402,7 @@ function objectType(fields: ObjectField[],
                     p: ParserStream,
                     obj: Partial,
                     fieldName: string,
-                    tkn: lexer.Identifier): boolean {                    
+                    tkn: lexer.Identifier): boolean {
     const name = identParser(p)
     if (!name) {
         p.lexer.skipToNewLine
@@ -365,10 +417,10 @@ function objectType(fields: ObjectField[],
     let nameField : A.StringField = { value: name.value }
     let partial: Partial = {name: nameField}
     for (const c of fields) {
-        if (c.arity === Arity.Array) 
+        if (c.arity === Arity.Array)
             partial[c.fieldName] = []
     }
-    
+
     let rcurly:lexer.OperatorToken|undefined = undefined
     let errorCount = p.errors.length
 
@@ -413,7 +465,7 @@ function objectType(fields: ObjectField[],
 
     // Check fields are defined.
     let r : TextRange = { start: tkn.start, end: rcurly.end }
-    let hasUndefined = false 
+    let hasUndefined = false
     for (const c of fields) {
         if (c.arity === Arity.Required && partial[c.fieldName] === undefined) {
             hasUndefined = true
@@ -424,21 +476,21 @@ function objectType(fields: ObjectField[],
 
     obj[fieldName].push(partial)
     return true
-}    
+}
 
 const portType: ObjectField[] = [
     reqObjField('location', locationField),
-    reqObjField('border', enumField([A.Border.Left, A.Border.Right, A.Border.Top, A.Border.Bottom])),
-    reqObjField('offset', numberField)
+    reqObjField('border', trackedEnumField([A.Border.Left, A.Border.Right, A.Border.Top, A.Border.Bottom])),
+    reqObjField('offset', trackedNumberField)
 ]
 
 /** Parser for actors */
 const actorType: ObjectField[] = [
     reqObjField('location', locationField),
-    reqObjField('left',   numberField),
-    reqObjField('top',    numberField),
-    reqObjField('width',  numberField),
-    reqObjField('height', numberField),
+    reqObjField('left',   trackedNumberField),
+    reqObjField('top',    trackedNumberField),
+    reqObjField('width',  trackedNumberField),
+    reqObjField('height', trackedNumberField),
     reqObjField('color',  stringField),
     arrayObjField('inPorts', 'in_port', portType),
     arrayObjField('outPorts', 'out_port', portType),
@@ -455,7 +507,7 @@ const busType: ObjectField[] = [
 
 /**
  * Call one of matches if next token is a keyword that matches.
- * 
+ *
  * @param choices List of keyword actions to match against.
  * @returns true if a match is found
  */
@@ -517,9 +569,9 @@ function topLevelDecls<T>(p: ParserStream, choices: ObjectField[]): T | undefine
         }
     }
     return complete ? (partial as T) : undefined
-}  
+}
 
-function matchOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined { 
+function matchOperator(p: ParserStream, v:string):lexer.OperatorToken|undefined {
     let t = p.peek()
     if (t.kind === '#operator' && t.value === v) {
         p.next()
@@ -545,10 +597,10 @@ const endpointParser : Parser<A.Endpoint> = (p:ParserStream) => {
 /**
  * Read declarations and return services
  */
-function consumeLayout(p:ParserStream): A.SystemLayout|undefined {
+function consumeLayout(p:ParserStream): A.SystemModel|undefined {
 
 
-    return topLevelDecls<A.SystemLayout>(p, [
+    return topLevelDecls<A.SystemModel>(p, [
         reqObjField('pagewidth', lengthParser),
         reqObjField('pageheight', lengthParser),
         reqObjField('width', numberField),
@@ -574,20 +626,18 @@ function consumeLayout(p:ParserStream): A.SystemLayout|undefined {
 
 
 
-export type ParseResult = { value: A.SystemLayout | undefined
-                          , doc: TrackedDocument
+export type ParseResult = { value: A.SystemModel | undefined
                           , errors: Error[]
                           }
 
 
-export function parseArchitectureFile(uri: vscode.Uri, text: string, options: lexer.Options, log: (msg:string) => void): ParseResult {
-    const p = new ParserStream(uri, text, options, log)
+export function parseArchitectureFile(tracker: Tracker, text: string): ParseResult {
+    const p = new ParserStream(text, tracker)
     const r = consumeLayout(p)
     return {
         // This is a pure grammar, the value will be undefined until we add embedded actions
         // or enable automatic CST creation.
         value: r,
-        doc: p.doc,
         errors: p.errors
     }
 }

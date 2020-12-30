@@ -1,41 +1,62 @@
-import { SystemLayout } from './architecture.js'
+import { SystemModel } from './architecture.js'
 
+// Namespace for types used in multiple protocol directions.
+export namespace common {
+	export interface ModifyString {
+		/** Index of tracked change */
+		readonly trackIndex: number
+		/** Value to use for replacement. */
+		readonly newText: string
+	}
+}
+
+// Namespace for messages and types passed from extension to webview
 export namespace extension {
 
 	export const enum Tag {
-		SetSystemLayout = "SetSystemLayout"
+		SetSystemModel,
+		DocumentEdited
 	}
 
 	/**
 	 * Base interface for updates passed from vscode extension to webview.
 	 */
-	export type Event = SetSystemLayout
+	export type Event = SetSystemModel | DocumentEdited
 
 	/**
 	 * Notify view of new system layout.
-	 * 
-	 * The extension will expect a response `SetSystemLayoutDone` 
+	 *
+	 * The extension will expect a response `SetSystemLayoutDone`
 	 * back from webview once this is received.  While waiting it
 	 * will ignore requests to update doc.
 	 */
-	export interface SetSystemLayout {
-		readonly tag: Tag.SetSystemLayout
+	export interface SetSystemModel {
+		readonly tag: Tag.SetSystemModel
 		/**
 		 * New value for system layout
 		 */
-		readonly system: SystemLayout
+		readonly system: SystemModel
+	}
+
+	export type ModifyString = common.ModifyString
+
+	/** Notify webview that some tracked regions were modified. */
+	export interface DocumentEdited {
+		readonly tag: Tag.DocumentEdited
+		readonly edits: readonly ModifyString[]
 	}
 }
 
+// Namespace for messages and types passed from webview to extension
 export namespace webview {
 	export const enum Tag {
-		VisitURI = "VisitURI",
-		UpdateDoc = "UpdateDoc",
-		SetSystemLayoutDone = "SetSystemLayoutDone"
+		VisitURI,
+		UpdateDocument,
+		SetSystemModelDone
 	}
 
 	/** Type for events from view to extension. */
-	export type Event = VisitURI | UpdateDoc | SetSystemLayoutDone
+	export type Event = VisitURI | UpdateDocument | SetSystemModelDone
 
 	/**
 	 *  Class for commands to visit a URI in the editor.
@@ -48,23 +69,18 @@ export namespace webview {
 		readonly column: number;
 	}
 
-	export interface DocEdit {
-		/** Index of tracked change */
-		readonly locationId: number
-		/** Value to use for replacement. */
-		readonly newText: string
-	}
+	export type ModifyString = common.ModifyString
 
 	/** Request extension modify the underlying document for webview. */
-	export interface UpdateDoc {
-		readonly tag: Tag.UpdateDoc
-		readonly changes: DocEdit[]
+	export interface UpdateDocument {
+		readonly tag: Tag.UpdateDocument
+		readonly changes: readonly ModifyString[]
 	}
 
 	/**
 	 * Notify extension that model has been updated.
 	 */
-	export interface SetSystemLayoutDone {
-		readonly tag: Tag.SetSystemLayoutDone
+	export interface SetSystemModelDone {
+		readonly tag: Tag.SetSystemModelDone
 	}
 }

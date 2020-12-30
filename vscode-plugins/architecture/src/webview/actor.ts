@@ -3,13 +3,14 @@ import * as D from "./dragHandlers.js"
 import { webview } from "../shared/webviewProtocol.js"
 
 import * as svg from './svg.js'
-import { symlinkSync } from "fs"
+
+export type TrackedIndex = number
 
 export class ChangeSet {
-    #changes: webview.DocEdit[] = []
+    #changes: webview.ModifyString[] = []
 
-    replace(locationId: number, newText: string): void {
-        this.#changes.push({locationId: locationId, newText: newText})
+    replace(locationId: number, newText: number|string): void {
+        this.#changes.push({trackIndex: locationId, newText: newText.toString()})
     }
 
     get changes() { return this.#changes }
@@ -19,31 +20,38 @@ export interface SystemServices {
     /**
      * Return true if @r@ does overlaps with any service other than `thisService`.
      */
-    overlaps(thisActor:string, r:Rect):boolean
-    /**
-     * Adjust the left coordinate to avoid overlapping.
-     */    
-    adjustX(thisActor:string, r:YRange, width:number, oldLeft:number, newLeft:number):number;
+    overlaps(thisActor:ActorView, r:Rect):boolean
     /**
      * Adjust the left coordinate to avoid overlapping.
      */
-    adjustY(thisActor:string, r:XRange, height:number, oldTop:number, newTop:number):number;
-
-    sendAsyncRequest(m:webview.VisitURI):void
-
+    adjustX(thisActor:ActorView, r:YRange, width:number, oldLeft:number, newLeft:number):number;
+    /**
+     * Adjust the left coordinate to avoid overlapping.
+     */
+    adjustY(thisActor:ActorView, r:XRange, height:number, oldTop:number, newTop:number):number;
+    /** Send a visit URI request to extension */
+    sendToExtension(m:webview.Event):void
     /**
      * Send an update doc request
      */
     sendUpdateDoc(changes: ChangeSet):void
+    /**
+     * Add listener to respond to when a tracked value changes.
+     */
+    whenStringTrackChanged(trackedIndex:TrackedIndex, listener:(newValue:string) => void):void
+    /**
+     * Add listener to respond to when a tracked value changes.
+     */
+    whenIntTrackChanged(trackedIndex:TrackedIndex, listener:(newValue:number) => void):void
 }
 
 /** `outsideRangeDist(x,l,h)` returns the amount `x` is outside the range `[l,h]`. */
 function outsideRangeDist(x:number, l:number, h:number):number {
-    if (x < l) 
+    if (x < l)
         return l - x
-     else if (x > h) 
+    else if (x > h)
         return h - x
-     else 
+    else
         return 0
 }
 
@@ -53,12 +61,12 @@ function outsideRangeDist(x:number, l:number, h:number):number {
  * It has special cases and assumes `x` and `y` are non-negative.
  */
 function euclid2Dist(x:number, y:number) {
-    if (x === 0) 
+    if (x === 0)
         return y
-     else if (y === 0) 
+    else if (y === 0)
         return x
-     else 
-        return Math.sqrt(x * x + y * y)   
+    else
+        return Math.sqrt(x * x + y * y)
 }
 
 enum PortDir { Out = "Out", In = "In"}
@@ -71,7 +79,7 @@ function clamp(v:number, min:number, max:number) {
 }
 
 /**
- * This calculate the orientation of the 
+ * This calculate the orientation of the
  */
 function calculatePortRotate(dir: PortDir, left:number, maxLeft:number, top:number, maxTop:number) {
     let orient:number
@@ -83,7 +91,7 @@ function calculatePortRotate(dir: PortDir, left:number, maxLeft:number, top:numb
         orient = 180
 
     const inPort = dir === PortDir.In
-    
+
     if (inPort)
         return (orient + 90) % 360
     else
@@ -205,10 +213,10 @@ class PortView {
             offset = setPortElementPosition(actorSVG, elt, bbox, portType, border, offset)
             let changes = new ChangeSet()
             if (curBorder !== border)
-                changes.replace(p.border.locationId, border)
+                changes.replace(p.border.trackId, border)
             if (curOffset !== offset) {
                 curOffset = offset
-                changes.replace(p.offset.locationId, offset.toString())
+                changes.replace(p.offset.trackId, offset)
             }
             sys.sendUpdateDoc(changes)
         })
@@ -234,9 +242,20 @@ export interface Rect {
 }
 
 export class ActorView {
-    #svgContainer:SVGSVGElement
+    readonly #sys: SystemServices
+    readonly #svgContainer:SVGSVGElement
+    readonly #leftTrackId:TrackedIndex
+    readonly #topTrackId:TrackedIndex
+    readonly #widthTrackId:TrackedIndex
+    readonly #heightTrackId:TrackedIndex
 
     constructor(sys:SystemServices, parentSVG:SVGSVGElement, a:A.Actor) {
+        this.#sys = sys
+        this.#leftTrackId = a.left.trackId
+        this.#topTrackId = a.top.trackId
+        this.#widthTrackId = a.width.trackId
+        this.#heightTrackId = a.height.trackId
+
         const width = a.width.value
         const height = a.height.value
 
@@ -250,6 +269,18 @@ export class ActorView {
         svg.setUserUnits(svgContainer.width, width)
         svg.setUserUnits(svgContainer.height, height)
         this.#svgContainer = svgContainer
+        sys.whenIntTrackChanged(this.#leftTrackId, (newValue) => {
+            svgContainer.x.baseVal.value = newValue
+        })
+        sys.whenIntTrackChanged(this.#topTrackId, (newValue) => {
+            svgContainer.y.baseVal.value = newValue
+        })
+        sys.whenIntTrackChanged(this.#widthTrackId, (newValue) => {
+            svgContainer.width.baseVal.value = newValue
+        })
+        sys.whenIntTrackChanged(this.#heightTrackId, (newValue) => {
+            svgContainer.height.baseVal.value = newValue
+        })
 
         const rect = document.createElementNS(svgns, 'rect') as SVGRectElement
         rect.classList.add('enclave')
@@ -259,36 +290,7 @@ export class ActorView {
         svg.setPercentageUnits(rect.height, 100)
         rect.style.fill = a.color.value
 
-        function drag(evt:D.SVGDragEvent) {
-            let newLeft = evt.left
-            let newTop  = evt.top
-            const width  = svgContainer.width.baseVal.value
-            const height = svgContainer.height.baseVal.value
-            
-            // Adjust to not overlap
-            newLeft = sys.adjustX(a.name.value, { top:  newTop, height: height }, width, svgContainer.x.baseVal.value, newLeft)
-            newTop  = sys.adjustY(a.name.value, { left: newLeft, width: width }, height, svgContainer.y.baseVal.value, newTop)
-
-            // Get new coordinates
-            let r = { left:   newLeft,
-                      top:    newTop,
-                      right:  newLeft + width,
-                      bottom: newTop  + height
-                    }
-            if (!sys.overlaps(a.name.value, r)) {
-                let changes = new ChangeSet()
-                if (svgContainer.x.baseVal.value !== newLeft) {
-                    svgContainer.x.baseVal.value = newLeft
-                    changes.replace(a.left.locationId, newLeft.toString())
-                }
-                if (svgContainer.y.baseVal.value !== newTop) {
-                    svgContainer.y.baseVal.value = newTop
-                    changes.replace(a.top.locationId, newTop.toString())
-                }
-                sys.sendUpdateDoc(changes)
-            }
-        };
-        D.addSVGDragHandlers(parentSVG, svgContainer, drag)
+        D.addSVGDragHandlers(parentSVG, svgContainer, (e) => this.drag(e))
 
         var div = document.createElement('div')
         var enclaveName = document.createElement('span') as HTMLSpanElement
@@ -306,7 +308,7 @@ export class ActorView {
                 line: loc.line,
                 column: loc.column
             }
-            sys.sendAsyncRequest(cmd)
+            sys.sendToExtension(cmd)
         }
 
         div.appendChild(enclaveName)
@@ -323,22 +325,56 @@ export class ActorView {
         svgContainer.appendChild(rect)
         svgContainer.appendChild(contentObject)
         parentSVG.appendChild(svgContainer)
-        
+
         for (const p of a.inPorts)
             new PortView(sys, this.#svgContainer, PortDir.In, p)
         for (const p of a.outPorts)
             new PortView(sys, this.#svgContainer, PortDir.Out, p)
-     }
+    }
 
-     /** Remove all components from SVG */
-     dispose() {
-         this.#svgContainer.remove()
-     }
+    drag(evt:D.SVGDragEvent) {
+        const svgContainer = this.#svgContainer
+        const sys = this.#sys
+        let newLeft = evt.left
+        let newTop  = evt.top
+        const width  = svgContainer.width.baseVal.value
+        const height = svgContainer.height.baseVal.value
 
-     get left():number { return this.#svgContainer.x.baseVal.value }
-     get top():number { return this.#svgContainer.y.baseVal.value }
-     get width():number  { return this.#svgContainer.width.baseVal.value }
-     get height():number { return this.#svgContainer.height.baseVal.value }
-     get right():number { return this.left + this.width }
-     get bottom():number { return this.top + this.height }
+        // Adjust to not overlap
+        newLeft = sys.adjustX(this, { top:  newTop, height: height }, width, svgContainer.x.baseVal.value, newLeft)
+        newTop  = sys.adjustY(this, { left: newLeft, width: width }, height, svgContainer.y.baseVal.value, newTop)
+
+        // Get new coordinates
+        let r = { left:   newLeft,
+                  top:    newTop,
+                  right:  newLeft + width,
+                  bottom: newTop  + height
+                }
+        if (!sys.overlaps(this, r)) {
+            let changes = new ChangeSet()
+            if (svgContainer.x.baseVal.value !== newLeft) {
+                svgContainer.x.baseVal.value = newLeft
+                changes.replace(this.#leftTrackId, newLeft)
+            }
+            if (svgContainer.y.baseVal.value !== newTop) {
+                svgContainer.y.baseVal.value = newTop
+                changes.replace(this.#topTrackId, newTop)
+            }
+            sys.sendUpdateDoc(changes)
+        }
+    };
+
+
+
+    /** Remove all components from SVG */
+    dispose() {
+        this.#svgContainer.remove()
+    }
+
+    get left():number   { return this.#svgContainer.x.baseVal.value }
+    get top():number    { return this.#svgContainer.y.baseVal.value }
+    get width():number  { return this.#svgContainer.width.baseVal.value }
+    get height():number { return this.#svgContainer.height.baseVal.value }
+    get right():number  { return this.left + this.width }
+    get bottom():number { return this.top + this.height }
 }
