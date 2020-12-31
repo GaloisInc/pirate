@@ -4,7 +4,7 @@ import * as A     from "../shared/architecture"
 import { common } from "../shared/webviewProtocol"
 
 import { Tracker, SourceLocation } from "./parser"
-import { TextRange } from "./position"
+import { TextRange } from "../shared/position"
 
 type DocEdit = common.TrackUpdate
 

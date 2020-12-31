@@ -32,12 +32,30 @@
 				"displayName": "Visualize Pirate components",
 				"selector": [
 					{
-						"filenamePattern": "*.piratemap"						
+						"filenamePattern": "*.piratemap"
 					}
 				],
 				"priority": "default"
 			}
-		]
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "references",
+					"title": "References",
+					"icon": "eye.svg"
+
+				}
+			]
+		},
+		"views": {
+			"references": [
+				{
+					"id": "pirateTV",
+					"name": "References"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

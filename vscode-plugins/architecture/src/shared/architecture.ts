@@ -1,3 +1,4 @@
+import { TextLocated, TextRange } from "./position"
 
 /** Integer that identifies a source locations in the document. */
 export type TrackIndex = number
@@ -5,13 +6,6 @@ export type TrackIndex = number
 /** Integer that identifies a file location in the underlying document. */
 export type LocationIndex = number
 
-/*
-export interface SourceLocation {
-    readonly fileId: string
-    readonly line: number
-    readonly column: number
-}
-*/
 
 export const enum Border {
     Left = 'left',
@@ -33,15 +27,22 @@ export interface TrackedValue<T> {
     readonly value: T
 }
 
-export interface Port {
-    readonly name: StringField
+/**
+ * Common type for all named entiries in architecture.
+ */
+export interface NamedEntity {
+    readonly name: TextLocated<string>
+    readonly definition: TextRange
+
+}
+
+export interface Port extends NamedEntity {
     readonly location: LocationIndex
     readonly border: TrackedValue<Border>
     readonly offset: TrackedValue<number>
 }
 
-export interface Actor {
-    readonly name: StringField
+export interface Actor extends NamedEntity {
     readonly location: LocationIndex
     readonly left: TrackedValue<number>
     readonly top: TrackedValue<number>
@@ -65,8 +66,7 @@ export const enum BusOrientation {
  *
  * All messages sent on any input ports are forwarded to output ports.
  */
-export interface Bus {
-    readonly name: StringField
+export interface Bus extends NamedEntity {
     readonly orientation: BusOrientation
     readonly left:   number
     readonly top:    number

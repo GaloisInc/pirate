@@ -15,20 +15,21 @@ export namespace extension {
 
 	export const enum Tag {
 		SetSystemModel,
+		InvalidateModel,
 		DocumentEdited
 	}
 
 	/**
 	 * Base interface for updates passed from vscode extension to webview.
 	 */
-	export type Event = SetSystemModel | DocumentEdited
+	export type Event = SetSystemModel | InvalidateModel | DocumentEdited
 
 	/**
 	 * Notify view of new system layout.
 	 *
-	 * The extension will expect a response `SetSystemLayoutDone`
-	 * back from webview once this is received.  While waiting it
-	 * will ignore requests to update doc.
+	 * The extension will expect a response (see `webview.SetSystemModelDone`)
+	 * back from webview once this is received.  While waiting for this
+	 * response, the extension will drop any notifications from the webview.
 	 */
 	export interface SetSystemModel {
 		readonly tag: Tag.SetSystemModel
@@ -36,6 +37,13 @@ export namespace extension {
 		 * New value for system layout
 		 */
 		readonly system: A.SystemModel
+	}
+
+	/**
+	 * Notify webview that system model is done.
+	 */
+	export interface InvalidateModel {
+		readonly tag: Tag.InvalidateModel
 	}
 
 	/** Notify webview that some tracked regions were modified. */

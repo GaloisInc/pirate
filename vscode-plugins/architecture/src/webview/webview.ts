@@ -21,18 +21,20 @@ function svgSetLength(e:SVGAnimatedLength, l:A.Length) {
 class Webview implements SystemServices {
     // Container for SVG
     #svg:SVGSVGElement
+
     #actors:ActorView[] = []
 
+    #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
+
     constructor(thisSVG:SVGSVGElement) {
-       this.#svg = thisSVG
-       thisSVG.preserveAspectRatio.baseVal.align = thisSVG.preserveAspectRatio.baseVal.SVG_PRESERVEASPECTRATIO_XMINYMIN
+        this.#svg = thisSVG
+        thisSVG.preserveAspectRatio.baseVal.align = thisSVG.preserveAspectRatio.baseVal.SVG_PRESERVEASPECTRATIO_XMINYMIN
     }
 
     setSystemModel(m:A.SystemModel):void {
         console.log('setSystemModel')
         // Dispose existing components
-        for (const a of this.#actors) a.dispose()
-        this.#actors = []
+        this.clearModel("")
 
         const thisSVG = this.#svg
 
@@ -48,6 +50,14 @@ class Webview implements SystemServices {
             var av = new ActorView(this, this.#svg, a)
             this.#actors.push(av)
         }
+    }
+
+    clearModel(errorMsgText:string):void {
+        for (const a of this.#actors) a.dispose()
+        this.#actors = []
+        if (this.#errormsgDiv)
+            this.#errormsgDiv.innerText = errorMsgText
+
     }
 
     adjustX(thisActor:ActorView, r:YRange, width:number, oldLeft:number, newLeft:number):number {
@@ -129,8 +139,21 @@ class Webview implements SystemServices {
        return false
     }
 
-    sendToExtension(r: webview.Event):void {
+    private sendToExtension(r: webview.Event):void {
         vscode.postMessage(r)
+    }
+
+    visitURI(idx:A.LocationIndex): void {
+        const cmd:webview.VisitURI = {
+            tag: webview.Tag.VisitURI,
+            locationIdx: idx
+        }
+        this.sendToExtension(cmd)
+    }
+
+    setSystemModelDone(): void {
+        let upd:webview.SetSystemModelDone = {tag: webview.Tag.SetSystemModelDone}
+        this.sendToExtension(upd)
     }
 
     sendUpdateDoc(s: ChangeSet) {
@@ -170,20 +193,30 @@ declare var acquireVsCodeApi: any
 
 const vscode = acquireVsCodeApi()
 
-const sys = new Webview((document.getElementById('panel') as unknown) as SVGSVGElement)
+{
+    const svg = (document.getElementById('panel') as unknown) as SVGSVGElement
+    if (svg === null) {
+        console.log('SVG panel is missing')
+    } else {
+        const sys = new Webview(svg)
 
-console.log('Start loop')
+        console.log('Start loop')
 
-window.addEventListener('message', event => {
-    const message = event.data as extension.Event // The json data that the extension sent
-    switch (message.tag) {
-    case extension.Tag.SetSystemModel:
-        sys.setSystemModel(message.system)
-        let upd:webview.SetSystemModelDone = {tag: webview.Tag.SetSystemModelDone}
-        sys.sendToExtension(upd)
-        break
-    case extension.Tag.DocumentEdited:
-        sys.documentEdited(message.edits)
-        break
+        window.addEventListener('message', event => {
+            const message = event.data as extension.Event // The json data that the extension sent
+            switch (message.tag) {
+            case extension.Tag.SetSystemModel:
+                sys.setSystemModel(message.system)
+                sys.setSystemModelDone()
+                break
+            case extension.Tag.InvalidateModel:
+                sys.clearModel("Invalid model.")
+                sys.setSystemModelDone()
+                break
+            case extension.Tag.DocumentEdited:
+                sys.documentEdited(message.edits)
+                break
+            }
+        })
     }
-})
+}

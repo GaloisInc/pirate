@@ -1,6 +1,6 @@
 //import * as vscode from 'vscode'
 
-import { TextLocated, TextPosition, TextRange } from "./position"
+import { TextLocated, TextPosition, TextRange } from "../shared/position"
 import { TrackedValue, StringField } from "../shared/architecture"
 import * as A from "../shared/architecture"
 import * as lexer from './lexer'
@@ -427,8 +427,8 @@ function objectType(fields: ObjectField[],
     }
 
     // Initialize partial object
-    let nameField : A.StringField = { value: name.value }
-    let partial: Partial = {name: nameField}
+    let nameField : TextLocated<string> = mkLocated(name, name.value)
+    let partial: Partial = { name: nameField }
     for (const c of fields) {
         if (c.arity === Arity.Array)
             partial[c.fieldName] = []
@@ -486,7 +486,7 @@ function objectType(fields: ObjectField[],
         }
     }
     if (hasUndefined) return false
-
+    partial.definition = r
     obj[fieldName].push(partial)
     return true
 }

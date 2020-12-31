@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as p from 'child_process'
 
 import { ModelResources } from './modelResources'
 
@@ -8,8 +9,7 @@ const piratemodelLangID:string = "piratemap"
 /**
  * Manages global state for the Pirate plugin Provider for PIRATE project files.
  */
-class PiratePlugin  {
-
+class PirateArchitectureExtension  {
 	readonly #dc = vscode.languages.createDiagnosticCollection('PIRATE')
 
 	// Map from URIs of open pirate system model text documents to tracker content.
@@ -34,10 +34,36 @@ class PiratePlugin  {
 		subscribe(vscode.workspace.onDidCloseTextDocument(this.onDidCloseTextDocument, this))
 		subscribe(vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this))
 
+		// Register document symbol provider
+		const ext=this
+		vscode.languages.registerDocumentSymbolProvider(piratemodelLangID, {
+			provideDocumentSymbols(doc, _token): vscode.DocumentSymbol[] {
+				return ext.getModelForDoc(doc).getDocumentSymbols()
+			}
+		})
+
 		// Enable and register custom editor
 		subscribe(vscode.window.registerCustomEditorProvider('pirate.graph', {
 			resolveCustomTextEditor: (d,p,t) => this.resolvePirateGraphViewer(d,p,t)
 		}))
+
+		// Create sample tree view in case it is useful later.
+		const tdProvider:vscode.TreeDataProvider<string> = {
+			getTreeItem(element: string): vscode.TreeItem | Thenable<vscode.TreeItem> {
+				return new vscode.TreeItem(element)
+			},
+
+			getChildren(element?: string): vscode.ProviderResult<string[]> {
+				if (element === undefined)
+					return ['sample1', 'sample2', 'sample3']
+				else
+					return null
+			}
+		}
+		const tv = vscode.window.createTreeView<string>("pirateTV", {
+			treeDataProvider: tdProvider
+		})
+		subscribe(tv)
 	}
 
 	/** Deactivate plugin */
@@ -46,12 +72,19 @@ class PiratePlugin  {
 			d.dispose()
 	}
 
+	/** This retrieves the model for a piratelang file. */
+	getModelForDoc(doc: vscode.TextDocument):ModelResources {
+		const uri = doc.uri.toString()
+		let mdlRes = this.#openModels.get(uri)
+		if (mdlRes) return mdlRes
+		mdlRes = new ModelResources(this.#dc, (msg:string) => this.#c.appendLine(msg), doc)
+		this.#openModels.set(uri, mdlRes)
+		return mdlRes
+	}
+
 	private onDidOpenTextDocument(doc: vscode.TextDocument) {
-		if (doc.languageId === piratemodelLangID) {
-			let uri = doc.uri.toString()
-			let mdlRes = new ModelResources(this.#dc, (msg:string) => this.#c.appendLine(msg), doc)
-			this.#openModels.set(uri, mdlRes)
-		}
+		if (doc.languageId === piratemodelLangID)
+			this.getModelForDoc(doc)
 	}
 
 	private onDidCloseTextDocument(doc: vscode.TextDocument) {
@@ -96,7 +129,7 @@ class PiratePlugin  {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(new PiratePlugin(context))
+	context.subscriptions.push(new PirateArchitectureExtension(context))
 }
 
 // this method is called when your extension is deactivated

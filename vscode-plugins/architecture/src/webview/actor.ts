@@ -29,8 +29,10 @@ export interface SystemServices {
      * Adjust the left coordinate to avoid overlapping.
      */
     adjustY(thisActor:ActorView, r:XRange, height:number, oldTop:number, newTop:number):number;
-    /** Send a visit URI request to extension */
-    sendToExtension(m:webview.Event):void
+    /**
+     * Request we open a text editor at the given location.
+     */
+    visitURI(idx:A.LocationIndex):void
     /**
      * Send an update doc request
      */
@@ -301,13 +303,7 @@ export class ActorView {
         visitClass.classList.add('enclave-visit-class')
         visitClass.innerHTML = '[Visit Class]'
         let loc = a.location
-        visitClass.onclick = e => {
-            const cmd:webview.VisitURI = {
-                tag: webview.Tag.VisitURI,
-                locationIdx: loc
-            }
-            sys.sendToExtension(cmd)
-        }
+        visitClass.onclick = e => sys.visitURI(loc)
 
         div.appendChild(enclaveName)
         div.appendChild(visitClass)

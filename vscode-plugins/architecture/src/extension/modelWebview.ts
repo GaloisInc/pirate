@@ -20,14 +20,21 @@ export interface ModelWebviewServices {
     /**
      * Synchronize edits received from this webview with rest of document.
      */
-    synchronizeEdits(edits:readonly common.TrackUpdate[]):void
+	synchronizeEdits(view: ModelWebview, edits:readonly common.TrackUpdate[]):void
+
+	/**
+	 * Log a message for debugging purposes.
+	 */
+	debugLog(message: string):void
 }
 
 /**
  * Get the static html used for the editor webviews.
  */
-function configureWebview(webview: vscode.Webview, extensionPath:string, htmlBodyContents: string): void {
+function webviewHtml(webview: vscode.Webview, extensionPath:string): string {
 	// Local path to script and css for the webview
+	const htmlBodyDiskPath = path.join(extensionPath, 'webview-static', 'contents.html')
+	const htmlBodyContents = fs.readFileSync(htmlBodyDiskPath, 'utf8')
 	const cssDiskPath    = path.join(extensionPath, 'webview-static', 'webview.css')
 	const cssResource    = webview.asWebviewUri(vscode.Uri.file(cssDiskPath))
 	const scriptDiskPath = path.join(extensionPath, 'out', 'webview', 'webview', 'webview.js')
@@ -35,7 +42,7 @@ function configureWebview(webview: vscode.Webview, extensionPath:string, htmlBod
 	// Use a nonce to whitelist which scripts can be run
 	const nonce = getNonce()
 
-	webview.html = `
+	return `
 		<!DOCTYPE html>
 		<html lang="en">
 		<head>
@@ -67,7 +74,14 @@ export class ModelWebview {
 	 */
 	#setSystemModelWaitCount: number = 0
 
-	constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, view: vscode.Webview) {
+	private model: A.SystemModel|null=null
+
+	readonly #disposables: { dispose: () => any }[] = []
+
+	constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, webviewPanel: vscode.WebviewPanel) {
+		const view = webviewPanel.webview
+		this.#webview = view
+
         // Setup initial content for the webview
         view.options = {
             // Enable javascript
@@ -77,30 +91,56 @@ export class ModelWebview {
                 vscode.Uri.file(context.asAbsolutePath('webview-static')),
                 vscode.Uri.file(context.asAbsolutePath(path.join('out', 'webview')))
             ]
-        }
-        const htmlBodyDiskPath = path.join(context.extensionPath, 'webview-static', 'contents.html')
-        const htmlBodyContents = fs.readFileSync(htmlBodyDiskPath, 'utf8')
-        configureWebview(view, context.extensionPath, htmlBodyContents)
+		}
+		view.html = webviewHtml(view, context.extensionPath)
 
-		this.#webview = view
+		let visible = webviewPanel.visible
+
+		this.#disposables.push(webviewPanel.onDidChangeViewState((e) => {
+			if (!visible && e.webviewPanel.visible && this.model)
+				this.setModel(this.model)
+			visible = e.webviewPanel.visible
+		}))
 
 		// Receive message from the webview.
-		view.onDidReceiveMessage((e:webview.Event) => {
+		this.#disposables.push(view.onDidReceiveMessage((e:webview.Event) => {
 			switch (e.tag) {
 			case webview.Tag.VisitURI:
-				svc.showDocument(e.locationIdx)
+				if (this.#setSystemModelWaitCount === 0)
+					svc.showDocument(e.locationIdx)
 				break
 			case webview.Tag.UpdateDocument:
 				// Only apply update doc requests when we reject update doc requests if the system is waiting
 				// for a system layout wait count request.
 				if (this.#setSystemModelWaitCount === 0)
-					svc.synchronizeEdits(e.edits)
+					svc.synchronizeEdits(this, e.edits)
 				break
 			case webview.Tag.SetSystemModelDone:
 				this.#setSystemModelWaitCount--
 				break
 			}
-		})
+		}))
+	}
+
+	dispose():void {
+		this.#disposables.forEach((d) => d.dispose)
+	}
+
+	/**
+	 * Update the document associated with the given webview.
+	 */
+	public setModel(s: A.SystemModel): void {
+		this.model = s
+		this.#setSystemModelWaitCount++
+		let msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
+		this.postEvent(msg)
+	}
+
+	public invalidateModel(): void {
+		this.model = null
+		this.#setSystemModelWaitCount++
+		let msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
+		this.postEvent(msg)
 	}
 
 	private postEvent(m : extension.Event) {
@@ -115,13 +155,5 @@ export class ModelWebview {
 		this.postEvent(msg)
 	}
 
-	/**
-	 * Update the document associated with the given webview.
-	 */
-	public setSystemModel(s: A.SystemModel): void {
-		this.#setSystemModelWaitCount++
-		let msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
-		this.postEvent(msg)
-	 }
 
 }

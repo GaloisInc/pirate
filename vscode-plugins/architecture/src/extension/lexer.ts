@@ -1,4 +1,4 @@
-import { TextPosition, TextRange } from './position'
+import { TextPosition, TextRange } from '../shared/position'
 
 export interface Identifier extends TextRange {
     readonly kind: '#keyword'

@@ -2,6 +2,7 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 
 import * as A     from '../shared/architecture'
+import { TextRange } from '../shared/position'
 import { common } from '../shared/webviewProtocol'
 
 import * as tracker from './docUpdater'
@@ -13,21 +14,49 @@ import * as parser from './parser'
  */
 type NextEditCell = { next : null|(() => void)}
 
+function mkvscodeRange(r:TextRange):vscode.Range {
+	const start = new vscode.Position(r.start.line, r.start.character)
+	const end = new vscode.Position(r.end.line, r.end.character)
+	return new vscode.Range(start, end)
+
+}
 
 /**
  * Create vscode diagnostic from parser error message.
  */
 function diagnosticFromParserError(e : parser.Error):vscode.Diagnostic {
-	const start = new vscode.Position(e.start.line, e.start.character)
-	const end = new vscode.Position(e.end.line, e.end.character)
-	const r : vscode.Range = new vscode.Range(start, end)
-	return new vscode.Diagnostic(r, e.message)
+	return new vscode.Diagnostic(mkvscodeRange(e), e.message)
+}
+
+function addPortSymbol(syms:vscode.DocumentSymbol[], p:A.Port) {
+	const kind = vscode.SymbolKind.Property
+	const range = mkvscodeRange(p.definition)
+	const selRange = mkvscodeRange(p.name)
+	const psym = new vscode.DocumentSymbol(p.name.value, "port", kind, range, selRange)
+	syms.push(psym)
+
+}
+
+function mkSymbols(mdl:A.SystemModel):vscode.DocumentSymbol[] {
+	const symbols:vscode.DocumentSymbol[]=[]
+	for (const a of mdl.actors) {
+		const kind = vscode.SymbolKind.Interface
+		const range = mkvscodeRange(a.definition)
+		const selRange = mkvscodeRange(a.name)
+		const asym = new vscode.DocumentSymbol(a.name.value, "actor", kind, range, selRange)
+		symbols.push(asym)
+		for (const p of a.inPorts)
+			addPortSymbol(asym.children, p)
+		for (const p of a.outPorts)
+			addPortSymbol(asym.children, p)
+	}
+	return symbols
 }
 
 /**
  * Manages state corresponding to a particular URI
  */
-export class ModelResources {
+export class ModelResources implements ModelWebviewServices {
     /**
      * Disagnostic collection to add diagnostics to.
      */
@@ -44,6 +73,10 @@ export class ModelResources {
 
 	private trackedDoc:tracker.TrackedDoc|null=null
 
+	getDocumentSymbols(): vscode.DocumentSymbol[] {
+		return this.system ? mkSymbols(this.system) : []
+	}
+
 	#onNext:null|NextEditCell = null
 
 	/** System layout associated with document */
@@ -54,6 +87,7 @@ export class ModelResources {
 		this.updateModel(doc)
 	}
 
+	debugLog(msg:string) { this.#logger(msg) }
 	/**
 	 * Parse the document and update the system model.
 	 *
@@ -61,6 +95,7 @@ export class ModelResources {
 	 * in a modification not driven by out plugin.
 	 */
 	private updateModel(doc:vscode.TextDocument):void {
+		this.#onNext = null
 		try {
 			const uri = doc.uri
 			const t = new tracker.TrackedDoc(uri)
@@ -70,14 +105,19 @@ export class ModelResources {
 			if (model !== undefined) {
 				this.system = model
 				this.trackedDoc = t
-				this.#onNext = null
 				for (const view of this.#activeWebviews)
-					view.setSystemModel(model)
+					view.setModel(model)
+			} else {
+				this.system = null
+				this.trackedDoc = null
 			}
 		} catch (e) {
+			this.system = null
+			this.trackedDoc = null
 			this.#logger("Exception parsing model.")
 		}
 	}
+
 
 	#expectedEdits: null|tracker.NormalizedEdits=null
 
@@ -92,74 +132,75 @@ export class ModelResources {
 			this.#expectedEdits = null
 			return
 		}
-		this.system = null
-		this.trackedDoc = null
-		this.#onNext = null
 		this.updateModel(e.document)
 	}
+
+	showDocument(idx:A.LocationIndex):void {
+		if (this.trackedDoc === null) return
+		if (idx >= this.trackedDoc.locations.length) return
+		const thisDirectoryPath = path.dirname(this.#uri.fsPath)
+		let loc = this.trackedDoc.locations[idx].loc
+		const uri = vscode.Uri.file(path.join(thisDirectoryPath, loc.filename))
+		const pos = new vscode.Position(loc.line, loc.column)
+		const range = new vscode.Range(pos, pos)
+		vscode.window.showTextDocument(uri, {selection: range})
+	}
+
+	/**
+	 * Synchronize edits from a webview.
+	 */
+	synchronizeEdits(source:ModelWebview, edits: readonly common.TrackUpdate[]):void {
+		const doc = this.trackedDoc
+		if (!doc)  return
+		const edit = tracker.NormalizedEdits.fromArray(edits)
+
+		const lastOnNext = this.#onNext
+		const thisOnNext: NextEditCell = { next: null }
+		this.#onNext = thisOnNext
+		let doEdit = () => {
+			this.#expectedEdits = edit
+			for (let v of this.#activeWebviews) {
+				if (v !== source)
+					v.notifyDocumentEdited(edit.array)
+			}
+			const wsEdit = doc.mkWorkspaceEdit(edit)
+			vscode.workspace.applyEdit(wsEdit).then((success) => {
+				if (success) doc.updateRanges(edit)
+				if (thisOnNext.next)
+					thisOnNext.next()
+				else
+					this.#onNext = null
+
+			}, (rsn) => {
+				this.#logger("Edit failed" + rsn)
+				if (thisOnNext.next)
+					thisOnNext.next()
+				else
+					this.#onNext = null
+			})
+		}
+		if (lastOnNext === null)
+			doEdit()
+		else
+			lastOnNext.next = doEdit
+	}
+
 
 	/**
 	 * Called when pirate graph viewer is opened
 	 */
 	public resolvePirateGraphViewer(context: vscode.ExtensionContext, webviewPanel: vscode.WebviewPanel): void {
-
-		const thisDirectoryPath = path.dirname(this.#uri.fsPath)
-
-		let view:ModelWebview
-
+		// Create webview
+		const view:ModelWebview = new ModelWebview(context, this, webviewPanel)
 		// Append new system model webview to active webviews.
-		let svc:ModelWebviewServices = {
-			showDocument: (idx) => {
-				if (this.trackedDoc === null) return
-				let loc = this.trackedDoc.locations[idx].loc
-				const uri = vscode.Uri.file(path.join(thisDirectoryPath, loc.filename))
-				const pos = new vscode.Position(loc.line, loc.column)
-				const range = new vscode.Range(pos, pos)
-				vscode.window.showTextDocument(uri, {selection: range})
-			},
-			synchronizeEdits: (edits: readonly common.TrackUpdate[]) => {
-				const doc = this.trackedDoc
-				if (!doc)  return
-				const edit = tracker.NormalizedEdits.fromArray(edits)
-
-				const lastOnNext = this.#onNext
-				const thisOnNext: NextEditCell = { next: null }
-				this.#onNext = thisOnNext
-				let doEdit = () => {
-					this.#expectedEdits = edit
-					for (let v of this.#activeWebviews) {
-						if (v !== view)
-							v.notifyDocumentEdited(edit.array)
-					}
-					const wsEdit = doc.mkWorkspaceEdit(edit)
-					vscode.workspace.applyEdit(wsEdit).then((success) => {
-						if (success) doc.updateRanges(edit)
-						if (thisOnNext.next)
-							thisOnNext.next()
-						else
-							this.#onNext = null
-
-					}, (rsn) => {
-						this.#logger("Edit failed" + rsn)
-						if (thisOnNext.next)
-							thisOnNext.next()
-						else
-							this.#onNext = null
-					})
-				}
-				if (lastOnNext === null)
-					doEdit()
-				else
-					lastOnNext.next = doEdit
-			}
-		}
-        view = new ModelWebview(context, svc, webviewPanel.webview)
 		this.#activeWebviews.add(view)
-
 		// Make sure we get rid of the listener when our editor is closed.
-		webviewPanel.onDidDispose(() => this.#activeWebviews.delete(view))
-
+		webviewPanel.onDidDispose(() => {
+			this.#logger("dispose Webview")
+			this.#activeWebviews.delete(view)
+			view.dispose()
+		})
 		const mdl = this.system
-		if (mdl) view.setSystemModel(mdl)
+		if (mdl) view.setModel(mdl)
 	}
 }
