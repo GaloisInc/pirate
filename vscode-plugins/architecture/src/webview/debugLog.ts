@@ -1,4 +1,3 @@
-
 /**
  * Logging function for debugging.
  *

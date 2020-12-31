@@ -227,20 +227,20 @@ class PortView {
 }
 
 export interface XRange {
-	readonly left:  number;
-	readonly width: number;
+    readonly left:  number;
+    readonly width: number;
 }
 
 export interface YRange {
-	readonly top:    number;
-	readonly height: number;
+    readonly top:    number;
+    readonly height: number;
 }
 
 export interface Rect {
-	readonly left:  number;
-	readonly right: number;
-	readonly top:    number;
-	readonly bottom: number;
+    readonly left:  number;
+    readonly right: number;
+    readonly top:    number;
+    readonly bottom: number;
 }
 
 export class ActorView {

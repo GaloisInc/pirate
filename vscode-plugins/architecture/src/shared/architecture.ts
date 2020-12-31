@@ -33,7 +33,6 @@ export interface TrackedValue<T> {
 export interface NamedEntity {
     readonly name: TextLocated<string>
     readonly definition: TextRange
-
 }
 
 export interface Port extends NamedEntity {

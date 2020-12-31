@@ -10,7 +10,6 @@
     ],
     "rules": {
         "@typescript-eslint/semi":  ["warn", "never"],
-        "curly": ["warn", "multi-or-nest", "consistent"],
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
         "semi": "off"
