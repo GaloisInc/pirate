@@ -70,9 +70,9 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    int tag_num_bytes = bitsLength(switchType->cTypeBits());
+    int tagNumBytes = bitsLength(switchType->cTypeBits());
     ostream << "unsigned" << " " << "char" << " " << "tag";
-    ostream << "[" << tag_num_bytes << "]";
+    ostream << "[" << tagNumBytes << "]";
     ostream << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
     ostream << indent_manip::push;
