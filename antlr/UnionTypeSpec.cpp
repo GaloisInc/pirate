@@ -111,6 +111,12 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
     cConvertByteOrder(ostream, switchType, "tag", functionType);
     cCopyMemoryOut(ostream, switchType, "tag", "tag");
     if (functionType == CDRFunc::SERIALIZE) {
+        ostream << "memset" << "(";
+        ostream << "&" << "output" << "->" << "data" << ",";
+        ostream << " " << "0" << ",";
+        ostream << " " << "sizeof" << "(" << "output" << "->" << "data" << ")" << ")" << ";" << std::endl;
+    }
+    if (functionType == CDRFunc::SERIALIZE) {
         ostream << "switch" << " " << "(" << "input" << "->" << "tag" << ")" << " " << "{" << std::endl;
     } else {
         ostream << "switch" << " " << "(" << "output" << "->" << "tag" << ")" << " " << "{" << std::endl;

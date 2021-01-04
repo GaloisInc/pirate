@@ -30,6 +30,7 @@ void encode_union_example(struct Union_Example* input, struct Union_Example_wire
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));
+	memset(&output->data, 0, sizeof(output->data));
 	switch (input->tag) {
 	case 1:
 		memcpy(&data_a, &input->data.a, sizeof(uint8_t));
