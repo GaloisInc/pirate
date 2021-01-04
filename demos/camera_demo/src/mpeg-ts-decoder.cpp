@@ -65,6 +65,7 @@ MpegTsDecoder::~MpegTsDecoder()
 int MpegTsDecoder::init()
 {
     int rv;
+    AVDictionary* opts = NULL;
 
     if (mH264Url.empty()) {
         std::cout << "decoder url must be specified on the command-line" << std::endl;
@@ -83,9 +84,16 @@ int MpegTsDecoder::init()
 
     mInputContext = avformat_alloc_context();
     
-    if (avformat_open_input(&mInputContext, mH264Url.c_str(), NULL, NULL) < 0) {
+    // udp protocol timeout is in microseconds
+    av_dict_set(&opts, "timeout", "2000000", 0);
+    if (avformat_open_input(&mInputContext, mH264Url.c_str(), NULL, &opts) < 0) {
+        if (opts != NULL) av_dict_free(&opts);
         std::cout << "unable to open url " << mH264Url << std::endl;
         return 1;
+    } else {
+        // on success opts will be destroyed and replaced
+        // with a dict containing options that were not found
+        if (opts != NULL) av_dict_free(&opts);
     }
 
     if (mInputContext->nb_streams == 0) {
