@@ -25,4 +25,4 @@ typedef enum TargetLanguage {
 } target_t;
 
 std::string target_as_string(TargetLanguage target);
-int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target);
+int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target, bool packed);

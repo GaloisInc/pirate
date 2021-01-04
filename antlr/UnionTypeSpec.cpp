@@ -73,7 +73,7 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << "}" << ";" << std::endl;
 }
 
-void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
+void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream, bool packed) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -99,23 +99,31 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
                 ostream << "[" << dim << "]";
             }
             ostream << "[" << alignment << "]";
-            ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+            if (!packed) {
+                ostream << " " << "__attribute__((aligned(" << alignment << ")))";
+            }
         }
         ostream << ";" << std::endl;
     }
     ostream << indent_manip::pop;
     ostream << "}" << " " << "data" << ";" << std::endl;
     ostream << indent_manip::pop;
-    ostream << "}" << ";" << std::endl;
+    if (packed) {
+        ostream << "}" << " " << "__attribute__((packed))" << " " <<  ";" << std::endl;
+    } else {
+        ostream << "}" << ";" << std::endl;
+    }
 }
 
-void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
-    ostream << "static_assert" << "(";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
-    ostream << " " << "==" << " ";
-    ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
-    ostream << "," << " " << "\"" << "size of " << identifier << " not equal to wire protocol size" << "\"" << std::endl;
-    ostream << ")" << ";" << std::endl;
+void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream, bool packed) {
+    if (!packed) {
+        ostream << "static_assert" << "(";
+        ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
+        ostream << " " << "==" << " ";
+        ostream << "sizeof" << "(" << "struct" << " " << identifier << "_wire" << ")";
+        ostream << "," << " " << "\"" << "size of " << identifier << " not equal to wire protocol size" << "\"" << std::endl;
+        ostream << ")" << ";" << std::endl;
+    }
 }
 
 void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {

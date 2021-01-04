@@ -55,7 +55,7 @@ TEST_P(RegressionTest, RegressionTestCase) {
     ASSERT_FALSE(observed_output_file_w.fail());
     expected_output << expected_output_file.rdbuf();
     expected_output_file.close();
-    rv = parse(input_file, observed_output_file_w, observed_error, target);
+    rv = parse(input_file, observed_output_file_w, observed_error, target, false);
     input_file.close();
     observed_output_file_w.close();
     observed_output_file_r.open("/tmp/" + root + ".c");

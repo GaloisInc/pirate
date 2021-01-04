@@ -67,19 +67,19 @@ class TypeSpec {
 public:
     virtual CDRTypeOf typeOf() = 0;
     virtual void cTypeDecl(std::ostream &ostream) = 0;
-    virtual void cTypeDeclWire(std::ostream &ostream) = 0;
+    virtual void cTypeDeclWire(std::ostream &ostream, bool packed) = 0;
     virtual std::string cTypeName() = 0;
     virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
-    virtual void cDeclareAsserts(std::ostream &ostream) { }
+    virtual void cDeclareAsserts(std::ostream &ostream, bool packed) { }
     virtual void cDeclareAnnotationValidate(std::ostream &ostream) = 0;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) = 0;
     virtual void cppDeclareHeader(std::ostream &ostream) { }
     virtual void cppTypeDecl(std::ostream &ostream) = 0;
-    virtual void cppTypeDeclWire(std::ostream &ostream) = 0;
-    virtual void cppDeclareAsserts(std::ostream &ostream) { }
+    virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) = 0;
+    virtual void cppDeclareAsserts(std::ostream &ostream, bool packed) { }
     virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
@@ -108,14 +108,14 @@ public:
     virtual CDRTypeOf typeOf() override { return m_typeOf; }
     virtual CDRBits cTypeBits() override { return m_cTypeBits; }
     virtual void cTypeDecl(std::ostream &ostream) override { }
-    virtual void cTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual std::string cTypeName() override { return m_cType; }
     virtual std::string cppNamespacePrefix() override { return ""; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
     virtual void cppTypeDecl(std::ostream &ostream) override { }
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
@@ -145,7 +145,7 @@ public:
         namespacePrefix(namespacePrefix), identifier(identifier), enumerators() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
-    virtual void cTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
@@ -154,7 +154,7 @@ public:
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
     virtual void cppTypeDecl(std::ostream &ostream) override;
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     void addEnumerator(std::string enumerator);
     virtual ~EnumTypeSpec() { }
@@ -179,7 +179,7 @@ public:
     TypeReference(TypeSpec *child) : child(child) { }
     virtual CDRTypeOf typeOf() override { return child->typeOf(); };
     virtual void cTypeDecl(std::ostream &ostream) override { }
-    virtual void cTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
@@ -188,7 +188,7 @@ public:
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { }
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { }
     virtual void cppTypeDecl(std::ostream &ostream) override { }
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { }
+    virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
     virtual ~TypeReference() { child = nullptr; }
 };

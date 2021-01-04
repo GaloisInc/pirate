@@ -38,9 +38,11 @@ add_element(Node *parent, char const* name)
 }
 
 void
-set_defaults(Element* defaults)
+set_defaults(Element* defaults, bool packed)
 {
-    defaults->SetAttribute("alignment", "1");
+    if (packed) {
+        defaults->SetAttribute("alignment", "8");
+    }
     defaults->SetAttribute("alignmentUnits", "bits");
     defaults->SetAttribute("binaryBooleanFalseRep", "0");
     defaults->SetAttribute("binaryBooleanTrueRep", "1");
@@ -78,30 +80,33 @@ add_primitive_type(
     Element* schema,
     char const* name,
     char const* type,
-    char const* size
+    char const* size,
+    bool packed
 ) {
     auto simpleType = schema->InsertEndChild(Element("xs:simpleType"))->ToElement();
     simpleType->SetAttribute("name", name);
     simpleType->SetAttribute("dfdl:length", size);
     simpleType->SetAttribute("dfdl:lengthKind", "explicit");
-    simpleType->SetAttribute("dfdl:alignment", size);
+    if (!packed) {
+        simpleType->SetAttribute("dfdl:alignment", size);
+    }
     add_element(simpleType, "xs:restriction")->SetAttribute("base", type);
 }
 
 void
-add_primitive_types(Element* schema)
+add_primitive_types(Element* schema, bool packed)
 {
-    add_primitive_type(schema, "float", "xs:float", "32");
-    add_primitive_type(schema, "double", "xs:double", "64");
-    add_primitive_type(schema, "int8", "xs:integer", "8");
-    add_primitive_type(schema, "int16", "xs:integer", "16");
-    add_primitive_type(schema, "int32", "xs:integer", "32");
-    add_primitive_type(schema, "int64", "xs:integer", "64");
-    add_primitive_type(schema, "uint8", "xs:nonNegativeInteger", "8");
-    add_primitive_type(schema, "uint16", "xs:nonNegativeInteger", "16");
-    add_primitive_type(schema, "uint32", "xs:nonNegativeInteger", "32");
-    add_primitive_type(schema, "uint64", "xs:nonNegativeInteger", "64");
-    add_primitive_type(schema, "boolean", "xs:boolean", "8");
+    add_primitive_type(schema, "float", "xs:float", "32", packed);
+    add_primitive_type(schema, "double", "xs:double", "64", packed);
+    add_primitive_type(schema, "int8", "xs:byte", "8", packed);
+    add_primitive_type(schema, "int16", "xs:short", "16", packed);
+    add_primitive_type(schema, "int32", "xs:int", "32", packed);
+    add_primitive_type(schema, "int64", "xs:long", "64", packed);
+    add_primitive_type(schema, "uint8", "xs:unsignedByte", "8", packed);
+    add_primitive_type(schema, "uint16", "xs:unsignedShort", "16", packed);
+    add_primitive_type(schema, "uint32", "xs:unsignedInt", "32", packed);
+    add_primitive_type(schema, "uint64", "xs:unsignedLong", "64", packed);
+    add_primitive_type(schema, "boolean", "xs:boolean", "8", packed);
 }
 
 int
@@ -216,10 +221,10 @@ get_type_name(TypeSpec* typeSpec)
     }
 }
 
-void construct_member(Element* e, Declarator* decl, TypeSpec* type);
+void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed);
 
 void
-finish_type(Element* e, TypeSpec* typeSpec)
+finish_type(Element* e, TypeSpec* typeSpec, bool packed)
 {
     if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
         e->SetAttribute("ref", "idl:" + get_type_name(typeref->child));
@@ -287,7 +292,7 @@ finish_type(Element* e, TypeSpec* typeSpec)
                     auto member = add_element(sequence, "xs:element");
                     member->SetAttribute("name", d->identifier);
 
-                    construct_member(member, d, m->typeSpec);
+                    construct_member(member, d, m->typeSpec, packed);
                 }
             }
             return;
@@ -301,13 +306,15 @@ finish_type(Element* e, TypeSpec* typeSpec)
 
             auto tag = add_element(sequence, "xs:element");
             tag->SetAttribute("name", "tag");
-            finish_type(tag, u->switchType);
+            finish_type(tag, u->switchType, packed);
 
             auto data = add_element(sequence, "xs:element");
             data->SetAttribute("name", "data");
             data->SetAttribute("dfdl:length", type_size(u));
             data->SetAttribute("dfdl:lengthKind", "explicit");
-            data->SetAttribute("dfdl:alignment", type_alignment(u));
+            if (!packed) {
+                data->SetAttribute("dfdl:alignment", type_alignment(u));
+            }
 
             auto unionelement = add_element(data, "xs:complexType");
             auto unionchoice = add_element(unionelement, "xs:choice");
@@ -327,14 +334,14 @@ finish_type(Element* e, TypeSpec* typeSpec)
                 member->SetAttribute("dfdl:choiceBranchKey", labels);
                 member->SetAttribute("name", m->declarator->identifier);
 
-                construct_member(member, m->declarator, m->typeSpec);
+                construct_member(member, m->declarator, m->typeSpec, packed);
             }
             return;
         }
     }
 }
 
-void construct_member(Element* e, Declarator* decl, TypeSpec* type)
+void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
 {
     for (auto dim : decl->dimensions) {
         auto complexType = add_element(e, "xs:complexType");
@@ -351,7 +358,7 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type)
         }
     }
 
-    finish_type(e, type);
+    finish_type(e, type, packed);
 }
 
 }
@@ -359,6 +366,7 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type)
 int generate_dfdl(
     std::ostream &ostream,
     CDRBuildTypes const& buildTypes,
+    bool packed,
     ModuleDecl const* moduleDecl)
 {
     Document doc;
@@ -378,19 +386,19 @@ int generate_dfdl(
     defineFormat->SetAttribute("name", "defaults");
 
     auto defaults = add_element(defineFormat, "dfdl:format");
-    set_defaults(defaults);
+    set_defaults(defaults, packed);
 
     auto format = add_element(appinfo, "dfdl:format");
     format->SetAttribute("ref", "idl:defaults");
 
-    add_primitive_types(schema);
+    add_primitive_types(schema, packed);
 
 
     for (auto * def : moduleDecl->definitions) {
         auto name = get_type_name(def);
         auto element = add_element(schema, "xs:element");
         element->SetAttribute("name", get_type_name(def));
-        finish_type(element, def);
+        finish_type(element, def, packed);
     }
 
     ostream << doc;

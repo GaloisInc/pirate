@@ -32,9 +32,9 @@ void ModuleDecl::cppTypeDecl(std::ostream &ostream) {
     }
 }
 
-void ModuleDecl::cTypeDeclWire(std::ostream &ostream) {
+void ModuleDecl::cTypeDeclWire(std::ostream &ostream, bool packed) {
     for (TypeSpec* definition : definitions) {
-        definition->cTypeDeclWire(ostream);
+        definition->cTypeDeclWire(ostream, packed);
     }
 }
 
@@ -56,10 +56,10 @@ void ModuleDecl::cDeclareAnnotationTransform(std::ostream &ostream) {
     }
 }
 
-void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
+void ModuleDecl::cDeclareAsserts(std::ostream &ostream, bool packed) {
     ostream << std::endl;
     for (TypeSpec* definition : definitions) {
-        definition->cDeclareAsserts(ostream);
+        definition->cDeclareAsserts(ostream, packed);
     }
 }
 
