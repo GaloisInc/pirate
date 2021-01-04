@@ -78,8 +78,8 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int num_bytes = bitsLength(member->typeSpec->cTypeBits());
-        if (num_bytes == 0) {
+        int numBytes = bitsLength(member->typeSpec->cTypeBits());
+        if (numBytes == 0) {
             ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
@@ -91,7 +91,7 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
-            ostream << "[" << num_bytes << "]";
+            ostream << "[" << numBytes << "]";
         }
         ostream << ";" << std::endl;
     }
