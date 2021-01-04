@@ -70,7 +70,7 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    int tag_num_bytes = bitsSize(switchType->cTypeBits());
+    int tag_num_bytes = bitsLength(switchType->cTypeBits());
     ostream << "unsigned" << " " << "char" << " " << "tag";
     ostream << "[" << tag_num_bytes << "]";
     ostream << ";" << std::endl;
@@ -78,7 +78,7 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int num_bytes = bitsSize(member->typeSpec->cTypeBits());
+        int num_bytes = bitsLength(member->typeSpec->cTypeBits());
         if (num_bytes == 0) {
             ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;

@@ -70,7 +70,7 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int num_bytes = bitsSize(member->typeSpec->cTypeBits());
+            int num_bytes = bitsLength(member->typeSpec->cTypeBits());
             if (num_bytes == 0) {
                 ostream << member->typeSpec->cTypeName() << "_wire" << " ";
                 ostream << declarator->identifier;

@@ -59,7 +59,7 @@ enum class CDRBits {
 };
 
 std::string bitsCType(CDRBits cdrBits);
-uint8_t bitsSize(CDRBits cdrBits);
+uint8_t bitsLength(CDRBits cdrBits);
 std::string bitsSerialize(CDRBits cdrBits);
 std::string bitsDeserialize(CDRBits cdrBits);
 

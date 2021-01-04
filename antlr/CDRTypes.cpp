@@ -222,7 +222,7 @@ std::string bitsCType(CDRBits cdrBits) {
     }
 }
 
-uint8_t bitsSize(CDRBits cdrBits) {
+uint8_t bitsLength(CDRBits cdrBits) {
     switch (cdrBits) {
         case CDRBits::B8:
             return 1;
