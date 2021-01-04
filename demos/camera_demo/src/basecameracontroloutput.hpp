@@ -15,27 +15,35 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include "cameracontroloutput.hpp"
+#include "options.hpp"
 
-class PiServoOrientationOutput : public BaseOrientationOutput
+class BaseCameraControlOutput : public CameraControlOutput
 {
 public:
-    PiServoOrientationOutput(int servoPin, const Options& options);
-    virtual ~PiServoOrientationOutput();
+    BaseCameraControlOutput(const Options& options);
+    virtual ~BaseCameraControlOutput();
 
     virtual int init() override;
     virtual void term() override;
 
+    virtual PanTilt getAngularPosition() override;
+    virtual void setAngularPosition(PanTilt angularPosition) override;
+    virtual void updateAngularPosition(PanTilt positionUpdate) override;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
+    const bool mVerbose;
+    const float mPanAxisMin;
+    const float mPanAxisMax;
+    const float mTiltAxisMin;
+    const float mTiltAxisMax;
+
 protected:
-    virtual bool applyAngularPosition(PanTilt angularPosition) override;
+    virtual bool applyAngularPosition(PanTilt angularPosition);
 
 private:
-    static int angleToServo(float angle);
+    std::mutex mLock;
+    PanTilt mAngularPosition;
 
-    const int mServoPin;
-    const bool mGpioLibInit;
-    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+    bool safelySetAngularPosition(PanTilt& angularPosition);
 };
-

@@ -15,38 +15,31 @@
 
 #pragma once
 
-// Angular position is read from the keyboard left/right keys
-
-#include <thread>
-#include <termios.h>
-
 #include "options.hpp"
-#include "orientationinput.hpp"
+#include "cameracontroloutput.hpp"
+#include "piservocameracontroloutput.hpp"
+#include "trilliumcontrol.hpp"
 
-class KeyboardOrientationInput : public OrientationInput
+class CameraControlOutputCreator
 {
-public:
-    KeyboardOrientationInput(const Options& options,
-                             CameraOrientationCallbacks angPosCallbacks);
-    virtual ~KeyboardOrientationInput();
-
-    virtual int init();
-    virtual void term();
-
 private:
-    const float mAngIncrement;
+    static constexpr int PI_SERVO_PIN = 27;
 
-    enum eKeyCode {
-        UP    = 0x41,
-        DOWN  = 0x42,
-        RIGHT = 0x43,
-        LEFT  = 0x44
-    };
-
-    struct termios mTermiosBackup;
-    bool mTermiosInit;
-
-    std::thread *mPollThread;
-    bool mPoll;
-    void pollThread();
+public:
+    static CameraControlOutput * get(const Options& options)
+    {
+        switch (options.mOutputType)
+        {
+#ifdef PIGPIO_PRESENT
+            case PiServoOutput:
+                return new PiServoCameraControlOutput(PI_SERVO_PIN, options);
+#endif
+            case TrilliumOutput:
+                return new TrilliumControl(options);
+            case PrintOutput:
+            case NoneOutput:
+            default:
+                return new BaseCameraControlOutput(options);
+        }
+    }
 };

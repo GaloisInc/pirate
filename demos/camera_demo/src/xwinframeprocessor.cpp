@@ -25,10 +25,10 @@
 #include <X11/Xutil.h>
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    CameraOrientationCallbacks angPosCallbacks) :
+    CameraControlCallbacks cameraControlCallbacks) :
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
-    mCallbacks(angPosCallbacks),
+    mCallbacks(cameraControlCallbacks),
     mPanAxisMin(options.mPanAxisMin),
     mPanAxisMax(options.mPanAxisMax),
     mTiltAxisMin(options.mTiltAxisMin),

@@ -15,10 +15,10 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include "basecameracontroloutput.hpp"
 #include "orion-sdk/OrionPublicPacketShim.hpp"
 
-class TrilliumControl : public BaseOrientationOutput
+class TrilliumControl : public BaseCameraControlOutput
 {
 public:
     TrilliumControl(const Options& options);

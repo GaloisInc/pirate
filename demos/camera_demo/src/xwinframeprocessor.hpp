@@ -22,14 +22,14 @@
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
-#include "orientationinput.hpp"
-#include "orientationoutput.hpp"
+#include "cameracontrolinput.hpp"
+#include "cameracontroloutput.hpp"
 
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
     XWinFrameProcessor(const Options& options,
-        CameraOrientationCallbacks angPosCallbacks);
+        CameraControlCallbacks cameraControlCallbacks);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
@@ -39,18 +39,18 @@ protected:
     virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
-    CameraOrientationCallbacks mCallbacks;
-    const float                mPanAxisMin;
-    const float                mPanAxisMax;
-    const float                mTiltAxisMin;
-    const float                mTiltAxisMax;
-    bool                       mImageSlidingWindow;
-    Display*                   mDisplay;
-    Window                     mWindow;
-    XImage*                    mImage;
-    unsigned char*             mImageBuffer;
-    GC                         mContext;
-    XGCValues                  mContextVals;
+    CameraControlCallbacks mCallbacks;
+    const float            mPanAxisMin;
+    const float            mPanAxisMax;
+    const float            mTiltAxisMin;
+    const float            mTiltAxisMax;
+    bool                   mImageSlidingWindow;
+    Display*               mDisplay;
+    Window                 mWindow;
+    XImage*                mImage;
+    unsigned char*         mImageBuffer;
+    GC                     mContext;
+    XGCValues              mContextVals;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();

@@ -19,19 +19,19 @@
 #include <thread>
 #include <vector>
 
-#include "orientationoutput.hpp"
+#include "cameracontroloutput.hpp"
 #include "options.hpp"
 #include "remotes.hpp"
 #include "camerademo-serialization.hpp"
 
-class RemoteOrientationOutput : public OrientationOutput
+class RemoteCameraControlOutput : public CameraControlOutput
 {
 public:
-    RemoteOrientationOutput(
-        std::unique_ptr<OrientationOutput> delegate,
+    RemoteCameraControlOutput(
+        std::unique_ptr<CameraControlOutput> delegate,
         const Options& options,
         const RemoteDescriptors& remotes);
-    virtual ~RemoteOrientationOutput();
+    virtual ~RemoteCameraControlOutput();
 
     virtual int init() override;
     virtual void term() override;
@@ -42,7 +42,7 @@ public:
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
 private:
-    const std::unique_ptr<OrientationOutput> mDelegate;
+    const std::unique_ptr<CameraControlOutput> mDelegate;
     uint16_t mMessageCounter;
 
     const bool mHasOutput;
@@ -57,9 +57,9 @@ private:
 
     void pollThread();
 
-    bool sendRequest(const CameraDemo::OrientationOutputRequest& request);
-    bool sendResponse(uint16_t id, const CameraDemo::OrientationOutputResponse& response);
+    bool sendRequest(const CameraDemo::CameraControlOutputRequest& request);
+    bool sendResponse(uint16_t id, const CameraDemo::CameraControlOutputResponse& response);
 
-    int recvRequest(CameraDemo::OrientationOutputRequest& request, int& clientId);
-    bool recvResponse(CameraDemo::OrientationOutputResponse& response);
+    int recvRequest(CameraDemo::CameraControlOutputRequest& request, int& clientId);
+    bool recvResponse(CameraDemo::CameraControlOutputResponse& response);
 };

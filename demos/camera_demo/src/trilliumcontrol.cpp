@@ -27,7 +27,7 @@
 #include "orion-sdk/Constants.hpp"
 
 TrilliumControl::TrilliumControl(const Options& options) :
-    BaseOrientationOutput(options),
+    BaseCameraControlOutput(options),
     mTrilliumIpAddress(options.mTrilliumIpAddress),
     mSockFd(-1),
     mVerbose(options.mVerbose),

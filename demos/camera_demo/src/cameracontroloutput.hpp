@@ -20,13 +20,13 @@
 #include <functional>
 #include <mutex>
 
-struct CameraOrientationCallbacks
+struct CameraControlCallbacks
 {
     using GetCallback = std::function<PanTilt()>;
     using SetCallback = std::function<void(PanTilt)>;
     using UpdateCallback = std::function<void(PanTilt)>;
 
-    CameraOrientationCallbacks(
+    CameraControlCallbacks(
         GetCallback get,
         SetCallback set,
         UpdateCallback update) :
@@ -40,11 +40,11 @@ struct CameraOrientationCallbacks
     UpdateCallback mUpdate;
 };
 
-class OrientationOutput
+class CameraControlOutput
 {
 public:
-    OrientationOutput();
-    virtual ~OrientationOutput();
+    CameraControlOutput();
+    virtual ~CameraControlOutput();
 
     virtual int init() = 0;
     virtual void term() = 0;
@@ -54,9 +54,9 @@ public:
     virtual void updateAngularPosition(PanTilt positionUpdate) = 0;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) = 0;
 
-    const CameraOrientationCallbacks& getCallbacks();
+    const CameraControlCallbacks& getCallbacks();
 
     static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
 private:
-    const CameraOrientationCallbacks mCallbacks;
+    const CameraControlCallbacks mCallbacks;
 };

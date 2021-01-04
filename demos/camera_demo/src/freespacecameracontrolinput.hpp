@@ -21,15 +21,15 @@
 #include <string>
 #include <vector>
 #include <freespace/freespace.h>
-#include "orientationinput.hpp"
+#include "cameracontrolinput.hpp"
 
-class FreespaceOrientationInput : public OrientationInput
+class FreespaceCameraControlInput : public CameraControlInput
 {
 public:
-    FreespaceOrientationInput(
-            CameraOrientationCallbacks angPosCallbacks,
+    FreespaceCameraControlInput(
+            CameraControlCallbacks cameraControlCallbacks,
             unsigned periodUs = DEFAULT_PERIOD_US);
-    virtual ~FreespaceOrientationInput();
+    virtual ~FreespaceCameraControlInput();
 
     virtual int init();
     virtual void term();

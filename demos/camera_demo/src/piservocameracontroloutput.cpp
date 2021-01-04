@@ -18,22 +18,22 @@
 #include <sys/types.h>
 #include <cerrno>
 #include <iostream>
-#include "piservoorientationoutput.hpp"
+#include "piservocameracontroloutput.hpp"
 
-PiServoOrientationOutput::PiServoOrientationOutput(int servoPin, const Options& options) :
-    BaseOrientationOutput(options),
+PiServoCameraControlOutput::PiServoCameraControlOutput(int servoPin, const Options& options) :
+    BaseCameraControlOutput(options),
     mServoPin(servoPin),
     mGpioLibInit(true)
 {
 
 }
 
-PiServoOrientationOutput::~PiServoOrientationOutput()
+PiServoCameraControlOutput::~PiServoCameraControlOutput()
 {
     term();
 }
 
-int PiServoOrientationOutput::init()
+int PiServoCameraControlOutput::init()
 {
     int rv;
 
@@ -72,7 +72,7 @@ int PiServoOrientationOutput::init()
     return 0;
 }
 
-void PiServoOrientationOutput::term()
+void PiServoCameraControlOutput::term()
 {
     gpioServo(mServoPin, PI_SERVO_OFF);
     gpioSetMode(mServoPin, PI_INPUT);
@@ -83,7 +83,7 @@ void PiServoOrientationOutput::term()
     }
 }
 
-int PiServoOrientationOutput::angleToServo(float angle)
+int PiServoCameraControlOutput::angleToServo(float angle)
 {
     static const float slope =
         (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
@@ -93,13 +93,13 @@ int PiServoOrientationOutput::angleToServo(float angle)
     return -1.0 * slope * angle + off;
 }
 
-bool PiServoOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
+bool PiServoCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
 {
     // ignore changes in tilt angle
     return p1.pan == p2.pan;
 }
 
-bool PiServoOrientationOutput::applyAngularPosition(PanTilt angularPosition)
+bool PiServoCameraControlOutput::applyAngularPosition(PanTilt angularPosition)
 {
     int rv = gpioServo(mServoPin, angleToServo(angularPosition.pan));
 

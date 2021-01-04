@@ -13,29 +13,24 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#pragma once
+#include <iomanip>
+#include <iostream>
+#include "cameracontroloutput.hpp"
 
-// Definition of a simple interface for reading camera angular orientation
-
-#include "orientationoutput.hpp"
-
-class OrientationInput
+CameraControlOutput::CameraControlOutput() :
+    mCallbacks(std::bind(&CameraControlOutput::getAngularPosition, this),
+               std::bind(&CameraControlOutput::setAngularPosition, this,  std::placeholders::_1),
+               std::bind(&CameraControlOutput::updateAngularPosition, this,  std::placeholders::_1))
 {
-public:
-    OrientationInput(CameraOrientationCallbacks callbacks) :
-        mCallbacks(callbacks)
-    {
 
-    }
+}
 
-    virtual ~OrientationInput()
-    {
+CameraControlOutput::~CameraControlOutput()
+{
 
-    }
+}
 
-    virtual int init() = 0;
-    virtual void term() = 0;
-
-protected:
-    CameraOrientationCallbacks mCallbacks;
-};
+const CameraControlCallbacks& CameraControlOutput::getCallbacks()
+{
+    return mCallbacks;
+}
