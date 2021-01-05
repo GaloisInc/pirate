@@ -3,25 +3,25 @@
   <xs:annotation>
     <xs:appinfo source="http://www.ogf.org/dfdl/">
       <dfdl:defineFormat name="defaults">
-        <dfdl:format alignment="1" alignmentUnits="bits" binaryBooleanFalseRep="0" binaryBooleanTrueRep="1" binaryFloatRep="ieee" binaryNumberCheckPolicy="lax" binaryNumberRep="binary" bitOrder="mostSignificantBitFirst" byteOrder="bigEndian" choiceLengthKind="implicit" encoding="utf-8" encodingErrorPolicy="replace" escapeSchemeRef="" floating="no" ignoreCase="no" initiatedContent="no" initiator="" leadingSkip="0" lengthKind="implicit" lengthUnits="bits" occursCountKind="implicit" prefixIncludesPrefixLength="no" representation="binary" separator="" separatorPosition="infix" sequenceKind="ordered" terminator="" textBidi="no" textPadKind="none" trailingSkip="0" truncateSpecifiedLengthString="no"/>
+        <dfdl:format alignment="8" alignmentUnits="bits" binaryBooleanFalseRep="0" binaryBooleanTrueRep="1" binaryFloatRep="ieee" binaryNumberCheckPolicy="lax" binaryNumberRep="binary" bitOrder="mostSignificantBitFirst" byteOrder="bigEndian" choiceLengthKind="implicit" encoding="utf-8" encodingErrorPolicy="replace" escapeSchemeRef="" floating="no" ignoreCase="no" initiatedContent="no" initiator="" leadingSkip="0" lengthKind="implicit" lengthUnits="bits" occursCountKind="implicit" prefixIncludesPrefixLength="no" representation="binary" separator="" separatorPosition="infix" sequenceKind="ordered" terminator="" textBidi="no" textPadKind="none" trailingSkip="0" truncateSpecifiedLengthString="no"/>
       </dfdl:defineFormat>
       <dfdl:format ref="idl:defaults"/>
     </xs:appinfo>
   </xs:annotation>
-  <xs:simpleType name="int8" dfdl:length="8" dfdl:lengthKind="explicit" dfdl:alignment="8">
-    <xs:restriction base="xs:integer"/>
+  <xs:simpleType name="int8" dfdl:length="8" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:byte"/>
   </xs:simpleType>
-  <xs:simpleType name="int16" dfdl:length="16" dfdl:lengthKind="explicit" dfdl:alignment="16">
-    <xs:restriction base="xs:integer"/>
+  <xs:simpleType name="int16" dfdl:length="16" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:short"/>
   </xs:simpleType>
-  <xs:simpleType name="uint8" dfdl:length="8" dfdl:lengthKind="explicit" dfdl:alignment="8">
-    <xs:restriction base="xs:nonNegativeInteger"/>
+  <xs:simpleType name="uint8" dfdl:length="8" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:unsignedByte"/>
   </xs:simpleType>
-  <xs:simpleType name="uint16" dfdl:length="16" dfdl:lengthKind="explicit" dfdl:alignment="16">
-    <xs:restriction base="xs:nonNegativeInteger"/>
+  <xs:simpleType name="uint16" dfdl:length="16" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:unsignedShort"/>
   </xs:simpleType>
-  <xs:simpleType name="uint32" dfdl:length="32" dfdl:lengthKind="explicit" dfdl:alignment="32">
-    <xs:restriction base="xs:nonNegativeInteger"/>
+  <xs:simpleType name="uint32" dfdl:length="32" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:unsignedInt"/>
   </xs:simpleType>
   <xs:element name="Command">
     <xs:complexType>
@@ -39,12 +39,27 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+  <xs:element name="CameraState">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="sync0" fixed="208" type="idl:uint8"/>
+        <xs:element name="sync1" fixed="13" type="idl:uint8"/>
+        <xs:element name="id" fixed="97" type="idl:uint8"/>
+        <xs:element name="length" fixed="5" type="idl:uint8"/>
+        <xs:element name="zoom" type="idl:int16"/>
+        <xs:element name="focus" type="idl:int16"/>
+        <xs:element name="index" fixed="0" type="idl:uint8"/>
+        <xs:element name="checksum" type="idl:uint16"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="VideoSettings">
     <xs:complexType>
       <xs:sequence>
         <xs:element name="sync0" fixed="208" type="idl:uint8"/>
         <xs:element name="sync1" fixed="13" type="idl:uint8"/>
         <xs:element name="id" fixed="98" type="idl:uint8"/>
+        <xs:element name="length" fixed="14" type="idl:uint8"/>
         <xs:element name="destIp">
           <xs:complexType>
             <xs:sequence>
