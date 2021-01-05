@@ -259,7 +259,7 @@ void FreespaceCameraControlInput::pollThread()
 
         float angularPan = weightedFilter(slope * acc.y + offset, mPrevPan, mPanIndex);
         float angularTilt = weightedFilter(slope * acc.x + offset, mPrevTilt, mTiltIndex);
-        mCallbacks.mSet(PanTilt(angularPan, angularTilt));
+        mCallbacks.mPosSet(PanTilt(angularPan, angularTilt));
     }
 
     // Disable data flow

@@ -116,6 +116,47 @@ bool TrilliumControl::applyAngularPosition(PanTilt angularPosition)
     return trilliumPktSend(mSockFd, pkt) == 0;
 }
 
+void TrilliumControl::updateZoom(CameraZoom zoom)
+{
+    int rv = -1;
+    OrionPkt_t pkt;
+
+    switch(zoom)
+    {
+        case Increment:
+            mState.mZoom += mZoomIncrement;
+            break;
+
+        case Decrement:
+            mState.mZoom -= mZoomIncrement;
+            break;
+
+        case Reset:
+            mState.mZoom = mZoomDefault;
+            break;
+
+        default:
+            return;
+    }
+
+    if (mState.mZoom < mZoomMin)
+    {
+        mState.mZoom = mZoomMin;
+    }
+    else if (mState.mZoom > mZoomMax)
+    {
+        mState.mZoom = mZoomMax;
+    }
+
+    encodeOrionCameraStatePacket(&pkt, mState.mZoom, -1, 0);
+
+    rv = trilliumPktSend(mSockFd, pkt);
+    if (rv != 0)
+    {
+        std::perror("Failed to send Trillium zoom command");
+    }
+}
+
 void TrilliumControl::reveiveThread()
 {
     int rv = -1;
@@ -147,6 +188,10 @@ void TrilliumControl::processTrilliumPacket(OrionPkt_t& pkt)
             decodeOrionDiagnosticsPacketStructure(&pkt, &mState.mDiag);
             break;
 
+        case ORION_PKT_CAMERA_STATE:
+            processCameraState(pkt);
+            break;
+
         default:
             break;
     }
@@ -159,7 +204,6 @@ void TrilliumControl::processTrilliumPacket(OrionPkt_t& pkt)
 
 void TrilliumControl::processSoftwareDiagnostics(OrionPkt_t& pkt)
 {
-
     OrionSoftwareDiagnostics_t d;
     int rv = decodeOrionSoftwareDiagnosticsPacketStructure(&pkt, &d);
     if (rv != 1 || d.sourceBoard >= BOARD_COUNT)
@@ -168,6 +212,22 @@ void TrilliumControl::processSoftwareDiagnostics(OrionPkt_t& pkt)
     }
 
     mState.mSoftDiad[d.sourceBoard] = d;
+}
+
+void TrilliumControl::processCameraState(OrionPkt_t& pkt)
+{
+    float zoom = 0.0;
+    float focus = 0.0;
+    uint8_t index = ~0;
+
+    int rv = decodeOrionCameraStatePacket(&pkt, &zoom, &focus, &index);
+    if ((rv != 1) || (index != 0))
+    {
+        return;
+    }
+
+    mState.mZoom = zoom;
+    mState.mFocus = focus;
 }
 
 void TrilliumControl::printCameraStatus()
@@ -255,6 +315,11 @@ void TrilliumControl::printCameraStatus()
       << "   HFOV = " << std::setprecision(8) << std::setw(10) << hfov << " deg "
       << "   VFOV = " << std::setprecision(8) << std::setw(10) << vfov << " deg "
       << std::string(14, ' ') <<  "|\n";
+    s << "|" << std::string(14, ' ')
+      << "   Zoom = " << std::setprecision(8) << std::setw(10) << mState.mZoom
+      << std::string(5, ' ')
+      << "  Focus = " << std::setprecision(8) << std::setw(10) << mState.mFocus
+      << std::string(19, ' ') <<  "|\n";
 
     s << "|" << std::string(11, ' ')
       << "Resolution = " << std::setw(4) << width << " x " 

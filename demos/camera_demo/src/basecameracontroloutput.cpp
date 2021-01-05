@@ -59,6 +59,11 @@ bool BaseCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
     return p1 == p2;
 }
 
+void BaseCameraControlOutput::updateZoom(CameraZoom zoom)
+{
+    (void) zoom;
+}
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 

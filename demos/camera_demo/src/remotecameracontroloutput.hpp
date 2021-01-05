@@ -40,6 +40,7 @@ public:
     virtual void setAngularPosition(PanTilt angularPosition) override;
     virtual void updateAngularPosition(PanTilt positionUpdate) override;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
+    virtual void updateZoom(CameraZoom zoom) override;
 
 private:
     const std::unique_ptr<CameraControlOutput> mDelegate;

@@ -13,25 +13,11 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <iomanip>
-#include <iostream>
-#include "cameracontroloutput.hpp"
+#pragma once
 
-CameraControlOutput::CameraControlOutput() :
-    mCallbacks(std::bind(&CameraControlOutput::getAngularPosition, this),
-               std::bind(&CameraControlOutput::setAngularPosition, this,  std::placeholders::_1),
-               std::bind(&CameraControlOutput::updateAngularPosition, this,  std::placeholders::_1),
-               std::bind(&CameraControlOutput::updateZoom, this,  std::placeholders::_1))
+enum CameraZoom
 {
-
-}
-
-CameraControlOutput::~CameraControlOutput()
-{
-
-}
-
-const CameraControlCallbacks& CameraControlOutput::getCallbacks()
-{
-    return mCallbacks;
-}
+    Increment,
+    Decrement,
+    Reset
+};

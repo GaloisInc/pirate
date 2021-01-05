@@ -16,28 +16,33 @@
 #pragma once
 
 #include "pantilt.hpp"
+#include "camerazoom.hpp"
 
 #include <functional>
 #include <mutex>
 
 struct CameraControlCallbacks
 {
-    using GetCallback = std::function<PanTilt()>;
-    using SetCallback = std::function<void(PanTilt)>;
-    using UpdateCallback = std::function<void(PanTilt)>;
+    using PosGet = std::function<PanTilt()>;
+    using PosSet = std::function<void(PanTilt)>;
+    using PosUpdate = std::function<void(PanTilt)>;
+    using ZoomUpdate = std::function<void(CameraZoom)>;
 
     CameraControlCallbacks(
-        GetCallback get,
-        SetCallback set,
-        UpdateCallback update) :
-        mGet(get), mSet(set), mUpdate(update)
+        PosGet posGet,
+        PosSet posSet,
+        PosUpdate posUpdate,
+        ZoomUpdate zoomUpdate) :
+        mPosGet(posGet), mPosSet(posSet), mPosUpdate(posUpdate),
+        mZoomUpdate(zoomUpdate)
     {
 
     }
 
-    GetCallback mGet;
-    SetCallback mSet;
-    UpdateCallback mUpdate;
+    PosGet mPosGet;
+    PosSet mPosSet;
+    PosUpdate mPosUpdate;
+    ZoomUpdate mZoomUpdate;
 };
 
 class CameraControlOutput
@@ -53,6 +58,8 @@ public:
     virtual void setAngularPosition(PanTilt angularPosition) = 0;
     virtual void updateAngularPosition(PanTilt positionUpdate) = 0;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) = 0;
+
+    virtual void updateZoom(CameraZoom zoom) = 0;
 
     const CameraControlCallbacks& getCallbacks();
 

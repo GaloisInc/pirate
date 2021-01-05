@@ -29,6 +29,7 @@ public:
 
 protected:
     virtual bool applyAngularPosition(PanTilt angularPosition) override;
+    virtual void updateZoom(CameraZoom zoom) override;
 
 private:
     const std::string mTrilliumIpAddress;
@@ -40,10 +41,13 @@ private:
     void reveiveThread();
     void processTrilliumPacket(OrionPkt_t& pkt);
     void processSoftwareDiagnostics(OrionPkt_t& pkt);
+    void processCameraState(OrionPkt_t& pkt);
     void printCameraStatus();
 
     struct {
         GeolocateTelemetryCore_t mGeo;
+        float mZoom;
+        float mFocus;
         OrionDiagnostics_t mDiag;
         OrionSoftwareDiagnostics_t mSoftDiad[BOARD_COUNT]; 
         struct {
@@ -52,4 +56,9 @@ private:
         } mLastPacket;
         unsigned mPacketCount;
     } mState;
+
+    static constexpr float mZoomIncrement = 0.1;
+    static constexpr float mZoomMin = 1.0;
+    static constexpr float mZoomMax = 8.0;
+    static constexpr float mZoomDefault = mZoomMin;
 };

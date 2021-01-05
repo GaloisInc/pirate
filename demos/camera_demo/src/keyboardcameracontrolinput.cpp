@@ -129,19 +129,28 @@ void KeyboardCameraControlInput::pollThread()
         {
             case UP:
                 panTiltUpdate.tilt = mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case DOWN:
                 panTiltUpdate.tilt = -mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case LEFT:
                 panTiltUpdate.pan = -mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case RIGHT:
                 panTiltUpdate.pan = mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
+                break;
+            case ZOOM_INC:
+                mCallbacks.mZoomUpdate(Increment);
+                break;
+            case ZOOM_DEC:
+                mCallbacks.mZoomUpdate(Decrement);
+                break;
+            case ZOOM_RESET:
+                mCallbacks.mZoomUpdate(Reset);
                 break;
             default:
                 continue;

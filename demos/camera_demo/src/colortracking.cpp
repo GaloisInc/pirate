@@ -104,7 +104,7 @@ int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataS
     }
 
     if (mImageSlidingWindow) {
-        PanTilt angularPosition = mCallbacks.mGet();
+        PanTilt angularPosition = mCallbacks.mPosGet();
         float fractionX = (angularPosition.pan - mPanAxisMin) / (mPanAxisMax - mPanAxisMin);
         float fractionY = (angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
         x_center = mImageWidth * fractionX;
@@ -130,7 +130,7 @@ int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataS
     }
 
     if ((update.pan != 0.0) || (update.tilt != 0.0)) {
-        mCallbacks.mUpdate(update);
+        mCallbacks.mPosUpdate(update);
     }
 
     return 0;

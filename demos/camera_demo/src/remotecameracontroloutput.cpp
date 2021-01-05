@@ -183,6 +183,10 @@ bool RemoteCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2) {
     return mDelegate->equivalentPosition(p1, p2);
 }
 
+void RemoteCameraControlOutput::updateZoom(CameraZoom zoom) {
+    (void) zoom; // TODO
+}
+
 PanTilt RemoteCameraControlOutput::getAngularPosition() {
     CameraControlOutputRequest request;
     CameraControlOutputResponse response;
