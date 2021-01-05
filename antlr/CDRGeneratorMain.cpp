@@ -51,6 +51,8 @@ int main(int argc, char* argv[]) {
                     return 1;
                 }
                 break;
+            case 0:
+                break;
             default:
                 return 1;
         }

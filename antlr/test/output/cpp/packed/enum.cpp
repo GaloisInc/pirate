@@ -1,0 +1,83 @@
+#ifndef _ENUMTYPE_IDL_CODEGEN_H
+#define _ENUMTYPE_IDL_CODEGEN_H
+
+#include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <stdexcept>
+#include <vector>
+
+#include <endian.h>
+
+namespace EnumType {
+
+	enum class DayOfWeek : uint32_t {
+		Monday,
+		Tuesday,
+		Wednesday,
+		Thursday,
+		Friday
+	};
+
+	struct Week_Interval {
+		DayOfWeek begin __attribute__((aligned(4)));
+		DayOfWeek end __attribute__((aligned(4)));
+	};
+
+	struct Week_Interval_wire {
+		unsigned char begin[4];
+		unsigned char end[4];
+	} __attribute__((packed)) ;
+
+}
+
+namespace pirate {
+#ifndef _PIRATE_SERIALIZATION_H
+#define _PIRATE_SERIALIZATION_H
+	template <typename T>
+	struct Serialization {
+		static void toBuffer(T const& val, std::vector<char>& buf);
+		static T fromBuffer(std::vector<char> const& buf);
+	};
+#endif // _PIRATE_SERIALIZATION_H
+
+	template<>
+	struct Serialization<struct EnumType::Week_Interval> {
+		static void toBuffer(struct EnumType::Week_Interval const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct EnumType::Week_Interval));
+			struct EnumType::Week_Interval_wire* output = (struct EnumType::Week_Interval_wire*) buf.data();
+			const struct EnumType::Week_Interval* input = &val;
+			uint32_t field_begin;
+			uint32_t field_end;
+			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+			memcpy(&field_end, &input->end, sizeof(uint32_t));
+			field_begin = htobe32(field_begin);
+			field_end = htobe32(field_end);
+			memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+			memcpy(&output->end, &field_end, sizeof(uint32_t));
+		}
+
+		static struct EnumType::Week_Interval fromBuffer(std::vector<char> const& buf) {
+			struct EnumType::Week_Interval retval;
+			const struct EnumType::Week_Interval_wire* input = (const struct EnumType::Week_Interval_wire*) buf.data();
+			struct EnumType::Week_Interval* output = &retval;
+			if (buf.size() != sizeof(struct EnumType::Week_Interval)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for EnumType::Week_Interval type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct EnumType::Week_Interval));
+				throw std::length_error(error_msg);
+			}
+			uint32_t field_begin;
+			uint32_t field_end;
+			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+			memcpy(&field_end, &input->end, sizeof(uint32_t));
+			field_begin = be32toh(field_begin);
+			field_end = be32toh(field_end);
+			memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+			memcpy(&output->end, &field_end, sizeof(uint32_t));
+			return retval;
+		}
+	};
+}
+
+#endif // _ENUMTYPE_IDL_CODEGEN_H
