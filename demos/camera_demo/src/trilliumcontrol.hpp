@@ -38,7 +38,18 @@ private:
     std::thread *mReceiveThread;
     bool mReceive;
     void reveiveThread();
-    static void processTrilliumPacket(OrionPkt_t& pkt);
-    static void processSoftwareDiagnostics(OrionPkt_t& pkt);
-    static void processGeolocateTelemetry(OrionPkt_t& pkt);
+    void processTrilliumPacket(OrionPkt_t& pkt);
+    void processSoftwareDiagnostics(OrionPkt_t& pkt);
+    void printCameraStatus();
+
+    struct {
+        GeolocateTelemetryCore_t mGeo;
+        OrionDiagnostics_t mDiag;
+        OrionSoftwareDiagnostics_t mSoftDiad[BOARD_COUNT]; 
+        struct {
+            unsigned mID;
+            unsigned mLength;
+        } mLastPacket;
+        unsigned mPacketCount;
+    } mState;
 };
