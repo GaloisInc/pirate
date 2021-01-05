@@ -40,8 +40,8 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, bool pac
     moduleDecl->cTypeDecl(ostream);
     moduleDecl->cTypeDeclWire(ostream, packed);
     moduleDecl->cDeclareAsserts(ostream, packed);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE, packed);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE, packed);
     if (buildTypes.hasValidateAnnotations()) {
         moduleDecl->cDeclareAnnotationValidate(ostream);
     }
@@ -70,7 +70,7 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, bool p
     moduleDecl->cppDeclareAsserts(ostream, packed);
     moduleDecl->cppDeclareFooter(ostream);
     cppPirateNamespaceHeader(ostream);
-    moduleDecl->cppDeclareFunctions(ostream);
+    moduleDecl->cppDeclareFunctions(ostream, packed);
     cppPirateNamespaceFooter(ostream);
     ostream << std::endl;
     ostream << "#endif" << " " << "//" << " " << guardname << std::endl;

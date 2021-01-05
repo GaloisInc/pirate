@@ -66,6 +66,7 @@ namespace pirate {
 			uint8_t data_a;
 			uint32_t data_b;
 			uint32_t data_c;
+			memset(output, 0, sizeof(*output));
 			memcpy(&tag, &input->tag, sizeof(uint16_t));
 			tag = htobe16(tag);
 			memcpy(&output->tag, &tag, sizeof(uint16_t));
@@ -153,6 +154,7 @@ namespace pirate {
 			uint8_t field_a;
 			uint32_t field_b;
 			uint32_t field_c;
+			memset(output, 0, sizeof(*output));
 			for (size_t b_0 = 0; b_0 < 10; b_0++) {
 				memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
 				field_b = htobe32(field_b);

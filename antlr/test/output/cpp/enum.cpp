@@ -50,6 +50,7 @@ namespace pirate {
 			const struct EnumType::Week_Interval* input = &val;
 			uint32_t field_begin;
 			uint32_t field_end;
+			memset(output, 0, sizeof(*output));
 			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
 			memcpy(&field_end, &input->end, sizeof(uint32_t));
 			field_begin = htobe32(field_begin);

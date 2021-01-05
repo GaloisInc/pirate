@@ -93,6 +93,7 @@ namespace pirate {
 			uint8_t field_bool_val;
 			uint8_t field_octet_val;
 			uint8_t field_uint8_val;
+			memset(output, 0, sizeof(*output));
 			memcpy(&field_float_val, &input->float_val, sizeof(uint32_t));
 			memcpy(&field_double_val, &input->double_val, sizeof(uint64_t));
 			memcpy(&field_short_val, &input->short_val, sizeof(uint16_t));

@@ -69,6 +69,7 @@ void encode_annotation_union_example(struct Annotation_Union_Example* input, str
 	uint16_t data_a;
 	uint32_t data_b;
 	uint32_t data_c;
+	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));

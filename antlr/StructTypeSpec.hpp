@@ -32,10 +32,10 @@ typedef std::function<void(StructMember* member, Declarator* declarator)> Struct
 class StructTypeSpec : public TypeSpec {
 private:
     void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
-    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, bool packed);
     void cCppTypeDecl(std::ostream &ostream, bool cpp);
-    void cppDeclareSerializationFunction(std::ostream &ostream);
-    void cppDeclareDeserializationFunction(std::ostream &ostream);
+    void cppDeclareSerializationFunction(std::ostream &ostream, bool packed);
+    void cppDeclareDeserializationFunction(std::ostream &ostream, bool packed);
 public:
     std::string namespacePrefix;
     std::string identifier;
@@ -48,14 +48,14 @@ public:
     virtual std::string cTypeName() override { return "struct " + identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) override;
     virtual void cDeclareAnnotationValidate(std::ostream &ostream) override;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream, bool packed) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
     virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { cTypeDeclWire(ostream, packed); }
     virtual void cppDeclareAsserts(std::ostream &ostream, bool packed) override { cDeclareAsserts(ostream, packed); }
-    virtual void cppDeclareFunctions(std::ostream &ostream) override;
+    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) override;
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
 };

@@ -131,7 +131,7 @@ void EnumTypeSpec::cppTypeDecl(std::ostream &ostream) {
     ostream << "}" << ";" << std::endl;
 }
 
-void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
     std::string funcname = identifier;
     transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     ostream << std::endl;

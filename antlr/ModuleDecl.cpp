@@ -38,9 +38,9 @@ void ModuleDecl::cTypeDeclWire(std::ostream &ostream, bool packed) {
     }
 }
 
-void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
     for (TypeSpec* definition : definitions) {
-        definition->cDeclareFunctions(ostream, functionType);
+        definition->cDeclareFunctions(ostream, functionType, packed);
     }
 }
 
@@ -63,9 +63,9 @@ void ModuleDecl::cDeclareAsserts(std::ostream &ostream, bool packed) {
     }
 }
 
-void ModuleDecl::cppDeclareFunctions(std::ostream &ostream) {
+void ModuleDecl::cppDeclareFunctions(std::ostream &ostream, bool packed) {
     for (TypeSpec* definition : definitions) {
-        definition->cppDeclareFunctions(ostream);
+        definition->cppDeclareFunctions(ostream, packed);
     }
 }
 

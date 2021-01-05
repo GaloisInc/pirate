@@ -40,6 +40,7 @@ void encode_union_array_field(struct Union_Array_Field* input, struct Union_Arra
 	uint8_t data_a;
 	uint32_t data_b;
 	uint32_t data_c;
+	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));

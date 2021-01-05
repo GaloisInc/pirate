@@ -72,7 +72,7 @@ public:
     virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) = 0;
     virtual void cDeclareAsserts(std::ostream &ostream, bool packed) { }
     virtual void cDeclareAnnotationValidate(std::ostream &ostream) = 0;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) = 0;
@@ -80,7 +80,7 @@ public:
     virtual void cppTypeDecl(std::ostream &ostream) = 0;
     virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) = 0;
     virtual void cppDeclareAsserts(std::ostream &ostream, bool packed) { }
-    virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
+    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
     virtual ~TypeSpec() { };
@@ -111,12 +111,12 @@ public:
     virtual void cTypeDeclWire(std::ostream &ostream, bool packed) override { }
     virtual std::string cTypeName() override { return m_cType; }
     virtual std::string cppNamespacePrefix() override { return ""; }
-    virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
+    virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/, bool /* packed*/) override { };
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
     virtual void cppTypeDecl(std::ostream &ostream) override { }
     virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
-    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) override { }
     static TypeSpec* floatType();
     static TypeSpec* doubleType();
     static TypeSpec* longDoubleType();
@@ -150,12 +150,12 @@ public:
     virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::B32; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) override;
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { };
     virtual void cppTypeDecl(std::ostream &ostream) override;
     virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
-    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) override { }
     void addEnumerator(std::string enumerator);
     virtual ~EnumTypeSpec() { }
 };
@@ -184,12 +184,12 @@ public:
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override { }
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) override { }
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { }
     virtual void cDeclareAnnotationTransform(std::ostream& /*ostream*/) override { }
     virtual void cppTypeDecl(std::ostream &ostream) override { }
     virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { }
-    virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) override { }
     virtual ~TypeReference() { child = nullptr; }
 };
 

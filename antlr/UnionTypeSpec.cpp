@@ -126,11 +126,20 @@ void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream, bool packed) {
     }
 }
 
-void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
+void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, bool packed) {
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
         cDeclareLocalVar(ostream, member->typeSpec, "data_" + declarator->identifier);
+    }
+    // packed union types should fill the unused bytes of data with 0's
+    // unpacked union types should fill the unused bytes of data and padding with 0's
+    // simpler to combine these two cases
+    if (functionType == CDRFunc::SERIALIZE) {
+        ostream << "memset" << "(";
+        ostream << "output" << ",";
+        ostream << " " << "0" << ",";
+        ostream << " " << "sizeof" << "(" << "*" << "output" << ")" << ")" << ";" << std::endl;
     }
     cCopyMemoryIn(ostream, switchType, "tag", "tag");
     cConvertByteOrder(ostream, switchType, "tag", functionType);
@@ -164,11 +173,11 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
     ostream << "}" << std::endl;
 }
 
-void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType);
+    cCppFunctionBody(ostream, functionType, packed);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -240,20 +249,20 @@ void UnionTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
     ostream << "}" << std::endl;
 }
 
-void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
+void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream, bool packed) {
     ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
     ostream << "struct" << " " << "Serialization";
     ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    cppDeclareSerializationFunction(ostream);
+    cppDeclareSerializationFunction(ostream, packed);
     ostream << std::endl;
-    cppDeclareDeserializationFunction(ostream);
+    cppDeclareDeserializationFunction(ostream, packed);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
 }
 
-void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
+void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream, bool packed) {
     cppDeclareSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -266,12 +275,12 @@ void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, packed);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 
-void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
+void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream, bool packed) {
     cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -301,7 +310,7 @@ void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << "error_msg" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, packed);
     ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;

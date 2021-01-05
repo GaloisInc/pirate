@@ -58,6 +58,7 @@ namespace pirate {
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
+			memset(output, 0, sizeof(*output));
 			memcpy(&field_x, &input->x, sizeof(uint64_t));
 			memcpy(&field_y, &input->y, sizeof(uint64_t));
 			memcpy(&field_z, &input->z, sizeof(uint64_t));
@@ -104,6 +105,7 @@ namespace pirate {
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
+			memset(output, 0, sizeof(*output));
 			memcpy(&field_x, &input->x, sizeof(uint64_t));
 			memcpy(&field_y, &input->y, sizeof(uint64_t));
 			memcpy(&field_z, &input->z, sizeof(uint64_t));
