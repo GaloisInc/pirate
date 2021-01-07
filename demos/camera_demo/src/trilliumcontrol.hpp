@@ -61,4 +61,7 @@ private:
     static constexpr float mZoomMin = 1.0;
     static constexpr float mZoomMax = 8.0;
     static constexpr float mZoomDefault = mZoomMin;
+
+    const bool mVerticalFlip;
+    const bool mHorizontalFlip;
 };
