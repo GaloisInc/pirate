@@ -23,14 +23,12 @@ namespace UnionType {
 	struct Union_Example_wire {
 		unsigned char tag[2];
 		union {
-			unsigned char a[1] __attribute__((aligned(1)));
-			unsigned char b[4] __attribute__((aligned(4)));
-			unsigned char c[4] __attribute__((aligned(4)));
+			unsigned char a[1];
+			unsigned char b[4];
+			unsigned char c[4];
 		} data;
-	};
+	} __attribute__((packed)) ;
 
-	static_assert(sizeof(struct Union_Example) == sizeof(struct Union_Example_wire), "size of Union_Example not equal to wire protocol size"
-	);
 }
 
 namespace pirate {

@@ -29,25 +29,22 @@ namespace Annotations_Module {
 	};
 
 	struct Annotation_Struct_Example_wire {
-		unsigned char u[4] __attribute__((aligned(4)));
-		unsigned char v[4] __attribute__((aligned(4)));
-		unsigned char x[8] __attribute__((aligned(8)));
-		unsigned char y[8] __attribute__((aligned(8)));
-		unsigned char z[8] __attribute__((aligned(8)));
-	};
+		unsigned char u[4];
+		unsigned char v[4];
+		unsigned char x[8];
+		unsigned char y[8];
+		unsigned char z[8];
+	} __attribute__((packed)) ;
 
 	struct Annotation_Union_Example_wire {
 		unsigned char tag[2];
 		union {
-			unsigned char a[2] __attribute__((aligned(2)));
-			unsigned char b[4] __attribute__((aligned(4)));
-			unsigned char c[4] __attribute__((aligned(4)));
+			unsigned char a[2];
+			unsigned char b[4];
+			unsigned char c[4];
 		} data;
-	};
+	} __attribute__((packed)) ;
 
-	static_assert(sizeof(struct Annotation_Struct_Example) == sizeof(struct Annotation_Struct_Example_wire), "size of struct Annotation_Struct_Example not equal to wire protocol struct");
-	static_assert(sizeof(struct Annotation_Union_Example) == sizeof(struct Annotation_Union_Example_wire), "size of Annotation_Union_Example not equal to wire protocol size"
-	);
 }
 
 namespace pirate {
@@ -71,7 +68,6 @@ namespace pirate {
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
-			memset(output, 0, sizeof(*output));
 			memcpy(&field_u, &input->u, sizeof(uint32_t));
 			memcpy(&field_v, &input->v, sizeof(uint32_t));
 			memcpy(&field_x, &input->x, sizeof(uint64_t));
