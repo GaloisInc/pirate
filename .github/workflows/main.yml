@@ -70,8 +70,6 @@ jobs:
     - name: Install dependencies via apt-get
       if: matrix.packager == 'apt-get'
       run: |
-        ${{matrix.sudo}} apt-get install gnupg1
-        ${{matrix.sudo}} apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DE19EB17684BA42D
         ${{matrix.sudo}} apt-get update
         ${{matrix.sudo}} DEBIAN_FRONTEND=noninteractive TZ=UTC \
            apt-get install --no-install-recommends -y \
