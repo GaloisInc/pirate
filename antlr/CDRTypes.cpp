@@ -131,7 +131,7 @@ void EnumTypeSpec::cppTypeDecl(std::ostream &ostream) {
     ostream << "}" << ";" << std::endl;
 }
 
-void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
+void EnumTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
     std::string funcname = identifier;
     transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     ostream << std::endl;
@@ -222,6 +222,9 @@ std::string bitsCType(CDRBits cdrBits) {
     }
 }
 
+// Types are declared with their natural alignment on 64-bit systems.
+// These are nearly identical to the natural alignment on 32-bit systems
+// except that doubles have a natural alignment of 4 bytes of 32-bit Linux systems.
 uint8_t bitsAlignment(CDRBits cdrBits) {
     switch (cdrBits) {
         case CDRBits::B8:

@@ -22,21 +22,18 @@ struct Struct_Array_Field {
 struct Union_Array_Field_wire {
 	unsigned char tag[2];
 	union {
-		unsigned char a[1] __attribute__((aligned(1)));
-		unsigned char b[10][4] __attribute__((aligned(4)));
-		unsigned char c[1][2][3][4] __attribute__((aligned(4)));
+		unsigned char a[1];
+		unsigned char b[10][4];
+		unsigned char c[1][2][3][4];
 	} data;
-};
+} __attribute__((packed)) ;
 
 struct Struct_Array_Field_wire {
-	unsigned char a[1] __attribute__((aligned(1)));
-	unsigned char b[10][4] __attribute__((aligned(4)));
-	unsigned char c[1][2][3][4][5][6][4] __attribute__((aligned(4)));
-};
+	unsigned char a[1];
+	unsigned char b[10][4];
+	unsigned char c[1][2][3][4][5][6][4];
+} __attribute__((packed)) ;
 
-static_assert(sizeof(struct Union_Array_Field) == sizeof(struct Union_Array_Field_wire), "size of Union_Array_Field not equal to wire protocol size"
-);
-static_assert(sizeof(struct Struct_Array_Field) == sizeof(struct Struct_Array_Field_wire), "size of struct Struct_Array_Field not equal to wire protocol struct");
 
 void encode_union_array_field(struct Union_Array_Field* input, struct Union_Array_Field_wire* output) {
 	uint16_t tag;
@@ -79,7 +76,6 @@ void encode_struct_array_field(struct Struct_Array_Field* input, struct Struct_A
 	uint8_t field_a;
 	uint32_t field_b;
 	uint32_t field_c;
-	memset(output, 0, sizeof(*output));
 	for (size_t b_0 = 0; b_0 < 10; b_0++) {
 		memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
 		field_b = htobe32(field_b);

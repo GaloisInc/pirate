@@ -28,6 +28,29 @@ module Orion {
 		uint16 checksum;
 	};
 
+	struct CameraState {
+		@value(208)
+		uint8 sync0;
+
+		@value(13)
+		uint8 sync1;
+
+		@value(97)
+		uint8 id;
+
+		@value(5)
+		uint8 length;
+
+		int16 zoom;
+
+		int16 focus;
+
+		@value(0)
+		uint8 index;
+
+		uint16 checksum;
+	};
+
 	struct VideoSettings {
 		@value(208)
 		uint8 sync0;
@@ -37,6 +60,9 @@ module Orion {
 
 		@value(98)
 		uint8 id;
+
+		@value(14)
+		uint8 length;
 
 		uint8 destIp[4];
 

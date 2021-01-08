@@ -27,28 +27,27 @@ struct Primitives {
 };
 
 struct Primitives_wire {
-	unsigned char float_val[4] __attribute__((aligned(4)));
-	unsigned char double_val[8] __attribute__((aligned(8)));
-	unsigned char short_val[2] __attribute__((aligned(2)));
-	unsigned char int16_val[2] __attribute__((aligned(2)));
-	unsigned char long_val[4] __attribute__((aligned(4)));
-	unsigned char int32_val[4] __attribute__((aligned(4)));
-	unsigned char long_long_val[8] __attribute__((aligned(8)));
-	unsigned char int64_val[8] __attribute__((aligned(8)));
-	unsigned char unsigned_short_val[2] __attribute__((aligned(2)));
-	unsigned char uint16_val[2] __attribute__((aligned(2)));
-	unsigned char unsigned_long_val[4] __attribute__((aligned(4)));
-	unsigned char uint32_val[4] __attribute__((aligned(4)));
-	unsigned char unsigned_long_long_val[8] __attribute__((aligned(8)));
-	unsigned char uint64_val[8] __attribute__((aligned(8)));
-	unsigned char char_val[1] __attribute__((aligned(1)));
-	unsigned char int8_val[1] __attribute__((aligned(1)));
-	unsigned char bool_val[1] __attribute__((aligned(1)));
-	unsigned char octet_val[1] __attribute__((aligned(1)));
-	unsigned char uint8_val[1] __attribute__((aligned(1)));
-};
+	unsigned char float_val[4];
+	unsigned char double_val[8];
+	unsigned char short_val[2];
+	unsigned char int16_val[2];
+	unsigned char long_val[4];
+	unsigned char int32_val[4];
+	unsigned char long_long_val[8];
+	unsigned char int64_val[8];
+	unsigned char unsigned_short_val[2];
+	unsigned char uint16_val[2];
+	unsigned char unsigned_long_val[4];
+	unsigned char uint32_val[4];
+	unsigned char unsigned_long_long_val[8];
+	unsigned char uint64_val[8];
+	unsigned char char_val[1];
+	unsigned char int8_val[1];
+	unsigned char bool_val[1];
+	unsigned char octet_val[1];
+	unsigned char uint8_val[1];
+} __attribute__((packed)) ;
 
-static_assert(sizeof(struct Primitives) == sizeof(struct Primitives_wire), "size of struct Primitives not equal to wire protocol struct");
 
 void encode_primitives(struct Primitives* input, struct Primitives_wire* output) {
 	uint32_t field_float_val;
@@ -70,7 +69,6 @@ void encode_primitives(struct Primitives* input, struct Primitives_wire* output)
 	uint8_t field_bool_val;
 	uint8_t field_octet_val;
 	uint8_t field_uint8_val;
-	memset(output, 0, sizeof(*output));
 	memcpy(&field_float_val, &input->float_val, sizeof(uint32_t));
 	memcpy(&field_double_val, &input->double_val, sizeof(uint64_t));
 	memcpy(&field_short_val, &input->short_val, sizeof(uint16_t));

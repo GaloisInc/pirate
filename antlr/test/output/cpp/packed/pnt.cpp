@@ -24,19 +24,17 @@ namespace PNT {
 	};
 
 	struct Position_wire {
-		unsigned char x[8] __attribute__((aligned(8)));
-		unsigned char y[8] __attribute__((aligned(8)));
-		unsigned char z[8] __attribute__((aligned(8)));
-	};
+		unsigned char x[8];
+		unsigned char y[8];
+		unsigned char z[8];
+	} __attribute__((packed)) ;
 
 	struct Distance_wire {
-		unsigned char x[8] __attribute__((aligned(8)));
-		unsigned char y[8] __attribute__((aligned(8)));
-		unsigned char z[8] __attribute__((aligned(8)));
-	};
+		unsigned char x[8];
+		unsigned char y[8];
+		unsigned char z[8];
+	} __attribute__((packed)) ;
 
-	static_assert(sizeof(struct Position) == sizeof(struct Position_wire), "size of struct Position not equal to wire protocol struct");
-	static_assert(sizeof(struct Distance) == sizeof(struct Distance_wire), "size of struct Distance not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -58,7 +56,6 @@ namespace pirate {
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
-			memset(output, 0, sizeof(*output));
 			memcpy(&field_x, &input->x, sizeof(uint64_t));
 			memcpy(&field_y, &input->y, sizeof(uint64_t));
 			memcpy(&field_z, &input->z, sizeof(uint64_t));
@@ -105,7 +102,6 @@ namespace pirate {
 			uint64_t field_x;
 			uint64_t field_y;
 			uint64_t field_z;
-			memset(output, 0, sizeof(*output));
 			memcpy(&field_x, &input->x, sizeof(uint64_t));
 			memcpy(&field_y, &input->y, sizeof(uint64_t));
 			memcpy(&field_z, &input->z, sizeof(uint64_t));

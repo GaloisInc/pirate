@@ -23,4 +23,5 @@
 int generate_dfdl(
     std::ostream &ostream,
     CDRBuildTypes const& buildTypes,
+    bool packed,
     ModuleDecl const* moduleDecl);
