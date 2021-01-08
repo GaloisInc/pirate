@@ -118,6 +118,6 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     )
 endif(PIRATE_UNIT_TEST)
 
-install(TARGETS libpirate_shared DESTINATION lib)
-install(TARGETS libpirate_static DESTINATION lib)
+install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 install(FILES include/libpirate.h include/libpirate.hpp DESTINATION include)
