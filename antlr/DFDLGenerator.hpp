@@ -10,7 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2020 Galois, All rights reserved.
+ * Copyright 2021 Galois, All rights reserved.
  */
 
 #pragma once
