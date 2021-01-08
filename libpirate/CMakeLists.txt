@@ -120,3 +120,4 @@ endif(PIRATE_UNIT_TEST)
 
 install(TARGETS libpirate_shared DESTINATION lib)
 install(TARGETS libpirate_static DESTINATION lib)
+install(FILES include/libpirate.h include/libpirate.hpp DESTINATION include)
