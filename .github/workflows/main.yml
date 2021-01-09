@@ -51,9 +51,9 @@ jobs:
             cc: gcc
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
           - name: pirate-ubuntu
-            container: docker://pirateteam/llvm-ubuntu:latest
+            container: docker://pirateteam/llvm-ubuntu-x86_64
             packager: apt-get
-            extra-packages: git libssl-dev libjpeg-dev libx11-dev
+            extra-packages: wget ca-certificates git libssl-dev libjpeg-dev libx11-dev
             cc: clang
             extra-cmake: -DIPV6_TESTS=OFF
             upload-artifact: true
@@ -220,7 +220,7 @@ jobs:
         include:
           - name: pirate-ubuntu
             packager: apt-get
-            container: docker://pirateteam/llvm-ubuntu
+            container: docker://pirateteam/llvm-ubuntu-x86_64
           - name: pirate-centos7
             packager: yum
             container: docker://pirateteam/llvm-centos7-x86_64
