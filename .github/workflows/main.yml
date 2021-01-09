@@ -116,7 +116,7 @@ jobs:
         cd build
         cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
               ${{matrix.extra-cmake}} \
-              -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
+              -DCMAKE_INSTALL_PREFIX=../${{matrix.name}}-libs/libpirate \
               -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
@@ -129,11 +129,11 @@ jobs:
       run: |
         mkdir -p build-pal
         cd build-pal
-        CFLAGS="-I$GITHUB_WORKSPACE/dist/libpirate/include" \
-          LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
+        CFLAGS="-I$GITHUB_WORKSPACE/${{matrix.name}}-libs/libpirate/include" \
+          LDFLAGS="-L$GITHUB_WORKSPACE/${{matrix.name}}-libs/libpirate/lib" \
           cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
                 ${{matrix.extra-cmake}} \
-                -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal \
+                -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/${{matrix.name}}-libs/pal \
                 ../pal
         make install
     - name: Build libpirategetopt
@@ -142,15 +142,19 @@ jobs:
         cd build-getopt
         cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
               ${{matrix.extra-cmake}} \
-              -DCMAKE_INSTALL_PREFIX=../dist/libpirategetopt \
+              -DCMAKE_INSTALL_PREFIX=../${{matrix.name}}-libs/libpirategetopt \
               ../libpirategetopt
-        make install      
+        make install
+      # We put the libraries in a tarball so we can preserve symbolic links.
+    - name: Make library tar
+      if: matrix.upload-artifact
+      run: tar cvfz ${{matrix.name}}-libs.tgz ${{matrix.name}}-libs
     - name: Make library artifact
       uses: actions/upload-artifact@v1
       if: matrix.upload-artifact
       with:
-        name: ${{matrix.name}}-dist
-        path: dist
+        name: ${{matrix.name}}-libs
+        path: ${{matrix.name}}-libs.tgz
     - name: libpirate tests
       timeout-minutes: 5
       run: |
@@ -211,7 +215,7 @@ jobs:
       run: |
         cd build/libpirate/Release
         ./gaps_channels_test.exe
-  # This assembles the docker images
+  # This assembles a tar with all artifacts.
   assemble-tar:
     needs: [docs, build]
     strategy:
@@ -265,8 +269,8 @@ jobs:
     - name: Get libraries
       uses: actions/download-artifact@v1
       with:
-        name: ${{matrix.name}}-dist
-        path: dist
+        name: ${{matrix.name}}-libs
+        path: ${{matrix.name}}-libs.tgz
     - name: Get documentation
       uses: actions/download-artifact@v1
       with:
@@ -274,6 +278,7 @@ jobs:
         path: doc
     - name: Make archive
       run: |
+        tar xvfz ${{matrix.name}}-libs.tgz
         mkdir -p ${{matrix.name}}/bin
         
         cd ${{matrix.name}}/bin
@@ -291,8 +296,8 @@ jobs:
         ln -s lld-pirate ld
         cd ../..
         
-        cp -a dist/libpirate/include ${{matrix.name}}
-        cp -a dist/libpirate/lib     ${{matrix.name}}
+        cp -a ${{matrix.name}}-libs/libpirate/include ${{matrix.name}}
+        cp -a ${{matrix.name}}-libs/libpirate/lib     ${{matrix.name}}
         cp -a doc/html ${{matrix.name}}/doc
 
         tar cvfz ${{matrix.name}}.tgz ${{matrix.name}}
@@ -311,50 +316,59 @@ jobs:
           -f ${{matrix.name}}.tgz \
           -n dist/${{matrix.name}}.tgz
   assemble-docker-images:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu
+            libname: pirate-ubuntu-libs
+            imagedir: images/ubuntu
+            dockername: pirateteam/ubuntu
+          - name: centos7
+            libname: pirate-centos7-libs
+            imagedir: images/centos7
+            dockername: pirateteam/centos7
     runs-on: ubuntu-20.04
-    needs: [docs, build]
+    needs: [build]
     steps:
     - uses: actions/checkout@v2
-    - name: Get documentation
-      uses: actions/download-artifact@v1
-      with:
-        name: doc
-        path: images/ubuntu/doc
     - name: Get libpirate
       uses: actions/download-artifact@v1
       with:
-        name: pirate-ubuntu-dist
-        path: dist
+        name: ${{matrix.libname}}
+        path: ${{matrix.libname}}
     - name: Build pirateteam/ubuntu
       run: |
-        cp -a dist/libpirate       images/ubuntu
-        cp -a dist/libpirategetopt images/ubuntu
-        cp -a dist/pal             images/ubuntu
-        cp -a demos                images/ubuntu
-        docker build -t pirateteam/ubuntu images/ubuntu
-        docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
+        tar xvfz ${{matrix.libname}}.tgz
+        cp -a ${{matrix.libname}}/libpirate       ${{matrix.imagedir}}
+        cp -a ${{matrix.libname}}/libpirategetopt ${{matrix.imagedir}}
+        cp -a ${{matrix.libname}}/pal             ${{matrix.imagedir}}
+        docker build -t ${{matrix.dockername}} ${{matrix.imagedir}}
+        docker save ${{matrix.dockername}} | gzip > ${{matrix.name}}-docker.tar.gz
     - name: Make pirateteam/ubuntu artifact
       uses: actions/upload-artifact@v1
       with:
-        name: ubuntu-latest
-        path: ubuntu-latest.tar.gz
-    - name: Build demos on pirateteam/ubuntu
+        name: ${{matrix.name}}-docker
+        path: ${{matrix.name}}-docker.tar.gz
+    - name: Build demos on docker image
       run: |
         mkdir -p build
         # Run cmake
         docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
+                   --mount type=bind,src=`pwd`/demos,dst=/root/demos,readonly \
                    -w /root/build \
-                   pirateteam/ubuntu \
-                   cmake ../pirate/demos
+                   ${{matrix.dockername}} \
+                   cmake ../demos
         # Run make
         docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
+                   --mount type=bind,src=`pwd`/demos,dst=/root/demos,readonly \
                    -w /root/build \
-                   pirateteam/ubuntu \
+                   ${{matrix.dockername}} \
                    make
     - name: Post docker images
       run: |
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
-        docker push pirateteam/ubuntu:${{ github.event.release.tag_name }}
+        docker push ${{matrix.dockername}}:${{ github.event.release.tag_name }}
       if: github.event_name == 'release'
   # This builds the IDL tool
   antlr-idl:
