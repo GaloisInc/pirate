@@ -38,6 +38,7 @@ MpegTsDecoder::MpegTsDecoder(const Options& options,
     VideoSource(options, frameProcessors),
     mH264Url(options.mH264DecoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
+    mFlip(options.mImageFlip),
     mInputWidth(0),
     mInputHeight(0),
     mInputContext(nullptr),
@@ -47,6 +48,7 @@ MpegTsDecoder::MpegTsDecoder(const Options& options,
     mCodecContext(nullptr),
     mInputFrame(nullptr),
     mOutputFrame(nullptr),
+    mImageBuffer(nullptr),
     mSwsContext(nullptr),
     mMetaDataBytes(0),
     mMetaDataSize(0),
@@ -128,7 +130,7 @@ int MpegTsDecoder::init()
         return 1;
     }
 
-    mOutputFrame->format = YUYV_PIXEL_FORMAT;
+    mOutputFrame->format = BGRA_PIXEL_FORMAT;
     mOutputFrame->width  = mOutputWidth;
     mOutputFrame->height = mOutputHeight;
 
@@ -137,6 +139,8 @@ int MpegTsDecoder::init()
         std::cout << "unable to allocate output image buffer" << std::endl;
         return 1;
     }
+
+    mImageBuffer = (unsigned char*) calloc(mOutputWidth * mOutputHeight * 4, 1);
 
     av_init_packet(&mPkt);
     mPkt.data = NULL;
@@ -163,6 +167,9 @@ void MpegTsDecoder::term()
     }
     if (mSwsContext != nullptr) {
         sws_freeContext(mSwsContext);
+    }
+    if (mImageBuffer != nullptr) {
+        free(mImageBuffer);
     }
     if (mOutputFrame != nullptr) {
         av_frame_free(&mOutputFrame);
@@ -300,7 +307,7 @@ int MpegTsDecoder::processVideoFrame() {
 
         mSwsContext = sws_getContext(mInputFrame->width, mInputFrame->height,
             H264_PIXEL_FORMAT, mOutputWidth, mOutputHeight,
-            YUYV_PIXEL_FORMAT, 0, nullptr, nullptr, nullptr);
+            BGRA_PIXEL_FORMAT, 0, nullptr, nullptr, nullptr);
 
         if (mSwsContext == nullptr) {
             std::cout << "unable to allocate SwsContext" << std::endl;
@@ -319,7 +326,17 @@ int MpegTsDecoder::processVideoFrame() {
         return -1;
     }
 
-    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2, VideoData);
+    if (mFlip) {
+        for(size_t i = 0; i < mOutputWidth * mOutputHeight; i++) {
+            uint32_t *src = (uint32_t*) (mOutputFrame->data[0] + 4 * i);
+            uint32_t *dst = (uint32_t*) (mImageBuffer + 4 * (mOutputWidth * mOutputHeight - i - 1));
+            *dst = *src;
+        }
+    } else {
+        memcpy(mImageBuffer, mOutputFrame->data[0], mOutputWidth * mOutputHeight * 4);
+    }
+
+    rv = process(mImageBuffer, mOutputWidth * mOutputHeight * 4, VideoData);
     if (rv) {
         return rv;
     }

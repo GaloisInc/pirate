@@ -36,9 +36,7 @@ XWinFrameProcessor::XWinFrameProcessor(const Options& options,
     mImageSlidingWindow(options.mImageSlidingWindow),
     mDisplay(nullptr),
     mImage(nullptr),
-    mImageBuffer(nullptr),
-    mImageVerticalFlip(options.mImageVerticalFlip),
-    mImageHorizontalFlip(options.mImageHorizontalFlip)
+    mImageBuffer(nullptr)
 {
 
 }
@@ -77,53 +75,6 @@ void XWinFrameProcessor::xwinDisplayTerminate() {
     mDisplay = nullptr;
     mImageBuffer = nullptr;
     mContext = nullptr;
-}
-
-int XWinFrameProcessor::transferImageData(FrameBuffer data, size_t length) {
-    const uint32_t rowDataLen = mImageWidth * 4;
-
-    if (length != (mImageWidth * mImageHeight * 4)) {
-        std::cout << "xwindows unexpected frame length " << length << std::endl;
-        return 1;
-    }
-
-    if ((mImageVerticalFlip == false) && (mImageHorizontalFlip == false)) {
-        memcpy(mImageBuffer, data, length);
-    }
-    else if ((mImageVerticalFlip == true) && (mImageHorizontalFlip == false)) {
-        uint32_t dstOff = 0;
-        uint32_t srcOff = length - rowDataLen;
-        for (uint32_t row = 0; row < mImageHeight; row++)
-        {
-            memcpy(mImageBuffer + dstOff, data + srcOff, rowDataLen);
-            dstOff += rowDataLen;
-            srcOff -= rowDataLen;
-        }
-    }
-    else if ((mImageVerticalFlip == false) && (mImageHorizontalFlip == true)) {
-        for (uint32_t row = 0; row < mImageHeight; row++) {
-            uint32_t * srcPixel = (uint32_t *)(data + (row + 1) * rowDataLen) - 1;
-            uint32_t * dstPixel = (uint32_t *)(mImageBuffer + row * rowDataLen);
-            for (uint32_t col = 0; col < mImageWidth; col++) {
-                *dstPixel = *srcPixel;
-                srcPixel--;
-                dstPixel++;
-            }
-        }
-    }
-    else if ((mImageVerticalFlip == true) && (mImageHorizontalFlip == true)) {
-        for (uint32_t row = 0; row < mImageHeight; row++) {
-            uint32_t * srcPixel = (uint32_t *)(data + (mImageHeight - row) * rowDataLen) - 1;
-            uint32_t * dstPixel = (uint32_t *)(mImageBuffer + row * rowDataLen);
-            for (uint32_t col = 0; col < mImageWidth; col++) {
-                *dstPixel = *srcPixel;
-                srcPixel--;
-                dstPixel++;
-            }
-        }
-    }
-
-    return 0;
 }
 
 void XWinFrameProcessor::slidingWindow() {
@@ -175,16 +126,16 @@ void XWinFrameProcessor::term()
 
 int XWinFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
-    int rv = -1;
-
     if (dataStream != VideoData) {
         return 0;
     }
 
-    rv = transferImageData(data, length);
-    if (rv) {
-        return rv;
+    if (length != (mImageWidth * mImageHeight * 4)) {
+        std::cout << "xwindows unexpected frame length " << length << std::endl;
+        return 1;
     }
+
+    memcpy(mImageBuffer, data, length);
 
     if (mImageSlidingWindow) {
         slidingWindow();
