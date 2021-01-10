@@ -90,13 +90,12 @@ int PiServoCameraControlOutput::angleToServo(float angle)
         (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
         (2 * SERVO_ANGLE_LIMIT);
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
-    // Fip the sign. The camera is mounted upside-down.
-    int angle = slope * angle + off;
+    int result = slope * angle + off;
     if (mFlip)
     {
-        angle = -angle;
+        result = -result;
     }
-    return angle;
+    return result;
 }
 
 bool PiServoCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
