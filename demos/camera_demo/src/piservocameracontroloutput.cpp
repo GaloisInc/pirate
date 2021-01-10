@@ -63,7 +63,7 @@ int PiServoCameraControlOutput::init()
         return -1;
     }
 
-    rv = gpioServo(mServoPin, angleToServo(0.0));
+    rv = gpioServo(mServoPin, angleToServo(0.0, mFlip));
     if (rv != 0)
     {
         std::perror("Failed to set the initial servo position");
@@ -84,19 +84,20 @@ void PiServoCameraControlOutput::term()
     }
 }
 
-int PiServoCameraControlOutput::angleToServo(float angle)
+int PiServoCameraControlOutput::angleToServo(float angle, bool flip)
 {
     static const float slope =
         (PI_MAX_SERVO_PULSEWIDTH - PI_MIN_SERVO_PULSEWIDTH) /
         (2 * SERVO_ANGLE_LIMIT);
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
-    // Fip the sign. The camera is mounted upside-down.
-    int angle = slope * angle + off;
-    if (mFlip)
+    if (flip)
     {
-        angle = -angle;
+        return -1.0 * slope * angle + off;
     }
-    return angle;
+    else
+    {
+        return slope * angle + off;
+    }
 }
 
 bool PiServoCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
@@ -107,7 +108,7 @@ bool PiServoCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
 
 bool PiServoCameraControlOutput::applyAngularPosition(PanTilt angularPosition)
 {
-    int rv = gpioServo(mServoPin, angleToServo(angularPosition.pan));
+    int rv = gpioServo(mServoPin, angleToServo(angularPosition.pan, mFlip));
 
     if (rv < 0)
     {
