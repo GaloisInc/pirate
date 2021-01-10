@@ -133,7 +133,7 @@ void XWinFrameProcessor::slidingWindow() {
     float y_range = mTiltAxisMax - mTiltAxisMin;
     PanTilt position = mCallbacks.mPosGet();
     float x_percent = (position.pan - mPanAxisMin) / x_range;
-    float y_percent = (-position.tilt - mTiltAxisMin) / y_range;
+    float y_percent = (position.tilt - mTiltAxisMin) / y_range;
     int x_center = mImageWidth * x_percent;
     int y_center = mImageHeight * y_percent;
     // min can go negative

@@ -279,6 +279,18 @@ int VideoSensor::initVideoDevice()
         }
     }
 
+    // Reset horizontal flip. Ignore errors
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_HFLIP;
+    ctrl.value = 0;
+    ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+
+    // Reset vertical flip. Ignore errors
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_VFLIP;
+    ctrl.value = 0;
+    ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+
     // Horizontal flip
     if (mFlipHorizontal)
     {
