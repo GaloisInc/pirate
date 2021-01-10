@@ -128,11 +128,11 @@ void KeyboardCameraControlInput::pollThread()
         switch (c)
         {
             case UP:
-                panTiltUpdate.tilt = -mAngIncrement;
+                panTiltUpdate.tilt = mAngIncrement;
                 mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case DOWN:
-                panTiltUpdate.tilt = mAngIncrement;
+                panTiltUpdate.tilt = -mAngIncrement;
                 mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case LEFT:
