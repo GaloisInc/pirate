@@ -47,7 +47,8 @@ protected:
     const std::string mH264Url;
 
 private:
-    int mFFmpegLogLevel;
+    const int mFFmpegLogLevel;
+    const bool mFlip;
     int mInputWidth;
     int mInputHeight;
 
@@ -57,6 +58,7 @@ private:
     AVCodec *mCodec;
     AVCodecContext *mCodecContext;
     AVFrame *mInputFrame, *mOutputFrame;
+    uint8_t* mImageBuffer;
     struct SwsContext *mSwsContext;
     AVPacket mPkt;
     uint64_t mMetaDataBytes, mMetaDataSize;
@@ -71,7 +73,7 @@ private:
     int processDataFrame();
     int processVideoFrame();
 
-    static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
+    static const AVPixelFormat BGRA_PIXEL_FORMAT = AV_PIX_FMT_BGRA;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
 };
 

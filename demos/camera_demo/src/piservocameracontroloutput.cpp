@@ -22,6 +22,7 @@
 
 PiServoCameraControlOutput::PiServoCameraControlOutput(int servoPin, const Options& options) :
     BaseCameraControlOutput(options),
+    mFlip(options.mImageFlip),
     mServoPin(servoPin),
     mGpioLibInit(true)
 {
@@ -90,7 +91,12 @@ int PiServoCameraControlOutput::angleToServo(float angle)
         (2 * SERVO_ANGLE_LIMIT);
     static const float off = slope * SERVO_ANGLE_LIMIT + PI_MIN_SERVO_PULSEWIDTH;
     // Fip the sign. The camera is mounted upside-down.
-    return -1.0 * slope * angle + off;
+    int angle = slope * angle + off;
+    if (mFlip)
+    {
+        angle = -angle;
+    }
+    return angle;
 }
 
 bool PiServoCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)

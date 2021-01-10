@@ -51,12 +51,9 @@ private:
     unsigned char*         mImageBuffer;
     GC                     mContext;
     XGCValues              mContextVals;
-    const bool             mImageVerticalFlip;
-    const bool             mImageHorizontalFlip;
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
-    int transferImageData(FrameBuffer data, size_t length);
     void slidingWindow();
     void renderImage();
 };

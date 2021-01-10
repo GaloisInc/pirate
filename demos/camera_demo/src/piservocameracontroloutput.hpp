@@ -34,6 +34,7 @@ protected:
 private:
     static int angleToServo(float angle);
 
+    const bool mFlip;
     const int mServoPin;
     const bool mGpioLibInit;
     static constexpr float SERVO_ANGLE_LIMIT = 90.0;
