@@ -15,10 +15,10 @@
 
 #pragma once
 
-#include "baseorientationoutput.hpp"
+#include "basecameracontroloutput.hpp"
 #include "orion-sdk/OrionPublicPacketShim.hpp"
 
-class TrilliumControl : public BaseOrientationOutput
+class TrilliumControl : public BaseCameraControlOutput
 {
 public:
     TrilliumControl(const Options& options);
@@ -29,6 +29,7 @@ public:
 
 protected:
     virtual bool applyAngularPosition(PanTilt angularPosition) override;
+    virtual void updateZoom(CameraZoom zoom) override;
 
 private:
     const std::string mTrilliumIpAddress;
@@ -38,7 +39,28 @@ private:
     std::thread *mReceiveThread;
     bool mReceive;
     void reveiveThread();
-    static void processTrilliumPacket(OrionPkt_t& pkt);
-    static void processSoftwareDiagnostics(OrionPkt_t& pkt);
-    static void processGeolocateTelemetry(OrionPkt_t& pkt);
+    void processTrilliumPacket(OrionPkt_t& pkt);
+    void processSoftwareDiagnostics(OrionPkt_t& pkt);
+    void processCameraState(OrionPkt_t& pkt);
+    void printCameraStatus();
+
+    struct {
+        GeolocateTelemetryCore_t mGeo;
+        float mZoom;
+        float mFocus;
+        OrionDiagnostics_t mDiag;
+        OrionSoftwareDiagnostics_t mSoftDiad[BOARD_COUNT]; 
+        struct {
+            unsigned mID;
+            unsigned mLength;
+        } mLastPacket;
+        unsigned mPacketCount;
+    } mState;
+
+    static constexpr float mZoomIncrement = 0.1;
+    static constexpr float mZoomMin = 1.0;
+    static constexpr float mZoomMax = 8.0;
+    static constexpr float mZoomDefault = mZoomMin;
+
+    const bool mFlip;
 };

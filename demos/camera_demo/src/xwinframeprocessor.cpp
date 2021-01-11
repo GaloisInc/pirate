@@ -25,10 +25,10 @@
 #include <X11/Xutil.h>
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    CameraOrientationCallbacks angPosCallbacks) :
+    CameraControlCallbacks cameraControlCallbacks) :
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
-    mCallbacks(angPosCallbacks),
+    mCallbacks(cameraControlCallbacks),
     mPanAxisMin(options.mPanAxisMin),
     mPanAxisMax(options.mPanAxisMax),
     mTiltAxisMin(options.mTiltAxisMin),
@@ -82,7 +82,7 @@ void XWinFrameProcessor::slidingWindow() {
 
     float x_range = mPanAxisMax - mPanAxisMin;
     float y_range = mTiltAxisMax - mTiltAxisMin;
-    PanTilt position = mCallbacks.mGet();
+    PanTilt position = mCallbacks.mPosGet();
     float x_percent = (position.pan - mPanAxisMin) / x_range;
     float y_percent = (-position.tilt - mTiltAxisMin) / y_range;
     int x_center = mImageWidth * x_percent;
@@ -129,11 +129,14 @@ int XWinFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType 
     if (dataStream != VideoData) {
         return 0;
     }
+
     if (length != (mImageWidth * mImageHeight * 4)) {
         std::cout << "xwindows unexpected frame length " << length << std::endl;
         return 1;
     }
+
     memcpy(mImageBuffer, data, length);
+
     if (mImageSlidingWindow) {
         slidingWindow();
     }

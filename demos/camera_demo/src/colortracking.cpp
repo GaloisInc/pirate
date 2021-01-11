@@ -19,8 +19,8 @@
 
 ColorTracking::ColorTracking(
         const Options& options,
-        CameraOrientationCallbacks angPosallbacks) :
-    OrientationInput(angPosallbacks),
+        CameraControlCallbacks cameraControlCallbacks) :
+    CameraControlInput(cameraControlCallbacks),
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
     mVerbose(options.mVerbose),
     mPanAxisMin(options.mPanAxisMin),
@@ -104,9 +104,9 @@ int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataS
     }
 
     if (mImageSlidingWindow) {
-        PanTilt angularPosition = mCallbacks.mGet();
+        PanTilt angularPosition = mCallbacks.mPosGet();
         float fractionX = (angularPosition.pan - mPanAxisMin) / (mPanAxisMax - mPanAxisMin);
-        float fractionY = (angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
+        float fractionY = (-angularPosition.tilt - mTiltAxisMin) / (mTiltAxisMax - mTiltAxisMin);
         x_center = mImageWidth * fractionX;
         y_center = mImageHeight * fractionY;
     } else {
@@ -124,13 +124,13 @@ int ColorTracking::process(FrameBuffer data, size_t length, DataStreamType dataS
     }
 
     if (y_delta > y_tolerance) {
-        update.tilt = mAngIncrement;
-    } else if (y_delta < -y_tolerance) {
         update.tilt = -mAngIncrement;
+    } else if (y_delta < -y_tolerance) {
+        update.tilt = mAngIncrement;
     }
 
     if ((update.pan != 0.0) || (update.tilt != 0.0)) {
-        mCallbacks.mUpdate(update);
+        mCallbacks.mPosUpdate(update);
     }
 
     return 0;

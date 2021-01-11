@@ -15,20 +15,20 @@
 
 #pragma once
 
-// Definition of a simple interface for reading camera angular orientation
+// Definition of a simple interface for reading camera control parameters
 
-#include "orientationoutput.hpp"
+#include "cameracontroloutput.hpp"
 
-class OrientationInput
+class CameraControlInput
 {
 public:
-    OrientationInput(CameraOrientationCallbacks callbacks) :
-        mCallbacks(callbacks)
+    CameraControlInput(CameraControlCallbacks cameraControlCallbacks) :
+        mCallbacks(cameraControlCallbacks)
     {
 
     }
 
-    virtual ~OrientationInput()
+    virtual ~CameraControlInput()
     {
 
     }
@@ -37,5 +37,5 @@ public:
     virtual void term() = 0;
 
 protected:
-    CameraOrientationCallbacks mCallbacks;
+    CameraControlCallbacks mCallbacks;
 };

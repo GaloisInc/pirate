@@ -44,7 +44,7 @@ static struct argp_option options[] =
     { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream|trillium|none)", 0 },
     { "width",        'W',           "pixels",      0, "image width",                               0 },
     { "height",       'H',           "pixels",      0, "image height",                              0 },
-    { "flip",         'f',           "v|h",         0, "horizontal or vertical image flip",         0 },
+    { "flip",         'f',           NULL,          0, "flip image and controls (rotate 180)",      0 },
     { "decoder",      'D',           "url",         0, "MPEG-TS H.264 decoder url (host:port)",     0 },
     { 0,              0,             0,             0, "frame processor options:",                  2 },
     { "color_track",  'C',           "RRGGBB",      0, "color tracking (RGB hex)",                  0 },
@@ -127,12 +127,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             else if (ss.str() == "stream")
             {
                 opt->mVideoInputType = VIDEO_STREAM;
-                opt->mVideoOutputType = VIDEO_YUYV;
+                opt->mVideoOutputType = VIDEO_BGRX;
             }
             else if (ss.str() == "trillium")
             {
                 opt->mVideoInputType = VIDEO_TRILLIUM;
-                opt->mVideoOutputType = VIDEO_YUYV;
+                opt->mVideoOutputType = VIDEO_BGRX;
             }
             else if (ss.str() == "none")
             {
@@ -173,19 +173,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
 
         case 'f':
-            if (ss.str() == "v")
-            {
-                opt->mImageVerticalFlip = true;
-            }
-            else if (ss.str() == "h")
-            {
-                opt->mImageHorizontalFlip = true;
-            }
-            else
-            {
-                argp_error(state, "invalid flip argument '%s'", arg);
-            }
-
+            opt->mImageFlip = true;
             break;
 
         case OPT_OUT_DIR:

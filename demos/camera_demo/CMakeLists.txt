@@ -32,10 +32,10 @@ set(SRCS
     src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
-    src/keyboardorientationinput.cpp
-    src/orientationoutput.cpp
-    src/baseorientationoutput.cpp
-    src/remoteorientationoutput.cpp
+    src/keyboardcameracontrolinput.cpp
+    src/cameracontroloutput.cpp
+    src/basecameracontroloutput.cpp
+    src/remotecameracontroloutput.cpp
     src/trilliumcontrol.cpp
     src/trilliumutilities.cpp
     src/videosource.cpp
@@ -57,7 +57,7 @@ if (FREESPACE_LIB)
     message("-- Freespace library found")
     set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
+    set(SRCS ${SRCS} src/freespacecameracontrolinput.cpp)
 else ()
     message("-- Freespace library not found")
 endif (FREESPACE_LIB)
@@ -77,7 +77,7 @@ if (PIGPIO_LIB)
     message("-- Pigpio library found")
     set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
+    set(SRCS ${SRCS} src/piservocameracontroloutput.cpp)
 else ()
     message("-- Pigpio library not found")
 endif (PIGPIO_LIB)

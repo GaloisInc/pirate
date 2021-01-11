@@ -16,30 +16,30 @@
 #pragma once
 
 #include "options.hpp"
-#include "orientationoutput.hpp"
-#include "piservoorientationoutput.hpp"
+#include "cameracontroloutput.hpp"
+#include "piservocameracontroloutput.hpp"
 #include "trilliumcontrol.hpp"
 
-class OrientationOutputCreator
+class CameraControlOutputCreator
 {
 private:
     static constexpr int PI_SERVO_PIN = 27;
 
 public:
-    static OrientationOutput * get(const Options& options)
+    static CameraControlOutput * get(const Options& options)
     {
         switch (options.mOutputType)
         {
 #ifdef PIGPIO_PRESENT
             case PiServoOutput:
-                return new PiServoOrientationOutput(PI_SERVO_PIN, options);
+                return new PiServoCameraControlOutput(PI_SERVO_PIN, options);
 #endif
             case TrilliumOutput:
                 return new TrilliumControl(options);
             case PrintOutput:
             case NoneOutput:
             default:
-                return new BaseOrientationOutput(options);
+                return new BaseCameraControlOutput(options);
         }
     }
 };

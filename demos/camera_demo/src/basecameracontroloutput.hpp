@@ -15,14 +15,14 @@
 
 #pragma once
 
-#include "orientationoutput.hpp"
+#include "cameracontroloutput.hpp"
 #include "options.hpp"
 
-class BaseOrientationOutput : public OrientationOutput
+class BaseCameraControlOutput : public CameraControlOutput
 {
 public:
-    BaseOrientationOutput(const Options& options);
-    virtual ~BaseOrientationOutput();
+    BaseCameraControlOutput(const Options& options);
+    virtual ~BaseCameraControlOutput();
 
     virtual int init() override;
     virtual void term() override;
@@ -31,6 +31,7 @@ public:
     virtual void setAngularPosition(PanTilt angularPosition) override;
     virtual void updateAngularPosition(PanTilt positionUpdate) override;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
+    virtual void updateZoom(CameraZoom zoom) override;
 
     const bool mVerbose;
     const float mPanAxisMin;

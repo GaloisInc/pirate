@@ -17,18 +17,18 @@
 
 #include <iostream>
 #include <stdexcept>
-#include "keyboardorientationinput.hpp"
+#include "keyboardcameracontrolinput.hpp"
 
 #if FREESPACE_PRESENT
-#include "freespaceorientationinput.hpp"
+#include "freespacecameracontrolinput.hpp"
 #endif
 
 #include "options.hpp"
 
-class OrientationInputCreator {
+class CameraControlInputCreator {
 public:
-    static OrientationInput * get(InputType inputType, const Options& options,
-            CameraOrientationCallbacks angPosCallbacks)
+    static CameraControlInput * get(InputType inputType, const Options& options,
+            CameraControlCallbacks cameraControlCallbacks)
     {
         switch (inputType)
         {
@@ -37,15 +37,15 @@ public:
                 if (options.mVerbose) {
                     std::cout << "Using Freespace device" << std::endl;
                 }
-                return new FreespaceOrientationInput(angPosCallbacks);
+                return new FreespaceCameraControlInput(cameraControlCallbacks);
 #endif
             case Keyboard:
                 if (options.mVerbose) {
                     std::cout << "Using keyboard" << std::endl;
                 }
-                return new KeyboardOrientationInput(options, angPosCallbacks);
+                return new KeyboardCameraControlInput(options, cameraControlCallbacks);
             default:
-                throw std::runtime_error("Unsupported orientation input");
+                throw std::runtime_error("Unsupported camera control input");
                 return nullptr;
         }
     }

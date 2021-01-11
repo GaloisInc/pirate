@@ -16,15 +16,15 @@
 #include <cstdio>
 #include <unistd.h>
 #include <sys/select.h>
-#include "keyboardorientationinput.hpp"
+#include "keyboardcameracontrolinput.hpp"
 
 // Debug
 #include <iomanip>
 #include <iostream>
 
-KeyboardOrientationInput::KeyboardOrientationInput(
-        const Options& options, CameraOrientationCallbacks angPosCallbacks) :
-    OrientationInput(angPosCallbacks),
+KeyboardCameraControlInput::KeyboardCameraControlInput(
+        const Options& options, CameraControlCallbacks cameraControlCallbacks) :
+    CameraControlInput(cameraControlCallbacks),
     mAngIncrement(options.mAngularPositionIncrement),
     mTermiosInit(false),
     mPollThread(nullptr),
@@ -33,12 +33,12 @@ KeyboardOrientationInput::KeyboardOrientationInput(
 
 }
 
-KeyboardOrientationInput::~KeyboardOrientationInput()
+KeyboardCameraControlInput::~KeyboardCameraControlInput()
 {
     term();
 }
 
-int KeyboardOrientationInput::init()
+int KeyboardCameraControlInput::init()
 {
     // Setup stdin to be read one key at a time
     int rv = tcgetattr(0, &mTermiosBackup);
@@ -63,12 +63,12 @@ int KeyboardOrientationInput::init()
 
     // Start the reading thread
     mPoll = true;
-    mPollThread = new std::thread(&KeyboardOrientationInput::pollThread, this);
+    mPollThread = new std::thread(&KeyboardCameraControlInput::pollThread, this);
 
     return 0;
 }
 
-void KeyboardOrientationInput::term()
+void KeyboardCameraControlInput::term()
 {
     // Stop the polling thread
     if (mPollThread != nullptr)
@@ -90,7 +90,7 @@ void KeyboardOrientationInput::term()
     }
 }
 
-void KeyboardOrientationInput::pollThread()
+void KeyboardCameraControlInput::pollThread()
 {
     while (mPoll)
     {
@@ -129,19 +129,28 @@ void KeyboardOrientationInput::pollThread()
         {
             case UP:
                 panTiltUpdate.tilt = mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case DOWN:
                 panTiltUpdate.tilt = -mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case LEFT:
                 panTiltUpdate.pan = -mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
                 break;
             case RIGHT:
                 panTiltUpdate.pan = mAngIncrement;
-                mCallbacks.mUpdate(panTiltUpdate);
+                mCallbacks.mPosUpdate(panTiltUpdate);
+                break;
+            case ZOOM_INC:
+                mCallbacks.mZoomUpdate(Increment);
+                break;
+            case ZOOM_DEC:
+                mCallbacks.mZoomUpdate(Decrement);
+                break;
+            case ZOOM_RESET:
+                mCallbacks.mZoomUpdate(Reset);
                 break;
             default:
                 continue;

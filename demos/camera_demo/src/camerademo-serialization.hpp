@@ -11,38 +11,38 @@
 
 namespace CameraDemo {
 
-	enum class OrientationOutputReqType : uint32_t {
+	enum class CameraControlOutputReqType : uint32_t {
 		OutputGet,
 		OutputSet,
 		OutputUpdate
 	};
 
-	struct OrientationOutputRequest {
+	struct CameraControlOutputRequest {
 		uint16_t messageId __attribute__((aligned(2)));
-		OrientationOutputReqType reqType __attribute__((aligned(4)));
+		CameraControlOutputReqType reqType __attribute__((aligned(4)));
 		float angularPositionPan __attribute__((aligned(4)));
 		float angularPositionTilt __attribute__((aligned(4)));
 	};
 
-	struct OrientationOutputResponse {
+	struct CameraControlOutputResponse {
 		float angularPositionPan __attribute__((aligned(4)));
 		float angularPositionTilt __attribute__((aligned(4)));
 	};
 
-	struct OrientationOutputRequest_wire {
+	struct CameraControlOutputRequest_wire {
 		unsigned char messageId[2] __attribute__((aligned(2)));
 		unsigned char reqType[4] __attribute__((aligned(4)));
 		unsigned char angularPositionPan[4] __attribute__((aligned(4)));
 		unsigned char angularPositionTilt[4] __attribute__((aligned(4)));
 	};
 
-	struct OrientationOutputResponse_wire {
+	struct CameraControlOutputResponse_wire {
 		unsigned char angularPositionPan[4] __attribute__((aligned(4)));
 		unsigned char angularPositionTilt[4] __attribute__((aligned(4)));
 	};
 
-	static_assert(sizeof(struct OrientationOutputRequest) == sizeof(struct OrientationOutputRequest_wire), "size of struct OrientationOutputRequest not equal to wire protocol struct");
-	static_assert(sizeof(struct OrientationOutputResponse) == sizeof(struct OrientationOutputResponse_wire), "size of struct OrientationOutputResponse not equal to wire protocol struct");
+	static_assert(sizeof(struct CameraControlOutputRequest) == sizeof(struct CameraControlOutputRequest_wire), "size of struct CameraControlOutputRequest not equal to wire protocol struct");
+	static_assert(sizeof(struct CameraControlOutputResponse) == sizeof(struct CameraControlOutputResponse_wire), "size of struct CameraControlOutputResponse not equal to wire protocol struct");
 }
 
 namespace pirate {
@@ -56,11 +56,11 @@ namespace pirate {
 #endif // _PIRATE_SERIALIZATION_H
 
 	template<>
-	struct Serialization<struct CameraDemo::OrientationOutputRequest> {
-		static void toBuffer(struct CameraDemo::OrientationOutputRequest const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct CameraDemo::OrientationOutputRequest));
-			struct CameraDemo::OrientationOutputRequest_wire* output = (struct CameraDemo::OrientationOutputRequest_wire*) buf.data();
-			const struct CameraDemo::OrientationOutputRequest* input = &val;
+	struct Serialization<struct CameraDemo::CameraControlOutputRequest> {
+		static void toBuffer(struct CameraDemo::CameraControlOutputRequest const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct CameraDemo::CameraControlOutputRequest));
+			struct CameraDemo::CameraControlOutputRequest_wire* output = (struct CameraDemo::CameraControlOutputRequest_wire*) buf.data();
+			const struct CameraDemo::CameraControlOutputRequest* input = &val;
 			uint16_t field_messageId;
 			uint32_t field_reqType;
 			uint32_t field_angularPositionPan;
@@ -79,14 +79,14 @@ namespace pirate {
 			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 		}
 
-		static struct CameraDemo::OrientationOutputRequest fromBuffer(std::vector<char> const& buf) {
-			struct CameraDemo::OrientationOutputRequest retval;
-			const struct CameraDemo::OrientationOutputRequest_wire* input = (const struct CameraDemo::OrientationOutputRequest_wire*) buf.data();
-			struct CameraDemo::OrientationOutputRequest* output = &retval;
-			if (buf.size() != sizeof(struct CameraDemo::OrientationOutputRequest)) {
+		static struct CameraDemo::CameraControlOutputRequest fromBuffer(std::vector<char> const& buf) {
+			struct CameraDemo::CameraControlOutputRequest retval;
+			const struct CameraDemo::CameraControlOutputRequest_wire* input = (const struct CameraDemo::CameraControlOutputRequest_wire*) buf.data();
+			struct CameraDemo::CameraControlOutputRequest* output = &retval;
+			if (buf.size() != sizeof(struct CameraDemo::CameraControlOutputRequest)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for CameraDemo::OrientationOutputRequest type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct CameraDemo::OrientationOutputRequest));
+					std::string("pirate::Serialization::fromBuffer() for CameraDemo::CameraControlOutputRequest type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct CameraDemo::CameraControlOutputRequest));
 				throw std::length_error(error_msg);
 			}
 			uint16_t field_messageId;
@@ -110,11 +110,11 @@ namespace pirate {
 	};
 
 	template<>
-	struct Serialization<struct CameraDemo::OrientationOutputResponse> {
-		static void toBuffer(struct CameraDemo::OrientationOutputResponse const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct CameraDemo::OrientationOutputResponse));
-			struct CameraDemo::OrientationOutputResponse_wire* output = (struct CameraDemo::OrientationOutputResponse_wire*) buf.data();
-			const struct CameraDemo::OrientationOutputResponse* input = &val;
+	struct Serialization<struct CameraDemo::CameraControlOutputResponse> {
+		static void toBuffer(struct CameraDemo::CameraControlOutputResponse const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct CameraDemo::CameraControlOutputResponse));
+			struct CameraDemo::CameraControlOutputResponse_wire* output = (struct CameraDemo::CameraControlOutputResponse_wire*) buf.data();
+			const struct CameraDemo::CameraControlOutputResponse* input = &val;
 			uint32_t field_angularPositionPan;
 			uint32_t field_angularPositionTilt;
 			memcpy(&field_angularPositionPan, &input->angularPositionPan, sizeof(uint32_t));
@@ -125,14 +125,14 @@ namespace pirate {
 			memcpy(&output->angularPositionTilt, &field_angularPositionTilt, sizeof(uint32_t));
 		}
 
-		static struct CameraDemo::OrientationOutputResponse fromBuffer(std::vector<char> const& buf) {
-			struct CameraDemo::OrientationOutputResponse retval;
-			const struct CameraDemo::OrientationOutputResponse_wire* input = (const struct CameraDemo::OrientationOutputResponse_wire*) buf.data();
-			struct CameraDemo::OrientationOutputResponse* output = &retval;
-			if (buf.size() != sizeof(struct CameraDemo::OrientationOutputResponse)) {
+		static struct CameraDemo::CameraControlOutputResponse fromBuffer(std::vector<char> const& buf) {
+			struct CameraDemo::CameraControlOutputResponse retval;
+			const struct CameraDemo::CameraControlOutputResponse_wire* input = (const struct CameraDemo::CameraControlOutputResponse_wire*) buf.data();
+			struct CameraDemo::CameraControlOutputResponse* output = &retval;
+			if (buf.size() != sizeof(struct CameraDemo::CameraControlOutputResponse)) {
 				static const std::string error_msg =
-					std::string("pirate::Serialization::fromBuffer() for CameraDemo::OrientationOutputResponse type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct CameraDemo::OrientationOutputResponse));
+					std::string("pirate::Serialization::fromBuffer() for CameraDemo::CameraControlOutputResponse type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct CameraDemo::CameraControlOutputResponse));
 				throw std::length_error(error_msg);
 			}
 			uint32_t field_angularPositionPan;

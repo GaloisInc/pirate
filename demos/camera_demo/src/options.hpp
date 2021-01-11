@@ -37,8 +37,7 @@ struct Options
         mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
-        mImageHorizontalFlip(false),
-        mImageVerticalFlip(false),
+        mImageFlip(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
@@ -78,8 +77,7 @@ struct Options
     CodecType mEncoderCodecType;
     unsigned mImageWidth;
     unsigned mImageHeight;
-    bool mImageHorizontalFlip;
-    bool mImageVerticalFlip;
+    bool mImageFlip;
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];

@@ -16,10 +16,10 @@
 #include <iomanip>
 #include <iostream>
 #include <functional>
-#include "baseorientationoutput.hpp"
+#include "basecameracontroloutput.hpp"
 
-BaseOrientationOutput::BaseOrientationOutput(const Options& options) :
-    OrientationOutput(),
+BaseCameraControlOutput::BaseCameraControlOutput(const Options& options) :
+    CameraControlOutput(),
     mVerbose(options.mVerbose),
     mPanAxisMin(options.mPanAxisMin),
     mPanAxisMax(options.mPanAxisMax),
@@ -30,22 +30,22 @@ BaseOrientationOutput::BaseOrientationOutput(const Options& options) :
 
 }
 
-BaseOrientationOutput::~BaseOrientationOutput()
+BaseCameraControlOutput::~BaseCameraControlOutput()
 {
 
 }
 
-int BaseOrientationOutput::init()
+int BaseCameraControlOutput::init()
 {
     return 0;
 }
 
-void BaseOrientationOutput::term()
+void BaseCameraControlOutput::term()
 {
 
 }
 
-PanTilt BaseOrientationOutput::getAngularPosition()
+PanTilt BaseCameraControlOutput::getAngularPosition()
 {
     PanTilt angularPosition;
     mLock.lock();
@@ -54,15 +54,20 @@ PanTilt BaseOrientationOutput::getAngularPosition()
     return angularPosition;
 }
 
-bool BaseOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2)
+bool BaseCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2)
 {
     return p1 == p2;
+}
+
+void BaseCameraControlOutput::updateZoom(CameraZoom zoom)
+{
+    (void) zoom;
 }
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-bool BaseOrientationOutput::safelySetAngularPosition(PanTilt& angularPosition)
+bool BaseCameraControlOutput::safelySetAngularPosition(PanTilt& angularPosition)
 {
     angularPosition.pan = MAX(angularPosition.pan, mPanAxisMin);
     angularPosition.pan = MIN(angularPosition.pan, mPanAxisMax);
@@ -78,7 +83,7 @@ bool BaseOrientationOutput::safelySetAngularPosition(PanTilt& angularPosition)
     return false;
 }
 
-void BaseOrientationOutput::setAngularPosition(PanTilt angularPosition)
+void BaseCameraControlOutput::setAngularPosition(PanTilt angularPosition)
 {
     mLock.lock();
 
@@ -98,7 +103,7 @@ void BaseOrientationOutput::setAngularPosition(PanTilt angularPosition)
     mLock.unlock();
 }
 
-void BaseOrientationOutput::updateAngularPosition(PanTilt positionUpdate)
+void BaseCameraControlOutput::updateAngularPosition(PanTilt positionUpdate)
 {
     mLock.lock();
 
@@ -124,7 +129,7 @@ void BaseOrientationOutput::updateAngularPosition(PanTilt positionUpdate)
     mLock.unlock();
 }
 
-bool BaseOrientationOutput::applyAngularPosition(PanTilt angularPosition)
+bool BaseCameraControlOutput::applyAngularPosition(PanTilt angularPosition)
 {
     (void) angularPosition;
     return true;

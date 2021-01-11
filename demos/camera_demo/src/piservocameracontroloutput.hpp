@@ -13,24 +13,30 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
-#include <iomanip>
-#include <iostream>
-#include "orientationoutput.hpp"
+#pragma once
 
-OrientationOutput::OrientationOutput() :
-    mCallbacks(std::bind(&OrientationOutput::getAngularPosition, this),
-               std::bind(&OrientationOutput::setAngularPosition, this,  std::placeholders::_1),
-               std::bind(&OrientationOutput::updateAngularPosition, this,  std::placeholders::_1))
+#include "basecameracontroloutput.hpp"
+
+class PiServoCameraControlOutput : public BaseCameraControlOutput
 {
+public:
+    PiServoCameraControlOutput(int servoPin, const Options& options);
+    virtual ~PiServoCameraControlOutput();
 
-}
+    virtual int init() override;
+    virtual void term() override;
 
-OrientationOutput::~OrientationOutput()
-{
+    virtual bool equivalentPosition(PanTilt p1, PanTilt p2) override;
 
-}
+protected:
+    virtual bool applyAngularPosition(PanTilt angularPosition) override;
 
-const CameraOrientationCallbacks& OrientationOutput::getCallbacks()
-{
-    return mCallbacks;
-}
+private:
+    static int angleToServo(float angle, bool flip);
+
+    const bool mFlip;
+    const int mServoPin;
+    const bool mGpioLibInit;
+    static constexpr float SERVO_ANGLE_LIMIT = 90.0;
+};
+

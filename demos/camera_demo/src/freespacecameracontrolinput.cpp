@@ -21,9 +21,9 @@
 #include <iomanip>
 #include <iostream>
 #include <freespace/freespace_util.h>
-#include "freespaceorientationinput.hpp"
+#include "freespacecameracontrolinput.hpp"
 
-const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
+const std::vector<std::string> FreespaceCameraControlInput::SENSOR_NAMES =
 {
     "Accelerometer",
     "Gyroscope",
@@ -34,7 +34,7 @@ const std::vector<std::string> FreespaceOrientationInput::SENSOR_NAMES =
     "Sensor Fusion"
  };
 
-const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR_LEN] =
+const float FreespaceCameraControlInput::FIR_COEFFS[FreespaceCameraControlInput::FIR_LEN] =
 {
     1.0 / 16.0,
     1.0 / 16.0,
@@ -46,9 +46,9 @@ const float FreespaceOrientationInput::FIR_COEFFS[FreespaceOrientationInput::FIR
     4.0 / 16.0
 };
 
-FreespaceOrientationInput::FreespaceOrientationInput(
-        CameraOrientationCallbacks angPosCallbacks, unsigned periodUs) :
-    OrientationInput(angPosCallbacks),
+FreespaceCameraControlInput::FreespaceCameraControlInput(
+        CameraControlCallbacks cameraControlCallbacks, unsigned periodUs) :
+    CameraControlInput(cameraControlCallbacks),
     mPeriodUs(periodUs),
     mPollThread(nullptr),
     mPoll(false),
@@ -62,12 +62,12 @@ FreespaceOrientationInput::FreespaceOrientationInput(
     }
 }
 
-FreespaceOrientationInput::~FreespaceOrientationInput()
+FreespaceCameraControlInput::~FreespaceCameraControlInput()
 {
     term();
 }
 
-int FreespaceOrientationInput::init()
+int FreespaceCameraControlInput::init()
 {
     // Display liblibfreespace version
     printVersionInfo();
@@ -129,12 +129,12 @@ int FreespaceOrientationInput::init()
 
     // Start the reader thread
     mPoll = true;
-    mPollThread = new std::thread(&FreespaceOrientationInput::pollThread, this);
+    mPollThread = new std::thread(&FreespaceCameraControlInput::pollThread, this);
 
     return 0;
 }
 
-void FreespaceOrientationInput::term()
+void FreespaceCameraControlInput::term()
 {
     // Stop the reader thread
     if (mPollThread != nullptr)
@@ -152,7 +152,7 @@ void FreespaceOrientationInput::term()
     freespace_exit();
 }
 
-int FreespaceOrientationInput::setSensorPeriod(FreespaceDeviceId deviceId,
+int FreespaceCameraControlInput::setSensorPeriod(FreespaceDeviceId deviceId,
         unsigned periodUs)
 {
     for (unsigned i = 0; i < SENSOR_NAMES.size(); ++i)
@@ -197,7 +197,7 @@ int FreespaceOrientationInput::setSensorPeriod(FreespaceDeviceId deviceId,
     return 0;
 }
 
-int FreespaceOrientationInput::sensorEnable(FreespaceDeviceId deviceId,
+int FreespaceCameraControlInput::sensorEnable(FreespaceDeviceId deviceId,
         bool enable)
 {
     struct freespace_message m;
@@ -219,7 +219,7 @@ int FreespaceOrientationInput::sensorEnable(FreespaceDeviceId deviceId,
     return 0;
 }
 
-void FreespaceOrientationInput::pollThread()
+void FreespaceCameraControlInput::pollThread()
 {
     struct freespace_message m;
     struct MultiAxisSensor acc;
@@ -259,19 +259,19 @@ void FreespaceOrientationInput::pollThread()
 
         float angularPan = weightedFilter(slope * acc.y + offset, mPrevPan, mPanIndex);
         float angularTilt = weightedFilter(slope * acc.x + offset, mPrevTilt, mTiltIndex);
-        mCallbacks.mSet(PanTilt(angularPan, angularTilt));
+        mCallbacks.mPosSet(PanTilt(angularPan, angularTilt));
     }
 
     // Disable data flow
     sensorEnable(mDeviceId, false);
 }
 
-void FreespaceOrientationInput::printVersionInfo()
+void FreespaceCameraControlInput::printVersionInfo()
 {
     std::cout << "libfreespace verson\n\t" << freespace_version() << std::endl;
 }
 
-int FreespaceOrientationInput::printDeviceInfo(FreespaceDeviceId deviceId)
+int FreespaceCameraControlInput::printDeviceInfo(FreespaceDeviceId deviceId)
 {
     struct FreespaceDeviceInfo info;
 
@@ -293,7 +293,7 @@ int FreespaceOrientationInput::printDeviceInfo(FreespaceDeviceId deviceId)
     return 0;
 }
 
-int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
+int FreespaceCameraControlInput::printSensorInfo(FreespaceDeviceId deviceId)
 {
     std::cout << "Sensors:\n";
     for (unsigned sensor = 0; sensor < SENSOR_NAMES.size(); sensor++)
@@ -340,7 +340,7 @@ int FreespaceOrientationInput::printSensorInfo(FreespaceDeviceId deviceId)
     return 0;
 }
 
-float FreespaceOrientationInput::weightedFilter(float angularPosition, float previous[], unsigned& index)
+float FreespaceCameraControlInput::weightedFilter(float angularPosition, float previous[], unsigned& index)
 {
     float ret = 0.0;
     previous[index] = angularPosition;

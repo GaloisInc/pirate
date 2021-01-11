@@ -21,14 +21,14 @@
 #include <termios.h>
 
 #include "options.hpp"
-#include "orientationinput.hpp"
+#include "cameracontrolinput.hpp"
 
-class KeyboardOrientationInput : public OrientationInput
+class KeyboardCameraControlInput : public CameraControlInput
 {
 public:
-    KeyboardOrientationInput(const Options& options,
-                             CameraOrientationCallbacks angPosCallbacks);
-    virtual ~KeyboardOrientationInput();
+    KeyboardCameraControlInput(const Options& options,
+                             CameraControlCallbacks cameraControlCallbacks);
+    virtual ~KeyboardCameraControlInput();
 
     virtual int init();
     virtual void term();
@@ -37,10 +37,13 @@ private:
     const float mAngIncrement;
 
     enum eKeyCode {
-        UP    = 0x41,
-        DOWN  = 0x42,
-        RIGHT = 0x43,
-        LEFT  = 0x44
+        UP       = 0x41,
+        DOWN       = 0x42,
+        RIGHT      = 0x43,
+        LEFT       = 0x44,
+        ZOOM_INC   = 0x2B,
+        ZOOM_DEC   = 0x2D,
+        ZOOM_RESET = 0x3D
     };
 
     struct termios mTermiosBackup;

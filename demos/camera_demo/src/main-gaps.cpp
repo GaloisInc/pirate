@@ -29,9 +29,9 @@
 
 #include "libpirate.h"
 
-#include "orientationinputcreator.hpp"
-#include "orientationoutputcreator.hpp"
-#include "remoteorientationoutput.hpp"
+#include "cameracontrolinputcreator.hpp"
+#include "cameracontroloutputcreator.hpp"
+#include "remotecameracontroloutput.hpp"
 #include "frameprocessorcreator.hpp"
 #include "videosourcecreator.hpp"
 #include "imageconvert.hpp"
@@ -208,42 +208,42 @@ int main(int argc, char *argv[])
         sigaction(SIGINT, &newaction, NULL);
     }
 
-    OrientationOutput *orientationOutput = nullptr;
+    CameraControlOutput *cameraControlOutput = nullptr;
 
-    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
+    std::vector<std::shared_ptr<CameraControlInput>> cameraControlInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
-    std::unique_ptr<OrientationOutput> delegate(OrientationOutputCreator::get(options));
-    orientationOutput = new RemoteOrientationOutput(std::move(delegate), options, remotes);
-    CameraOrientationCallbacks angPosCallbacks = orientationOutput->getCallbacks();
+    std::unique_ptr<CameraControlOutput> delegate(CameraControlOutputCreator::get(options));
+    cameraControlOutput = new RemoteCameraControlOutput(std::move(delegate), options, remotes);
+    CameraControlCallbacks cameraControlCallbacks = cameraControlOutput->getCallbacks();
 
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, angPosCallbacks);
-        orientationInputs.push_back(colorTracking);
+        colorTracking = std::make_shared<ColorTracking>(options, cameraControlCallbacks);
+        cameraControlInputs.push_back(colorTracking);
     }
 
     if (options.mInputKeyboard) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Keyboard, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mInputFreespace) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Freespace, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(Filesystem, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(Filesystem, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(XWindows, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(H264Stream, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(H264Stream, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mImageTracking) {
@@ -252,14 +252,14 @@ int main(int argc, char *argv[])
 
     VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
 
-    rv = orientationOutput->init();
+    rv = cameraControlOutput->init();
     if (rv != 0)
     {
         goto cleanup;
     }
 
-    for (auto orientationInput : orientationInputs) {
-        rv = orientationInput->init();
+    for (auto cameraControlInput : cameraControlInputs) {
+        rv = cameraControlInput->init();
         if (rv != 0)
         {
             goto cleanup;
@@ -298,9 +298,9 @@ cleanup:
         delete videoSource;
     }
     frameProcessors.clear();
-    orientationInputs.clear();
-    if (orientationOutput != nullptr) {
-        delete orientationOutput;
+    cameraControlInputs.clear();
+    if (cameraControlOutput != nullptr) {
+        delete cameraControlOutput;
     }
 
     pirateCloseRemotes(remotes);

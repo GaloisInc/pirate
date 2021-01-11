@@ -20,7 +20,7 @@
 #include "libpirate.h"
 
 #include "camerademo-serialization.hpp"
-#include "remoteorientationoutput.hpp"
+#include "remotecameracontroloutput.hpp"
 
 using namespace pirate;
 using namespace CameraDemo;
@@ -29,10 +29,10 @@ using namespace CameraDemo;
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-RemoteOrientationOutput::RemoteOrientationOutput(
-    std::unique_ptr<OrientationOutput> delegate,
+RemoteCameraControlOutput::RemoteCameraControlOutput(
+    std::unique_ptr<CameraControlOutput> delegate,
     const Options& options, const RemoteDescriptors& remotes) :
-        OrientationOutput(),
+        CameraControlOutput(),
         mDelegate(std::move(delegate)),
         mMessageCounter(0),
         mHasOutput(options.mHasOutput),
@@ -47,22 +47,22 @@ RemoteOrientationOutput::RemoteOrientationOutput(
 
         }
 
-RemoteOrientationOutput::~RemoteOrientationOutput() {
+RemoteCameraControlOutput::~RemoteCameraControlOutput() {
     term();
 }
 
-int RemoteOrientationOutput::init() {
+int RemoteCameraControlOutput::init() {
     int rv = 0;
 
     if (mHasOutput) {
         mPoll = true;
-        mPollThread = new std::thread(&RemoteOrientationOutput::pollThread, this);
+        mPollThread = new std::thread(&RemoteCameraControlOutput::pollThread, this);
         rv = mDelegate->init();
     }
     return rv;
 }
 
-void RemoteOrientationOutput::term() {
+void RemoteCameraControlOutput::term() {
     if (mPoll) {
         mPoll = false;
         if (mPollThread != nullptr) {
@@ -73,10 +73,10 @@ void RemoteOrientationOutput::term() {
     }
 }
 
-int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& request, int &clientId) {
+int RemoteCameraControlOutput::recvRequest(CameraDemo::CameraControlOutputRequest& request, int &clientId) {
     int rv;
     struct pollfd fds[16];
-    std::vector<char> readBuf(sizeof(struct OrientationOutputRequest_wire));
+    std::vector<char> readBuf(sizeof(struct CameraControlOutputRequest_wire));
     int nfds = MIN(mGapsRequestReadGds.size(), 16);
 
     for (int i = 0; i < nfds; i++) {
@@ -87,7 +87,7 @@ int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& r
     if (rv == 0) {
         return 0;
     } else if (rv < 0) {
-        std::perror("remote orientation output receive request poll error");
+        std::perror("remote camera control output receive request poll error");
         return -1;
     }
     int gd = -1;
@@ -98,63 +98,63 @@ int RemoteOrientationOutput::recvRequest(CameraDemo::OrientationOutputRequest& r
             break;
         }
     }
-    rv = pirate_read(gd, readBuf.data(), sizeof(struct OrientationOutputRequest_wire));
+    rv = pirate_read(gd, readBuf.data(), sizeof(struct CameraControlOutputRequest_wire));
     if (rv < 0) {
-        std::perror("remote orientation output receive request read error");
+        std::perror("remote camera control output receive request read error");
         return -1;
     } else if (rv == 0) {
         return 0;
     }
-    if (rv != sizeof(struct OrientationOutputRequest_wire)) {
-        std::cout << "orientation output request " << ((int) request.reqType)
-            << " received " << rv << " out of " << sizeof(struct OrientationOutputRequest_wire)
+    if (rv != sizeof(struct CameraControlOutputRequest_wire)) {
+        std::cout << "camera control output request " << ((int) request.reqType)
+            << " received " << rv << " out of " << sizeof(struct CameraControlOutputRequest_wire)
             << " bytes" << std::endl;
         return -1;
     }
-    request = Serialization<struct OrientationOutputRequest>::fromBuffer(readBuf);    
+    request = Serialization<struct CameraControlOutputRequest>::fromBuffer(readBuf);    
     return rv;
 }
 
-bool RemoteOrientationOutput::recvResponse(CameraDemo::OrientationOutputResponse& response) {
+bool RemoteCameraControlOutput::recvResponse(CameraDemo::CameraControlOutputResponse& response) {
     int rv;
 
-    std::vector<char> readBuf(sizeof(struct OrientationOutputResponse_wire));
-    rv = pirate_read(mGapsResponseReadGd, readBuf.data(), sizeof(struct OrientationOutputResponse_wire));
+    std::vector<char> readBuf(sizeof(struct CameraControlOutputResponse_wire));
+    rv = pirate_read(mGapsResponseReadGd, readBuf.data(), sizeof(struct CameraControlOutputResponse_wire));
     if (rv < 0) {
-        std::perror("remote orientation output receive response read error");
+        std::perror("remote camera control output receive response read error");
         return false;
     }
-    if (rv != sizeof(struct OrientationOutputResponse_wire)) {
-        std::cout << "orientation output response received "
-            << rv << " out of " << sizeof(struct OrientationOutputResponse_wire)
+    if (rv != sizeof(struct CameraControlOutputResponse_wire)) {
+        std::cout << "camera control output response received "
+            << rv << " out of " << sizeof(struct CameraControlOutputResponse_wire)
             << " bytes" << std::endl;
         return false;
     }
-    response = Serialization<struct OrientationOutputResponse>::fromBuffer(readBuf);    
+    response = Serialization<struct CameraControlOutputResponse>::fromBuffer(readBuf);    
     return true;
 }
 
-bool RemoteOrientationOutput::sendRequest(const OrientationOutputRequest& request) {
+bool RemoteCameraControlOutput::sendRequest(const CameraControlOutputRequest& request) {
     int rv;
 
-    std::vector<char> writeBuf(sizeof(struct OrientationOutputRequest_wire));
-    Serialization<struct OrientationOutputRequest>::toBuffer(request, writeBuf);
-    rv = pirate_write(mGapsRequestWriteGd, writeBuf.data(), sizeof(struct OrientationOutputRequest_wire));
+    std::vector<char> writeBuf(sizeof(struct CameraControlOutputRequest_wire));
+    Serialization<struct CameraControlOutputRequest>::toBuffer(request, writeBuf);
+    rv = pirate_write(mGapsRequestWriteGd, writeBuf.data(), sizeof(struct CameraControlOutputRequest_wire));
     if (rv < 0) {
-        std::perror("remote orientation output send request write error");
+        std::perror("remote camera control output send request write error");
         return false;
     }
-    if (rv != sizeof(struct OrientationOutputRequest_wire)) {
-        std::cout << "orientation output request " << ((int) request.reqType)
-            << " sent " << rv << " out of " << sizeof(struct OrientationOutputRequest_wire)
+    if (rv != sizeof(struct CameraControlOutputRequest_wire)) {
+        std::cout << "camera control output request " << ((int) request.reqType)
+            << " sent " << rv << " out of " << sizeof(struct CameraControlOutputRequest_wire)
             << " bytes" << std::endl;
         return false;
     }
     return true;
 }
 
-bool RemoteOrientationOutput::sendResponse(uint16_t id,
-    const OrientationOutputResponse& response) {
+bool RemoteCameraControlOutput::sendResponse(uint16_t id,
+    const CameraControlOutputResponse& response) {
 
     int rv, gd;
 
@@ -163,33 +163,37 @@ bool RemoteOrientationOutput::sendResponse(uint16_t id,
         return false;
     }
     gd = mGapsResponseWriteGds[id];
-    std::vector<char> writeBuf(sizeof(struct OrientationOutputResponse_wire));
-    Serialization<struct OrientationOutputResponse>::toBuffer(response, writeBuf);
-    rv = pirate_write(gd, writeBuf.data(), sizeof(struct OrientationOutputResponse_wire));
+    std::vector<char> writeBuf(sizeof(struct CameraControlOutputResponse_wire));
+    Serialization<struct CameraControlOutputResponse>::toBuffer(response, writeBuf);
+    rv = pirate_write(gd, writeBuf.data(), sizeof(struct CameraControlOutputResponse_wire));
     if (rv < 0) {
-        std::perror("remote orientation output send response write error");
+        std::perror("remote camera control output send response write error");
         return false;
     }
-    if (rv != sizeof(struct OrientationOutputResponse_wire)) {
-        std::cout << "orientation output response to client " << id
-            << " sent " << rv << " out of " << sizeof(struct OrientationOutputResponse_wire)
+    if (rv != sizeof(struct CameraControlOutputResponse_wire)) {
+        std::cout << "camera control output response to client " << id
+            << " sent " << rv << " out of " << sizeof(struct CameraControlOutputResponse_wire)
             << " bytes" << std::endl;
         return false;
     }
     return true;
 }
 
-bool RemoteOrientationOutput::equivalentPosition(PanTilt p1, PanTilt p2) {
+bool RemoteCameraControlOutput::equivalentPosition(PanTilt p1, PanTilt p2) {
     return mDelegate->equivalentPosition(p1, p2);
 }
 
-PanTilt RemoteOrientationOutput::getAngularPosition() {
-    OrientationOutputRequest request;
-    OrientationOutputResponse response;
+void RemoteCameraControlOutput::updateZoom(CameraZoom zoom) {
+    (void) zoom; // TODO
+}
+
+PanTilt RemoteCameraControlOutput::getAngularPosition() {
+    CameraControlOutputRequest request;
+    CameraControlOutputResponse response;
 
     mClientLock.lock();
     mMessageCounter++;
-    request.reqType = OrientationOutputReqType::OutputGet;
+    request.reqType = CameraControlOutputReqType::OutputGet;
     request.messageId = mMessageCounter;
     request.angularPositionPan = std::numeric_limits<float>::quiet_NaN();
     request.angularPositionTilt = std::numeric_limits<float>::quiet_NaN();
@@ -205,12 +209,12 @@ PanTilt RemoteOrientationOutput::getAngularPosition() {
     }
 }
 
-void RemoteOrientationOutput::setAngularPosition(PanTilt angularPosition) {
-    OrientationOutputRequest request;
+void RemoteCameraControlOutput::setAngularPosition(PanTilt angularPosition) {
+    CameraControlOutputRequest request;
 
     mClientLock.lock();
     mMessageCounter++;
-    request.reqType = OrientationOutputReqType::OutputSet;
+    request.reqType = CameraControlOutputReqType::OutputSet;
     request.messageId = mMessageCounter;
     request.angularPositionPan = angularPosition.pan;
     request.angularPositionTilt = angularPosition.tilt;
@@ -218,12 +222,12 @@ void RemoteOrientationOutput::setAngularPosition(PanTilt angularPosition) {
     mClientLock.unlock();
 }
 
-void RemoteOrientationOutput::updateAngularPosition(PanTilt positionUpdate) {
-    OrientationOutputRequest request;
+void RemoteCameraControlOutput::updateAngularPosition(PanTilt positionUpdate) {
+    CameraControlOutputRequest request;
 
     mClientLock.lock();
     mMessageCounter++;
-    request.reqType = OrientationOutputReqType::OutputUpdate;
+    request.reqType = CameraControlOutputReqType::OutputUpdate;
     request.messageId = mMessageCounter;
     request.angularPositionPan = positionUpdate.pan;
     request.angularPositionTilt = positionUpdate.tilt;
@@ -231,9 +235,9 @@ void RemoteOrientationOutput::updateAngularPosition(PanTilt positionUpdate) {
     mClientLock.unlock();
 }
 
-void RemoteOrientationOutput::pollThread() {
-    OrientationOutputRequest request;
-    OrientationOutputResponse response;
+void RemoteCameraControlOutput::pollThread() {
+    CameraControlOutputRequest request;
+    CameraControlOutputResponse response;
     PanTilt angularPosition;
 
     while (mPoll) {
@@ -245,18 +249,18 @@ void RemoteOrientationOutput::pollThread() {
             continue;
         }
         switch (request.reqType) {
-            case OrientationOutputReqType::OutputGet:
+            case CameraControlOutputReqType::OutputGet:
                 angularPosition = mDelegate->getAngularPosition();
                 response.angularPositionPan = angularPosition.pan;
                 response.angularPositionTilt = angularPosition.tilt;
                 sendResponse(clientId, response);
                 break;
-            case OrientationOutputReqType::OutputSet:
+            case CameraControlOutputReqType::OutputSet:
                 angularPosition.pan = request.angularPositionPan;
                 angularPosition.tilt = request.angularPositionTilt;
                 mDelegate->setAngularPosition(angularPosition);
                 break;
-            case OrientationOutputReqType::OutputUpdate:
+            case CameraControlOutputReqType::OutputUpdate:
                 angularPosition.pan = request.angularPositionPan;
                 angularPosition.tilt = request.angularPositionTilt;
                 mDelegate->updateAngularPosition(angularPosition);

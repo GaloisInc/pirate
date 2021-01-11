@@ -16,35 +16,40 @@
 #pragma once
 
 #include "pantilt.hpp"
+#include "camerazoom.hpp"
 
 #include <functional>
 #include <mutex>
 
-struct CameraOrientationCallbacks
+struct CameraControlCallbacks
 {
-    using GetCallback = std::function<PanTilt()>;
-    using SetCallback = std::function<void(PanTilt)>;
-    using UpdateCallback = std::function<void(PanTilt)>;
+    using PosGet = std::function<PanTilt()>;
+    using PosSet = std::function<void(PanTilt)>;
+    using PosUpdate = std::function<void(PanTilt)>;
+    using ZoomUpdate = std::function<void(CameraZoom)>;
 
-    CameraOrientationCallbacks(
-        GetCallback get,
-        SetCallback set,
-        UpdateCallback update) :
-        mGet(get), mSet(set), mUpdate(update)
+    CameraControlCallbacks(
+        PosGet posGet,
+        PosSet posSet,
+        PosUpdate posUpdate,
+        ZoomUpdate zoomUpdate) :
+        mPosGet(posGet), mPosSet(posSet), mPosUpdate(posUpdate),
+        mZoomUpdate(zoomUpdate)
     {
 
     }
 
-    GetCallback mGet;
-    SetCallback mSet;
-    UpdateCallback mUpdate;
+    PosGet mPosGet;
+    PosSet mPosSet;
+    PosUpdate mPosUpdate;
+    ZoomUpdate mZoomUpdate;
 };
 
-class OrientationOutput
+class CameraControlOutput
 {
 public:
-    OrientationOutput();
-    virtual ~OrientationOutput();
+    CameraControlOutput();
+    virtual ~CameraControlOutput();
 
     virtual int init() = 0;
     virtual void term() = 0;
@@ -54,9 +59,11 @@ public:
     virtual void updateAngularPosition(PanTilt positionUpdate) = 0;
     virtual bool equivalentPosition(PanTilt p1, PanTilt p2) = 0;
 
-    const CameraOrientationCallbacks& getCallbacks();
+    virtual void updateZoom(CameraZoom zoom) = 0;
+
+    const CameraControlCallbacks& getCallbacks();
 
     static constexpr float DEFAULT_ANG_POS_LIMIT = 90.0;
 private:
-    const CameraOrientationCallbacks mCallbacks;
+    const CameraControlCallbacks mCallbacks;
 };
