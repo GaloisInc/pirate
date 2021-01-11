@@ -1,0 +1,28 @@
+# Trillium HS25 - XV Aptina sensor settings
+
+# Minimum exposure time in milliseconds, (default=0.1, effective min=0.05, effective max=33.0), float
+MinExposure = 0.1
+
+# Maximum exposure time in milliseconds, (default=8.0, effective min=0.05, effective max=33.0), float
+MaxExposure = 8.0
+
+# Minimum sensor luminance gain, (default=1, effective min=1, effective max=32), float
+MinGain = 1
+
+# Maximum sensor luminance gain, (default=32, effective min=1, effective max=32), float
+MaxGain = 32
+
+# Brightness adjustment, (default=-8, effective min=-100, effective max=110), int8
+Brightness = -8
+
+# Contrast adjustment, (default=-0.4, effective min=-1.0, effective max=1.0), float
+Contrast = -0.4
+
+# Saturation adjustment, (default=0.3, effective min=-1.0, effective max=1.0), float
+Saturation = 0.3
+
+# Sharpening filter strength, (default=2.0, effective min=0.0, effective max=5.0), float
+Sharpness = 2.0
+
+# Hue adjustment, (default=0, effective min=-10, effective max=10), int8
+Hue = 0
