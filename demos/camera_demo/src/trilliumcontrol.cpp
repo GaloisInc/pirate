@@ -35,8 +35,7 @@ TrilliumControl::TrilliumControl(const Options& options) :
     mVerbose(options.mVerbose),
     mReceiveThread(nullptr),
     mReceive(false),
-    mVerticalFlip(options.mImageVerticalFlip),
-    mHorizontalFlip(options.mImageHorizontalFlip)
+    mFlip(options.mImageFlip)
 {
     std::memset(&mState, 0, sizeof(mState));
 }
@@ -109,13 +108,10 @@ bool TrilliumControl::applyAngularPosition(PanTilt angularPosition)
 
     std::memset(&cmd, 0, sizeof(cmd));
     cmd.Target[0] = deg2radf(angularPosition.pan);
-    if (mHorizontalFlip)
+    cmd.Target[1] = deg2radf(angularPosition.tilt);
+    if (mFlip)
     {
         cmd.Target[0] = -cmd.Target[0];
-    }
-    cmd.Target[1] = deg2radf(angularPosition.tilt);
-    if (mVerticalFlip)
-    {
         cmd.Target[1] = -cmd.Target[1];
     }
     cmd.Mode = ORION_MODE_POSITION;
