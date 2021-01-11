@@ -91,7 +91,7 @@ Embedded application based on camera, position input and position driver
  video options:
   -d, --video_device=device  video device file path
   -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
-  -f, --flip=v|h             horizontal or vertical image flip
+  -f, --flip                 flip image and controls (rotate 180)
   -H, --height=pixels        image height
   -t, --video_type=type      video type (jpeg|yuyv|h264|stream|trillium|none)
   -W, --width=pixels         image width
