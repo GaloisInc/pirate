@@ -42,6 +42,7 @@ struct Options
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
+        mImageColorPick(false),
         mFrameRateNumerator(1),
         mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
@@ -83,6 +84,7 @@ struct Options
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
+    bool mImageColorPick;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;

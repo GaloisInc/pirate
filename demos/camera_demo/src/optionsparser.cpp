@@ -37,6 +37,7 @@ const int OPT_KBD           = 2400;
 const int OPT_FREESPACE     = 2500;
 const int OPT_GAPS_REQ      = 2600;
 const int OPT_GAPS_RSP      = 2700;
+const int OPT_COLOR_PICK    = 2800;
 
 
 static struct argp_option options[] =
@@ -50,6 +51,7 @@ static struct argp_option options[] =
     { "decoder",      'D',               "url",     0, "MPEG-TS H.264 decoder url (host:port)",     0 },
     { 0,              0,                 0,         0, "frame processor options:",                  2 },
     { "color_track",  'C',               "RRGGBB",  0, "color tracking (RGB hex)",                  0 },
+    { "color_pick",   OPT_COLOR_PICK,    NULL,      0, "object color pick tool",                    0 },
     { "threshold",    OPT_THRESH,        "val",     0, "color tracking threshold",                  0 },
     { "xwindows",     'X',               NULL,      0, "xwindows frame processor",                  0 },
     { "filesystem",   'F',               NULL,      0, "filesystem frame processor",                0 },
@@ -310,6 +312,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             }
             break;
         }
+
+        case OPT_COLOR_PICK:
+            opt->mImageColorPick = true;
+            break;
 
         case OPT_THRESH:
             ss >> opt->mImageTrackingThreshold;
