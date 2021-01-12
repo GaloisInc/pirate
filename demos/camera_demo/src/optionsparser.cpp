@@ -41,7 +41,7 @@ static struct argp_option options[] =
 {
     { 0,              0,             0,             0, "video options:",                            1 },
     { "video_device", 'd',           "device",      0, "video device file path",                    0 },
-    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream|trillium|none)", 0 },
+    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream|trillium|test|none)", 0 },
     { "width",        'W',           "pixels",      0, "image width",                               0 },
     { "height",       'H',           "pixels",      0, "image height",                              0 },
     { "flip",         'f',           NULL,          0, "flip image and controls (rotate 180)",      0 },
@@ -132,6 +132,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             else if (ss.str() == "trillium")
             {
                 opt->mVideoInputType = VIDEO_TRILLIUM;
+                opt->mVideoOutputType = VIDEO_BGRX;
+            }
+            else if (ss.str() == "test")
+            {
+                opt->mVideoInputType = VIDEO_TEST;
                 opt->mVideoOutputType = VIDEO_BGRX;
             }
             else if (ss.str() == "none")

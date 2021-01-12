@@ -36,6 +36,7 @@ set(SRCS
     src/cameracontroloutput.cpp
     src/basecameracontroloutput.cpp
     src/remotecameracontroloutput.cpp
+    src/testsource.cpp
     src/trilliumcontrol.cpp
     src/trilliumutilities.cpp
     src/videosource.cpp
