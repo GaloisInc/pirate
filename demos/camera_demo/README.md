@@ -26,6 +26,7 @@ The following types of video sources are supported:
 * Laptop or USB webcam
 * Trillium HD-series camera
 * MPEG-TS H.264 video stream
+* test video stream
 * no video source
 
 The demo supports exactly one video source, or zero sources if 'no video source' is selected.
@@ -93,7 +94,7 @@ Embedded application based on camera, position input and position driver
   -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
   -f, --flip                 flip image and controls (rotate 180)
   -H, --height=pixels        image height
-  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|trillium|none)
+  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|trillium|test|none)
   -W, --width=pixels         image width
 
  frame processor options:
