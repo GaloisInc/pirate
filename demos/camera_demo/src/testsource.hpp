@@ -21,7 +21,6 @@
 #include <vector>
 
 #include <stdint.h>
-#include <linux/videodev2.h>
 
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
@@ -44,6 +43,5 @@ private:
     bool mPoll;
     void pollThread();
     void perturb();
-    uint8_t perturbComponent(uint8_t val);
 };
 
