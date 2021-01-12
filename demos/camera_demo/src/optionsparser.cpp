@@ -42,28 +42,28 @@ const int OPT_COLOR_PICK    = 2800;
 
 static struct argp_option options[] =
 {
-    { 0,              0,                 0,         0, "video options:",                            1 },
-    { "video_device", 'd',               "device",  0, "video device file path",                    0 },
-    { "video_type",   't',               "type",    0, "video type (jpeg|yuyv|h264|stream|trillium|none)", 0 },
-    { "width",        'W',               "pixels",  0, "image width",                               0 },
-    { "height",       'H',               "pixels",  0, "image height",                              0 },
-    { "flip",         'f',               NULL,      0, "flip image and controls (rotate 180)",      0 },
-    { "decoder",      'D',               "url",     0, "MPEG-TS H.264 decoder url (host:port)",     0 },
-    { 0,              0,                 0,         0, "frame processor options:",                  2 },
-    { "color_track",  'C',               "RRGGBB",  0, "color tracking (RGB hex)",                  0 },
-    { "color_pick",   OPT_COLOR_PICK,    NULL,      0, "object color pick tool",                    0 },
-    { "threshold",    OPT_THRESH,        "val",     0, "color tracking threshold",                  0 },
-    { "xwindows",     'X',               NULL,      0, "xwindows frame processor",                  0 },
-    { "filesystem",   'F',               NULL,      0, "filesystem frame processor",                0 },
-    { "metadata",     OPT_METADATA,      NULL,      0, "metadata frame processor",                  0 },
-    { "encoder",      'E',               "url",     0, "MPEG-TS H.264 encoder url (host:port)",     0 },
-    { "codec",        OPT_CODEC,         "type",    0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
-    { "out_dir",      OPT_OUT_DIR,       "path",    0, "image output directory",                    0 },
-    { "out_count",    OPT_MAX_OUT,       "val",     0, "image output maximum file count",           0 },
-    { "sliding",      OPT_SLIDE,         NULL,      0, "sliding window image filter",               0 },
-    { 0,              0,                 0,         0, "input/output options:",                     3 },
-    { "in_keyboard",  OPT_KBD,           NULL,      0, "read position input from keyboard",         0 },
-    { "in_freespace", OPT_FREESPACE,     NULL,      0, "read position input from freespace device", 0 },
+    { 0,              0,                0,          0, "video options:",                            1 },
+    { "video_device", 'd',              "device",   0, "video device file path",                    0 },
+    { "video_type",   't',              "type",     0, "video type (jpeg|yuyv|h264|stream|trillium|test|none)", 0 },
+    { "width",        'W',              "pixels",   0, "image width",                               0 },
+    { "height",       'H',              "pixels",   0, "image height",                              0 },
+    { "flip",         'f',              NULL,       0, "flip image and controls (rotate 180)",      0 },
+    { "decoder",      'D',              "url",      0, "MPEG-TS H.264 decoder url (host:port)",     0 },
+    { 0,              0,                0,          0, "frame processor options:",                  2 },
+    { "color_track",  'C',              "RRGGBB",   0, "color tracking (RGB hex)",                  0 },
+    { "color_pick",   OPT_COLOR_PICK,   NULL,       0, "object color pick tool",                    0 },
+    { "threshold",    OPT_THRESH,       "val",      0, "color tracking threshold",                  0 },
+    { "xwindows",     'X',              NULL,       0, "xwindows frame processor",                  0 },
+    { "filesystem",   'F',              NULL,       0, "filesystem frame processor",                0 },
+    { "metadata",     OPT_METADATA,     NULL,       0, "metadata frame processor",                  0 },
+    { "encoder",      'E',              "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
+    { "codec",        OPT_CODEC,        "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
+    { "out_dir",      OPT_OUT_DIR,      "path",     0, "image output directory",                    0 },
+    { "out_count",    OPT_MAX_OUT,      "val",      0, "image output maximum file count",           0 },
+    { "sliding",      OPT_SLIDE,        NULL,       0, "sliding window image filter",               0 },
+    { 0,              0,                0,          0, "input/output options:",                     3 },
+    { "in_keyboard",  OPT_KBD,          NULL,       0, "read position input from keyboard",         0 },
+    { "in_freespace", OPT_FREESPACE,    NULL,       0, "read position input from freespace device", 0 },
     { "output",       'o',              "type",     0, "controller (servo|trillium|print|none)",    0 },
     { "trillium",     OPT_TRILLIUM,     "addr",     0, "trillium camera IP address",                0 },
     { "trillium_cfg", OPT_TRILLIUM_CFG, "path",     0, "optional Trillium configuration file",      0 },
@@ -137,6 +137,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             else if (ss.str() == "trillium")
             {
                 opt->mVideoInputType = VIDEO_TRILLIUM;
+                opt->mVideoOutputType = VIDEO_BGRX;
+            }
+            else if (ss.str() == "test")
+            {
+                opt->mVideoInputType = VIDEO_TEST;
                 opt->mVideoOutputType = VIDEO_BGRX;
             }
             else if (ss.str() == "none")
