@@ -263,11 +263,11 @@ int TrilliumControl::trilliumConfigParse(std::string file, OrionAptinaSettings_t
         else if (opt.compare("MaxExposure") == 0)  { val >> cfg.MaxExposure; }
         else if (opt.compare("MinGain") == 0)      { val >> cfg.MinGain;     }
         else if (opt.compare("MaxGain") == 0)      { val >> cfg.MaxGain;     }
-        else if (opt.compare("Brightness") == 0)   { val >> cfg.Brightness;  }
+        else if (opt.compare("Brightness") == 0)   { cfg.Brightness = std::stoi(val.str());  }
         else if (opt.compare("Contrast") == 0)     { val >> cfg.Contrast;    }
         else if (opt.compare("Saturation") == 0)   { val >> cfg.Saturation;  }
         else if (opt.compare("Sharpness") == 0)    { val >> cfg.Sharpness;   }
-        else if (opt.compare("Hue") == 0)          { val >> cfg.Hue;         }
+        else if (opt.compare("Hue") == 0)          { cfg.Hue = std::stoi(val.str());         }
         else
         {
             std::cout << "Invalid configuration option: " << opt << std::endl;
