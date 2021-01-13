@@ -53,7 +53,7 @@ private:
     GC                     mContext;
     XGCValues              mContextVals;
     static const uint32_t  mColorPickBoxSize = 50;
-    static const uint32_t  mColorPickBoxColor = 0x00FF4500;
+    static const uint32_t  mColorPickBoxColor = 0x00FF4500; // red
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
