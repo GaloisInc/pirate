@@ -22,24 +22,26 @@ class ModuleDecl : public TypeSpec {
 public:
     std::string namespacePrefix;
     std::string identifier;
+    bool packed;
     std::vector<TypeSpec*> definitions;
-    ModuleDecl(std::string namespacePrefix, std::string identifier) :
-        namespacePrefix(namespacePrefix), identifier(identifier), definitions() { }
+    ModuleDecl(std::string namespacePrefix, std::string identifier, bool packed) :
+        namespacePrefix(namespacePrefix), identifier(identifier),
+        packed(packed), definitions() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
-    virtual void cTypeDeclWire(std::ostream &ostream, bool packed) override;
+    virtual void cTypeDeclWire(std::ostream &ostream) override;
     virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
-    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) override;
+    virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
     virtual void cDeclareAnnotationValidate(std::ostream& ostream) override;
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
-    virtual void cDeclareAsserts(std::ostream &ostream, bool packed) override;
+    virtual void cDeclareAsserts(std::ostream &ostream) override;
     virtual void cppDeclareHeader(std::ostream &ostream) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
-    virtual void cppTypeDeclWire(std::ostream &ostream, bool packed) override { cTypeDeclWire(ostream, packed); }
-    virtual void cppDeclareAsserts(std::ostream &ostream, bool packed) override { cDeclareAsserts(ostream, packed); }
-    virtual void cppDeclareFunctions(std::ostream &ostream, bool packed) override;
+    virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
+    virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
+    virtual void cppDeclareFunctions(std::ostream &ostream) override;
     virtual void cppDeclareFooter(std::ostream &ostream) override;
     void addDefinition(TypeSpec* definition);
     virtual ~ModuleDecl();
