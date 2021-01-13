@@ -32,15 +32,15 @@ void ModuleDecl::cppTypeDecl(std::ostream &ostream) {
     }
 }
 
-void ModuleDecl::cTypeDeclWire(std::ostream &ostream, bool packed) {
+void ModuleDecl::cTypeDeclWire(std::ostream &ostream) {
     for (TypeSpec* definition : definitions) {
-        definition->cTypeDeclWire(ostream, packed);
+        definition->cTypeDeclWire(ostream);
     }
 }
 
-void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
+void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     for (TypeSpec* definition : definitions) {
-        definition->cDeclareFunctions(ostream, functionType, packed);
+        definition->cDeclareFunctions(ostream, functionType);
     }
 }
 
@@ -56,16 +56,16 @@ void ModuleDecl::cDeclareAnnotationTransform(std::ostream &ostream) {
     }
 }
 
-void ModuleDecl::cDeclareAsserts(std::ostream &ostream, bool packed) {
+void ModuleDecl::cDeclareAsserts(std::ostream &ostream) {
     ostream << std::endl;
     for (TypeSpec* definition : definitions) {
-        definition->cDeclareAsserts(ostream, packed);
+        definition->cDeclareAsserts(ostream);
     }
 }
 
-void ModuleDecl::cppDeclareFunctions(std::ostream &ostream, bool packed) {
+void ModuleDecl::cppDeclareFunctions(std::ostream &ostream) {
     for (TypeSpec* definition : definitions) {
-        definition->cppDeclareFunctions(ostream, packed);
+        definition->cppDeclareFunctions(ostream);
     }
 }
 
