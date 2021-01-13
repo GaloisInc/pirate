@@ -100,6 +100,11 @@ class ProjectConfiguration:
                     target_agent,
                     target_id))
 
+        # Startup order, which is optional and can be partial
+        self.startup_order: List[str] = []
+        for enc in yaml.get('startup_order', []):
+            self.startup_order.append(enc)
+
     def dump(self) -> None:
         """For debug purposes, print out a text representation of a project
         configuration."""

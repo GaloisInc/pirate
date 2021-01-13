@@ -10,6 +10,7 @@ from sys import exit  # pylint: disable=redefined-builtin
 from tempfile import TemporaryDirectory
 
 from .arguments import parse_arguments
+from .execute import execute
 from .project import ProjectConfiguration
 from .simulate import simulate
 from .yaml import load_yaml, generate_pal_file
@@ -59,3 +60,5 @@ def main() -> None:
         tar_all(prj)
     elif args.command == 'simulate':
         simulate(prj)
+    elif args.command == 'execute':
+        execute(prj)

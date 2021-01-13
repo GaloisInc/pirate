@@ -15,5 +15,6 @@ def parse_arguments() -> argparse.Namespace:
         help="What to do with the project",
         choices=[
             'tar',
+            'execute',
             'simulate'])
     return parser.parse_args()

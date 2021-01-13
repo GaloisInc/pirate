@@ -48,6 +48,18 @@ _enclave_schema: Dict = {
         'resources': {
             'type': 'list',
             'schema': _resource_schema},
+        'host': {
+            'required': True,
+            'type': 'string'}
+    }
+}
+
+_host_schema: Dict = {
+    'type': 'dict',
+    'schema': {
+        'name': {
+            'required': True,
+            'type': 'string'},
         'location': {
             'required': True,
             'type': 'string'}
@@ -95,6 +107,10 @@ _schema: Dict = {
         'type': 'list',
         'schema': _enclave_schema,
         'required': True},
+    'hosts': {
+        'type': 'list',
+        'schema': _host_schema,
+        'required': True},
     'agents': {
         'type': 'list',
         'schema': _agent_schema,
@@ -111,6 +127,13 @@ _schema: Dict = {
             'log_level': {
                 'type': 'string',
             }
+        }
+    },
+    'startup_order': {
+        'type': 'list',
+        'required': False,
+        'schema': {
+            'type': 'string'
         }
     }
 }

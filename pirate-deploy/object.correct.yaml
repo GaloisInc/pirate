@@ -7,14 +7,18 @@ enclaves:
     resources:
       - id: fixed-period
         value: true
-    location: "ip=192.168.0.1"
+    host: machine1
 
   - name: green
     path: ./ls
     resources:
       - id: timer-duration
         value: 0
-    location: "the moon"
+    host: machine1
+
+hosts:
+  - name: machine1
+    location: ip=127.0.0.1
 
 # TODO: Migrate these to the source files via annotations or a library.
 agents:
@@ -47,3 +51,8 @@ routes:
 
 config:
   log_level: debug
+
+# This is optional and can be incomplete
+startup_order:
+  - green
+  - orange

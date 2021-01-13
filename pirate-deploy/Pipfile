@@ -13,6 +13,7 @@ pylint = "*"
 mypy = "*"
 autopep8 = "*"
 docformatter = "*"
+bandit = "*"
 
 [requires]
 python_version = "3.6"
