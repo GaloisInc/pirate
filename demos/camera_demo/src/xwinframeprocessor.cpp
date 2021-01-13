@@ -14,6 +14,7 @@
  */
 
 #include <cerrno>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -164,10 +165,10 @@ void XWinFrameProcessor::colorPick()
     const uint32_t bottomLeftOff = upLeftOff +  mColorPickBoxSize * mImageWidth;
 
     struct {
-        uint32_t r;
-        uint32_t g;
-        uint32_t b;
-    } accum = { 0, 0, 0};
+        uint64_t r;
+        uint64_t g;
+        uint64_t b;
+    } accum = {0, 0, 0};
 
     uint32_t color = 0;
     const uint32_t boxPixels = mColorPickBoxSize * mColorPickBoxSize;
@@ -178,13 +179,17 @@ void XWinFrameProcessor::colorPick()
         for (uint32_t j = 0; j < mColorPickBoxSize; j++)
         {
             uint8_t *pixData = (uint8_t *)&pixels[pixOff + j];
-            accum.b += pixData[0];
-            accum.g += pixData[1];
-            accum.r += pixData[2];
+            accum.b += pixData[0] * pixData[0];
+            accum.g += pixData[1] * pixData[1];
+            accum.r += pixData[2] * pixData[2];
         }
     }
 
-    color = ((accum.r / boxPixels) << 16) + ((accum.g / boxPixels) << 8) + accum.b / boxPixels;
+    accum.b = sqrt(accum.b / boxPixels);
+    accum.g = sqrt(accum.g / boxPixels);
+    accum.r = sqrt(accum.r / boxPixels);
+
+    color = ((accum.r) << 16) + ((accum.g) << 8) + accum.b;
 
     // Draw the box for target
     for (uint32_t i = 0; i < mColorPickBoxSize; i++) {
