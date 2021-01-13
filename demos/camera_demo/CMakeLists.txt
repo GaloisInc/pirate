@@ -113,3 +113,7 @@ target_include_directories(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE src/orion-sdk)
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
 configure_file(${SCRIPTS_DIR}/camera_demo.sh ${PROJECT_BINARY_DIR} COPYONLY)
+
+# Configuration files
+set(CONF_DIR ${PROJECT_SOURCE_DIR}/conf)
+configure_file(${CONF_DIR}/trilliumconfig.txt ${PROJECT_BINARY_DIR} COPYONLY)

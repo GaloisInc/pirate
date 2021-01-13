@@ -44,6 +44,7 @@ private:
     const float            mPanAxisMax;
     const float            mTiltAxisMin;
     const float            mTiltAxisMax;
+    const bool             mColorPick;
     bool                   mImageSlidingWindow;
     Display*               mDisplay;
     Window                 mWindow;
@@ -51,10 +52,13 @@ private:
     unsigned char*         mImageBuffer;
     GC                     mContext;
     XGCValues              mContextVals;
+    static const uint32_t  mColorPickBoxSize = 50;
+    static const uint32_t  mColorPickBoxColor = 0x00FF4500; // red
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
     void slidingWindow();
     void renderImage();
+    void colorPick();
 };
 

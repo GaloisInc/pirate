@@ -17,6 +17,8 @@
 #include <cstring>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <vector>
 #include <math.h>
 
 #include "trilliumcontrol.hpp"
@@ -28,9 +30,34 @@
 #include "orion-sdk/OrionComm.hpp"
 #include "orion-sdk/Constants.hpp"
 
+static std::string trim(const std::string& str)
+{
+    size_t first = str.find_first_not_of(' ');
+    if (std::string::npos == first)
+    {
+        return str;
+    }
+    size_t last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
+}
+
+static void tokenize(std::string const &str, const char delim, 
+                        std::vector<std::string> &out)
+{
+    size_t start;
+    size_t end = 0;
+ 
+    while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
+    {
+        end = str.find(delim, start);
+        out.push_back(str.substr(start, end - start));
+    }
+}
+
 TrilliumControl::TrilliumControl(const Options& options) :
     BaseCameraControlOutput(options),
     mTrilliumIpAddress(options.mTrilliumIpAddress),
+    mTrilliumConfig(options.mTrilliumConfig),
     mSockFd(-1),
     mVerbose(options.mVerbose),
     mReceiveThread(nullptr),
@@ -73,6 +100,13 @@ int TrilliumControl::init()
             return -1;
         }
         usleep(1000);
+    }
+
+    rv = trilliumSensorConfig();
+    if (rv != 0)
+    {
+        std::cerr << "Failed to configure Trillium Aptina sensor" << std::endl;
+        return -1;
     }
 
     return 0;
@@ -163,6 +197,87 @@ void TrilliumControl::updateZoom(CameraZoom zoom)
     }
 }
 
+int TrilliumControl::trilliumSensorConfig()
+{
+    int rv = -1;
+    OrionPkt_t pkt;
+
+    // Default configuration values
+    mState.mAptina.Index       = 0;
+    mState.mAptina.MinExposure = 0.1;
+    mState.mAptina.MaxExposure = 8.0;
+    mState.mAptina.MinGain     = 1;
+    mState.mAptina.MaxGain     = 32;
+    mState.mAptina.Brightness  = -8;
+    mState.mAptina.Contrast    = -0.4;
+    mState.mAptina.Saturation  = 0.3;
+    mState.mAptina.Sharpness   = 2.0;
+    mState.mAptina.DebugEnable = 0;
+    mState.mAptina.Hue         = 0;
+
+    if (!mTrilliumConfig.empty())
+    {
+        rv = trilliumConfigParse(mTrilliumConfig, mState.mAptina);
+        if (rv)
+        {
+            return rv;
+        }
+    }
+
+    encodeOrionAptinaSettingsPacketStructure(&pkt, &mState.mAptina);
+    return trilliumPktSend(mSockFd, pkt);
+}
+
+int TrilliumControl::trilliumConfigParse(std::string file, OrionAptinaSettings_t &cfg)
+{
+    std::ifstream infile(file);
+    std::string line;
+    if (!infile.is_open())
+    {
+        std::perror("Failed to open Trillium configuration file");
+        return -1;
+    }
+
+    while (std::getline(infile, line))
+    {
+        std::vector<std::string> cfgs;
+
+        line = trim(line);
+        if (line.empty() || line[0] == '#')
+        {
+            continue;
+        }
+
+        tokenize(line, '=', cfgs);
+
+        if (cfgs.size() != 2)
+        {
+            std::cout << "Invalid configuration: " << line << std::endl;
+            return -1;
+        }
+
+        std::string opt = trim(cfgs[0]);
+        std::istringstream val = std::istringstream(trim(cfgs[1]));
+
+        if (opt.compare("MinExposure") == 0)       { val >> cfg.MinExposure; }
+        else if (opt.compare("MaxExposure") == 0)  { val >> cfg.MaxExposure; }
+        else if (opt.compare("MinGain") == 0)      { val >> cfg.MinGain;     }
+        else if (opt.compare("MaxGain") == 0)      { val >> cfg.MaxGain;     }
+        else if (opt.compare("Brightness") == 0)   { cfg.Brightness = std::stoi(val.str());  }
+        else if (opt.compare("Contrast") == 0)     { val >> cfg.Contrast;    }
+        else if (opt.compare("Saturation") == 0)   { val >> cfg.Saturation;  }
+        else if (opt.compare("Sharpness") == 0)    { val >> cfg.Sharpness;   }
+        else if (opt.compare("Hue") == 0)          { cfg.Hue = std::stoi(val.str());         }
+        else
+        {
+            std::cout << "Invalid configuration option: " << opt << std::endl;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 void TrilliumControl::reveiveThread()
 {
     int rv = -1;
@@ -196,6 +311,14 @@ void TrilliumControl::processTrilliumPacket(OrionPkt_t& pkt)
 
         case ORION_PKT_CAMERA_STATE:
             processCameraState(pkt);
+            break;
+
+        case ORION_PKT_APTINA_SETTINGS:
+            decodeOrionAptinaSettingsPacketStructure(&pkt, &mState.mAptina);
+            break;
+
+        case ORION_PKT_GPS_DATA:
+            decodeGpsDataPacketStructure(&pkt, &mState.mGps);
             break;
 
         default:
@@ -255,6 +378,17 @@ void TrilliumControl::printCameraStatus()
     const float vfov = rad2degf(mState.mGeo.vfov);
     const uint32_t width = mState.mGeo.pixelWidth;
     const uint32_t height = mState.mGeo.pixelHeight;
+    const uint32_t sats = mState.mGps.TrackedSats;
+
+    const float minExposure = mState.mAptina.MinExposure;
+    const float maxExposure = mState.mAptina.MaxExposure;
+    const float minGain = mState.mAptina.MinGain;
+    const float maxGain = mState.mAptina.MaxGain;
+    const int brightness = mState.mAptina.Brightness;
+    const float contrast = mState.mAptina.Contrast;
+    const float saturation = mState.mAptina.Saturation;
+    const float sharpness = mState.mAptina.Sharpness;
+    const int hue = mState.mAptina.Hue;
 
     const float volt24 = mState.mDiag.Voltage24;
     const float volt12 = mState.mDiag.Voltage12;
@@ -309,7 +443,10 @@ void TrilliumControl::printCameraStatus()
       << std::string(14, ' ')
       << "    Alt = " << std::setprecision(8) << std::setw(10) << alt << " m   "
       << "   Time = " << std::setw(10) << time
-      << std::string(19, ' ') <<  "|\n";
+      << std::string(19, ' ') <<  "|\n|"
+      << std::string(11, ' ')
+      << "Satellites = " << std::setw(10) << sats
+      << std::string(44, ' ') <<  "|\n";
 
     s << "+" << std::string(78, '-') << "+\n";
 
@@ -331,6 +468,33 @@ void TrilliumControl::printCameraStatus()
       << "Resolution = " << std::setw(4) << width << " x " 
       << std::left << std::setw(4) << height
       << std::string(43, ' ') <<  "|\n";
+
+    s << "+" << std::string(78, '-') << "+\n";
+    s << "|      SENSOR:" 
+      << "  Brightness " << std::left << std::setw(10) << brightness
+      << "  Contrast   " <<  std::setprecision(8) << std::setw(10) << contrast
+      << std::string(18, ' ') <<  "|\n";
+    s << "|" << std::string(13, ' ')
+      << "  Saturation " << std::setprecision(8) << std::setw(10) << saturation
+      << "  Sharpness  " <<  std::setprecision(8) << std::setw(10) << sharpness
+      << std::string(19, ' ') <<  "|\n";
+    s << "|" << std::string(13, ' ')
+      << "  Hue        " << std::left << std::setw(10) << hue
+      << std::string(42, ' ') <<  "|\n";
+    s << "|"
+      << std::string(35, ' ') << "MIN" 
+      << std::string(13, ' ') << "MAX"
+      << std::string(24, ' ') <<  "|\n";
+    s << "|" << std::string(13, ' ')
+      << "  Exposure" << std::string(7, ' ')
+      << std::setprecision(8) << std::setw(10) << minExposure << " ms    " 
+      << std::setprecision(8) << std::setw(10) << maxExposure << " ms"
+      << std::string(17, ' ') <<  "|\n";
+    s << "|" << std::string(13, ' ')
+      << "      Gain" << std::string(7, ' ')
+      << std::setprecision(8) << std::setw(10) << minGain <<  std::string(8, ' ')
+      << std::setprecision(8) << std::setw(10) << maxGain
+      << std::string(20, ' ') <<  "|\n";
 
     s << "+" << std::string(78, '-') << "+\n";
     s << "|       POWER:                24V        12V        3.3V" 

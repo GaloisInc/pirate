@@ -94,11 +94,13 @@ Embedded application based on camera, position input and position driver
   -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
   -f, --flip                 flip image and controls (rotate 180)
   -H, --height=pixels        image height
-  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|trillium|test|none)
+  -t, --video_type=type      video type
+                             (jpeg|yuyv|h264|stream|trillium|test|none)
   -W, --width=pixels         image width
 
  frame processor options:
       --codec=type           encoder codec (mpeg1|mpeg2|h264)
+      --color_pick           object color pick tool
   -C, --color_track=RRGGBB   color tracking (RGB hex)
   -E, --encoder=url          MPEG-TS H.264 encoder url (host:port)
   -F, --filesystem           filesystem frame processor
@@ -121,6 +123,7 @@ Embedded application based on camera, position input and position driver
       --tilt_max=val         tilt axis maximum angle
       --tilt_min=val         tilt axis minimum angle
       --trillium=addr        trillium camera IP address
+      --trillium_cfg=path    optional Trillium configuration file
 
       --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output

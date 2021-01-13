@@ -42,6 +42,7 @@ struct Options
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
+        mImageColorPick(false),
         mFrameRateNumerator(1),
         mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
@@ -56,6 +57,7 @@ struct Options
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
         mTrilliumIpAddress(""),
+        mTrilliumConfig(""),
         mPanAxisMin(-45.0),
         mPanAxisMax(45.0),
         mTiltAxisMin(-45.0),
@@ -82,6 +84,7 @@ struct Options
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
+    bool mImageColorPick;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
@@ -96,6 +99,7 @@ struct Options
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
     std::string mTrilliumIpAddress;
+    std::string mTrilliumConfig;
     float mPanAxisMin;
     float mPanAxisMax;
     float mTiltAxisMin;
