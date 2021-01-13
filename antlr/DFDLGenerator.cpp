@@ -366,7 +366,6 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
 int generate_dfdl(
     std::ostream &ostream,
     CDRBuildTypes const& buildTypes,
-    bool packed,
     ModuleDecl const* moduleDecl)
 {
     Document doc;
@@ -386,19 +385,19 @@ int generate_dfdl(
     defineFormat->SetAttribute("name", "defaults");
 
     auto defaults = add_element(defineFormat, "dfdl:format");
-    set_defaults(defaults, packed);
+    set_defaults(defaults, moduleDecl->packed);
 
     auto format = add_element(appinfo, "dfdl:format");
     format->SetAttribute("ref", "idl:defaults");
 
-    add_primitive_types(schema, packed);
+    add_primitive_types(schema, moduleDecl->packed);
 
 
     for (auto * def : moduleDecl->definitions) {
         auto name = get_type_name(def);
         auto element = add_element(schema, "xs:element");
         element->SetAttribute("name", get_type_name(def));
-        finish_type(element, def, packed);
+        finish_type(element, def, moduleDecl->packed);
     }
 
     ostream << doc;

@@ -27,7 +27,7 @@
 
 using namespace antlr4;
 
-static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, bool packed, ModuleDecl *moduleDecl) {
+static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
     ostream << "#include <assert.h>" << std::endl;
     ostream << "#include <endian.h>" << std::endl;
     if (buildTypes.hasTransformAnnotations()) {
@@ -38,10 +38,10 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, bool pac
     ostream << "#include <string.h>" << std::endl;
     ostream << std::endl;
     moduleDecl->cTypeDecl(ostream);
-    moduleDecl->cTypeDeclWire(ostream, packed);
-    moduleDecl->cDeclareAsserts(ostream, packed);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE, packed);
-    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE, packed);
+    moduleDecl->cTypeDeclWire(ostream);
+    moduleDecl->cDeclareAsserts(ostream);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::SERIALIZE);
+    moduleDecl->cDeclareFunctions(ostream, CDRFunc::DESERIALIZE);
     if (buildTypes.hasValidateAnnotations()) {
         moduleDecl->cDeclareAnnotationValidate(ostream);
     }
@@ -51,7 +51,7 @@ static int generate_c(std::ostream &ostream, CDRBuildTypes &buildTypes, bool pac
     return 0;
 }
 
-static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, bool packed, ModuleDecl *moduleDecl) {
+static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, ModuleDecl *moduleDecl) {
     std::string guardname = "_" + moduleDecl->identifier + "_IDL_CODEGEN_H";
     transform(guardname.begin(), guardname.end(), guardname.begin(), ::toupper);
     ostream << "#ifndef" << " " << guardname << std::endl;
@@ -66,11 +66,11 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, bool p
     ostream << "#include <endian.h>"  << std::endl;
     moduleDecl->cppDeclareHeader(ostream);
     moduleDecl->cppTypeDecl(ostream);
-    moduleDecl->cppTypeDeclWire(ostream, packed);
-    moduleDecl->cppDeclareAsserts(ostream, packed);
+    moduleDecl->cppTypeDeclWire(ostream);
+    moduleDecl->cppDeclareAsserts(ostream);
     moduleDecl->cppDeclareFooter(ostream);
     cppPirateNamespaceHeader(ostream);
-    moduleDecl->cppDeclareFunctions(ostream, packed);
+    moduleDecl->cppDeclareFunctions(ostream);
     cppPirateNamespaceFooter(ostream);
     ostream << std::endl;
     ostream << "#endif" << " " << "//" << " " << guardname << std::endl;
@@ -80,7 +80,7 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, bool p
 int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target, bool packed) {
     CDRModuleCounter moduleCounter;
     antlr4::tree::ParseTreeWalker moduleWalker;
-    CDRBuildTypes buildTypes;
+    CDRBuildTypes buildTypes(packed);
     ANTLRInputStream input(istream);
     IDLLexer lexer(&input);
     CommonTokenStream tokens(&lexer);
@@ -125,13 +125,13 @@ int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, t
 
     switch (target) {
         case TargetLanguage::C_LANG:
-            rv = generate_c(ostream, buildTypes, packed, moduleDecl);
+            rv = generate_c(ostream, buildTypes, moduleDecl);
             break;
         case TargetLanguage::CPP_LANG:
-            rv = generate_cpp(ostream, buildTypes, packed, moduleDecl);
+            rv = generate_cpp(ostream, buildTypes, moduleDecl);
             break;
         case TargetLanguage::DFDL_LANG:
-            rv = generate_dfdl(ostream, buildTypes, packed, moduleDecl);
+            rv = generate_dfdl(ostream, buildTypes, moduleDecl);
             break;
         default:
             estream << "unknown target language " << target << std::endl;

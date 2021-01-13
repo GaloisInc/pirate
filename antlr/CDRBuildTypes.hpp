@@ -24,6 +24,7 @@
 
 class CDRBuildTypes : public IDLBaseVisitor {
 private:
+  bool packed;
   antlr4::tree::ParseTreeProperty<std::string> namespacePrefix;
   std::map<std::string, TypeSpec*> typeDeclarations;
   std::set<std::string> errors;
@@ -36,8 +37,10 @@ private:
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
 public:
-  CDRBuildTypes() : namespacePrefix(), typeDeclarations(), errors(),
-    annotationIds(0), hasValidate(false), hasTransform(false) { }
+  CDRBuildTypes(bool packed) : packed(packed), namespacePrefix(),
+    typeDeclarations(), errors(),
+    annotationIds(0),
+    hasValidate(false), hasTransform(false) { }
   std::set<std::string> getErrors() { return errors; }
   bool hasValidateAnnotations() { return hasValidate; }
   bool hasTransformAnnotations() { return hasTransform; }

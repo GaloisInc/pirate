@@ -68,7 +68,7 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << "}" << ";" << std::endl;
 }
 
-void StructTypeSpec::cTypeDeclWire(std::ostream &ostream, bool packed) {
+void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -103,7 +103,7 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream, bool packed) {
     }
 }
 
-void StructTypeSpec::cDeclareAsserts(std::ostream &ostream, bool packed) {
+void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
     if (!packed) {
         ostream << "static_assert" << "(";
         ostream << "sizeof" << "(" << "struct" << " " << identifier << ")";
@@ -126,7 +126,7 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
     }
 }
 
-void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, bool packed) {
+void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     // unpacked struct types should fill the bytes of padding with 0's
@@ -146,29 +146,29 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
 }
 
-void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType, bool packed) {
+void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType, packed);
+    cCppFunctionBody(ostream, functionType);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 
-void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream, bool packed) {
+void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
     ostream << "struct" << " " << "Serialization";
     ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    cppDeclareSerializationFunction(ostream, packed);
+    cppDeclareSerializationFunction(ostream);
     ostream << std::endl;
-    cppDeclareDeserializationFunction(ostream, packed);
+    cppDeclareDeserializationFunction(ostream);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
 }
 
-void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream, bool packed) {
+void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     cppDeclareSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -181,12 +181,12 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream, bool
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, packed);
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 
-void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream, bool packed) {
+void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
@@ -216,7 +216,7 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream, bo
     ostream << "error_msg" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, packed);
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
     ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
