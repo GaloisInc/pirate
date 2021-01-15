@@ -29,40 +29,36 @@ jobs:
           - name: runner
             packager: apt-get
             extra-packages: clang
-            cc: clang
             extra-cmake: -DGAPS_DISABLE=ON
             sudo: sudo
           - name: standard-clang
             container: ubuntu:focal
             packager: apt-get
             extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
-            cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
           - name: standard-clang-shmem
             container: ubuntu:focal
             packager: apt-get
             extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
-            cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON -DPIRATE_SHMEM_FEATURE=ON
           - name: standard-gcc
             container: ubuntu:focal
             packager: apt-get
             extra-packages: g++ wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
-            cc: gcc
-            extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
-          - name: pirate-ubuntu
-            container: docker://pirateteam/llvm-ubuntu-x86_64
+            extra-cmake: -DCMAKE_C_COMPILER=gcc -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
+          - name: ubuntu
+            container: ubuntu:focal
             packager: apt-get
-            extra-packages: wget ca-certificates git libssl-dev libjpeg-dev libx11-dev
-            cc: clang
+            extra-packages: wget ca-certificates libtinfo-dev binutils git cmake make libstdc++-9-dev libedit2 libpython3.8 libssl-dev libjpeg-dev libx11-dev
             extra-cmake: -DIPV6_TESTS=OFF
             upload-artifact: true
-          - name: pirate-centos7
-            container: docker://pirateteam/llvm-centos7-x86_64
+            pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.ubuntu.tgz
+          - name: centos7
+            container: centos:7
             packager: yum
-            cc: clang
             extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
             upload-artifact: true
+            pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.centos.tgz
     runs-on: ubuntu-20.04
     container: ${{matrix.container}}
     steps:
@@ -78,22 +74,57 @@ jobs:
     - name: Install dependencies via yum
       if: matrix.packager == 'yum'
       run: |
-        # Install epel repo
-        yum install -y epel-release
+        # Install additional releases
+        yum install -y centos-release-scl epel-release
         # Install git, wget, libgcc and libstdc++
         yum install -y \
-           git wget cmake3 \
-           devtoolset-7-gcc devtoolset-7-libstdc++-devel \
-           valgrind\
+           git wget cmake3 devtoolset-8-make \
+           devtoolset-8-gcc devtoolset-8-libstdc++-devel \
+           valgrind \
+           ncurses-libs \
            libyaml-devel-0.1.4-11.el7_0.x86_64 \
            openssl11 openssl11-devel \
            libjpeg-devel libX11-devel
-        echo "/opt/rh/devtoolset-7/root/bin" >> $GITHUB_PATH
-        echo "/opt/rh/llvm-toolset-7/root/bin" >> $GITHUB_PATH
-        mkdir -p /root/bin
-        ln -s /usr/bin/cmake3 /root/bin/cmake
-        ln -s /usr/bin/openssl11 /root/bin/openssl
-        echo "/root/bin" >> $GITHUB_PATH
+        # Add links in
+        echo "/opt/rh/devtoolset-8/root/bin" >> $GITHUB_PATH
+        ln -s /usr/bin/cmake3 /usr/local/bin/cmake
+        ln -s /usr/bin/openssl11 /usr/local/bin/openssl
+    - name: Install pirate-llvm
+      if: matrix.upload-artifact
+      run: |
+        # Unzip to pirate-llvm
+        wget -qO pirate-llvm.tgz ${{matrix.pirate-llvm}}
+        cd /usr/local  
+        tar -xz --strip-components=1 -f $GITHUB_WORKSPACE/pirate-llvm.tgz
+        cd bin
+        ln -s clang cc
+        # Make dist/pirate directory and put pirate-llvm components in it.
+        mkdir -p $GITHUB_WORKSPACE/dist/pirate/bin
+        cd $GITHUB_WORKSPACE/dist/pirate/bin
+        cp -a /usr/local/bin/clang-10 .
+        ln -s clang-10 clang
+        ln -s clang cc
+        ln -s clang clang++
+        ln -s clang++ c++
+        cp -a /usr/local/bin/clangd .
+        cp -a /usr/local/bin/lld .
+        ln -s lld ld.lld
+        ln -s ld.lld ld
+        cp -a /usr/local/bin/lldb .
+        cp -a /usr/local/bin/lldb-server .
+        cp -a /usr/local/bin/lldb-vscode .
+        cp -a /usr/local/bin/llvm-readobj .
+        ln -s llvm-readobj llvm-readelf      
+        # Copy libraries we need for lldb-mi
+        mkdir -p ../lib
+        cd ../lib
+        cp -a /usr/local/lib/liblldb.so.10.0.0svn .
+        ln -s liblldb.so.10.0.0svn liblldb.so.10svn
+        ln -s liblldb.so.10svn liblldb.so
+        # Copy compiler header files also.
+        mkdir -p clang/10.0.0
+        cp -a /usr/local/lib/clang/10.0.0/include clang/10.0.0
+    # Build Google test framework we use for testing libpirate
     - name: Build googletest
       run: |
         echo "$PATH"
@@ -114,9 +145,8 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
-              ${{matrix.extra-cmake}} \
-              -DCMAKE_INSTALL_PREFIX=../dist/libpirate \
+        cmake ${{matrix.extra-cmake}} \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
               -DGTEST_ROOT:PATH=$HOME/googletest \
               -DPIRATE_UNIT_TEST=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  \
@@ -129,28 +159,44 @@ jobs:
       run: |
         mkdir -p build-pal
         cd build-pal
-        CFLAGS="-I$GITHUB_WORKSPACE/dist/libpirate/include" \
-          LDFLAGS="-L$GITHUB_WORKSPACE/dist/libpirate/lib" \
-          cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
-                ${{matrix.extra-cmake}} \
-                -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pal \
+        CFLAGS="-I$GITHUB_WORKSPACE/dist/pirate/include" \
+          LDFLAGS="-L$GITHUB_WORKSPACE/dist/pirate/lib" \
+          cmake ${{matrix.extra-cmake}} \
+                -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
                 ../pal
         make install
     - name: Build libpirategetopt
       run: |
         mkdir -p build-getopt
         cd build-getopt
-        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
-              ${{matrix.extra-cmake}} \
-              -DCMAKE_INSTALL_PREFIX=../dist/libpirategetopt \
+        cmake ${{matrix.extra-cmake}} \
+              -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
               ../libpirategetopt
-        make install      
+        make install
+    # Build lldb-mi so we can include it in archive.
+    - name: Build lldb-mi
+      if: matrix.upload-artifact
+      run: |
+        git clone https://github.com/lldb-tools/lldb-mi.git
+        cd lldb-mi
+        mkdir build
+        cd build
+        # On Centos 7, for unclear reasons, the linker is not asked to link in terminfo and it complains.
+        # We can bypass this with a linker flag to pull in libraries as needed.
+        # The CMAKE_INSTALL_RPATH flag is passed in so that lldb-mi uses a relative rpath so the
+        # executable can be included in a tar.
+        LDFLAGS="-Wl,--copy-dt-needed-entries" cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate -DCMAKE_INSTALL_RPATH=../lib ..
+        cmake --build . --target install
+    - name: Make tar with all artifacts
+      working-directory: dist
+      if: matrix.upload-artifact
+      run: tar cvfz pirate.${{matrix.name}}.tgz pirate
     - name: Make library artifact
       uses: actions/upload-artifact@v1
       if: matrix.upload-artifact
       with:
-        name: ${{matrix.name}}-dist
-        path: dist
+        name: pirate.${{matrix.name}}.tgz
+        path: dist/pirate.${{matrix.name}}.tgz
     - name: libpirate tests
       timeout-minutes: 5
       run: |
@@ -160,8 +206,7 @@ jobs:
     - name: build benchmarks
       run: |
         cd build
-        cmake -DCMAKE_C_COMPILER=${{matrix.cc}} \
-              ${{matrix.extra-cmake}} \
+        cmake ${{matrix.extra-cmake}} \
               -DGAPS_BENCH=ON \
               -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
         make
@@ -211,153 +256,25 @@ jobs:
       run: |
         cd build/libpirate/Release
         ./gaps_channels_test.exe
-  # This assembles the docker images
-  assemble-tar:
-    needs: [docs, build]
+  # This builds the IDL tool
+  antlr-idl:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: pirate-ubuntu
+          - name: ubuntu
+            container: ubuntu:focal
             packager: apt-get
-            container: docker://pirateteam/llvm-ubuntu-x86_64
-          - name: pirate-centos7
+            extra-packages: wget ca-certificates binutils git cmake make libstdc++-9-dev libssl-dev libjpeg-dev libx11-dev
+            extra-cmake: -DIPV6_TESTS=OFF
+            upload-artifact: true
+            pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.ubuntu.tgz
+          - name: centos7
+            container: centos:7
             packager: yum
-            container: docker://pirateteam/llvm-centos7-x86_64
-    runs-on: ubuntu-20.04
-    container: ${{matrix.container}}
-    steps:
-    - name: Install dependencies via apt-get
-      if: matrix.packager == 'apt-get'
-      run: |
-        apt-get update
-        DEBIAN_FRONTEND=noninteractive TZ=UTC \
-        apt-get install --no-install-recommends -y \
-          ca-certificates curl apt-transport-https lsb-release gnupg
-        # Download and install the Microsoft signing key:
-        curl -sL https://packages.microsoft.com/keys/microsoft.asc |
-          gpg --dearmor |
-          tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
-        # Add the Azure CLI software repository
-        AZ_REPO=$(lsb_release -cs)
-        echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" > /etc/apt/sources.list.d/azure-cli.list
-        # Install azure-cli
-        apt-get update
-        DEBIAN_FRONTEND=noninteractive TZ=UTC \
-          apt-get install --no-install-recommends -y azure-cli
-    - name: Install dependencies via yum
-      if: matrix.packager == 'yum'
-      run: |
-        # Import the Microsoft repository key
-        rpm --import https://packages.microsoft.com/keys/microsoft.asc
-        # Create local azure-cli repository information
-        cat << EOF > /etc/yum.repos.d/azure-cli.repo
-        [azure-cli]
-        name=Azure CLI
-        baseurl=https://packages.microsoft.com/yumrepos/azure-cli
-        enabled=1
-        gpgcheck=1
-        gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-        EOF
-        ls -l /etc/yum.repos.d
-        # Install git, wget, libgcc and libstdc++
-        yum install -y azure-cli
-    - name: Get libraries
-      uses: actions/download-artifact@v1
-      with:
-        name: ${{matrix.name}}-dist
-        path: dist
-    - name: Get documentation
-      uses: actions/download-artifact@v1
-      with:
-        name: doc
-        path: doc
-    - name: Make archive
-      run: |
-        mkdir -p ${{matrix.name}}/bin
-        
-        cd ${{matrix.name}}/bin
-        # Add clang-pirate
-        cp -a /usr/local/bin/clang-10 clang-pirate
-        ln -s clang-pirate clang
-        ln -s clang clang-cl
-        ln -s clang clang-cpp
-        ln -s clang cc
-        ln -s clang-pirate clang++
-        ln -s clang++ c++
-        # Add lld-pirate
-        cp -a /usr/local/bin/lld lld-pirate
-        ln -s lld-pirate ld.lld-pirate
-        ln -s lld-pirate ld
-        cd ../..
-        
-        cp -a dist/libpirate/include ${{matrix.name}}
-        cp -a dist/libpirate/lib     ${{matrix.name}}
-        cp -a doc/html ${{matrix.name}}/doc
-
-        tar cvfz ${{matrix.name}}.tgz ${{matrix.name}}
-    - name: Make artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{matrix.name}}
-        path: ${{matrix.name}}.tgz
-    - name: Upload distribution
-      if: github.ref == 'master'
-      run: |
-        az storage blob upload \
-          --account-name pirateteam \
-          --account-key ${{ secrets.AZURE_ACCOUNT }} \
-          -c \$web \
-          -f ${{matrix.name}}.tgz \
-          -n dist/${{matrix.name}}.tgz
-  assemble-docker-images:
-    runs-on: ubuntu-20.04
-    needs: [docs, build]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Get documentation
-      uses: actions/download-artifact@v1
-      with:
-        name: doc
-        path: images/ubuntu/doc
-    - name: Get libpirate
-      uses: actions/download-artifact@v1
-      with:
-        name: pirate-ubuntu-dist
-        path: dist
-    - name: Build pirateteam/ubuntu
-      run: |
-        cp -a dist/libpirate       images/ubuntu
-        cp -a dist/libpirategetopt images/ubuntu
-        cp -a dist/pal             images/ubuntu
-        cp -a demos                images/ubuntu
-        docker build -t pirateteam/ubuntu images/ubuntu
-        docker save pirateteam/ubuntu | gzip > ubuntu-latest.tar.gz
-    - name: Make pirateteam/ubuntu artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: ubuntu-latest
-        path: ubuntu-latest.tar.gz
-    - name: Build demos on pirateteam/ubuntu
-      run: |
-        mkdir -p build
-        # Run cmake
-        docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
-                   -w /root/build \
-                   pirateteam/ubuntu \
-                   cmake ../pirate/demos
-        # Run make
-        docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
-                   -w /root/build \
-                   pirateteam/ubuntu \
-                   make
-    - name: Post docker images
-      run: |
-        echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
-        docker push pirateteam/ubuntu:${{ github.event.release.tag_name }}
-      if: github.event_name == 'release'
-  # This builds the IDL tool
-  antlr-idl:
+            extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+            upload-artifact: true
+            pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.centos.tgz
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -429,3 +346,82 @@ jobs:
     - name: Package extension
       working-directory: vscode-plugins/architecture
       run: vsce package
+  # This assembles a tar with all artifacts.
+  assemble:
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu
+            imagedir: images/ubuntu
+            dockername: pirateteam/ubuntu
+          - name: centos7
+            imagedir: images/centos7
+            dockername: pirateteam/centos7
+            demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+    runs-on: ubuntu-20.04
+    #if: github.event_name == 'push' && github.ref == 'master' || github.event_name == 'release'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies via apt-get
+      run: |
+        export DEBIAN_FRONTEND=noninteractive 
+        export TZ=UTC
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y \
+          ca-certificates curl apt-transport-https lsb-release gnupg
+        # Download and install the Microsoft signing key:
+        curl -sL https://packages.microsoft.com/keys/microsoft.asc |
+          gpg --dearmor |
+          sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+        # Add the Azure CLI software repository
+        AZ_REPO=$(lsb_release -cs)
+        echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" \
+          | sudo tee /etc/apt/sources.list.d/azure-cli.list > /dev/null
+        # Install azure-cli
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y azure-cli
+    - name: Get build artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: pirate.${{matrix.name}}.tgz
+        path: pirate.${{matrix.name}}.tgz
+    - name: Upload distribution
+      run: |
+        echo "This directory"
+        ls -l
+        ls -l pirate.${{matrix.name}}.tgz
+        az storage blob upload \
+          --account-name pirateteam \
+          --account-key ${{ secrets.AZURE_ACCOUNT }} \
+          -c \$web \
+          -f pirate.${{matrix.name}}.tgz/pirate.${{matrix.name}}.tgz \
+          -n dist/pirate/master/pirate.${{matrix.name}}.tgz
+    - name: Build docker image
+      run: docker build -t ${{matrix.dockername}} ${{matrix.imagedir}}
+    - name: Build demos on docker image
+      run: |
+        mkdir -p build
+        # Run cmake
+        docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
+                   --mount type=bind,src=`pwd`/demos,dst=/root/demos,readonly \
+                   -w /root/build \
+                   ${{matrix.dockername}} \
+                   cmake ../demos ${{matrix.demo-cmake-args}}
+        # Run make
+        docker run --mount type=bind,src=`pwd`/build,dst=/root/build \
+                   --mount type=bind,src=`pwd`/demos,dst=/root/demos,readonly \
+                   -w /root/build \
+                   ${{matrix.dockername}} \
+                   make
+    - name: Post master docker images
+      if: github.event_name == 'push' # && github.ref == 'master'
+      run: |
+        echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
+        docker push ${{matrix.dockername}}
+    - name: Post release docker images
+      if: github.event_name == 'release'
+      run: |
+        echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
+        docker push ${{matrix.dockername}}:${{ github.event.release.tag_name }}
