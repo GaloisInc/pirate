@@ -94,7 +94,7 @@ jobs:
       run: |
         # Unzip to pirate-llvm
         wget -qO pirate-llvm.tgz ${{matrix.pirate-llvm}}
-        cd /usr/local  
+        cd /usr/local
         tar -xz --strip-components=1 -f $GITHUB_WORKSPACE/pirate-llvm.tgz
         cd bin
         ln -s clang cc
@@ -113,8 +113,11 @@ jobs:
         cp -a /usr/local/bin/lldb .
         cp -a /usr/local/bin/lldb-server .
         cp -a /usr/local/bin/lldb-vscode .
+        # Copy objdump, elf, dwarf utilities
         cp -a /usr/local/bin/llvm-readobj .
-        ln -s llvm-readobj llvm-readelf      
+        ln -s llvm-readobj llvm-readelf
+        cp -a /usr/local/bin/llvm-dwarfdump .
+        cp -a /usr/local/bin/llvm-objdump .
         # Copy libraries we need for lldb-mi
         mkdir -p ../lib
         cd ../lib
@@ -361,12 +364,12 @@ jobs:
             dockername: pirateteam/centos7
             demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
     runs-on: ubuntu-20.04
-    #if: github.event_name == 'push' && github.ref == 'master' || github.event_name == 'release'
+    if: github.event_name == 'push' && github.ref == 'master' || github.event_name == 'release'
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies via apt-get
       run: |
-        export DEBIAN_FRONTEND=noninteractive 
+        export DEBIAN_FRONTEND=noninteractive
         export TZ=UTC
         sudo apt-get update
         sudo apt-get install --no-install-recommends -y \
@@ -416,7 +419,7 @@ jobs:
                    ${{matrix.dockername}} \
                    make
     - name: Post master docker images
-      if: github.event_name == 'push' # && github.ref == 'master'
+      if: github.event_name == 'push' && github.ref == 'master'
       run: |
         echo ${{ secrets.docker_password }} | docker login -u gapspirateteam --password-stdin
         docker push ${{matrix.dockername}}
