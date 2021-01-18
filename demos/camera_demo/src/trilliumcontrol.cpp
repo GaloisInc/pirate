@@ -109,6 +109,14 @@ int TrilliumControl::init()
         return -1;
     }
 
+    // Request camera limits
+    rv = trilliumLimitsRequest();
+    if (rv != 0)
+    {
+        std::cout << "Camera limits request failed" << std::endl;
+        return -1;
+    }
+
     return 0;
 }
 
@@ -278,6 +286,22 @@ int TrilliumControl::trilliumConfigParse(std::string file, OrionAptinaSettings_t
     return 0;
 }
 
+int TrilliumControl::trilliumLimitsRequest()
+{
+    int rv = -1;
+    OrionPkt_t pkt;
+    MakeOrionPacket(&pkt, ORION_PKT_LIMITS, 0);
+
+    rv = trilliumPktSend(mSockFd, pkt);
+    if (rv != 0)
+    {
+        std::perror("Failed to send Trillium limits request command");
+        return rv;
+    }
+
+    return 0;
+}
+
 void TrilliumControl::reveiveThread()
 {
     int rv = -1;
@@ -319,6 +343,10 @@ void TrilliumControl::processTrilliumPacket(OrionPkt_t& pkt)
 
         case ORION_PKT_GPS_DATA:
             decodeGpsDataPacketStructure(&pkt, &mState.mGps);
+            break;
+
+        case ORION_PKT_LIMITS:
+            decodeOrionLimitsDataPacketStructure(&pkt, &mState.mLimits);
             break;
 
         default:
@@ -426,6 +454,25 @@ void TrilliumControl::printCameraStatus()
     const unsigned missionThreads1 = mState.mSoftDiad[BOARD_MISSCOMP].CoreLoading[0].numThreads;
     const unsigned missionCpu2 = missionCores == 2 ? round(mState.mSoftDiad[BOARD_MISSCOMP].CoreLoading[1].cpuLoad) : 0;
     const unsigned missionThreads2 = missionCores == 2 ? mState.mSoftDiad[BOARD_MISSCOMP].CoreLoading[1].numThreads : 0;
+
+    const float minPosP = rad2degf(mState.mLimits.MinPos[0]);
+    const float minPosT = rad2degf(mState.mLimits.MinPos[1]);
+    const float maxPosP = rad2degf(mState.mLimits.MaxPos[0]);
+    const float maxPosT = rad2degf(mState.mLimits.MaxPos[1]);
+    const float maxVelP = rad2degf(mState.mLimits.MaxVel[0]);
+    const float maxVelT = rad2degf(mState.mLimits.MaxVel[1]);
+    const float maxAccP = rad2degf(mState.mLimits.MaxAccel[0]);
+    const float maxAccT = rad2degf(mState.mLimits.MaxAccel[1]);
+    const float maxContCurP = mState.mLimits.ContCur[0];
+    const float maxContCurT = mState.mLimits.ContCur[1];
+    const float maxPeakCurP = mState.mLimits.PeakCur[0];
+    const float maxPeakCurT = mState.mLimits.PeakCur[1];
+    const float peakCurTimeP = mState.mLimits.PeakCurTime[0];
+    const float peakCurTimeT = mState.mLimits.PeakCurTime[1];
+    const float initCurP = mState.mLimits.InitCur[0];
+    const float initCurT = mState.mLimits.InitCur[1];
+    const float maxPowP = mState.mLimits.MaxPower[0];
+    const float maxPowT = mState.mLimits.MaxPower[1];
 
     const float crownT = mState.mDiag.CrownTemp;
     const float gyroT = mState.mDiag.GyroTemp;
@@ -544,6 +591,48 @@ void TrilliumControl::printCameraStatus()
       << std::string(14, ' ')
       << std::setw(3) << missionCpu2 << "%      " << std::setw(3) << missionThreads2
       << std::string(9, ' ') << "|\n";
+
+    s << "+" << std::string(78, '-') << "+\n";
+
+    s << "| LIMITS:" << std::string(40, ' ') << "  PAN " 
+      << std::string(10, ' ') << " TILT " << std::string(8, ' ') <<  "|\n";
+    s << "|      MIN position               (deg)" << std::string(9, ' ')
+      << std::right
+      << std::setprecision(5) << std::setw(6) << minPosP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << minPosT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX position               (deg)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxPosP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxPosT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX velocity             (deg/s)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxVelP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxVelT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX acceleration       (deg/s^2)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxAccP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxAccT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX continuous current       (A)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxContCurP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxContCurT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX peak current             (A)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxPeakCurP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxPeakCurT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      Peak current time            (s)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << peakCurTimeP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << peakCurTimeT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      Init current                 (A)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << initCurP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << initCurT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
+    s << "|      MAX power                    (W)" << std::string(9, ' ')
+      << std::setprecision(5) << std::setw(6) << maxPowP << std::string(8, ' ')
+      << std::setprecision(5) << std::setw(8) << maxPowT << std::string(4, ' ')
+      << std::string(5, ' ') <<  "|\n";
 
     s << "+" << std::string(78, '-') << "+\n";
 
