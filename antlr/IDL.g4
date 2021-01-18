@@ -277,7 +277,7 @@ identifier
 
 
 INTEGER_LITERAL
-   : ('0' | '1' .. '9' '0' .. '9'*) INTEGER_TYPE_SUFFIX?
+   : '-'? ('0' | '1' .. '9' '0' .. '9'*) INTEGER_TYPE_SUFFIX?
    ;
 
 

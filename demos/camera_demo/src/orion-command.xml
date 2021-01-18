@@ -49,7 +49,7 @@ under the License.
         <xs:element name="id" fixed="1" type="idl:uint8"/>
         <xs:element name="length" fixed="7" type="idl:uint8"/>
         <xs:element name="pan" type="idl:int16"/>
-        <xs:element name="tilt" type="idl:int16"/>
+        <xs:element name="tilt" minInclusive="-1396" maxInclusive="733" type="idl:int16"/>
         <xs:element name="mode" fixed="80" type="idl:uint8"/>
         <xs:element name="stabilized" fixed="0" type="idl:uint8"/>
         <xs:element name="impulse" fixed="0" type="idl:uint8"/>

@@ -372,6 +372,9 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
     for (auto ann : decl->annotations) {
         if (auto * valueAnn = dynamic_cast<ValueAnnotation*>(ann)) {
             e->SetAttribute("fixed", valueAnn->value);
+        } else if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
+            e->SetAttribute("minInclusive", rangeAnn->min);
+            e->SetAttribute("maxInclusive", rangeAnn->max);
         }
     }
 
