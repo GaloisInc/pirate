@@ -240,9 +240,56 @@ get_type_name(TypeSpec* typeSpec)
 
 void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed);
 
-void
-finish_type(Element* e, TypeSpec* typeSpec, bool packed)
+std::string construct_type(TypeSpec* typeSpec)
 {
+    switch (typeSpec->typeOf()) {
+        case CDRTypeOf::MODULE_T:
+            not_implemented("construct_type of module");
+        case CDRTypeOf::STRUCT_T:
+            not_implemented("construct_type of struct");
+        case CDRTypeOf::UNION_T:
+            not_implemented("construct_type of union");
+        case CDRTypeOf::ENUM_T:
+            not_implemented("construct_type of enum");
+        case CDRTypeOf::LONG_DOUBLE_T:
+            not_implemented("construct_type of long double");
+        case CDRTypeOf::ERROR_T:
+            not_implemented("construct_type of error");
+        case CDRTypeOf::FLOAT_T:
+            return "idl:float";
+        case CDRTypeOf::DOUBLE_T:
+            return "idl:double";
+        case CDRTypeOf::TINY_T:
+            return "idl:int8";
+        case CDRTypeOf::SHORT_T:
+            return "idl:int16";
+        case CDRTypeOf::LONG_T:
+            return "idl:int32";
+        case CDRTypeOf::LONG_LONG_T:
+            return "idl:int64";
+        case CDRTypeOf::UNSIGNED_TINY_T:
+            return "idl:uint8";
+        case CDRTypeOf::UNSIGNED_SHORT_T:
+            return "idl:uint16";
+        case CDRTypeOf::UNSIGNED_LONG_T:
+            return "idl:uint32";
+        case CDRTypeOf::UNSIGNED_LONG_LONG_T:
+            return "idl:uint64";
+        case CDRTypeOf::CHAR_T:
+            return "idl:int8";
+        case CDRTypeOf::BOOL_T:
+            return "idl:boolean";
+        case CDRTypeOf::OCTET_T:
+            return "idl:uint8";
+        default:
+            not_implemented("construct_type of unknown type");
+    }
+}
+
+void
+finish_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
+{
+    bool nestedType = false;
     if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
         e->SetAttribute("ref", "idl:" + get_type_name(typeref->child));
         e->RemoveAttribute("name");
@@ -250,53 +297,6 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
     }
 
     switch (typeSpec->typeOf()) {
-        case CDRTypeOf::MODULE_T:
-            not_implemented("finish_type of module");
-        case CDRTypeOf::ENUM_T:
-            not_implemented("finish_type of enum");
-        case CDRTypeOf::LONG_DOUBLE_T:
-            not_implemented("finish_type of long double");
-        case CDRTypeOf::ERROR_T:
-            not_implemented("finish_type of error");
-        case CDRTypeOf::FLOAT_T:
-            e->SetAttribute("type", "idl:float");
-            return;
-        case CDRTypeOf::DOUBLE_T:
-            e->SetAttribute("type", "idl:double");
-            return;
-        case CDRTypeOf::TINY_T:
-            e->SetAttribute("type", "idl:int8");
-            return;
-        case CDRTypeOf::SHORT_T:
-            e->SetAttribute("type", "idl:int16");
-            return;
-        case CDRTypeOf::LONG_T:
-            e->SetAttribute("type", "idl:int32");
-            return;
-        case CDRTypeOf::LONG_LONG_T:
-            e->SetAttribute("type", "idl:int64");
-            return;
-        case CDRTypeOf::UNSIGNED_TINY_T:
-            e->SetAttribute("type", "idl:uint8");
-            return;
-        case CDRTypeOf::UNSIGNED_SHORT_T:
-            e->SetAttribute("type", "idl:uint16");
-            return;
-        case CDRTypeOf::UNSIGNED_LONG_T:
-            e->SetAttribute("type", "idl:uint32");
-            return;
-        case CDRTypeOf::UNSIGNED_LONG_LONG_T: 
-            e->SetAttribute("type", "dl:uint64");
-            return;
-        case CDRTypeOf::CHAR_T:
-            e->SetAttribute("type", "idl:int8");
-            return;
-        case CDRTypeOf::BOOL_T:
-            e->SetAttribute("type", "idl:boolean");
-            return;
-        case CDRTypeOf::OCTET_T:
-            e->SetAttribute("type", "idl:uint8");
-            return;
         case CDRTypeOf::STRUCT_T:
         {
             auto s = static_cast<StructTypeSpec const*>(typeSpec);
@@ -323,7 +323,7 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
 
             auto tag = add_element(sequence, "xs:element");
             tag->SetAttribute("name", "tag");
-            finish_type(tag, u->switchType, packed);
+            finish_type(tag, nullptr, u->switchType, packed);
 
             auto data = add_element(sequence, "xs:element");
             data->SetAttribute("name", "data");
@@ -355,6 +355,33 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
             }
             return;
         }
+        default:
+            // do nothing
+            break;
+    }
+
+    if (decl != nullptr) {
+        for (auto ann : decl->annotations) {
+            if (dynamic_cast<ValueAnnotation*>(ann) == nullptr) {
+                nestedType = true;
+            }
+        }
+    }
+
+    if (!nestedType) {
+        e->SetAttribute("type", construct_type(typeSpec));
+    } else {
+        auto st = add_element(e, "xs:simpleType");
+        auto restrict = add_element(st, "xs:restriction");
+        restrict->SetAttribute("base", construct_type(typeSpec));
+        if (decl != nullptr) {
+            for (auto ann : decl->annotations) {
+                if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
+                    add_element(restrict, "xs:minInclusive")->SetAttribute("value", rangeAnn->min);
+                    add_element(restrict, "xs:maxInclusive")->SetAttribute("value", rangeAnn->max);
+                }
+            }
+        }
     }
 }
 
@@ -372,13 +399,10 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
     for (auto ann : decl->annotations) {
         if (auto * valueAnn = dynamic_cast<ValueAnnotation*>(ann)) {
             e->SetAttribute("fixed", valueAnn->value);
-        } else if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
-            e->SetAttribute("minInclusive", rangeAnn->min);
-            e->SetAttribute("maxInclusive", rangeAnn->max);
         }
     }
 
-    finish_type(e, type, packed);
+    finish_type(e, decl, type, packed);
 }
 
 }
@@ -417,7 +441,7 @@ int generate_dfdl(
         auto name = get_type_name(def);
         auto element = add_element(schema, "xs:element");
         element->SetAttribute("name", get_type_name(def));
-        finish_type(element, def, moduleDecl->packed);
+        finish_type(element, nullptr, def, moduleDecl->packed);
     }
     ostream << "<!--" << std::endl;
     ostream << license_header << std::endl;
