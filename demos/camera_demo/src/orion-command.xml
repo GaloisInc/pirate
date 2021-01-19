@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dfdl="http://www.ogf.org/dfdl/dfdl-1.0/" xmlns:idl="urn:idl:1.0" targetNamespace="urn:idl:1.0">
   <xs:annotation>
     <xs:appinfo source="http://www.ogf.org/dfdl/">
@@ -49,7 +49,14 @@ under the License.
         <xs:element name="id" fixed="1" type="idl:uint8"/>
         <xs:element name="length" fixed="7" type="idl:uint8"/>
         <xs:element name="pan" type="idl:int16"/>
-        <xs:element name="tilt" minInclusive="-1396" maxInclusive="733" type="idl:int16"/>
+        <xs:element name="tilt">
+          <xs:simpleType>
+            <xs:restriction base="idl:int16">
+              <xs:minInclusive value="-1396"/>
+              <xs:maxInclusive value="733"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
         <xs:element name="mode" fixed="80" type="idl:uint8"/>
         <xs:element name="stabilized" fixed="0" type="idl:uint8"/>
         <xs:element name="impulse" fixed="0" type="idl:uint8"/>
