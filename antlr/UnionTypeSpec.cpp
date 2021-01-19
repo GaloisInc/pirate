@@ -44,7 +44,11 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     int tagAlign = bitsAlignment(switchType->cTypeBits());
-    ostream << switchType->cTypeName() << " " << "tag";
+    if (cpp) {
+        ostream << switchType->cppTypeName() << " " << "tag";
+    } else {
+        ostream << switchType->cTypeName() << " " << "tag";
+    }
     ostream << " " << "__attribute__((aligned(" << tagAlign << ")))";
     ostream << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
