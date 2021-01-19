@@ -262,9 +262,6 @@ case_label(TypeSpec* typeSpec, std::string const& label)
                 return std::to_string(i);
             }
         }
-
-        errors.insert("unknown reference to enum " + label + " on line " +
-          std::to_string(typeSpect->getStart()->getLine()));
     }
     return label;
 }
