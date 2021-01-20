@@ -14,6 +14,8 @@ module Orion {
 
 		int16 pan;
 
+		// Expressed in 1/1000th radians units
+		@range(min = -1396, max = 733)
 		int16 tilt;
 
 		@value(80)
