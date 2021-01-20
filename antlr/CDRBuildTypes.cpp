@@ -289,7 +289,24 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
 
 antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
+
+  auto* st_ctx = ctx->switch_type_spec();
+  TypeSpec *switchType;
+  auto* scoped_name = st_ctx->scoped_name();
+  if (scoped_name != nullptr) {
+    std::string name = scoped_name->getText();
+    TypeSpec *typeSpecRef = typeDeclarations[name];
+    if (typeSpecRef == nullptr) {
+      errors.insert("unknown reference to type " + name + " on line " +
+        std::to_string(scoped_name->getStart()->getLine()));
+      switchType = BaseTypeSpec::errorType();
+    } else {
+      switchType = new TypeReference(typeSpecRef);
+    }
+  } else {
+    switchType = ctx->switch_type_spec()->accept(this);
+  }
+
   std::string parent = namespacePrefix.get(ctx);
   TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType, packed);
   UnionTypeSpec *unionSpec = dynamic_cast<UnionTypeSpec*>(typeSpec);
@@ -310,6 +327,8 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
   for (IDLParser::Case_labelContext* labelCtx : labels) {
     if (labelCtx->const_exp() == nullptr) {
       member->setHasDefault();
+    } else if (labelCtx->const_exp()->scoped_name() != nullptr) {
+      member->addLabel(typeSpec->cppNamespacePrefix() + labelCtx->const_exp()->getText());
     } else {
       member->addLabel(labelCtx->const_exp()->getText());
     }

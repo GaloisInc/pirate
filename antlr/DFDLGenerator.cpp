@@ -240,7 +240,34 @@ get_type_name(TypeSpec* typeSpec)
 
 void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed);
 
-std::string construct_type(TypeSpec* typeSpec)
+std::string
+case_label(TypeSpec* typeSpec, std::string const& label)
+{
+    while (auto * ref = dynamic_cast<TypeReference*>(typeSpec)) {
+        typeSpec = ref->child;
+    }
+
+    if (typeSpec->typeOf() == CDRTypeOf::ENUM_T) {
+        auto colon = label.find_last_of(':');
+        
+        // Strip away namespace
+        std::string label_
+          = std::string::npos == colon
+          ? label
+          : label.substr(colon+1);
+
+        auto* u = static_cast<EnumTypeSpec*>(typeSpec);
+        for (size_t i = 0; i < u->enumerators.size(); i++) {
+            if (u->enumerators[i] == label_) {
+                return std::to_string(i);
+            }
+        }
+    }
+    return label;
+}
+
+std::string
+construct_type(TypeSpec* typeSpec)
 {
     switch (typeSpec->typeOf()) {
         case CDRTypeOf::MODULE_T:
@@ -250,7 +277,7 @@ std::string construct_type(TypeSpec* typeSpec)
         case CDRTypeOf::UNION_T:
             not_implemented("construct_type of union");
         case CDRTypeOf::ENUM_T:
-            not_implemented("construct_type of enum");
+            return "idl:uint32";
         case CDRTypeOf::LONG_DOUBLE_T:
             not_implemented("construct_type of long double");
         case CDRTypeOf::ERROR_T:
@@ -342,10 +369,10 @@ finish_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
 
                 std::string labels;
                 for (auto const& l : m->labels) {
-                    labels += l;
+                    labels += case_label(u->switchType, l);
                     labels += " ";
                 }
-                labels.pop_back();
+                labels.pop_back(); // remove trailing space
 
                 auto member = add_element(unionchoice, "xs:element");
                 member->SetAttribute("dfdl:choiceBranchKey", labels);
