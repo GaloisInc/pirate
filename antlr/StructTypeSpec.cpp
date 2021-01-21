@@ -157,6 +157,8 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
 
 void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << std::endl;
+    cppDeclareInternalDeserializationFunction(ostream);
+    ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
     ostream << "struct" << " " << "Serialization";
     ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
@@ -186,17 +188,28 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "}" << std::endl;
 }
 
+void StructTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    ostream << "return" << " " << "retval" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
 void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "input" << " " << "=" << " ";
     ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
     ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
-    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
-    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
     ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
     ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
     ostream << ")" << " " << "{" << std::endl;
@@ -216,8 +229,7 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << "error_msg" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
-    ostream << "return" << " " << "retval" << ";" << std::endl;
+    ostream << "return" << " " << "fromWireType" << "(" << "input" << ")"  << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }

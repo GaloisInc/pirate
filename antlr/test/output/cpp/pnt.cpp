@@ -49,6 +49,24 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline struct PNT::Position fromWireType(const struct PNT::Position_wire* input) {
+		struct PNT::Position retval;
+		struct PNT::Position* output = &retval;
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_x = be64toh(field_x);
+		field_y = be64toh(field_y);
+		field_z = be64toh(field_z);
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+		return retval;
+	}
+
 	template<>
 	struct Serialization<struct PNT::Position> {
 		static void toBuffer(struct PNT::Position const& val, std::vector<char>& buf) {
@@ -71,30 +89,34 @@ namespace pirate {
 		}
 
 		static struct PNT::Position fromBuffer(std::vector<char> const& buf) {
-			struct PNT::Position retval;
 			const struct PNT::Position_wire* input = (const struct PNT::Position_wire*) buf.data();
-			struct PNT::Position* output = &retval;
 			if (buf.size() != sizeof(struct PNT::Position)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for PNT::Position type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct PNT::Position));
 				throw std::length_error(error_msg);
 			}
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_x = be64toh(field_x);
-			field_y = be64toh(field_y);
-			field_z = be64toh(field_z);
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
-			return retval;
+			return fromWireType(input);
 		}
 	};
+
+	inline struct PNT::Distance fromWireType(const struct PNT::Distance_wire* input) {
+		struct PNT::Distance retval;
+		struct PNT::Distance* output = &retval;
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_x = be64toh(field_x);
+		field_y = be64toh(field_y);
+		field_z = be64toh(field_z);
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+		return retval;
+	}
 
 	template<>
 	struct Serialization<struct PNT::Distance> {
@@ -118,28 +140,14 @@ namespace pirate {
 		}
 
 		static struct PNT::Distance fromBuffer(std::vector<char> const& buf) {
-			struct PNT::Distance retval;
 			const struct PNT::Distance_wire* input = (const struct PNT::Distance_wire*) buf.data();
-			struct PNT::Distance* output = &retval;
 			if (buf.size() != sizeof(struct PNT::Distance)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for PNT::Distance type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct PNT::Distance));
 				throw std::length_error(error_msg);
 			}
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_x = be64toh(field_x);
-			field_y = be64toh(field_y);
-			field_z = be64toh(field_z);
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
-			return retval;
+			return fromWireType(input);
 		}
 	};
 }

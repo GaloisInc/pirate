@@ -204,6 +204,11 @@ void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string ty
     ostream << " " << "buf" << ")";
 }
 
+void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << typeName << " " << "fromWireType";
+    ostream << "(" << "const" << " " << typeName << "_wire" << "*" << " " << "input" << ")";
+}
+
 std::string bitsCType(CDRBits cdrBits) {
     switch (cdrBits) {
         case CDRBits::B8:

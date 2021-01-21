@@ -60,6 +60,32 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline struct Annotations_Module::Annotation_Struct_Example fromWireType(const struct Annotations_Module::Annotation_Struct_Example_wire* input) {
+		struct Annotations_Module::Annotation_Struct_Example retval;
+		struct Annotations_Module::Annotation_Struct_Example* output = &retval;
+		uint32_t field_u;
+		uint32_t field_v;
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memcpy(&field_u, &input->u, sizeof(uint32_t));
+		memcpy(&field_v, &input->v, sizeof(uint32_t));
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_u = be32toh(field_u);
+		field_v = be32toh(field_v);
+		field_x = be64toh(field_x);
+		field_y = be64toh(field_y);
+		field_z = be64toh(field_z);
+		memcpy(&output->u, &field_u, sizeof(uint32_t));
+		memcpy(&output->v, &field_v, sizeof(uint32_t));
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+		return retval;
+	}
+
 	template<>
 	struct Serialization<struct Annotations_Module::Annotation_Struct_Example> {
 		static void toBuffer(struct Annotations_Module::Annotation_Struct_Example const& val, std::vector<char>& buf) {
@@ -90,38 +116,48 @@ namespace pirate {
 		}
 
 		static struct Annotations_Module::Annotation_Struct_Example fromBuffer(std::vector<char> const& buf) {
-			struct Annotations_Module::Annotation_Struct_Example retval;
 			const struct Annotations_Module::Annotation_Struct_Example_wire* input = (const struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
-			struct Annotations_Module::Annotation_Struct_Example* output = &retval;
 			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Struct_Example type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example));
 				throw std::length_error(error_msg);
 			}
-			uint32_t field_u;
-			uint32_t field_v;
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memcpy(&field_u, &input->u, sizeof(uint32_t));
-			memcpy(&field_v, &input->v, sizeof(uint32_t));
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_u = be32toh(field_u);
-			field_v = be32toh(field_v);
-			field_x = be64toh(field_x);
-			field_y = be64toh(field_y);
-			field_z = be64toh(field_z);
-			memcpy(&output->u, &field_u, sizeof(uint32_t));
-			memcpy(&output->v, &field_v, sizeof(uint32_t));
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
-			return retval;
+			return fromWireType(input);
 		}
 	};
+
+	inline struct Annotations_Module::Annotation_Union_Example fromWireType(const struct Annotations_Module::Annotation_Union_Example_wire* input) {
+		struct Annotations_Module::Annotation_Union_Example retval;
+		struct Annotations_Module::Annotation_Union_Example* output = &retval;
+		uint16_t tag;
+		uint16_t data_a;
+		uint32_t data_b;
+		uint32_t data_c;
+		memcpy(&tag, &input->tag, sizeof(uint16_t));
+		tag = be16toh(tag);
+		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		switch (output->tag) {
+		case 1:
+			memcpy(&data_a, &input->data.a, sizeof(uint16_t));
+			data_a = be16toh(data_a);
+			memcpy(&output->data.a, &data_a, sizeof(uint16_t));
+			break;
+		case 2:
+		case 3:
+			memcpy(&data_b, &input->data.b, sizeof(uint32_t));
+			data_b = be32toh(data_b);
+			memcpy(&output->data.b, &data_b, sizeof(uint32_t));
+			break;
+		case 4:
+		default:
+			memcpy(&data_c, &input->data.c, sizeof(uint32_t));
+			data_c = be32toh(data_c);
+			memcpy(&output->data.c, &data_c, sizeof(uint32_t));
+			break;
+		}
+		return retval;
+	}
 
 	template<>
 	struct Serialization<struct Annotations_Module::Annotation_Union_Example> {
@@ -159,42 +195,14 @@ namespace pirate {
 		}
 
 		static struct Annotations_Module::Annotation_Union_Example fromBuffer(std::vector<char> const& buf) {
-			struct Annotations_Module::Annotation_Union_Example retval;
 			const struct Annotations_Module::Annotation_Union_Example_wire* input = (const struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
-			struct Annotations_Module::Annotation_Union_Example* output = &retval;
 			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Union_Example)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Union_Example type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct Annotations_Module::Annotation_Union_Example));
 				throw std::length_error(error_msg);
 			}
-			uint16_t tag;
-			uint16_t data_a;
-			uint32_t data_b;
-			uint32_t data_c;
-			memcpy(&tag, &input->tag, sizeof(uint16_t));
-			tag = be16toh(tag);
-			memcpy(&output->tag, &tag, sizeof(uint16_t));
-			switch (output->tag) {
-			case 1:
-				memcpy(&data_a, &input->data.a, sizeof(uint16_t));
-				data_a = be16toh(data_a);
-				memcpy(&output->data.a, &data_a, sizeof(uint16_t));
-				break;
-			case 2:
-			case 3:
-				memcpy(&data_b, &input->data.b, sizeof(uint32_t));
-				data_b = be32toh(data_b);
-				memcpy(&output->data.b, &data_b, sizeof(uint32_t));
-				break;
-			case 4:
-			default:
-				memcpy(&data_c, &input->data.c, sizeof(uint32_t));
-				data_c = be32toh(data_c);
-				memcpy(&output->data.c, &data_c, sizeof(uint32_t));
-				break;
-			}
-			return retval;
+			return fromWireType(input);
 		}
 	};
 }

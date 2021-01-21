@@ -36,6 +36,7 @@ private:
     void cCppTypeDecl(std::ostream &ostream, bool cpp);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
+    void cppDeclareInternalDeserializationFunction(std::ostream &ostream);
 public:
     std::string namespacePrefix;
     std::string identifier;

@@ -41,6 +41,37 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline struct UnionType::Union_Example fromWireType(const struct UnionType::Union_Example_wire* input) {
+		struct UnionType::Union_Example retval;
+		struct UnionType::Union_Example* output = &retval;
+		uint16_t tag;
+		uint8_t data_a;
+		uint32_t data_b;
+		uint32_t data_c;
+		memcpy(&tag, &input->tag, sizeof(uint16_t));
+		tag = be16toh(tag);
+		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		switch (output->tag) {
+		case 1:
+			memcpy(&data_a, &input->data.a, sizeof(uint8_t));
+			memcpy(&output->data.a, &data_a, sizeof(uint8_t));
+			break;
+		case 2:
+		case 3:
+			memcpy(&data_b, &input->data.b, sizeof(uint32_t));
+			data_b = be32toh(data_b);
+			memcpy(&output->data.b, &data_b, sizeof(uint32_t));
+			break;
+		case 4:
+		default:
+			memcpy(&data_c, &input->data.c, sizeof(uint32_t));
+			data_c = be32toh(data_c);
+			memcpy(&output->data.c, &data_c, sizeof(uint32_t));
+			break;
+		}
+		return retval;
+	}
+
 	template<>
 	struct Serialization<struct UnionType::Union_Example> {
 		static void toBuffer(struct UnionType::Union_Example const& val, std::vector<char>& buf) {
@@ -76,41 +107,14 @@ namespace pirate {
 		}
 
 		static struct UnionType::Union_Example fromBuffer(std::vector<char> const& buf) {
-			struct UnionType::Union_Example retval;
 			const struct UnionType::Union_Example_wire* input = (const struct UnionType::Union_Example_wire*) buf.data();
-			struct UnionType::Union_Example* output = &retval;
 			if (buf.size() != sizeof(struct UnionType::Union_Example)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for UnionType::Union_Example type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct UnionType::Union_Example));
 				throw std::length_error(error_msg);
 			}
-			uint16_t tag;
-			uint8_t data_a;
-			uint32_t data_b;
-			uint32_t data_c;
-			memcpy(&tag, &input->tag, sizeof(uint16_t));
-			tag = be16toh(tag);
-			memcpy(&output->tag, &tag, sizeof(uint16_t));
-			switch (output->tag) {
-			case 1:
-				memcpy(&data_a, &input->data.a, sizeof(uint8_t));
-				memcpy(&output->data.a, &data_a, sizeof(uint8_t));
-				break;
-			case 2:
-			case 3:
-				memcpy(&data_b, &input->data.b, sizeof(uint32_t));
-				data_b = be32toh(data_b);
-				memcpy(&output->data.b, &data_b, sizeof(uint32_t));
-				break;
-			case 4:
-			default:
-				memcpy(&data_c, &input->data.c, sizeof(uint32_t));
-				data_c = be32toh(data_c);
-				memcpy(&output->data.c, &data_c, sizeof(uint32_t));
-				break;
-			}
-			return retval;
+			return fromWireType(input);
 		}
 	};
 }

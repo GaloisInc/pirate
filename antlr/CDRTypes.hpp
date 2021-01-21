@@ -210,3 +210,4 @@ void cppPirateNamespaceFooter(std::ostream &ostream);
 void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier);
 void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName);
 void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName);
+void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName);
