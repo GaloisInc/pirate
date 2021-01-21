@@ -76,7 +76,7 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
         for (Declarator* declarator : member->declarators) {
             int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             if (alignment == 0) {
-                ostream << member->typeSpec->cTypeName() << " ";
+                ostream << member->typeSpec->cTypeName() << "_wire" << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
                     ostream << "[" << dim << "]";
@@ -118,6 +118,9 @@ void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
 void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
+            if (bitsAlignment(member->typeSpec->cTypeBits()) == 0) {
+                continue;
+            }
             if (((declarator->dimensions.size() == 0) && scalar) ||
                 ((declarator->dimensions.size() > 0) && array)) {
                 apply(member, declarator);
@@ -126,7 +129,7 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
     }
 }
 
-void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
+void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType) {
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     // unpacked struct types should fill the bytes of padding with 0's
@@ -144,13 +147,18 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         { cConvertByteOrder(ostream, member->typeSpec, "field_" + declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            cDeclareFunctionNested(ostream, member->typeSpec, declarator, functionType, languageType);
+        }
+    }
 }
 
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType);
+    cCppFunctionBody(ostream, functionType, TargetLanguage::C_LANG);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -183,7 +191,7 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -196,7 +204,7 @@ void StructTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ost
     ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
     ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
     ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
     ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;

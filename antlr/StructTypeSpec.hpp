@@ -16,6 +16,7 @@
 #pragma once
 
 #include "CDRTypes.hpp"
+#include "CDRGenerator.hpp"
 
 class StructMember {
 public:
@@ -32,7 +33,7 @@ typedef std::function<void(StructMember* member, Declarator* declarator)> Struct
 class StructTypeSpec : public TypeSpec {
 private:
     void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
-    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType);
     void cCppTypeDecl(std::ostream &ostream, bool cpp);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);

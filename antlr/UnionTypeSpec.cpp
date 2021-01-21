@@ -91,7 +91,7 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
         Declarator* declarator = member->declarator;
         int alignment = bitsAlignment(member->typeSpec->cTypeBits());
         if (alignment == 0) {
-            ostream << member->typeSpec->cTypeName() << " ";
+            ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";

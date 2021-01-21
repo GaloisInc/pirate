@@ -13,6 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include "CDRGenerator.hpp"
 #include "CDRTypes.hpp"
 #include "indent_facet.hpp"
 
@@ -168,22 +169,31 @@ Declarator::~Declarator() {
     }
 }
 
-void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+std::string cCreateFunctionName(CDRFunc functionType, std::string identifier) {
     std::string funcname = identifier;
     transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     switch (functionType) {
         case CDRFunc::SERIALIZE:
+            return "encode_" + funcname;
+        case CDRFunc::DESERIALIZE:
+            return "decode_" + funcname;
+        default:
+            throw std::runtime_error("unexpected function type");
+    }
+}
+
+void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
             ostream << "void" << " ";
-            ostream << "encode";
-            ostream << "_" << funcname << "(";
+            ostream << cCreateFunctionName(functionType, identifier) << "(";
             ostream << "struct" << " " << identifier << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "_wire" << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;
             break;
         case CDRFunc::DESERIALIZE:
             ostream << "void" << " ";
-            ostream << "decode";
-            ostream << "_" << funcname << "(";
+            ostream << cCreateFunctionName(functionType, identifier) << "(";
             ostream << "struct" << " " << identifier << "_wire" << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;
@@ -385,4 +395,30 @@ void cppPirateNamespaceHeader(std::ostream &ostream) {
 void cppPirateNamespaceFooter(std::ostream &ostream) {
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
+}
+
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator* declarator,
+    CDRFunc functionType, TargetLanguage languageType) {
+
+    if (bitsAlignment(typeSpec->cTypeBits()) != 0) {
+        return;
+    }
+    if (languageType == TargetLanguage::C_LANG) {
+        ostream << cCreateFunctionName(functionType, declarator->identifier) << "(";
+        ostream << "&" << "input" << "->" << declarator->identifier << "," << " ";
+        ostream << "&" << "output" << "->" << declarator->identifier << ")" << ";" << std::endl;
+    } else {
+        switch (functionType) {
+            case CDRFunc::SERIALIZE: {
+                break;
+            }
+            case CDRFunc::DESERIALIZE: {
+                ostream << "output" << "->" << declarator->identifier << " " << "=";
+                ostream << " " << "fromWireType" << "(";
+                ostream << "&" << "input" << "->" << declarator->identifier << ")";
+                ostream << ";" << std::endl;
+                break;
+            }
+        }
+    }
 }

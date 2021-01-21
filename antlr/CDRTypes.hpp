@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "CDRGenerator.hpp"
+
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -199,6 +201,8 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
 void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
 void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator* declarator,
+    CDRFunc functionType, TargetLanguage languageType);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
     Declarator* declarator, CDRFunc functionType,
@@ -207,6 +211,7 @@ void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
 void cppPirateNamespaceHeader(std::ostream &ostream);
 void cppPirateNamespaceFooter(std::ostream &ostream);
 
+std::string cCreateFunctionName(CDRFunc functionType, std::string identifier);
 void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier);
 void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName);
 void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName);
