@@ -32,19 +32,19 @@ UnionMember::~UnionMember() {
 }
 
 void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, false);
+    cCppTypeDecl(ostream, TargetLanguage::C_LANG);
 }
 
 void UnionTypeSpec::cppTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, true);
+    cCppTypeDecl(ostream, TargetLanguage::CPP_LANG);
 }
 
-void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
+void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     int tagAlign = bitsAlignment(switchType->cTypeBits());
-    if (cpp) {
+    if (languageType == TargetLanguage::CPP_LANG) {
         ostream << switchType->cppTypeName() << " " << "tag";
     } else {
         ostream << switchType->cTypeName() << " " << "tag";
@@ -55,8 +55,7 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        if (cpp) {
+        if (languageType == TargetLanguage::CPP_LANG) {
             ostream << member->typeSpec->cppTypeName();
         } else {
             ostream << member->typeSpec->cTypeName();
@@ -66,7 +65,8 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
         for (int dim : declarator->dimensions) {
             ostream << "[" << dim << "]";
         }
-        if (alignment > 0) {
+        if (!member->typeSpec->container()) {
+            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << " " << "__attribute__((aligned(" << alignment << ")))";
         }
         ostream << ";" << std::endl;
@@ -89,14 +89,14 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        if (alignment == 0) {
-            ostream << member->typeSpec->cTypeName() << " ";
+        if (member->typeSpec->container()) {
+            ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
         } else {
+            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << "unsigned" << " " << "char" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
@@ -130,7 +130,7 @@ void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
     }
 }
 
-void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
+void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType) {
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
@@ -164,10 +164,12 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
         ostream << indent_manip::push;
         if (declarator->dimensions.size() == 0) {
             std::string local = "data_" + declarator->identifier;
-            std::string remote = "data." + declarator->identifier;
-            cCopyMemoryIn(ostream, member->typeSpec, local, remote);
+            std::string field = "data." + declarator->identifier;
+            cCopyMemoryIn(ostream, member->typeSpec, local, field);
             cConvertByteOrder(ostream, member->typeSpec, local, functionType);
-            cCopyMemoryOut(ostream, member->typeSpec, local, remote);
+            cCopyMemoryOut(ostream, member->typeSpec, local, field);
+            cDeclareFunctionNested(ostream, member->typeSpec,
+                field, functionType, languageType);
         } else {
             cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "data_", "data.");
         }
@@ -181,7 +183,7 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType);
+    cCppFunctionBody(ostream, functionType, TargetLanguage::C_LANG);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -255,6 +257,10 @@ void UnionTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
 
 void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << std::endl;
+    cppDeclareInternalSerializationFunction(ostream);
+    ostream << std::endl;
+    cppDeclareInternalDeserializationFunction(ostream);
+    ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
     ostream << "struct" << " " << "Serialization";
     ostream << "<" << "struct" << " " << namespacePrefix << identifier << ">" << " " << "{" << std::endl;
@@ -264,6 +270,16 @@ void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     cppDeclareDeserializationFunction(ostream);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareInternalSerializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
@@ -279,7 +295,21 @@ void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    ostream << "toWireType" << "(" << "input" << "," << " " << "output" << ")" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -288,13 +318,10 @@ void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "input" << " " << "=" << " ";
     ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
     ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
-    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
-    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
     ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
     ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
     ostream << ")" << " " << "{" << std::endl;
@@ -314,8 +341,7 @@ void UnionTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << "error_msg" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
-    ostream << "return" << " " << "retval" << ";" << std::endl;
+    ostream << "return" << " " << "fromWireType" << "(" << "input" << ")"  << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }

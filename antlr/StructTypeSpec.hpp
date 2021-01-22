@@ -16,6 +16,7 @@
 #pragma once
 
 #include "CDRTypes.hpp"
+#include "CDRGenerator.hpp"
 
 class StructMember {
 public:
@@ -32,10 +33,12 @@ typedef std::function<void(StructMember* member, Declarator* declarator)> Struct
 class StructTypeSpec : public TypeSpec {
 private:
     void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
-    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
-    void cCppTypeDecl(std::ostream &ostream, bool cpp);
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType);
+    void cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
+    void cppDeclareInternalSerializationFunction(std::ostream &ostream);
+    void cppDeclareInternalDeserializationFunction(std::ostream &ostream);
 public:
     std::string namespacePrefix;
     std::string identifier;
@@ -48,6 +51,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override;
     virtual std::string cTypeName() override { return "struct " + identifier; }
+    virtual std::string typeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
@@ -58,6 +62,7 @@ public:
     virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
+    virtual bool container() override { return true; }
     void addMember(StructMember* member);
     virtual ~StructTypeSpec();
 };

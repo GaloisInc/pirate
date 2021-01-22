@@ -1,0 +1,169 @@
+#include <assert.h>
+#include <endian.h>
+#include <stdint.h>
+#include <string.h>
+
+
+struct Foo {
+	int32_t a __attribute__((aligned(4)));
+	int32_t b __attribute__((aligned(4)));
+	int32_t c __attribute__((aligned(4)));
+};
+
+struct Bar {
+	double x __attribute__((aligned(8)));
+	double y __attribute__((aligned(8)));
+	double z __attribute__((aligned(8)));
+};
+
+struct OuterStruct {
+	struct Foo foo;
+	struct Bar bar;
+};
+
+struct OuterUnion {
+	int16_t tag __attribute__((aligned(2)));
+	union {
+		struct Foo foo;
+		struct Bar bar;
+	} data;
+};
+
+struct Foo_wire {
+	unsigned char a[4] __attribute__((aligned(4)));
+	unsigned char b[4] __attribute__((aligned(4)));
+	unsigned char c[4] __attribute__((aligned(4)));
+};
+
+struct Bar_wire {
+	unsigned char x[8] __attribute__((aligned(8)));
+	unsigned char y[8] __attribute__((aligned(8)));
+	unsigned char z[8] __attribute__((aligned(8)));
+};
+
+struct OuterStruct_wire {
+	struct Foo_wire foo;
+	struct Bar_wire bar;
+};
+
+struct OuterUnion_wire {
+	unsigned char tag[2];
+	union {
+		struct Foo_wire foo;
+		struct Bar_wire bar;
+	} data;
+};
+
+static_assert(sizeof(struct Foo) == sizeof(struct Foo_wire), "size of struct Foo not equal to wire protocol struct");
+static_assert(sizeof(struct Bar) == sizeof(struct Bar_wire), "size of struct Bar not equal to wire protocol struct");
+static_assert(sizeof(struct OuterStruct) == sizeof(struct OuterStruct_wire), "size of struct OuterStruct not equal to wire protocol struct");
+static_assert(sizeof(struct OuterUnion) == sizeof(struct OuterUnion_wire), "size of OuterUnion not equal to wire protocol size"
+);
+
+void encode_foo(struct Foo* input, struct Foo_wire* output) {
+	uint32_t field_a;
+	uint32_t field_b;
+	uint32_t field_c;
+	memset(output, 0, sizeof(*output));
+	memcpy(&field_a, &input->a, sizeof(uint32_t));
+	memcpy(&field_b, &input->b, sizeof(uint32_t));
+	memcpy(&field_c, &input->c, sizeof(uint32_t));
+	field_a = htobe32(field_a);
+	field_b = htobe32(field_b);
+	field_c = htobe32(field_c);
+	memcpy(&output->a, &field_a, sizeof(uint32_t));
+	memcpy(&output->b, &field_b, sizeof(uint32_t));
+	memcpy(&output->c, &field_c, sizeof(uint32_t));
+}
+
+void encode_bar(struct Bar* input, struct Bar_wire* output) {
+	uint64_t field_x;
+	uint64_t field_y;
+	uint64_t field_z;
+	memset(output, 0, sizeof(*output));
+	memcpy(&field_x, &input->x, sizeof(uint64_t));
+	memcpy(&field_y, &input->y, sizeof(uint64_t));
+	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_x = htobe64(field_x);
+	field_y = htobe64(field_y);
+	field_z = htobe64(field_z);
+	memcpy(&output->x, &field_x, sizeof(uint64_t));
+	memcpy(&output->y, &field_y, sizeof(uint64_t));
+	memcpy(&output->z, &field_z, sizeof(uint64_t));
+}
+
+void encode_outerstruct(struct OuterStruct* input, struct OuterStruct_wire* output) {
+	memset(output, 0, sizeof(*output));
+	encode_foo(&input->foo, &output->foo);
+	encode_bar(&input->bar, &output->bar);
+}
+
+void encode_outerunion(struct OuterUnion* input, struct OuterUnion_wire* output) {
+	uint16_t tag;
+	memset(output, 0, sizeof(*output));
+	memcpy(&tag, &input->tag, sizeof(uint16_t));
+	tag = htobe16(tag);
+	memcpy(&output->tag, &tag, sizeof(uint16_t));
+	switch (input->tag) {
+	case 1:
+	case 2:
+	case 3:
+		encode_foo(&input->data.foo, &output->data.foo);
+		break;
+	default:
+		encode_bar(&input->data.bar, &output->data.bar);
+		break;
+	}
+}
+
+void decode_foo(struct Foo_wire* input, struct Foo* output) {
+	uint32_t field_a;
+	uint32_t field_b;
+	uint32_t field_c;
+	memcpy(&field_a, &input->a, sizeof(uint32_t));
+	memcpy(&field_b, &input->b, sizeof(uint32_t));
+	memcpy(&field_c, &input->c, sizeof(uint32_t));
+	field_a = be32toh(field_a);
+	field_b = be32toh(field_b);
+	field_c = be32toh(field_c);
+	memcpy(&output->a, &field_a, sizeof(uint32_t));
+	memcpy(&output->b, &field_b, sizeof(uint32_t));
+	memcpy(&output->c, &field_c, sizeof(uint32_t));
+}
+
+void decode_bar(struct Bar_wire* input, struct Bar* output) {
+	uint64_t field_x;
+	uint64_t field_y;
+	uint64_t field_z;
+	memcpy(&field_x, &input->x, sizeof(uint64_t));
+	memcpy(&field_y, &input->y, sizeof(uint64_t));
+	memcpy(&field_z, &input->z, sizeof(uint64_t));
+	field_x = be64toh(field_x);
+	field_y = be64toh(field_y);
+	field_z = be64toh(field_z);
+	memcpy(&output->x, &field_x, sizeof(uint64_t));
+	memcpy(&output->y, &field_y, sizeof(uint64_t));
+	memcpy(&output->z, &field_z, sizeof(uint64_t));
+}
+
+void decode_outerstruct(struct OuterStruct_wire* input, struct OuterStruct* output) {
+	decode_foo(&input->foo, &output->foo);
+	decode_bar(&input->bar, &output->bar);
+}
+
+void decode_outerunion(struct OuterUnion_wire* input, struct OuterUnion* output) {
+	uint16_t tag;
+	memcpy(&tag, &input->tag, sizeof(uint16_t));
+	tag = be16toh(tag);
+	memcpy(&output->tag, &tag, sizeof(uint16_t));
+	switch (output->tag) {
+	case 1:
+	case 2:
+	case 3:
+		decode_foo(&input->data.foo, &output->data.foo);
+		break;
+	default:
+		decode_bar(&input->data.bar, &output->data.bar);
+		break;
+	}
+}

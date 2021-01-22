@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "CDRGenerator.hpp"
+
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -69,6 +71,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
     virtual std::string cTypeName() = 0;
+    virtual std::string typeName() { return ""; }
     virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
@@ -83,6 +86,7 @@ public:
     virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
+    virtual bool container() { return false; } // structs and unions are containers
     virtual ~TypeSpec() { };
 };
 
@@ -183,6 +187,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
+    virtual std::string typeName() override { return child->typeName(); }
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
@@ -192,6 +197,7 @@ public:
     virtual void cppTypeDecl(std::ostream &ostream) override { }
     virtual void cppTypeDeclWire(std::ostream &ostream) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual bool container() override { return child->container(); }
     virtual ~TypeReference() { child = nullptr; }
 };
 
@@ -199,6 +205,8 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
 void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
 void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
+    CDRFunc functionType, TargetLanguage languageType);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
     Declarator* declarator, CDRFunc functionType,
@@ -207,6 +215,9 @@ void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
 void cppPirateNamespaceHeader(std::ostream &ostream);
 void cppPirateNamespaceFooter(std::ostream &ostream);
 
+std::string cCreateFunctionName(CDRFunc functionType, std::string identifier);
 void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier);
 void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName);
 void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName);
+void cppDeclareInternalSerializationFunctionName(std::ostream &ostream, std::string typeName);
+void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName);

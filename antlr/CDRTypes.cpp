@@ -13,6 +13,7 @@
  * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
  */
 
+#include "CDRGenerator.hpp"
 #include "CDRTypes.hpp"
 #include "indent_facet.hpp"
 
@@ -168,22 +169,31 @@ Declarator::~Declarator() {
     }
 }
 
-void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+std::string cCreateFunctionName(CDRFunc functionType, std::string identifier) {
     std::string funcname = identifier;
     transform(funcname.begin(), funcname.end(), funcname.begin(), ::tolower);
     switch (functionType) {
         case CDRFunc::SERIALIZE:
+            return "encode_" + funcname;
+        case CDRFunc::DESERIALIZE:
+            return "decode_" + funcname;
+        default:
+            throw std::runtime_error("unexpected function type");
+    }
+}
+
+void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier) {
+    switch (functionType) {
+        case CDRFunc::SERIALIZE:
             ostream << "void" << " ";
-            ostream << "encode";
-            ostream << "_" << funcname << "(";
+            ostream << cCreateFunctionName(functionType, identifier) << "(";
             ostream << "struct" << " " << identifier << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "_wire" << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;
             break;
         case CDRFunc::DESERIALIZE:
             ostream << "void" << " ";
-            ostream << "decode";
-            ostream << "_" << funcname << "(";
+            ostream << cCreateFunctionName(functionType, identifier) << "(";
             ostream << "struct" << " " << identifier << "_wire" << "*" << " " << "input";
             ostream << "," << " " << "struct" << " " << identifier << "*" << " " << "output";
             ostream << ")" << " " << "{" << std::endl;
@@ -202,6 +212,17 @@ void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string ty
     ostream << "static" << " " << typeName << " " << "fromBuffer";
     ostream << "(" << "std" << "::" << "vector" << "<" << "char" << ">" << " " << "const" << "&";
     ostream << " " << "buf" << ")";
+}
+
+void cppDeclareInternalSerializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << "void" << " " << "toWireType";
+    ostream << "(" << "const" << " " << typeName << "*" << " " << "input";
+    ostream << "," << " " << typeName << "_wire" << "*" << " " << "output" << ")";
+}
+
+void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << typeName << " " << "fromWireType";
+    ostream << "(" << "const" << " " << typeName << "_wire" << "*" << " " << "input" << ")";
 }
 
 std::string bitsCType(CDRBits cdrBits) {
@@ -380,4 +401,34 @@ void cppPirateNamespaceHeader(std::ostream &ostream) {
 void cppPirateNamespaceFooter(std::ostream &ostream) {
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
+}
+
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
+    CDRFunc functionType, TargetLanguage languageType) {
+
+    if (!typeSpec->container()) {
+        return;
+    }
+    std::string typeName = typeSpec->typeName();
+    if (languageType == TargetLanguage::C_LANG) {
+        ostream << cCreateFunctionName(functionType, typeName) << "(";
+        ostream << "&" << "input" << "->" << fieldName << "," << " ";
+        ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
+    } else {
+        switch (functionType) {
+            case CDRFunc::SERIALIZE: {
+                ostream << "toWireType" << "(";
+                ostream << "&" << "input" << "->" << fieldName << "," << " ";
+                ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
+                break;
+            }
+            case CDRFunc::DESERIALIZE: {
+                ostream << "output" << "->" << fieldName << " " << "=";
+                ostream << " " << "fromWireType" << "(";
+                ostream << "&" << "input" << "->" << fieldName << ")";
+                ostream << ";" << std::endl;
+                break;
+            }
+        }
+    }
 }

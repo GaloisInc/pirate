@@ -34,21 +34,20 @@ void StructTypeSpec::addMember(StructMember* member) {
 }
 
 void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, false);
+    cCppTypeDecl(ostream, TargetLanguage::C_LANG);
 }
 
 void StructTypeSpec::cppTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, true);
+    cCppTypeDecl(ostream, TargetLanguage::CPP_LANG);
 }
 
-void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
+void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            if (cpp) {
+            if (languageType == TargetLanguage::CPP_LANG) {
                 ostream << member->typeSpec->cppTypeName();
             } else {
                 ostream << member->typeSpec->cTypeName();
@@ -58,7 +57,8 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
-            if (alignment > 0) {
+            if (!member->typeSpec->container()) {
+                int alignment = bitsAlignment(member->typeSpec->cTypeBits());
                 ostream << " " << "__attribute__((aligned(" << alignment << ")))";
             }
             ostream << ";" << std::endl;
@@ -74,14 +74,14 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            if (alignment == 0) {
-                ostream << member->typeSpec->cTypeName() << " ";
+            if (member->typeSpec->container()) {
+                ostream << member->typeSpec->cTypeName() << "_wire" << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
                     ostream << "[" << dim << "]";
                 }
             } else {
+                int alignment = bitsAlignment(member->typeSpec->cTypeBits());
                 ostream << "unsigned" << " " << "char" << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
@@ -118,6 +118,9 @@ void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
 void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
+            if (member->typeSpec->container()) {
+                continue;
+            }
             if (((declarator->dimensions.size() == 0) && scalar) ||
                 ((declarator->dimensions.size() > 0) && array)) {
                 apply(member, declarator);
@@ -126,7 +129,7 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
     }
 }
 
-void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
+void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType) {
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     // unpacked struct types should fill the bytes of padding with 0's
@@ -144,18 +147,28 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         { cConvertByteOrder(ostream, member->typeSpec, "field_" + declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
+    for (StructMember* member : members) {
+        for (Declarator* declarator : member->declarators) {
+            cDeclareFunctionNested(ostream, member->typeSpec,
+                declarator->identifier, functionType, languageType);
+        }
+    }
 }
 
 void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType);
+    cCppFunctionBody(ostream, functionType, TargetLanguage::C_LANG);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
 
 void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
+    ostream << std::endl;
+    cppDeclareInternalSerializationFunction(ostream);
+    ostream << std::endl;
+    cppDeclareInternalDeserializationFunction(ostream);
     ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
     ostream << "struct" << " " << "Serialization";
@@ -166,6 +179,16 @@ void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     cppDeclareDeserializationFunction(ostream);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareInternalSerializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
@@ -181,7 +204,21 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    ostream << "toWireType" << "(" << "input" << "," << " " << "output" << ")" << ";" << std::endl;
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -190,13 +227,10 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     cppDeclareDeserializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
-    ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "input" << " " << "=" << " ";
     ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
     ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
-    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
-    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
     ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
     ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
     ostream << ")" << " " << "{" << std::endl;
@@ -216,8 +250,7 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << "error_msg" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
-    ostream << "return" << " " << "retval" << ";" << std::endl;
+    ostream << "return" << " " << "fromWireType" << "(" << "input" << ")"  << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
