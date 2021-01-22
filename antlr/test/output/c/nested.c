@@ -108,8 +108,10 @@ void encode_outerunion(struct OuterUnion* input, struct OuterUnion_wire* output)
 	case 1:
 	case 2:
 	case 3:
+		encode_foo(&input->data.foo, &output->data.foo);
 		break;
 	default:
+		encode_bar(&input->data.bar, &output->data.bar);
 		break;
 	}
 }
@@ -158,8 +160,10 @@ void decode_outerunion(struct OuterUnion_wire* input, struct OuterUnion* output)
 	case 1:
 	case 2:
 	case 3:
+		decode_foo(&input->data.foo, &output->data.foo);
 		break;
 	default:
+		decode_bar(&input->data.bar, &output->data.bar);
 		break;
 	}
 }

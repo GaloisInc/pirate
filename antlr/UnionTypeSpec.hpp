@@ -34,10 +34,11 @@ public:
 // Implementation of the union type
 class UnionTypeSpec : public TypeSpec {
 private:
-    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType);
+    void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType);
     void cCppTypeDecl(std::ostream &ostream, bool cpp);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
+    void cppDeclareInternalSerializationFunction(std::ostream &ostream);
     void cppDeclareInternalDeserializationFunction(std::ostream &ostream);
 public:
     std::string namespacePrefix;
@@ -52,6 +53,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override;
     virtual std::string cTypeName() override { return "struct " + identifier; }
+    virtual std::string typeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;

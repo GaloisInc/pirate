@@ -130,7 +130,7 @@ void UnionTypeSpec::cDeclareAsserts(std::ostream &ostream) {
     }
 }
 
-void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType) {
+void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType) {
     cDeclareLocalVar(ostream, switchType, "tag");
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
@@ -164,10 +164,12 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
         ostream << indent_manip::push;
         if (declarator->dimensions.size() == 0) {
             std::string local = "data_" + declarator->identifier;
-            std::string remote = "data." + declarator->identifier;
-            cCopyMemoryIn(ostream, member->typeSpec, local, remote);
+            std::string field = "data." + declarator->identifier;
+            cCopyMemoryIn(ostream, member->typeSpec, local, field);
             cConvertByteOrder(ostream, member->typeSpec, local, functionType);
-            cCopyMemoryOut(ostream, member->typeSpec, local, remote);
+            cCopyMemoryOut(ostream, member->typeSpec, local, field);
+            cDeclareFunctionNested(ostream, member->typeSpec->typeName(),
+                field, functionType, languageType);
         } else {
             cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "data_", "data.");
         }
@@ -181,7 +183,7 @@ void UnionTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTyp
     ostream << std::endl;
     cDeclareFunctionName(ostream, functionType, identifier);
     ostream << indent_manip::push;
-    cCppFunctionBody(ostream, functionType);
+    cCppFunctionBody(ostream, functionType, TargetLanguage::C_LANG);
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -255,6 +257,8 @@ void UnionTypeSpec::cDeclareAnnotationTransform(std::ostream &ostream) {
 
 void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << std::endl;
+    cppDeclareInternalSerializationFunction(ostream);
+    ostream << std::endl;
     cppDeclareInternalDeserializationFunction(ostream);
     ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
@@ -266,6 +270,16 @@ void UnionTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     cppDeclareDeserializationFunction(ostream);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void UnionTypeSpec::cppDeclareInternalSerializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
@@ -281,7 +295,7 @@ void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE);
+    ostream << "toWireType" << "(" << "input" << "," << " " << "output" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }
@@ -294,7 +308,7 @@ void UnionTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ostr
     ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
     ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
     ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE);
+    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
     ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;

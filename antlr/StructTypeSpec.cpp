@@ -149,7 +149,8 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cDeclareFunctionNested(ostream, member->typeSpec, declarator, functionType, languageType);
+            cDeclareFunctionNested(ostream, member->typeSpec->typeName(),
+                declarator->identifier, functionType, languageType);
         }
     }
 }
@@ -165,6 +166,8 @@ void StructTypeSpec::cDeclareFunctions(std::ostream &ostream, CDRFunc functionTy
 
 void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     ostream << std::endl;
+    cppDeclareInternalSerializationFunction(ostream);
+    ostream << std::endl;
     cppDeclareInternalDeserializationFunction(ostream);
     ostream << std::endl;
     ostream << "template" << "<" << ">" << std::endl;
@@ -176,6 +179,16 @@ void StructTypeSpec::cppDeclareFunctions(std::ostream &ostream) {
     cppDeclareDeserializationFunction(ostream);
     ostream << indent_manip::pop;
     ostream << "}" << ";" << std::endl;
+}
+
+void StructTypeSpec::cppDeclareInternalSerializationFunction(std::ostream &ostream) {
+    ostream << "inline" << " ";
+    cppDeclareInternalSerializationFunctionName(ostream, "struct " + namespacePrefix + identifier);
+    ostream << " " << "{" << std::endl;
+    ostream << indent_manip::push;
+    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << indent_manip::pop;
+    ostream << "}" << std::endl;
 }
 
 void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
@@ -191,7 +204,7 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "const" << " " << "struct" << " " << namespacePrefix << identifier << "*" << " " << "input" << " ";
     ostream << "=" << " " << "&" << "val" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::SERIALIZE, TargetLanguage::CPP_LANG);
+    ostream << "toWireType" << "(" << "input" << "," << " " << "output" << ")" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;
 }

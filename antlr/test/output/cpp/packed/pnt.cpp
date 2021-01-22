@@ -47,6 +47,21 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline void toWireType(const struct PNT::Position* input, struct PNT::Position_wire* output) {
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_x = htobe64(field_x);
+		field_y = htobe64(field_y);
+		field_z = htobe64(field_z);
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+	}
+
 	inline struct PNT::Position fromWireType(const struct PNT::Position_wire* input) {
 		struct PNT::Position retval;
 		struct PNT::Position* output = &retval;
@@ -71,18 +86,7 @@ namespace pirate {
 			buf.resize(sizeof(struct PNT::Position));
 			struct PNT::Position_wire* output = (struct PNT::Position_wire*) buf.data();
 			const struct PNT::Position* input = &val;
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_x = htobe64(field_x);
-			field_y = htobe64(field_y);
-			field_z = htobe64(field_z);
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
+			toWireType(input, output);
 		}
 
 		static struct PNT::Position fromBuffer(std::vector<char> const& buf) {
@@ -96,6 +100,21 @@ namespace pirate {
 			return fromWireType(input);
 		}
 	};
+
+	inline void toWireType(const struct PNT::Distance* input, struct PNT::Distance_wire* output) {
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_x = htobe64(field_x);
+		field_y = htobe64(field_y);
+		field_z = htobe64(field_z);
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+	}
 
 	inline struct PNT::Distance fromWireType(const struct PNT::Distance_wire* input) {
 		struct PNT::Distance retval;
@@ -121,18 +140,7 @@ namespace pirate {
 			buf.resize(sizeof(struct PNT::Distance));
 			struct PNT::Distance_wire* output = (struct PNT::Distance_wire*) buf.data();
 			const struct PNT::Distance* input = &val;
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_x = htobe64(field_x);
-			field_y = htobe64(field_y);
-			field_z = htobe64(field_z);
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
+			toWireType(input, output);
 		}
 
 		static struct PNT::Distance fromBuffer(std::vector<char> const& buf) {

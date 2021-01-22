@@ -78,6 +78,22 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline void toWireType(const struct NestedTypes::Foo* input, struct NestedTypes::Foo_wire* output) {
+		uint32_t field_a;
+		uint32_t field_b;
+		uint32_t field_c;
+		memset(output, 0, sizeof(*output));
+		memcpy(&field_a, &input->a, sizeof(uint32_t));
+		memcpy(&field_b, &input->b, sizeof(uint32_t));
+		memcpy(&field_c, &input->c, sizeof(uint32_t));
+		field_a = htobe32(field_a);
+		field_b = htobe32(field_b);
+		field_c = htobe32(field_c);
+		memcpy(&output->a, &field_a, sizeof(uint32_t));
+		memcpy(&output->b, &field_b, sizeof(uint32_t));
+		memcpy(&output->c, &field_c, sizeof(uint32_t));
+	}
+
 	inline struct NestedTypes::Foo fromWireType(const struct NestedTypes::Foo_wire* input) {
 		struct NestedTypes::Foo retval;
 		struct NestedTypes::Foo* output = &retval;
@@ -102,19 +118,7 @@ namespace pirate {
 			buf.resize(sizeof(struct NestedTypes::Foo));
 			struct NestedTypes::Foo_wire* output = (struct NestedTypes::Foo_wire*) buf.data();
 			const struct NestedTypes::Foo* input = &val;
-			uint32_t field_a;
-			uint32_t field_b;
-			uint32_t field_c;
-			memset(output, 0, sizeof(*output));
-			memcpy(&field_a, &input->a, sizeof(uint32_t));
-			memcpy(&field_b, &input->b, sizeof(uint32_t));
-			memcpy(&field_c, &input->c, sizeof(uint32_t));
-			field_a = htobe32(field_a);
-			field_b = htobe32(field_b);
-			field_c = htobe32(field_c);
-			memcpy(&output->a, &field_a, sizeof(uint32_t));
-			memcpy(&output->b, &field_b, sizeof(uint32_t));
-			memcpy(&output->c, &field_c, sizeof(uint32_t));
+			toWireType(input, output);
 		}
 
 		static struct NestedTypes::Foo fromBuffer(std::vector<char> const& buf) {
@@ -128,6 +132,22 @@ namespace pirate {
 			return fromWireType(input);
 		}
 	};
+
+	inline void toWireType(const struct NestedTypes::Bar* input, struct NestedTypes::Bar_wire* output) {
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memset(output, 0, sizeof(*output));
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_x = htobe64(field_x);
+		field_y = htobe64(field_y);
+		field_z = htobe64(field_z);
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+	}
 
 	inline struct NestedTypes::Bar fromWireType(const struct NestedTypes::Bar_wire* input) {
 		struct NestedTypes::Bar retval;
@@ -153,19 +173,7 @@ namespace pirate {
 			buf.resize(sizeof(struct NestedTypes::Bar));
 			struct NestedTypes::Bar_wire* output = (struct NestedTypes::Bar_wire*) buf.data();
 			const struct NestedTypes::Bar* input = &val;
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memset(output, 0, sizeof(*output));
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_x = htobe64(field_x);
-			field_y = htobe64(field_y);
-			field_z = htobe64(field_z);
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
+			toWireType(input, output);
 		}
 
 		static struct NestedTypes::Bar fromBuffer(std::vector<char> const& buf) {
@@ -179,6 +187,12 @@ namespace pirate {
 			return fromWireType(input);
 		}
 	};
+
+	inline void toWireType(const struct NestedTypes::OuterStruct* input, struct NestedTypes::OuterStruct_wire* output) {
+		memset(output, 0, sizeof(*output));
+		toWireType(&input->foo, &output->foo);
+		toWireType(&input->bar, &output->bar);
+	}
 
 	inline struct NestedTypes::OuterStruct fromWireType(const struct NestedTypes::OuterStruct_wire* input) {
 		struct NestedTypes::OuterStruct retval;
@@ -194,7 +208,7 @@ namespace pirate {
 			buf.resize(sizeof(struct NestedTypes::OuterStruct));
 			struct NestedTypes::OuterStruct_wire* output = (struct NestedTypes::OuterStruct_wire*) buf.data();
 			const struct NestedTypes::OuterStruct* input = &val;
-			memset(output, 0, sizeof(*output));
+			toWireType(input, output);
 		}
 
 		static struct NestedTypes::OuterStruct fromBuffer(std::vector<char> const& buf) {
@@ -209,6 +223,24 @@ namespace pirate {
 		}
 	};
 
+	inline void toWireType(const struct NestedTypes::OuterUnion* input, struct NestedTypes::OuterUnion_wire* output) {
+		uint16_t tag;
+		memset(output, 0, sizeof(*output));
+		memcpy(&tag, &input->tag, sizeof(uint16_t));
+		tag = htobe16(tag);
+		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		switch (input->tag) {
+		case 1:
+		case 2:
+		case 3:
+			toWireType(&input->data.foo, &output->data.foo);
+			break;
+		default:
+			toWireType(&input->data.bar, &output->data.bar);
+			break;
+		}
+	}
+
 	inline struct NestedTypes::OuterUnion fromWireType(const struct NestedTypes::OuterUnion_wire* input) {
 		struct NestedTypes::OuterUnion retval;
 		struct NestedTypes::OuterUnion* output = &retval;
@@ -220,8 +252,10 @@ namespace pirate {
 		case 1:
 		case 2:
 		case 3:
+			output->data.foo = fromWireType(&input->data.foo);
 			break;
 		default:
+			output->data.bar = fromWireType(&input->data.bar);
 			break;
 		}
 		return retval;
@@ -233,19 +267,7 @@ namespace pirate {
 			buf.resize(sizeof(struct NestedTypes::OuterUnion));
 			struct NestedTypes::OuterUnion_wire* output = (struct NestedTypes::OuterUnion_wire*) buf.data();
 			const struct NestedTypes::OuterUnion* input = &val;
-			uint16_t tag;
-			memset(output, 0, sizeof(*output));
-			memcpy(&tag, &input->tag, sizeof(uint16_t));
-			tag = htobe16(tag);
-			memcpy(&output->tag, &tag, sizeof(uint16_t));
-			switch (input->tag) {
-			case 1:
-			case 2:
-			case 3:
-				break;
-			default:
-				break;
-			}
+			toWireType(input, output);
 		}
 
 		static struct NestedTypes::OuterUnion fromBuffer(std::vector<char> const& buf) {

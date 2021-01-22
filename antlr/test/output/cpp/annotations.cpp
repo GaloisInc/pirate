@@ -60,6 +60,30 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline void toWireType(const struct Annotations_Module::Annotation_Struct_Example* input, struct Annotations_Module::Annotation_Struct_Example_wire* output) {
+		uint32_t field_u;
+		uint32_t field_v;
+		uint64_t field_x;
+		uint64_t field_y;
+		uint64_t field_z;
+		memset(output, 0, sizeof(*output));
+		memcpy(&field_u, &input->u, sizeof(uint32_t));
+		memcpy(&field_v, &input->v, sizeof(uint32_t));
+		memcpy(&field_x, &input->x, sizeof(uint64_t));
+		memcpy(&field_y, &input->y, sizeof(uint64_t));
+		memcpy(&field_z, &input->z, sizeof(uint64_t));
+		field_u = htobe32(field_u);
+		field_v = htobe32(field_v);
+		field_x = htobe64(field_x);
+		field_y = htobe64(field_y);
+		field_z = htobe64(field_z);
+		memcpy(&output->u, &field_u, sizeof(uint32_t));
+		memcpy(&output->v, &field_v, sizeof(uint32_t));
+		memcpy(&output->x, &field_x, sizeof(uint64_t));
+		memcpy(&output->y, &field_y, sizeof(uint64_t));
+		memcpy(&output->z, &field_z, sizeof(uint64_t));
+	}
+
 	inline struct Annotations_Module::Annotation_Struct_Example fromWireType(const struct Annotations_Module::Annotation_Struct_Example_wire* input) {
 		struct Annotations_Module::Annotation_Struct_Example retval;
 		struct Annotations_Module::Annotation_Struct_Example* output = &retval;
@@ -92,27 +116,7 @@ namespace pirate {
 			buf.resize(sizeof(struct Annotations_Module::Annotation_Struct_Example));
 			struct Annotations_Module::Annotation_Struct_Example_wire* output = (struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
 			const struct Annotations_Module::Annotation_Struct_Example* input = &val;
-			uint32_t field_u;
-			uint32_t field_v;
-			uint64_t field_x;
-			uint64_t field_y;
-			uint64_t field_z;
-			memset(output, 0, sizeof(*output));
-			memcpy(&field_u, &input->u, sizeof(uint32_t));
-			memcpy(&field_v, &input->v, sizeof(uint32_t));
-			memcpy(&field_x, &input->x, sizeof(uint64_t));
-			memcpy(&field_y, &input->y, sizeof(uint64_t));
-			memcpy(&field_z, &input->z, sizeof(uint64_t));
-			field_u = htobe32(field_u);
-			field_v = htobe32(field_v);
-			field_x = htobe64(field_x);
-			field_y = htobe64(field_y);
-			field_z = htobe64(field_z);
-			memcpy(&output->u, &field_u, sizeof(uint32_t));
-			memcpy(&output->v, &field_v, sizeof(uint32_t));
-			memcpy(&output->x, &field_x, sizeof(uint64_t));
-			memcpy(&output->y, &field_y, sizeof(uint64_t));
-			memcpy(&output->z, &field_z, sizeof(uint64_t));
+			toWireType(input, output);
 		}
 
 		static struct Annotations_Module::Annotation_Struct_Example fromBuffer(std::vector<char> const& buf) {
@@ -126,6 +130,36 @@ namespace pirate {
 			return fromWireType(input);
 		}
 	};
+
+	inline void toWireType(const struct Annotations_Module::Annotation_Union_Example* input, struct Annotations_Module::Annotation_Union_Example_wire* output) {
+		uint16_t tag;
+		uint16_t data_a;
+		uint32_t data_b;
+		uint32_t data_c;
+		memset(output, 0, sizeof(*output));
+		memcpy(&tag, &input->tag, sizeof(uint16_t));
+		tag = htobe16(tag);
+		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		switch (input->tag) {
+		case 1:
+			memcpy(&data_a, &input->data.a, sizeof(uint16_t));
+			data_a = htobe16(data_a);
+			memcpy(&output->data.a, &data_a, sizeof(uint16_t));
+			break;
+		case 2:
+		case 3:
+			memcpy(&data_b, &input->data.b, sizeof(uint32_t));
+			data_b = htobe32(data_b);
+			memcpy(&output->data.b, &data_b, sizeof(uint32_t));
+			break;
+		case 4:
+		default:
+			memcpy(&data_c, &input->data.c, sizeof(uint32_t));
+			data_c = htobe32(data_c);
+			memcpy(&output->data.c, &data_c, sizeof(uint32_t));
+			break;
+		}
+	}
 
 	inline struct Annotations_Module::Annotation_Union_Example fromWireType(const struct Annotations_Module::Annotation_Union_Example_wire* input) {
 		struct Annotations_Module::Annotation_Union_Example retval;
@@ -165,33 +199,7 @@ namespace pirate {
 			buf.resize(sizeof(struct Annotations_Module::Annotation_Union_Example));
 			struct Annotations_Module::Annotation_Union_Example_wire* output = (struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
 			const struct Annotations_Module::Annotation_Union_Example* input = &val;
-			uint16_t tag;
-			uint16_t data_a;
-			uint32_t data_b;
-			uint32_t data_c;
-			memset(output, 0, sizeof(*output));
-			memcpy(&tag, &input->tag, sizeof(uint16_t));
-			tag = htobe16(tag);
-			memcpy(&output->tag, &tag, sizeof(uint16_t));
-			switch (input->tag) {
-			case 1:
-				memcpy(&data_a, &input->data.a, sizeof(uint16_t));
-				data_a = htobe16(data_a);
-				memcpy(&output->data.a, &data_a, sizeof(uint16_t));
-				break;
-			case 2:
-			case 3:
-				memcpy(&data_b, &input->data.b, sizeof(uint32_t));
-				data_b = htobe32(data_b);
-				memcpy(&output->data.b, &data_b, sizeof(uint32_t));
-				break;
-			case 4:
-			default:
-				memcpy(&data_c, &input->data.c, sizeof(uint32_t));
-				data_c = htobe32(data_c);
-				memcpy(&output->data.c, &data_c, sizeof(uint32_t));
-				break;
-			}
+			toWireType(input, output);
 		}
 
 		static struct Annotations_Module::Annotation_Union_Example fromBuffer(std::vector<char> const& buf) {

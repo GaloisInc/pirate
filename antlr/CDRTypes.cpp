@@ -214,6 +214,12 @@ void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string ty
     ostream << " " << "buf" << ")";
 }
 
+void cppDeclareInternalSerializationFunctionName(std::ostream &ostream, std::string typeName) {
+    ostream << "void" << " " << "toWireType";
+    ostream << "(" << "const" << " " << typeName << "*" << " " << "input";
+    ostream << "," << " " << typeName << "_wire" << "*" << " " << "output" << ")";
+}
+
 void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName) {
     ostream << typeName << " " << "fromWireType";
     ostream << "(" << "const" << " " << typeName << "_wire" << "*" << " " << "input" << ")";
@@ -397,25 +403,28 @@ void cppPirateNamespaceFooter(std::ostream &ostream) {
     ostream << "}" << std::endl;
 }
 
-void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator* declarator,
+void cDeclareFunctionNested(std::ostream &ostream, std::string typeName, std::string fieldName,
     CDRFunc functionType, TargetLanguage languageType) {
 
-    if (bitsAlignment(typeSpec->cTypeBits()) != 0) {
+    if (typeName.empty()) {
         return;
     }
     if (languageType == TargetLanguage::C_LANG) {
-        ostream << cCreateFunctionName(functionType, declarator->identifier) << "(";
-        ostream << "&" << "input" << "->" << declarator->identifier << "," << " ";
-        ostream << "&" << "output" << "->" << declarator->identifier << ")" << ";" << std::endl;
+        ostream << cCreateFunctionName(functionType, typeName) << "(";
+        ostream << "&" << "input" << "->" << fieldName << "," << " ";
+        ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
     } else {
         switch (functionType) {
             case CDRFunc::SERIALIZE: {
+                ostream << "toWireType" << "(";
+                ostream << "&" << "input" << "->" << fieldName << "," << " ";
+                ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
                 break;
             }
             case CDRFunc::DESERIALIZE: {
-                ostream << "output" << "->" << declarator->identifier << " " << "=";
+                ostream << "output" << "->" << fieldName << " " << "=";
                 ostream << " " << "fromWireType" << "(";
-                ostream << "&" << "input" << "->" << declarator->identifier << ")";
+                ostream << "&" << "input" << "->" << fieldName << ")";
                 ostream << ";" << std::endl;
                 break;
             }

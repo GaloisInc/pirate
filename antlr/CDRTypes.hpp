@@ -71,6 +71,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
     virtual std::string cTypeName() = 0;
+    virtual std::string typeName() { return ""; }
     virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
@@ -185,6 +186,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
+    virtual std::string typeName() override { return child->typeName(); }
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
@@ -201,7 +203,7 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
 void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
 void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
-void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator* declarator,
+void cDeclareFunctionNested(std::ostream &ostream, std::string typeName, std::string fieldName,
     CDRFunc functionType, TargetLanguage languageType);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
@@ -215,4 +217,5 @@ std::string cCreateFunctionName(CDRFunc functionType, std::string identifier);
 void cDeclareFunctionName(std::ostream &ostream, CDRFunc functionType, std::string identifier);
 void cppDeclareSerializationFunctionName(std::ostream &ostream, std::string typeName);
 void cppDeclareDeserializationFunctionName(std::ostream &ostream, std::string typeName);
+void cppDeclareInternalSerializationFunctionName(std::ostream &ostream, std::string typeName);
 void cppDeclareInternalDeserializationFunctionName(std::ostream &ostream, std::string typeName);

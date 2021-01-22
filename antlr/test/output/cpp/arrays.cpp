@@ -56,6 +56,43 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline void toWireType(const struct Arrays::Union_Array_Field* input, struct Arrays::Union_Array_Field_wire* output) {
+		uint16_t tag;
+		uint8_t data_a;
+		uint32_t data_b;
+		uint32_t data_c;
+		memset(output, 0, sizeof(*output));
+		memcpy(&tag, &input->tag, sizeof(uint16_t));
+		tag = htobe16(tag);
+		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		switch (input->tag) {
+		case 1:
+			memcpy(&data_a, &input->data.a, sizeof(uint8_t));
+			memcpy(&output->data.a, &data_a, sizeof(uint8_t));
+			break;
+		case 2:
+		case 3:
+			for (size_t b_0 = 0; b_0 < 10; b_0++) {
+				memcpy(&data_b, &input->data.b[b_0], sizeof(uint32_t));
+				data_b = htobe32(data_b);
+				memcpy(&output->data.b[b_0], &data_b, sizeof(uint32_t));
+			}
+			break;
+		case 4:
+		default:
+			for (size_t c_0 = 0; c_0 < 1; c_0++) {
+				for (size_t c_1 = 0; c_1 < 2; c_1++) {
+					for (size_t c_2 = 0; c_2 < 3; c_2++) {
+						memcpy(&data_c, &input->data.c[c_0][c_1][c_2], sizeof(uint32_t));
+						data_c = htobe32(data_c);
+						memcpy(&output->data.c[c_0][c_1][c_2], &data_c, sizeof(uint32_t));
+					}
+				}
+			}
+			break;
+		}
+	}
+
 	inline struct Arrays::Union_Array_Field fromWireType(const struct Arrays::Union_Array_Field_wire* input) {
 		struct Arrays::Union_Array_Field retval;
 		struct Arrays::Union_Array_Field* output = &retval;
@@ -101,40 +138,7 @@ namespace pirate {
 			buf.resize(sizeof(struct Arrays::Union_Array_Field));
 			struct Arrays::Union_Array_Field_wire* output = (struct Arrays::Union_Array_Field_wire*) buf.data();
 			const struct Arrays::Union_Array_Field* input = &val;
-			uint16_t tag;
-			uint8_t data_a;
-			uint32_t data_b;
-			uint32_t data_c;
-			memset(output, 0, sizeof(*output));
-			memcpy(&tag, &input->tag, sizeof(uint16_t));
-			tag = htobe16(tag);
-			memcpy(&output->tag, &tag, sizeof(uint16_t));
-			switch (input->tag) {
-			case 1:
-				memcpy(&data_a, &input->data.a, sizeof(uint8_t));
-				memcpy(&output->data.a, &data_a, sizeof(uint8_t));
-				break;
-			case 2:
-			case 3:
-				for (size_t b_0 = 0; b_0 < 10; b_0++) {
-					memcpy(&data_b, &input->data.b[b_0], sizeof(uint32_t));
-					data_b = htobe32(data_b);
-					memcpy(&output->data.b[b_0], &data_b, sizeof(uint32_t));
-				}
-				break;
-			case 4:
-			default:
-				for (size_t c_0 = 0; c_0 < 1; c_0++) {
-					for (size_t c_1 = 0; c_1 < 2; c_1++) {
-						for (size_t c_2 = 0; c_2 < 3; c_2++) {
-							memcpy(&data_c, &input->data.c[c_0][c_1][c_2], sizeof(uint32_t));
-							data_c = htobe32(data_c);
-							memcpy(&output->data.c[c_0][c_1][c_2], &data_c, sizeof(uint32_t));
-						}
-					}
-				}
-				break;
-			}
+			toWireType(input, output);
 		}
 
 		static struct Arrays::Union_Array_Field fromBuffer(std::vector<char> const& buf) {
@@ -148,6 +152,35 @@ namespace pirate {
 			return fromWireType(input);
 		}
 	};
+
+	inline void toWireType(const struct Arrays::Struct_Array_Field* input, struct Arrays::Struct_Array_Field_wire* output) {
+		uint8_t field_a;
+		uint32_t field_b;
+		uint32_t field_c;
+		memset(output, 0, sizeof(*output));
+		for (size_t b_0 = 0; b_0 < 10; b_0++) {
+			memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
+			field_b = htobe32(field_b);
+			memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
+		}
+		for (size_t c_0 = 0; c_0 < 1; c_0++) {
+			for (size_t c_1 = 0; c_1 < 2; c_1++) {
+				for (size_t c_2 = 0; c_2 < 3; c_2++) {
+					for (size_t c_3 = 0; c_3 < 4; c_3++) {
+						for (size_t c_4 = 0; c_4 < 5; c_4++) {
+							for (size_t c_5 = 0; c_5 < 6; c_5++) {
+								memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
+								field_c = htobe32(field_c);
+								memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
+							}
+						}
+					}
+				}
+			}
+		}
+		memcpy(&field_a, &input->a, sizeof(uint8_t));
+		memcpy(&output->a, &field_a, sizeof(uint8_t));
+	}
 
 	inline struct Arrays::Struct_Array_Field fromWireType(const struct Arrays::Struct_Array_Field_wire* input) {
 		struct Arrays::Struct_Array_Field retval;
@@ -186,32 +219,7 @@ namespace pirate {
 			buf.resize(sizeof(struct Arrays::Struct_Array_Field));
 			struct Arrays::Struct_Array_Field_wire* output = (struct Arrays::Struct_Array_Field_wire*) buf.data();
 			const struct Arrays::Struct_Array_Field* input = &val;
-			uint8_t field_a;
-			uint32_t field_b;
-			uint32_t field_c;
-			memset(output, 0, sizeof(*output));
-			for (size_t b_0 = 0; b_0 < 10; b_0++) {
-				memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
-				field_b = htobe32(field_b);
-				memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
-			}
-			for (size_t c_0 = 0; c_0 < 1; c_0++) {
-				for (size_t c_1 = 0; c_1 < 2; c_1++) {
-					for (size_t c_2 = 0; c_2 < 3; c_2++) {
-						for (size_t c_3 = 0; c_3 < 4; c_3++) {
-							for (size_t c_4 = 0; c_4 < 5; c_4++) {
-								for (size_t c_5 = 0; c_5 < 6; c_5++) {
-									memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
-									field_c = htobe32(field_c);
-									memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
-								}
-							}
-						}
-					}
-				}
-			}
-			memcpy(&field_a, &input->a, sizeof(uint8_t));
-			memcpy(&output->a, &field_a, sizeof(uint8_t));
+			toWireType(input, output);
 		}
 
 		static struct Arrays::Struct_Array_Field fromBuffer(std::vector<char> const& buf) {
