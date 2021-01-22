@@ -1,14 +1,14 @@
 module NestedTypes {
-	struct Foo {
-		int32 a, b, c;
-	};
-	struct Bar {
-		double x, y, z;
-	};
-	struct OuterStruct {
+  struct Foo {
+    int32 a, b, c;
+  };
+  struct Bar {
+    double x, y, z;
+  };
+  struct OuterStruct {
     Foo foo;
     Bar bar;
-	};
+  };
   union OuterUnion switch (short) { 
     case 1:
     case 2:
