@@ -86,6 +86,7 @@ public:
     virtual void cppDeclareFunctions(std::ostream &ostream) = 0;
     virtual void cppDeclareFooter(std::ostream &ostream) { }
     virtual bool singleton() { return false; } // workaround for preventing destruction of singletons
+    virtual bool container() { return false; } // structs and unions are containers
     virtual ~TypeSpec() { };
 };
 
@@ -196,6 +197,7 @@ public:
     virtual void cppTypeDecl(std::ostream &ostream) override { }
     virtual void cppTypeDeclWire(std::ostream &ostream) override { }
     virtual void cppDeclareFunctions(std::ostream &ostream) override { }
+    virtual bool container() override { return child->container(); }
     virtual ~TypeReference() { child = nullptr; }
 };
 
@@ -203,7 +205,7 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
 void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
 void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
-void cDeclareFunctionNested(std::ostream &ostream, std::string typeName, std::string fieldName,
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
     CDRFunc functionType, TargetLanguage languageType);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,

@@ -34,21 +34,20 @@ void StructTypeSpec::addMember(StructMember* member) {
 }
 
 void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, false);
+    cCppTypeDecl(ostream, TargetLanguage::C_LANG);
 }
 
 void StructTypeSpec::cppTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, true);
+    cCppTypeDecl(ostream, TargetLanguage::CPP_LANG);
 }
 
-void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
+void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            if (cpp) {
+            if (languageType == TargetLanguage::CPP_LANG) {
                 ostream << member->typeSpec->cppTypeName();
             } else {
                 ostream << member->typeSpec->cTypeName();
@@ -58,7 +57,8 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
-            if (alignment > 0) {
+            if (!member->typeSpec->container()) {
+                int alignment = bitsAlignment(member->typeSpec->cTypeBits());
                 ostream << " " << "__attribute__((aligned(" << alignment << ")))";
             }
             ostream << ";" << std::endl;
@@ -74,14 +74,14 @@ void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-            if (alignment == 0) {
+            if (member->typeSpec->container()) {
                 ostream << member->typeSpec->cTypeName() << "_wire" << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
                     ostream << "[" << dim << "]";
                 }
             } else {
+                int alignment = bitsAlignment(member->typeSpec->cTypeBits());
                 ostream << "unsigned" << " " << "char" << " ";
                 ostream << declarator->identifier;
                 for (int dim : declarator->dimensions) {
@@ -118,7 +118,7 @@ void StructTypeSpec::cDeclareAsserts(std::ostream &ostream) {
 void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFunction apply) {
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            if (bitsAlignment(member->typeSpec->cTypeBits()) == 0) {
+            if (member->typeSpec->container()) {
                 continue;
             }
             if (((declarator->dimensions.size() == 0) && scalar) ||
@@ -149,7 +149,7 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
-            cDeclareFunctionNested(ostream, member->typeSpec->typeName(),
+            cDeclareFunctionNested(ostream, member->typeSpec,
                 declarator->identifier, functionType, languageType);
         }
     }

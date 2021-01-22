@@ -35,7 +35,7 @@ public:
 class UnionTypeSpec : public TypeSpec {
 private:
     void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType);
-    void cCppTypeDecl(std::ostream &ostream, bool cpp);
+    void cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
     void cppDeclareInternalSerializationFunction(std::ostream &ostream);
@@ -64,6 +64,7 @@ public:
     virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
+    virtual bool container() override { return true; }
     void addMember(UnionMember* member);
     virtual ~UnionTypeSpec();
 };

@@ -32,19 +32,19 @@ UnionMember::~UnionMember() {
 }
 
 void UnionTypeSpec::cTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, false);
+    cCppTypeDecl(ostream, TargetLanguage::C_LANG);
 }
 
 void UnionTypeSpec::cppTypeDecl(std::ostream &ostream) {
-    cCppTypeDecl(ostream, true);
+    cCppTypeDecl(ostream, TargetLanguage::CPP_LANG);
 }
 
-void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
+void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     int tagAlign = bitsAlignment(switchType->cTypeBits());
-    if (cpp) {
+    if (languageType == TargetLanguage::CPP_LANG) {
         ostream << switchType->cppTypeName() << " " << "tag";
     } else {
         ostream << switchType->cTypeName() << " " << "tag";
@@ -55,8 +55,7 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        if (cpp) {
+        if (languageType == TargetLanguage::CPP_LANG) {
             ostream << member->typeSpec->cppTypeName();
         } else {
             ostream << member->typeSpec->cTypeName();
@@ -66,7 +65,8 @@ void UnionTypeSpec::cCppTypeDecl(std::ostream &ostream, bool cpp) {
         for (int dim : declarator->dimensions) {
             ostream << "[" << dim << "]";
         }
-        if (alignment > 0) {
+        if (!member->typeSpec->container()) {
+            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << " " << "__attribute__((aligned(" << alignment << ")))";
         }
         ostream << ";" << std::endl;
@@ -89,14 +89,14 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     ostream << indent_manip::push;
     for (UnionMember* member : members) {
         Declarator* declarator = member->declarator;
-        int alignment = bitsAlignment(member->typeSpec->cTypeBits());
-        if (alignment == 0) {
+        if (member->typeSpec->container()) {
             ostream << member->typeSpec->cTypeName() << "_wire" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
                 ostream << "[" << dim << "]";
             }
         } else {
+            int alignment = bitsAlignment(member->typeSpec->cTypeBits());
             ostream << "unsigned" << " " << "char" << " ";
             ostream << declarator->identifier;
             for (int dim : declarator->dimensions) {
@@ -168,7 +168,7 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
             cCopyMemoryIn(ostream, member->typeSpec, local, field);
             cConvertByteOrder(ostream, member->typeSpec, local, functionType);
             cCopyMemoryOut(ostream, member->typeSpec, local, field);
-            cDeclareFunctionNested(ostream, member->typeSpec->typeName(),
+            cDeclareFunctionNested(ostream, member->typeSpec,
                 field, functionType, languageType);
         } else {
             cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "data_", "data.");

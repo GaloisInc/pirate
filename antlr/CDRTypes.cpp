@@ -403,12 +403,13 @@ void cppPirateNamespaceFooter(std::ostream &ostream) {
     ostream << "}" << std::endl;
 }
 
-void cDeclareFunctionNested(std::ostream &ostream, std::string typeName, std::string fieldName,
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
     CDRFunc functionType, TargetLanguage languageType) {
 
-    if (typeName.empty()) {
+    if (!typeSpec->container()) {
         return;
     }
+    std::string typeName = typeSpec->typeName();
     if (languageType == TargetLanguage::C_LANG) {
         ostream << cCreateFunctionName(functionType, typeName) << "(";
         ostream << "&" << "input" << "->" << fieldName << "," << " ";
