@@ -57,44 +57,44 @@
   <xs:simpleType name="boolean" dfdl:length="8" dfdl:lengthKind="explicit">
     <xs:restriction base="xs:boolean"/>
   </xs:simpleType>
-  <xs:complexType name="FooType">
+  <xs:complexType name="Foo">
     <xs:sequence>
       <xs:element name="a" type="idl:int32"/>
       <xs:element name="b" type="idl:int32"/>
       <xs:element name="c" type="idl:int32"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="Foo" type="idl:FooType"/>
-  <xs:complexType name="BarType">
+  <xs:element name="FooDecl" type="idl:Foo"/>
+  <xs:complexType name="Bar">
     <xs:sequence>
       <xs:element name="x" type="idl:double"/>
       <xs:element name="y" type="idl:double"/>
       <xs:element name="z" type="idl:double"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="Bar" type="idl:BarType"/>
-  <xs:complexType name="OuterStructType">
+  <xs:element name="BarDecl" type="idl:Bar"/>
+  <xs:complexType name="OuterStruct">
     <xs:sequence>
-      <xs:element name="foo" type="idl:FooType"/>
-      <xs:element name="bar" type="idl:BarType"/>
+      <xs:element name="foo" type="idl:Foo"/>
+      <xs:element name="bar" type="idl:Bar"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="OuterStruct" type="idl:OuterStructType"/>
-  <xs:simpleType name="DayOfWeekType">
+  <xs:element name="OuterStructDecl" type="idl:OuterStruct"/>
+  <xs:simpleType name="DayOfWeek">
     <xs:restriction base="idl:uint32"/>
   </xs:simpleType>
-  <xs:complexType name="OuterUnionType">
+  <xs:complexType name="OuterUnion">
     <xs:sequence>
-      <xs:element name="tag" type="idl:DayOfWeekType"/>
+      <xs:element name="tag" type="idl:DayOfWeek"/>
       <xs:element name="data" dfdl:length="192" dfdl:lengthKind="explicit">
         <xs:complexType>
           <xs:choice dfdl:choiceDispatchKey="{xs:string(../tag)}">
-            <xs:element dfdl:choiceBranchKey="0 1 2" name="foo" type="idl:FooType"/>
-            <xs:element dfdl:choiceBranchKey="3 4" name="bar" type="idl:BarType"/>
+            <xs:element dfdl:choiceBranchKey="0 1 2" name="foo" type="idl:Foo"/>
+            <xs:element dfdl:choiceBranchKey="3 4" name="bar" type="idl:Bar"/>
           </xs:choice>
         </xs:complexType>
       </xs:element>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="OuterUnion" type="idl:OuterUnionType"/>
+  <xs:element name="OuterUnionDecl" type="idl:OuterUnion"/>
 </xs:schema>

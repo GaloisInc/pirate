@@ -223,13 +223,13 @@ std::string
 get_type_name(TypeSpec* typeSpec)
 {
     if (auto * p = dynamic_cast<StructTypeSpec*>(typeSpec)) {
-        return p->identifier + "Type";
+        return p->identifier;
     } else if (auto * p = dynamic_cast<UnionTypeSpec*>(typeSpec)) {
-        return p->identifier + "Type";
+        return p->identifier;
     } else if (auto * p = dynamic_cast<TypeReference*>(typeSpec)) {
         return get_type_name(p->child);
     } else if (auto * p = dynamic_cast<EnumTypeSpec*>(typeSpec)) {
-        return p->identifier + "Type";
+        return p->identifier;
     } else if (NULL != dynamic_cast<BaseTypeSpec*>(typeSpec)) {
         not_implemented("get_type_name of base type");
     } else {
@@ -379,7 +379,7 @@ declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
                 }
             }
             auto elem = add_element(schema, "xs:element");
-            elem->SetAttribute("name", s->identifier);
+            elem->SetAttribute("name", s->identifier + "Decl");
             elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
             break;
         }
@@ -424,7 +424,7 @@ declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
                 construct_member(member, m->declarator, m->typeSpec, packed);
             }
             auto elem = add_element(schema, "xs:element");
-            elem->SetAttribute("name", u->identifier);
+            elem->SetAttribute("name", u->identifier + "Decl");
             elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
             break;
         }
@@ -437,7 +437,7 @@ declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
             // should we declare an element for this enum?
             // auto ets = static_cast<EnumTypeSpec*>(typeSpec);
             // auto elem = add_element(schema, "xs:element");
-            // elem->SetAttribute("name", ets->identifier);
+            // elem->SetAttribute("name", ets->identifier + "Decl");
             // elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
             break;
         }
