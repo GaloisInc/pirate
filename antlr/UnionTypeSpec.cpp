@@ -154,8 +154,11 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
         ostream << "switch" << " " << "(" << "output" << "->" << "tag" << ")" << " " << "{" << std::endl;
     }
     for (UnionMember* member : members) {
-         Declarator* declarator = member->declarator;
+        Declarator* declarator = member->declarator;
         for (std::string label : member->labels) {
+            if ((switchType->typeOf() == CDRTypeOf::ENUM_T) && (languageType == TargetLanguage::CPP_LANG)) {
+                label = switchType->cppNamespacePrefix() + switchType->cppTypeName() + "::" + label;
+            }
             ostream << "case" << " " << label << ":" << std::endl;
         }
         if (member->hasDefault) {

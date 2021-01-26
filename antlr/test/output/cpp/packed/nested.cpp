@@ -28,8 +28,16 @@ namespace NestedTypes {
 		struct Bar bar;
 	};
 
+	enum class DayOfWeek : uint32_t {
+		Monday,
+		Tuesday,
+		Wednesday,
+		Thursday,
+		Friday
+	};
+
 	struct OuterUnion {
-		int16_t tag __attribute__((aligned(2)));
+		DayOfWeek tag __attribute__((aligned(4)));
 		union {
 			struct Foo foo;
 			struct Bar bar;
@@ -54,7 +62,7 @@ namespace NestedTypes {
 	} __attribute__((packed)) ;
 
 	struct OuterUnion_wire {
-		unsigned char tag[2];
+		unsigned char tag[4];
 		union {
 			struct Foo_wire foo;
 			struct Bar_wire bar;
@@ -216,18 +224,19 @@ namespace pirate {
 	};
 
 	inline void toWireType(const struct NestedTypes::OuterUnion* input, struct NestedTypes::OuterUnion_wire* output) {
-		uint16_t tag;
+		uint32_t tag;
 		memset(output, 0, sizeof(*output));
-		memcpy(&tag, &input->tag, sizeof(uint16_t));
-		tag = htobe16(tag);
-		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		memcpy(&tag, &input->tag, sizeof(uint32_t));
+		tag = htobe32(tag);
+		memcpy(&output->tag, &tag, sizeof(uint32_t));
 		switch (input->tag) {
-		case 1:
-		case 2:
-		case 3:
+		case NestedTypes::DayOfWeek::Monday:
+		case NestedTypes::DayOfWeek::Tuesday:
+		case NestedTypes::DayOfWeek::Wednesday:
 			toWireType(&input->data.foo, &output->data.foo);
 			break;
-		default:
+		case NestedTypes::DayOfWeek::Thursday:
+		case NestedTypes::DayOfWeek::Friday:
 			toWireType(&input->data.bar, &output->data.bar);
 			break;
 		}
@@ -236,17 +245,18 @@ namespace pirate {
 	inline struct NestedTypes::OuterUnion fromWireType(const struct NestedTypes::OuterUnion_wire* input) {
 		struct NestedTypes::OuterUnion retval;
 		struct NestedTypes::OuterUnion* output = &retval;
-		uint16_t tag;
-		memcpy(&tag, &input->tag, sizeof(uint16_t));
-		tag = be16toh(tag);
-		memcpy(&output->tag, &tag, sizeof(uint16_t));
+		uint32_t tag;
+		memcpy(&tag, &input->tag, sizeof(uint32_t));
+		tag = be32toh(tag);
+		memcpy(&output->tag, &tag, sizeof(uint32_t));
 		switch (output->tag) {
-		case 1:
-		case 2:
-		case 3:
+		case NestedTypes::DayOfWeek::Monday:
+		case NestedTypes::DayOfWeek::Tuesday:
+		case NestedTypes::DayOfWeek::Wednesday:
 			output->data.foo = fromWireType(&input->data.foo);
 			break;
-		default:
+		case NestedTypes::DayOfWeek::Thursday:
+		case NestedTypes::DayOfWeek::Friday:
 			output->data.bar = fromWireType(&input->data.bar);
 			break;
 		}
