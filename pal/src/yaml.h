@@ -11,6 +11,7 @@
 struct enclave {
     char *enc_name;
     char *enc_path;
+    char *enc_directory;
     char **enc_args;
     size_t enc_args_count;
     char **enc_env;
