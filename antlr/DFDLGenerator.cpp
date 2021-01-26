@@ -435,8 +435,10 @@ declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
             auto rest = add_element(simple, "xs:restriction");
             rest->SetAttribute("base", "idl:uint32");
             // should we declare an element for this enum?
+            // auto ets = static_cast<EnumTypeSpec*>(typeSpec);
             // auto elem = add_element(schema, "xs:element");
-            // elem->SetAttribute("type", ets->identifier);
+            // elem->SetAttribute("name", ets->identifier);
+            // elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
             break;
         }
         default:
