@@ -9,12 +9,14 @@ module NestedTypes {
     Foo foo;
     Bar bar;
   };
-  union OuterUnion switch (short) { 
-    case 1:
-    case 2:
-    case 3:
+  enum DayOfWeek { Monday, Tuesday, Wednesday, Thursday, Friday };
+  union OuterUnion switch (DayOfWeek) {
+    case Monday:
+    case Tuesday:
+    case Wednesday:
       Foo foo;
-    default:
+    case Thursday:
+    case Friday:
       Bar bar;
   };
 };

@@ -21,8 +21,16 @@ struct OuterStruct {
 	struct Bar bar;
 };
 
+enum DayOfWeek {
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday
+};
+
 struct OuterUnion {
-	int16_t tag __attribute__((aligned(2)));
+	uint32_t tag __attribute__((aligned(4)));
 	union {
 		struct Foo foo;
 		struct Bar bar;
@@ -47,7 +55,7 @@ struct OuterStruct_wire {
 } __attribute__((packed)) ;
 
 struct OuterUnion_wire {
-	unsigned char tag[2];
+	unsigned char tag[4];
 	union {
 		struct Foo_wire foo;
 		struct Bar_wire bar;
@@ -90,19 +98,25 @@ void encode_outerstruct(struct OuterStruct* input, struct OuterStruct_wire* outp
 	encode_bar(&input->bar, &output->bar);
 }
 
+uint32_t encode_dayofweek(uint32_t value) {
+	value = htobe32(value);
+	return value;
+}
+
 void encode_outerunion(struct OuterUnion* input, struct OuterUnion_wire* output) {
-	uint16_t tag;
+	uint32_t tag;
 	memset(output, 0, sizeof(*output));
-	memcpy(&tag, &input->tag, sizeof(uint16_t));
-	tag = htobe16(tag);
-	memcpy(&output->tag, &tag, sizeof(uint16_t));
+	memcpy(&tag, &input->tag, sizeof(uint32_t));
+	tag = htobe32(tag);
+	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (input->tag) {
-	case 1:
-	case 2:
-	case 3:
+	case Monday:
+	case Tuesday:
+	case Wednesday:
 		encode_foo(&input->data.foo, &output->data.foo);
 		break;
-	default:
+	case Thursday:
+	case Friday:
 		encode_bar(&input->data.bar, &output->data.bar);
 		break;
 	}
@@ -143,18 +157,24 @@ void decode_outerstruct(struct OuterStruct_wire* input, struct OuterStruct* outp
 	decode_bar(&input->bar, &output->bar);
 }
 
+uint32_t decode_dayofweek(uint32_t value) {
+	value = be32toh(value);
+	return value;
+}
+
 void decode_outerunion(struct OuterUnion_wire* input, struct OuterUnion* output) {
-	uint16_t tag;
-	memcpy(&tag, &input->tag, sizeof(uint16_t));
-	tag = be16toh(tag);
-	memcpy(&output->tag, &tag, sizeof(uint16_t));
+	uint32_t tag;
+	memcpy(&tag, &input->tag, sizeof(uint32_t));
+	tag = be32toh(tag);
+	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (output->tag) {
-	case 1:
-	case 2:
-	case 3:
+	case Monday:
+	case Tuesday:
+	case Wednesday:
 		decode_foo(&input->data.foo, &output->data.foo);
 		break;
-	default:
+	case Thursday:
+	case Friday:
 		decode_bar(&input->data.bar, &output->data.bar);
 		break;
 	}

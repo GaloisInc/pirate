@@ -24,11 +24,23 @@
       <dfdl:format ref="idl:defaults"/>
     </xs:appinfo>
   </xs:annotation>
+  <xs:simpleType name="float" dfdl:length="32" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:float"/>
+  </xs:simpleType>
+  <xs:simpleType name="double" dfdl:length="64" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:double"/>
+  </xs:simpleType>
   <xs:simpleType name="int8" dfdl:length="8" dfdl:lengthKind="explicit">
     <xs:restriction base="xs:byte"/>
   </xs:simpleType>
   <xs:simpleType name="int16" dfdl:length="16" dfdl:lengthKind="explicit">
     <xs:restriction base="xs:short"/>
+  </xs:simpleType>
+  <xs:simpleType name="int32" dfdl:length="32" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:int"/>
+  </xs:simpleType>
+  <xs:simpleType name="int64" dfdl:length="64" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:long"/>
   </xs:simpleType>
   <xs:simpleType name="uint8" dfdl:length="8" dfdl:lengthKind="explicit">
     <xs:restriction base="xs:unsignedByte"/>
@@ -39,62 +51,50 @@
   <xs:simpleType name="uint32" dfdl:length="32" dfdl:lengthKind="explicit">
     <xs:restriction base="xs:unsignedInt"/>
   </xs:simpleType>
-  <xs:complexType name="Command">
+  <xs:simpleType name="uint64" dfdl:length="64" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:unsignedLong"/>
+  </xs:simpleType>
+  <xs:simpleType name="boolean" dfdl:length="8" dfdl:lengthKind="explicit">
+    <xs:restriction base="xs:boolean"/>
+  </xs:simpleType>
+  <xs:complexType name="Foo">
     <xs:sequence>
-      <xs:element name="sync0" fixed="208" type="idl:uint8"/>
-      <xs:element name="sync1" fixed="13" type="idl:uint8"/>
-      <xs:element name="id" fixed="1" type="idl:uint8"/>
-      <xs:element name="length" fixed="7" type="idl:uint8"/>
-      <xs:element name="pan" type="idl:int16"/>
-      <xs:element name="tilt">
-        <xs:simpleType>
-          <xs:restriction base="idl:int16">
-            <xs:minInclusive value="-1396"/>
-            <xs:maxInclusive value="733"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:element>
-      <xs:element name="mode" fixed="80" type="idl:uint8"/>
-      <xs:element name="stabilized" fixed="0" type="idl:uint8"/>
-      <xs:element name="impulse" fixed="0" type="idl:uint8"/>
-      <xs:element name="checksum" type="idl:uint16"/>
+      <xs:element name="a" type="idl:int32"/>
+      <xs:element name="b" type="idl:int32"/>
+      <xs:element name="c" type="idl:int32"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="CommandDecl" type="idl:Command"/>
-  <xs:complexType name="CameraState">
+  <xs:element name="FooDecl" type="idl:Foo"/>
+  <xs:complexType name="Bar">
     <xs:sequence>
-      <xs:element name="sync0" fixed="208" type="idl:uint8"/>
-      <xs:element name="sync1" fixed="13" type="idl:uint8"/>
-      <xs:element name="id" fixed="97" type="idl:uint8"/>
-      <xs:element name="length" fixed="5" type="idl:uint8"/>
-      <xs:element name="zoom" type="idl:int16"/>
-      <xs:element name="focus" type="idl:int16"/>
-      <xs:element name="index" fixed="0" type="idl:uint8"/>
-      <xs:element name="checksum" type="idl:uint16"/>
+      <xs:element name="x" type="idl:double"/>
+      <xs:element name="y" type="idl:double"/>
+      <xs:element name="z" type="idl:double"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="CameraStateDecl" type="idl:CameraState"/>
-  <xs:complexType name="VideoSettings">
+  <xs:element name="BarDecl" type="idl:Bar"/>
+  <xs:complexType name="OuterStruct">
     <xs:sequence>
-      <xs:element name="sync0" fixed="208" type="idl:uint8"/>
-      <xs:element name="sync1" fixed="13" type="idl:uint8"/>
-      <xs:element name="id" fixed="98" type="idl:uint8"/>
-      <xs:element name="length" fixed="14" type="idl:uint8"/>
-      <xs:element name="destIp">
+      <xs:element name="foo" type="idl:Foo"/>
+      <xs:element name="bar" type="idl:Bar"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="OuterStructDecl" type="idl:OuterStruct"/>
+  <xs:simpleType name="DayOfWeek">
+    <xs:restriction base="idl:uint32"/>
+  </xs:simpleType>
+  <xs:complexType name="OuterUnion">
+    <xs:sequence>
+      <xs:element name="tag" type="idl:DayOfWeek"/>
+      <xs:element name="data" dfdl:length="192" dfdl:lengthKind="explicit">
         <xs:complexType>
-          <xs:sequence>
-            <xs:element name="item" minOccurs="4" maxOccurs="4" dfdl:occursCountKind="fixed" type="idl:uint8"/>
-          </xs:sequence>
+          <xs:choice dfdl:choiceDispatchKey="{xs:string(../tag)}">
+            <xs:element dfdl:choiceBranchKey="0 1 2" name="foo" type="idl:Foo"/>
+            <xs:element dfdl:choiceBranchKey="3 4" name="bar" type="idl:Bar"/>
+          </xs:choice>
         </xs:complexType>
       </xs:element>
-      <xs:element name="port" type="idl:uint16"/>
-      <xs:element name="bitrate" fixed="0" type="idl:uint32"/>
-      <xs:element name="ttl" fixed="0" type="idl:int8"/>
-      <xs:element name="streamType" fixed="0" type="idl:uint8"/>
-      <xs:element name="mjpegQuality" fixed="0" type="idl:uint8"/>
-      <xs:element name="saveSettingsAndTsPacketCount" fixed="0" type="idl:uint8"/>
-      <xs:element name="checksum" type="idl:uint16"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="VideoSettingsDecl" type="idl:VideoSettings"/>
+  <xs:element name="OuterUnionDecl" type="idl:OuterUnion"/>
 </xs:schema>

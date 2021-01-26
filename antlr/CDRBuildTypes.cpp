@@ -327,8 +327,6 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
   for (IDLParser::Case_labelContext* labelCtx : labels) {
     if (labelCtx->const_exp() == nullptr) {
       member->setHasDefault();
-    } else if (labelCtx->const_exp()->scoped_name() != nullptr) {
-      member->addLabel(typeSpec->cppNamespacePrefix() + labelCtx->const_exp()->getText());
     } else {
       member->addLabel(labelCtx->const_exp()->getText());
     }
