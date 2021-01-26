@@ -322,13 +322,13 @@ finish_inner_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
     }
     switch (typeSpec->typeOf()) {
         case CDRTypeOf::STRUCT_T:
-            not_implemented("finish_inner_type should not be called on struct");
+            not_implemented("finish_inner_type of struct");
             break;
         case CDRTypeOf::UNION_T:
-            not_implemented("finish_inner_type should not be called on union");
+            not_implemented("finish_inner_type of union");
             break;
         case CDRTypeOf::ENUM_T:
-            not_implemented("finish_inner_type should not be called on enum");
+            not_implemented("finish_inner_type of enum");
             break;
         default:
             break;
@@ -440,7 +440,7 @@ declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
             break;
         }
         default:
-            not_implemented("invalid top level type");
+            not_implemented("declare_top_type on inner type");
             break;
     }
 
