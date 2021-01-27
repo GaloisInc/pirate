@@ -14,7 +14,7 @@ if(NOT DEFINED ANTLR4_JAR_LOCATION)
     message(FATAL_ERROR "ANTLR4_JAR_LOCATION must be defined")
 endif(NOT DEFINED ANTLR4_JAR_LOCATION)
 
-set(CMAKE_MODULE_PATH ${ANTLR4_MODULE_PATH_GEN} ${ANTLR4_MODULE_PATH_RUN})
+set(CMAKE_MODULE_PATH ${ANTLR4_MODULE_PATH})
 set(IDL_CXX_FLAGS -Werror -Wall -Wextra -Wpedantic -Wno-attributes -Wno-unused-parameter)
 
 include(antlr4-runtime-config)
