@@ -222,10 +222,6 @@ int pirate_ge_eth_open(void *_param, void *_ctx) {
         errno = EINVAL;
         return -1;
     }
-    if (param->writer_port < 0) {
-        errno = EINVAL;
-        return -1;
-    }
     if ((param->writer_port > 0) && (strncmp(param->writer_addr, "0.0.0.0", 8) == 0)) {
         errno = EINVAL;
         return -1;
