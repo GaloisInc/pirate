@@ -65,8 +65,8 @@ typedef enum {
 typedef struct {
     char reader_addr[INET_ADDRSTRLEN];
     char writer_addr[INET_ADDRSTRLEN];
-    short reader_port;
-    short writer_port;
+    uint16_t reader_port;
+    uint16_t writer_port;
     unsigned buffer_size;
     unsigned mtu;
 } pirate_udp_socket_param_t;
@@ -76,8 +76,8 @@ typedef struct {
 typedef struct {
     char reader_addr[INET_ADDRSTRLEN];
     char writer_addr[INET_ADDRSTRLEN];
-    short reader_port;
-    short writer_port;
+    uint16_t reader_port;
+    uint16_t writer_port;
     uint32_t message_id;
     uint32_t mtu;
 } pirate_ge_eth_param_t;
