@@ -565,11 +565,7 @@ int pirate_tcp_socket_open(void *_param, void *_ctx) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_tcp_socket_init_param(param);
-    if (param->reader_port <= 0) {
-        errno = EINVAL;
-        return -1;
-    }
-    if (param->writer_port < 0) {
+    if (param->reader_port == 0) {
         errno = EINVAL;
         return -1;
     }

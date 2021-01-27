@@ -218,7 +218,7 @@ int pirate_ge_eth_open(void *_param, void *_ctx) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_ge_eth_init_param(param);
-    if (param->reader_port <= 0) {
+    if (param->reader_port == 0) {
         errno = EINVAL;
         return -1;
     }
