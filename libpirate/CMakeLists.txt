@@ -34,6 +34,7 @@ endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
     .
+    include
     ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
 )
 

@@ -15,6 +15,7 @@ set(LOW "low")
 # Output directories
 set(HIGH_DIR ${PROJECT_BINARY_DIR}/${HIGH})
 set(LOW_DIR ${PROJECT_BINARY_DIR}/${LOW})
+set(PIRATE_APP_LIBS libpirate_static)
 file(MAKE_DIRECTORY ${HIGH_DIR} ${LOW_DIR})
 
 # Resources
