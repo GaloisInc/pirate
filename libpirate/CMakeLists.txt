@@ -48,7 +48,7 @@ target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
 target_include_directories(${PIRATE_SHARED_LIB} PUBLIC include)
 
 
-install(FILES shmem_buffer.h DESTINATION include)
+install(FILES include/libpirate.h include/libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 
