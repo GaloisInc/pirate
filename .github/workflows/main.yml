@@ -166,6 +166,7 @@ jobs:
           LDFLAGS="-L$GITHUB_WORKSPACE/dist/pirate/lib" \
           cmake ${{matrix.extra-cmake}} \
                 -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
+                -DPIRATE_APP_LIBS=pirate \
                 ../pal
         make install
     - name: Build libpirategetopt

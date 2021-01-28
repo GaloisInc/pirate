@@ -13,6 +13,8 @@ static const cyaml_schema_field_t enclave_field_schema[] = {
             struct enclave, enc_name, 0, CYAML_UNLIMITED),
     CYAML_FIELD_STRING_PTR("path", CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
             struct enclave, enc_path, 0, CYAML_UNLIMITED),
+    CYAML_FIELD_STRING_PTR("directory", CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+            struct enclave, enc_directory, 0, CYAML_UNLIMITED),
     CYAML_FIELD_SEQUENCE("arguments", CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
             struct enclave, enc_args, &string_ptr_schema, 0, CYAML_UNLIMITED),
     CYAML_FIELD_SEQUENCE("environment", CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
