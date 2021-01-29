@@ -44,6 +44,14 @@ namespace NestedTypes {
 		} data;
 	};
 
+	struct ScopedOuterUnion {
+		DayOfWeek tag __attribute__((aligned(4)));
+		union {
+			struct Foo foo;
+			struct Bar bar;
+		} data;
+	};
+
 	struct Foo_wire {
 		unsigned char a[4] __attribute__((aligned(4)));
 		unsigned char b[4] __attribute__((aligned(4)));
@@ -69,10 +77,20 @@ namespace NestedTypes {
 		} data;
 	};
 
+	struct ScopedOuterUnion_wire {
+		unsigned char tag[4];
+		union {
+			struct Foo_wire foo;
+			struct Bar_wire bar;
+		} data;
+	};
+
 	static_assert(sizeof(struct Foo) == sizeof(struct Foo_wire), "size of struct Foo not equal to wire protocol struct");
 	static_assert(sizeof(struct Bar) == sizeof(struct Bar_wire), "size of struct Bar not equal to wire protocol struct");
 	static_assert(sizeof(struct OuterStruct) == sizeof(struct OuterStruct_wire), "size of struct OuterStruct not equal to wire protocol struct");
 	static_assert(sizeof(struct OuterUnion) == sizeof(struct OuterUnion_wire), "size of OuterUnion not equal to wire protocol size"
+	);
+	static_assert(sizeof(struct ScopedOuterUnion) == sizeof(struct ScopedOuterUnion_wire), "size of ScopedOuterUnion not equal to wire protocol size"
 	);
 }
 
@@ -286,6 +304,67 @@ namespace pirate {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::OuterUnion type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct NestedTypes::OuterUnion));
+				throw std::length_error(error_msg);
+			}
+			return fromWireType(input);
+		}
+	};
+
+	inline void toWireType(const struct NestedTypes::ScopedOuterUnion* input, struct NestedTypes::ScopedOuterUnion_wire* output) {
+		uint32_t tag;
+		memset(output, 0, sizeof(*output));
+		memcpy(&tag, &input->tag, sizeof(uint32_t));
+		tag = htobe32(tag);
+		memcpy(&output->tag, &tag, sizeof(uint32_t));
+		switch (input->tag) {
+		case NestedTypes::DayOfWeek::Monday:
+		case NestedTypes::DayOfWeek::Tuesday:
+		case NestedTypes::DayOfWeek::Wednesday:
+			toWireType(&input->data.foo, &output->data.foo);
+			break;
+		case NestedTypes::DayOfWeek::Thursday:
+		case NestedTypes::DayOfWeek::Friday:
+			toWireType(&input->data.bar, &output->data.bar);
+			break;
+		}
+	}
+
+	inline struct NestedTypes::ScopedOuterUnion fromWireType(const struct NestedTypes::ScopedOuterUnion_wire* input) {
+		struct NestedTypes::ScopedOuterUnion retval;
+		struct NestedTypes::ScopedOuterUnion* output = &retval;
+		uint32_t tag;
+		memcpy(&tag, &input->tag, sizeof(uint32_t));
+		tag = be32toh(tag);
+		memcpy(&output->tag, &tag, sizeof(uint32_t));
+		switch (output->tag) {
+		case NestedTypes::DayOfWeek::Monday:
+		case NestedTypes::DayOfWeek::Tuesday:
+		case NestedTypes::DayOfWeek::Wednesday:
+			output->data.foo = fromWireType(&input->data.foo);
+			break;
+		case NestedTypes::DayOfWeek::Thursday:
+		case NestedTypes::DayOfWeek::Friday:
+			output->data.bar = fromWireType(&input->data.bar);
+			break;
+		}
+		return retval;
+	}
+
+	template<>
+	struct Serialization<struct NestedTypes::ScopedOuterUnion> {
+		static void toBuffer(struct NestedTypes::ScopedOuterUnion const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct NestedTypes::ScopedOuterUnion));
+			struct NestedTypes::ScopedOuterUnion_wire* output = (struct NestedTypes::ScopedOuterUnion_wire*) buf.data();
+			const struct NestedTypes::ScopedOuterUnion* input = &val;
+			toWireType(input, output);
+		}
+
+		static struct NestedTypes::ScopedOuterUnion fromBuffer(std::vector<char> const& buf) {
+			const struct NestedTypes::ScopedOuterUnion_wire* input = (const struct NestedTypes::ScopedOuterUnion_wire*) buf.data();
+			if (buf.size() != sizeof(struct NestedTypes::ScopedOuterUnion)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for NestedTypes::ScopedOuterUnion type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct NestedTypes::ScopedOuterUnion));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

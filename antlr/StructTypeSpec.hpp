@@ -35,6 +35,7 @@ private:
     void cDeclareFunctionApply(bool scalar, bool array, StructFunction apply);
     void cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType);
     void cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType);
+    void cCppTypeDeclWire(std::ostream &ostream, TargetLanguage languageType);
     void cppDeclareSerializationFunction(std::ostream &ostream);
     void cppDeclareDeserializationFunction(std::ostream &ostream);
     void cppDeclareInternalSerializationFunction(std::ostream &ostream);
@@ -59,7 +60,7 @@ public:
     virtual void cDeclareAnnotationTransform(std::ostream &ostream) override;
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
+    virtual void cppTypeDeclWire(std::ostream &ostream) override;
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
     virtual bool container() override { return true; }

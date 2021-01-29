@@ -37,12 +37,24 @@ void StructTypeSpec::cTypeDecl(std::ostream &ostream) {
     cCppTypeDecl(ostream, TargetLanguage::C_LANG);
 }
 
+void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
+    cCppTypeDeclWire(ostream, TargetLanguage::C_LANG);
+}
+
 void StructTypeSpec::cppTypeDecl(std::ostream &ostream) {
     cCppTypeDecl(ostream, TargetLanguage::CPP_LANG);
 }
 
+void StructTypeSpec::cppTypeDeclWire(std::ostream &ostream) {
+    cCppTypeDeclWire(ostream, TargetLanguage::CPP_LANG);
+}
+
 void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
+    if (members.empty() && (languageType == TargetLanguage::C_LANG)) {
+        // zero element structs are a gcc/clang extension
+        ostream << "__extension__" << " ";
+    }
     ostream << "struct" << " " << identifier << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
@@ -68,8 +80,12 @@ void StructTypeSpec::cCppTypeDecl(std::ostream &ostream, TargetLanguage language
     ostream << "}" << ";" << std::endl;
 }
 
-void StructTypeSpec::cTypeDeclWire(std::ostream &ostream) {
+void StructTypeSpec::cCppTypeDeclWire(std::ostream &ostream, TargetLanguage languageType) {
     ostream << std::endl;
+    if (members.empty() && (languageType == TargetLanguage::C_LANG)) {
+        // zero element structs are a gcc/clang extension
+        ostream << "__extension__" << " ";
+    }
     ostream << "struct" << " " << identifier << "_wire" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     for (StructMember* member : members) {
@@ -130,6 +146,11 @@ void StructTypeSpec::cDeclareFunctionApply(bool scalar, bool array, StructFuncti
 }
 
 void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType, TargetLanguage languageType) {
+    if (members.empty()) {
+        ostream << "(" << "void" << ")" << " " << "input" << ";" << std::endl;
+        ostream << "(" << "void" << ")" << " " << "output" << ";" << std::endl;
+        return;
+    }
     cDeclareFunctionApply(true, true, [&ostream] (StructMember* member, Declarator* declarator)
         { cDeclareLocalVar(ostream, member->typeSpec, "field_" + declarator->identifier); });
     // unpacked struct types should fill the bytes of padding with 0's
@@ -215,9 +236,13 @@ void StructTypeSpec::cppDeclareInternalDeserializationFunction(std::ostream &ost
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
     ostream << "struct" << " " << namespacePrefix << identifier << " " << "retval" << ";" << std::endl;
-    ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
-    ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
-    cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
+    if (members.empty()) {
+        ostream << "(" << "void" << ")" << " " << "input" << ";" << std::endl;
+    } else {
+        ostream << "struct" << " " << namespacePrefix << identifier << "*" << " " << "output" << " ";
+        ostream << "=" << " " << "&" << "retval" << ";" << std::endl;
+        cCppFunctionBody(ostream, CDRFunc::DESERIALIZE, TargetLanguage::CPP_LANG);
+    }
     ostream << "return" << " " << "retval" << ";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "}" << std::endl;

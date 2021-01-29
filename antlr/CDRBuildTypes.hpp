@@ -36,6 +36,7 @@ private:
   MaxAnnotation*   buildMaxAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RangeAnnotation* buildRangeAnnotation(IDLParser::Annotation_appl_paramsContext *params);
   RoundAnnotation* buildRoundAnnotation(IDLParser::Annotation_appl_paramsContext *params);
+  static std::string stripScopedName(std::string name);
 public:
   CDRBuildTypes(bool packed) : packed(packed), namespacePrefix(),
     typeDeclarations(), errors(),
