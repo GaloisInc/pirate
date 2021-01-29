@@ -1,0 +1,4 @@
+module Zero {
+	struct Zero {
+	};
+};

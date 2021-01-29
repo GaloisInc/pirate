@@ -39,7 +39,7 @@ public:
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     virtual void cppDeclareHeader(std::ostream &ostream) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
+    virtual void cppTypeDeclWire(std::ostream &ostream) override;
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
     virtual void cppDeclareFooter(std::ostream &ostream) override;
