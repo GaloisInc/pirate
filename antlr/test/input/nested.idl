@@ -19,4 +19,13 @@ module NestedTypes {
     case Friday:
       Bar bar;
   };
+  union ScopedOuterUnion switch (DayOfWeek) {
+    case DayOfWeek::Monday:
+    case DayOfWeek::Tuesday:
+    case DayOfWeek::Wednesday:
+      Foo foo;
+    case DayOfWeek::Thursday:
+    case DayOfWeek::Friday:
+      Bar bar;
+  };
 };
