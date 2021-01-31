@@ -70,9 +70,9 @@ public:
     virtual CDRTypeOf typeOf() = 0;
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
-    virtual std::string identifierName() { return ""; } // the identifier if the type has one
+    virtual std::string identifierName() { throw std::runtime_error("type has no identifier"); }
     virtual std::string cTypeName() = 0;
-    virtual std::string cppTypeName() { return cTypeName(); }
+    virtual std::string cppTypeName() = 0;
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
@@ -114,6 +114,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return m_cType; }
+    virtual std::string cppTypeName() override { return m_cType; }
     virtual std::string cppNamespacePrefix() override { return ""; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };

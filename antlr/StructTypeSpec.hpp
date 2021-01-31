@@ -52,6 +52,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override;
     virtual std::string cTypeName() override { return "struct " + identifier; }
+    virtual std::string cppTypeName() override { return "struct " + identifier; }
     virtual std::string identifierName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
