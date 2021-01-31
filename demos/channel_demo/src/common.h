@@ -19,6 +19,8 @@
 #include <argp.h>
 #include <stdint.h>
 
+#include "libpirate.h"
+
 #define OPT_DELIM ","
 
 /* Verbosity levels */
@@ -66,6 +68,12 @@ typedef struct {
     } perf;
 } test_data_t;
 
+typedef struct {
+    int enable;
+    pthread_t threadId;
+    pirate_atomic_bool done;
+} stats_t;
+
 #define TEST_DATA_INIT(name_str) {           \
     .name         = name_str,                \
     .pattern      = DEFAULT_TEST_PATTERN,    \
@@ -86,6 +94,7 @@ typedef struct {
 /* Common test components */
 typedef struct {
     uint32_t verbosity;
+    stats_t stats;
     const char *conf;
     int gd;
     test_data_t data;
@@ -93,6 +102,7 @@ typedef struct {
 
 #define TEST_INIT(name_str) {             \
     .verbosity = VERBOSITY_NONE,          \
+    .stats     = {0, 0, 0},               \
     .conf      = NULL,                    \
     .gd        = -1,                      \
     .data      = TEST_DATA_INIT(name_str) \
@@ -105,6 +115,7 @@ typedef struct {
     { "length",  'l', "LEN",  0, "Test lengths <START,STOP,STEP>",    0 },  \
     { "input",   'i', "PATH", 0, "Binary input file path",            0 },  \
     { "save",    's', "DIR",  0, "Save test packets in a directory",  0 },  \
+    { "stats",   'S', NULL,   0, "Print periodic channel statistics", 0 },  \
     { "verbose", 'v', NULL,   0, "Increase verbosity level",          0 },  \
     { "perf",    'P', "PERF", 0, "Performance test: <MSG_LEN,COUNT>", 0 },  \
     { "delay",   'd', "NS",   0, "Inter-packet delay",                0 },  \

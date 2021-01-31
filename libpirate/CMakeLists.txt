@@ -14,6 +14,7 @@ else()
     SET(PIRATE_SOURCES
         "primitives.c"
         "pirate_common.c"
+        "stats.c"
         "device.c"
         "pipe.c"
         "ge_eth.c"

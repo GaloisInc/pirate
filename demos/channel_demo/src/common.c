@@ -188,6 +188,10 @@ int parse_common_options(int key, char *arg, channel_test_t *test,
         test->data.out_dir = arg;
         break;
 
+    case 'S':
+        test->stats.enable = 1;
+        break;
+
     case 'v':
         if (test->verbosity < VERBOSITY_MAX) {
             test->verbosity++;

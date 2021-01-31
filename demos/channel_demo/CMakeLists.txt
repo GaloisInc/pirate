@@ -15,7 +15,7 @@ set(COMMON_SRC ${SRC_DIR}/common.c)
 
 function(add_channel_test_target TGT)
     add_executable(${TGT} ${COMMON_SRC} ${SRC_DIR}/${TGT}.c)
-    target_link_libraries(${TGT} ${PIRATE_APP_LIBS})
+    target_link_libraries(${TGT} ${PIRATE_APP_LIBS} pthread)
     target_compile_options(${TGT} PRIVATE ${BUILD_FLAGS})
 endfunction()
 

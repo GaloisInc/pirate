@@ -14,6 +14,7 @@
  */
 
 #include <argp.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
@@ -53,6 +54,12 @@ static void parse_args(int argc, char *argv[], reader_t *reader) {
     argp_parse(&argp, argc, argv, 0, 0, reader);
 }
 
+static void* reader_stats(void* arg) {
+    reader_t* reader = (reader_t*) arg;
+    pirate_print_stats(stdout, 5, &reader->common.stats.done, 1, &reader->common.gd);
+    return NULL;
+}
+
 static int reader_init(reader_t *reader) {
     int fd;
     pirate_channel_param_t param;
@@ -82,6 +89,10 @@ static int reader_init(reader_t *reader) {
     if(pirate_get_channel_param(reader->common.gd, &param) != 0) {
         log_msg(ERROR, "Failed to get GAPS channel parameters");
         return -1;
+    }
+
+    if (reader->common.stats.enable) {
+        pthread_create(&reader->common.stats.threadId, NULL, &reader_stats, reader);
     }
 
     fd = reader->common.gd;
@@ -122,6 +133,8 @@ static int reader_init(reader_t *reader) {
 }
 
 static int reader_term(reader_t *reader) {
+    int rv;
+
     /* Release test data */
     test_data_term(&reader->common.data);
 
@@ -131,7 +144,14 @@ static int reader_term(reader_t *reader) {
     }
 
     /* Close the test cahnnel */
-    return pirate_close(reader->common.gd);
+    rv = pirate_close(reader->common.gd);
+
+    if (reader->common.stats.enable) {
+        PIRATE_ATOMIC_STORE(&reader->common.stats.done, 1);
+        pthread_join(reader->common.stats.threadId, NULL);
+    }
+
+    return rv;
 }
 
 static int reader_run_perf_test(reader_t *reader) {

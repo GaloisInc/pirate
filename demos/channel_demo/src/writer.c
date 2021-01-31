@@ -16,9 +16,10 @@
 #define _GNU_SOURCE
 
 #include <argp.h>
-#include <time.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <time.h>
 #include "common.h"
 #include "libpirate.h"
 
@@ -88,6 +89,12 @@ static void parse_args(int argc, char *argv[], writer_t *writer) {
     argp_parse(&argp, argc, argv, 0, 0, writer);
 }
 
+static void* writer_stats(void* arg) {
+    writer_t* writer = (writer_t*) arg;
+    pirate_print_stats(stdout, 5, &writer->stats.done, 1, &writer->gd);
+    return NULL;
+}
+
 static int writer_init(writer_t *writer) {
     int fd;
     pirate_channel_param_t param;    
@@ -108,6 +115,10 @@ static int writer_init(writer_t *writer) {
     if(pirate_get_channel_param(writer->gd, &param) != 0) {
         log_msg(ERROR, "Failed to get GAPS channel parameters");
         return -1;
+    }
+
+    if (writer->stats.enable) {
+        pthread_create(&writer->stats.threadId, NULL, &writer_stats, writer);
     }
 
     fd = writer->gd;
@@ -134,11 +145,20 @@ static int writer_init(writer_t *writer) {
 }
 
 static int writer_term(writer_t *writer) {
+    int rv;
+
     /* Release test data */
     test_data_term(&writer->data);
 
     /* Close the test cahnnel */
-    return pirate_close(writer->gd);
+    rv = pirate_close(writer->gd);
+
+    if (writer->stats.enable) {
+        PIRATE_ATOMIC_STORE(&writer->stats.done, 1);
+        pthread_join(writer->stats.threadId, NULL);
+    }
+
+    return rv;
 }
 
 static int writer_run_perf_test(writer_t *writer) {

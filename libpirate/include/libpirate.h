@@ -18,6 +18,7 @@
 
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <termios.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -280,12 +281,29 @@ typedef struct {
 } pirate_channel_param_t;
 
 typedef struct {
-    uint64_t requests;
-    uint64_t success;
-    uint64_t errs; // EAGAIN and EWOULDBLOCK are not errors
-    uint64_t fuzzed;
-    uint64_t bytes; // bytes is incremented only on successful requests
+    int64_t requests;
+    int64_t success;
+    int64_t errs; // EAGAIN and EWOULDBLOCK are not errors
+    int64_t fuzzed;
+    int64_t bytes; // bytes is incremented only on successful requests
 } pirate_stats_t;
+
+#if defined __has_include
+#if __has_include (<stdatomic.h>)
+#define HAVE_STD_ATOMIC 1
+#endif
+#endif
+
+#ifdef HAVE_STD_ATOMIC
+#include <stdatomic.h>
+typedef atomic_bool pirate_atomic_bool;
+#define PIRATE_ATOMIC_LOAD(PTR) atomic_load(PTR)
+#define PIRATE_ATOMIC_STORE(PTR, VAL) atomic_store(PTR, VAL)
+#else
+typedef int pirate_atomic_bool;
+#define PIRATE_ATOMIC_LOAD(PTR) __atomic_load(PTR, __ATOMIC_SEQ_CST)
+#define PIRATE_ATOMIC_STORE(PTR, VAL) __atomic_store(PTR, VAL, __ATOMIC_SEQ_CST)
+#endif
 
 //
 // API
@@ -429,6 +447,30 @@ int pirate_nonblock_channel_type(channel_enum_t channel_type, size_t mtu);
 // On error NULL is returned, and errno is set appropriately.
 
 const pirate_stats_t *pirate_get_stats(int gd);
+
+// Periodically print statistics about gaps channels.
+// This function loops indefinitely until the termination
+// condition and should probably be invoked in its own thread.
+//
+// The set of gaps descriptors to be monitored is specified in the
+// gds argument, which is an array of gaps descriptors. The length
+// of gds is specified by ngds.
+//
+// Wait pause_sec seconds between intervals.
+//
+// If done is NULL then print statistics indefinitely.
+// If done is non-NULL then PIRATE_ATOMIC_STORE(done, 1)
+// will terminate the statistics printing.
+//
+// Prints the event rate (events per second) for the following metrics:
+//
+// requests: count of read or write requests
+// success: count of successful requests
+// errs: count of error requests. EAGAIN and EWOULDBLOCK are not errors
+// fuzzed: count of fuzzed requests.
+// bytes: sum of bytes over read or write requests
+
+void pirate_print_stats(FILE *stream, int pause_sec, pirate_atomic_bool* done, size_t ngds, int *gds);
 
 // pirate_read() attempts to read the next packet of up
 // to count bytes from gaps descriptor gd to the buffer
