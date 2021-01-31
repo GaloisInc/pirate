@@ -25,7 +25,7 @@ namespace NestedTypes {
 
 	struct OuterStruct {
 		struct Foo foo;
-		struct Bar bar;
+		struct Bar bar[2][3][4];
 	};
 
 	enum class DayOfWeek : uint32_t {
@@ -40,7 +40,7 @@ namespace NestedTypes {
 		DayOfWeek tag __attribute__((aligned(4)));
 		union {
 			struct Foo foo;
-			struct Bar bar;
+			struct Bar bar[2][3][4];
 		} data;
 	};
 
@@ -48,7 +48,7 @@ namespace NestedTypes {
 		DayOfWeek tag __attribute__((aligned(4)));
 		union {
 			struct Foo foo;
-			struct Bar bar;
+			struct Bar bar[2][3][4];
 		} data;
 	};
 
@@ -66,14 +66,14 @@ namespace NestedTypes {
 
 	struct OuterStruct_wire {
 		struct Foo_wire foo;
-		struct Bar_wire bar;
+		struct Bar_wire bar[2][3][4];
 	};
 
 	struct OuterUnion_wire {
 		unsigned char tag[4];
 		union {
 			struct Foo_wire foo;
-			struct Bar_wire bar;
+			struct Bar_wire bar[2][3][4];
 		} data;
 	};
 
@@ -81,7 +81,7 @@ namespace NestedTypes {
 		unsigned char tag[4];
 		union {
 			struct Foo_wire foo;
-			struct Bar_wire bar;
+			struct Bar_wire bar[2][3][4];
 		} data;
 	};
 
@@ -217,14 +217,30 @@ namespace pirate {
 	inline void toWireType(const struct NestedTypes::OuterStruct* input, struct NestedTypes::OuterStruct_wire* output) {
 		memset(output, 0, sizeof(*output));
 		toWireType(&input->foo, &output->foo);
-		toWireType(&input->bar, &output->bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					const struct NestedTypes::Bar* inptr = &input->bar[bar_0][bar_1][bar_2];
+					struct NestedTypes::Bar_wire* outptr = &output->bar[bar_0][bar_1][bar_2];
+					toWireType(inptr, outptr);
+				}
+			}
+		}
 	}
 
 	inline struct NestedTypes::OuterStruct fromWireType(const struct NestedTypes::OuterStruct_wire* input) {
 		struct NestedTypes::OuterStruct retval;
 		struct NestedTypes::OuterStruct* output = &retval;
 		output->foo = fromWireType(&input->foo);
-		output->bar = fromWireType(&input->bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					const struct NestedTypes::Bar_wire* inptr = &input->bar[bar_0][bar_1][bar_2];
+					struct NestedTypes::Bar* outptr = &output->bar[bar_0][bar_1][bar_2];
+					*outptr = fromWireType(inptr);
+				}
+			}
+		}
 		return retval;
 	}
 
@@ -263,7 +279,15 @@ namespace pirate {
 			break;
 		case NestedTypes::DayOfWeek::Thursday:
 		case NestedTypes::DayOfWeek::Friday:
-			toWireType(&input->data.bar, &output->data.bar);
+			for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+				for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+					for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+						const struct NestedTypes::Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+						struct NestedTypes::Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+						toWireType(inptr, outptr);
+					}
+				}
+			}
 			break;
 		}
 	}
@@ -283,7 +307,15 @@ namespace pirate {
 			break;
 		case NestedTypes::DayOfWeek::Thursday:
 		case NestedTypes::DayOfWeek::Friday:
-			output->data.bar = fromWireType(&input->data.bar);
+			for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+				for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+					for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+						const struct NestedTypes::Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+						struct NestedTypes::Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+						*outptr = fromWireType(inptr);
+					}
+				}
+			}
 			break;
 		}
 		return retval;
@@ -324,7 +356,15 @@ namespace pirate {
 			break;
 		case NestedTypes::DayOfWeek::Thursday:
 		case NestedTypes::DayOfWeek::Friday:
-			toWireType(&input->data.bar, &output->data.bar);
+			for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+				for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+					for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+						const struct NestedTypes::Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+						struct NestedTypes::Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+						toWireType(inptr, outptr);
+					}
+				}
+			}
 			break;
 		}
 	}
@@ -344,7 +384,15 @@ namespace pirate {
 			break;
 		case NestedTypes::DayOfWeek::Thursday:
 		case NestedTypes::DayOfWeek::Friday:
-			output->data.bar = fromWireType(&input->data.bar);
+			for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+				for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+					for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+						const struct NestedTypes::Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+						struct NestedTypes::Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+						*outptr = fromWireType(inptr);
+					}
+				}
+			}
 			break;
 		}
 		return retval;

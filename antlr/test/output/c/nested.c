@@ -18,7 +18,7 @@ struct Bar {
 
 struct OuterStruct {
 	struct Foo foo;
-	struct Bar bar;
+	struct Bar bar[2][3][4];
 };
 
 enum DayOfWeek {
@@ -33,7 +33,7 @@ struct OuterUnion {
 	uint32_t tag __attribute__((aligned(4)));
 	union {
 		struct Foo foo;
-		struct Bar bar;
+		struct Bar bar[2][3][4];
 	} data;
 };
 
@@ -41,7 +41,7 @@ struct ScopedOuterUnion {
 	uint32_t tag __attribute__((aligned(4)));
 	union {
 		struct Foo foo;
-		struct Bar bar;
+		struct Bar bar[2][3][4];
 	} data;
 };
 
@@ -59,14 +59,14 @@ struct Bar_wire {
 
 struct OuterStruct_wire {
 	struct Foo_wire foo;
-	struct Bar_wire bar;
+	struct Bar_wire bar[2][3][4];
 };
 
 struct OuterUnion_wire {
 	unsigned char tag[4];
 	union {
 		struct Foo_wire foo;
-		struct Bar_wire bar;
+		struct Bar_wire bar[2][3][4];
 	} data;
 };
 
@@ -74,7 +74,7 @@ struct ScopedOuterUnion_wire {
 	unsigned char tag[4];
 	union {
 		struct Foo_wire foo;
-		struct Bar_wire bar;
+		struct Bar_wire bar[2][3][4];
 	} data;
 };
 
@@ -121,7 +121,15 @@ void encode_bar(struct Bar* input, struct Bar_wire* output) {
 void encode_outerstruct(struct OuterStruct* input, struct OuterStruct_wire* output) {
 	memset(output, 0, sizeof(*output));
 	encode_foo(&input->foo, &output->foo);
-	encode_bar(&input->bar, &output->bar);
+	for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+		for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+			for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+				struct Bar* inptr = &input->bar[bar_0][bar_1][bar_2];
+				struct Bar_wire* outptr = &output->bar[bar_0][bar_1][bar_2];
+				encode_bar(inptr, outptr);
+			}
+		}
+	}
 }
 
 uint32_t encode_dayofweek(uint32_t value) {
@@ -143,7 +151,15 @@ void encode_outerunion(struct OuterUnion* input, struct OuterUnion_wire* output)
 		break;
 	case Thursday:
 	case Friday:
-		encode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					encode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
@@ -162,7 +178,15 @@ void encode_scopedouterunion(struct ScopedOuterUnion* input, struct ScopedOuterU
 		break;
 	case Thursday:
 	case Friday:
-		encode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					encode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
@@ -199,7 +223,15 @@ void decode_bar(struct Bar_wire* input, struct Bar* output) {
 
 void decode_outerstruct(struct OuterStruct_wire* input, struct OuterStruct* output) {
 	decode_foo(&input->foo, &output->foo);
-	decode_bar(&input->bar, &output->bar);
+	for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+		for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+			for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+				struct Bar_wire* inptr = &input->bar[bar_0][bar_1][bar_2];
+				struct Bar* outptr = &output->bar[bar_0][bar_1][bar_2];
+				decode_bar(inptr, outptr);
+			}
+		}
+	}
 }
 
 uint32_t decode_dayofweek(uint32_t value) {
@@ -220,7 +252,15 @@ void decode_outerunion(struct OuterUnion_wire* input, struct OuterUnion* output)
 		break;
 	case Thursday:
 	case Friday:
-		decode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					decode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
@@ -238,7 +278,15 @@ void decode_scopedouterunion(struct ScopedOuterUnion_wire* input, struct ScopedO
 		break;
 	case Thursday:
 	case Friday:
-		decode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					decode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }

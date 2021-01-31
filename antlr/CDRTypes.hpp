@@ -202,14 +202,14 @@ public:
 };
 
 void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier);
-void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
+void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input, bool inputPtr);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
-void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
-void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
-    CDRFunc functionType, TargetLanguage languageType);
+void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output, bool outputPtr);
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator,
+    CDRFunc functionType, TargetLanguage languageType, std::string remotePrefix);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
-    Declarator* declarator, CDRFunc functionType,
+    Declarator* declarator, CDRFunc functionType, TargetLanguage languageType,
     std::string localPrefix, std::string remotePrefix);
 
 void cppPirateNamespaceHeader(std::ostream &ostream);

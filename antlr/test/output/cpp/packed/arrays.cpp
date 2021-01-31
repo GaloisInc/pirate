@@ -70,9 +70,11 @@ namespace pirate {
 		case 2:
 		case 3:
 			for (size_t b_0 = 0; b_0 < 10; b_0++) {
-				memcpy(&data_b, &input->data.b[b_0], sizeof(uint32_t));
+				const int32_t* inptr = &input->data.b[b_0];
+				unsigned char* outptr = &output->data.b[b_0][0];
+				memcpy(&data_b, inptr, sizeof(uint32_t));
 				data_b = htobe32(data_b);
-				memcpy(&output->data.b[b_0], &data_b, sizeof(uint32_t));
+				memcpy(outptr, &data_b, sizeof(uint32_t));
 			}
 			break;
 		case 4:
@@ -80,9 +82,11 @@ namespace pirate {
 			for (size_t c_0 = 0; c_0 < 1; c_0++) {
 				for (size_t c_1 = 0; c_1 < 2; c_1++) {
 					for (size_t c_2 = 0; c_2 < 3; c_2++) {
-						memcpy(&data_c, &input->data.c[c_0][c_1][c_2], sizeof(uint32_t));
+						const float* inptr = &input->data.c[c_0][c_1][c_2];
+						unsigned char* outptr = &output->data.c[c_0][c_1][c_2][0];
+						memcpy(&data_c, inptr, sizeof(uint32_t));
 						data_c = htobe32(data_c);
-						memcpy(&output->data.c[c_0][c_1][c_2], &data_c, sizeof(uint32_t));
+						memcpy(outptr, &data_c, sizeof(uint32_t));
 					}
 				}
 			}
@@ -108,9 +112,11 @@ namespace pirate {
 		case 2:
 		case 3:
 			for (size_t b_0 = 0; b_0 < 10; b_0++) {
-				memcpy(&data_b, &input->data.b[b_0], sizeof(uint32_t));
+				const unsigned char* inptr = &input->data.b[b_0][0];
+				int32_t* outptr = &output->data.b[b_0];
+				memcpy(&data_b, inptr, sizeof(uint32_t));
 				data_b = be32toh(data_b);
-				memcpy(&output->data.b[b_0], &data_b, sizeof(uint32_t));
+				memcpy(outptr, &data_b, sizeof(uint32_t));
 			}
 			break;
 		case 4:
@@ -118,9 +124,11 @@ namespace pirate {
 			for (size_t c_0 = 0; c_0 < 1; c_0++) {
 				for (size_t c_1 = 0; c_1 < 2; c_1++) {
 					for (size_t c_2 = 0; c_2 < 3; c_2++) {
-						memcpy(&data_c, &input->data.c[c_0][c_1][c_2], sizeof(uint32_t));
+						const unsigned char* inptr = &input->data.c[c_0][c_1][c_2][0];
+						float* outptr = &output->data.c[c_0][c_1][c_2];
+						memcpy(&data_c, inptr, sizeof(uint32_t));
 						data_c = be32toh(data_c);
-						memcpy(&output->data.c[c_0][c_1][c_2], &data_c, sizeof(uint32_t));
+						memcpy(outptr, &data_c, sizeof(uint32_t));
 					}
 				}
 			}
@@ -155,9 +163,11 @@ namespace pirate {
 		uint32_t field_b;
 		uint32_t field_c;
 		for (size_t b_0 = 0; b_0 < 10; b_0++) {
-			memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
+			const int32_t* inptr = &input->b[b_0];
+			unsigned char* outptr = &output->b[b_0][0];
+			memcpy(&field_b, inptr, sizeof(uint32_t));
 			field_b = htobe32(field_b);
-			memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
+			memcpy(outptr, &field_b, sizeof(uint32_t));
 		}
 		for (size_t c_0 = 0; c_0 < 1; c_0++) {
 			for (size_t c_1 = 0; c_1 < 2; c_1++) {
@@ -165,9 +175,11 @@ namespace pirate {
 					for (size_t c_3 = 0; c_3 < 4; c_3++) {
 						for (size_t c_4 = 0; c_4 < 5; c_4++) {
 							for (size_t c_5 = 0; c_5 < 6; c_5++) {
-								memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
+								const float* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5];
+								unsigned char* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
+								memcpy(&field_c, inptr, sizeof(uint32_t));
 								field_c = htobe32(field_c);
-								memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
+								memcpy(outptr, &field_c, sizeof(uint32_t));
 							}
 						}
 					}
@@ -185,9 +197,11 @@ namespace pirate {
 		uint32_t field_b;
 		uint32_t field_c;
 		for (size_t b_0 = 0; b_0 < 10; b_0++) {
-			memcpy(&field_b, &input->b[b_0], sizeof(uint32_t));
+			const unsigned char* inptr = &input->b[b_0][0];
+			int32_t* outptr = &output->b[b_0];
+			memcpy(&field_b, inptr, sizeof(uint32_t));
 			field_b = be32toh(field_b);
-			memcpy(&output->b[b_0], &field_b, sizeof(uint32_t));
+			memcpy(outptr, &field_b, sizeof(uint32_t));
 		}
 		for (size_t c_0 = 0; c_0 < 1; c_0++) {
 			for (size_t c_1 = 0; c_1 < 2; c_1++) {
@@ -195,9 +209,11 @@ namespace pirate {
 					for (size_t c_3 = 0; c_3 < 4; c_3++) {
 						for (size_t c_4 = 0; c_4 < 5; c_4++) {
 							for (size_t c_5 = 0; c_5 < 6; c_5++) {
-								memcpy(&field_c, &input->c[c_0][c_1][c_2][c_3][c_4][c_5], sizeof(uint32_t));
+								const unsigned char* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
+								float* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5];
+								memcpy(&field_c, inptr, sizeof(uint32_t));
 								field_c = be32toh(field_c);
-								memcpy(&output->c[c_0][c_1][c_2][c_3][c_4][c_5], &field_c, sizeof(uint32_t));
+								memcpy(outptr, &field_c, sizeof(uint32_t));
 							}
 						}
 					}
