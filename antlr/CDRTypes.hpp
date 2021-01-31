@@ -70,9 +70,9 @@ public:
     virtual CDRTypeOf typeOf() = 0;
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
+    virtual std::string identifierName() { throw std::runtime_error("type has no identifier"); }
     virtual std::string cTypeName() = 0;
-    virtual std::string typeName() { return ""; }
-    virtual std::string cppTypeName() { return cTypeName(); }
+    virtual std::string cppTypeName() = 0;
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) = 0;
@@ -114,6 +114,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return m_cType; }
+    virtual std::string cppTypeName() override { return m_cType; }
     virtual std::string cppNamespacePrefix() override { return ""; }
     virtual void cDeclareFunctions(std::ostream& /*ostream*/, CDRFunc /*functionType*/) override { };
     virtual void cDeclareAnnotationValidate(std::ostream& /*ostream*/) override { };
@@ -144,14 +145,16 @@ class EnumTypeSpec : public TypeSpec {
 public:
     std::string namespacePrefix;
     std::string identifier;
-    bool packed;
     std::vector<std::string> enumerators;
-    EnumTypeSpec(std::string namespacePrefix, std::string identifier, bool packed) :
+    EnumTypeSpec(std::string namespacePrefix, std::string identifier) :
         namespacePrefix(namespacePrefix), identifier(identifier),
-        packed(packed), enumerators() { }
+        enumerators() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
+    virtual std::string identifierName() override { return identifier; }
+    // C will declare an enum type with the smallest size that is required.
+    // Our enums are always 4 bytes.
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
@@ -187,7 +190,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
-    virtual std::string typeName() override { return child->typeName(); }
+    virtual std::string identifierName() override { return child->identifierName(); }
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }
@@ -202,14 +205,14 @@ public:
 };
 
 void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier);
-void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input);
+void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input, bool inputPtr);
 void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string identifier, CDRFunc functionType);
-void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output);
-void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
-    CDRFunc functionType, TargetLanguage languageType);
+void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output, bool outputPtr);
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator *declarator,
+    CDRFunc functionType, TargetLanguage languageType, std::string remotePrefix);
 
 void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
-    Declarator* declarator, CDRFunc functionType,
+    Declarator* declarator, CDRFunc functionType, TargetLanguage languageType,
     std::string localPrefix, std::string remotePrefix);
 
 void cppPirateNamespaceHeader(std::ostream &ostream);

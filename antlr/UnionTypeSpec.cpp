@@ -145,9 +145,9 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
         ostream << " " << "0" << ",";
         ostream << " " << "sizeof" << "(" << "*" << "output" << ")" << ")" << ";" << std::endl;
     }
-    cCopyMemoryIn(ostream, switchType, "tag", "tag");
+    cCopyMemoryIn(ostream, switchType, "tag", "tag", false);
     cConvertByteOrder(ostream, switchType, "tag", functionType);
-    cCopyMemoryOut(ostream, switchType, "tag", "tag");
+    cCopyMemoryOut(ostream, switchType, "tag", "tag", false);
     if (functionType == CDRFunc::SERIALIZE) {
         ostream << "switch" << " " << "(" << "input" << "->" << "tag" << ")" << " " << "{" << std::endl;
     } else {
@@ -165,16 +165,17 @@ void UnionTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionType
             ostream << "default" << ":" << std::endl;
         }
         ostream << indent_manip::push;
-        if (declarator->dimensions.size() == 0) {
+        if (member->typeSpec->container()) {
+            cDeclareFunctionNested(ostream, member->typeSpec,
+                declarator, functionType, languageType, "data.");
+        } else if (declarator->dimensions.size() == 0) {
             std::string local = "data_" + declarator->identifier;
             std::string field = "data." + declarator->identifier;
-            cCopyMemoryIn(ostream, member->typeSpec, local, field);
+            cCopyMemoryIn(ostream, member->typeSpec, local, field, false);
             cConvertByteOrder(ostream, member->typeSpec, local, functionType);
-            cCopyMemoryOut(ostream, member->typeSpec, local, field);
-            cDeclareFunctionNested(ostream, member->typeSpec,
-                field, functionType, languageType);
+            cCopyMemoryOut(ostream, member->typeSpec, local, field, false);
         } else {
-            cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "data_", "data.");
+            cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, languageType, "data_", "data.");
         }
         ostream << "break" << ";" << std::endl;
         ostream << indent_manip::pop;

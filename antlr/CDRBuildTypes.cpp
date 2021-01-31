@@ -234,7 +234,7 @@ antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specCo
 antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   std::string parent = namespacePrefix.get(ctx);
-  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier, packed);
+  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier);
   EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);
   std::vector<IDLParser::EnumeratorContext *> enumerators = ctx->enumerator();
   for (IDLParser::EnumeratorContext* enumCtx : enumerators) {
