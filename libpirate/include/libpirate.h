@@ -24,6 +24,30 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#if defined __has_include
+  #if __has_include (<stdatomic.h>)
+    #define HAVE_STD_ATOMIC 1
+  #endif
+#endif
+
+#ifdef HAVE_STD_ATOMIC
+  #ifdef __cplusplus
+    #include <atomic>
+    typedef std::atomic_bool pirate_atomic_bool;
+    #define PIRATE_ATOMIC_LOAD(PTR) std::atomic_load(PTR)
+    #define PIRATE_ATOMIC_STORE(PTR, VAL) std::atomic_store(PTR, VAL)
+  #else
+  #include <stdatomic.h>
+    typedef atomic_bool pirate_atomic_bool;
+    #define PIRATE_ATOMIC_LOAD(PTR) atomic_load(PTR)
+    #define PIRATE_ATOMIC_STORE(PTR, VAL) atomic_store(PTR, VAL)
+  #endif
+#else
+  typedef int pirate_atomic_bool;
+  #define PIRATE_ATOMIC_LOAD(PTR) __atomic_load(PTR, __ATOMIC_SEQ_CST)
+  #define PIRATE_ATOMIC_STORE(PTR, VAL) __atomic_store(PTR, VAL, __ATOMIC_SEQ_CST)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -287,23 +311,6 @@ typedef struct {
     int64_t fuzzed;
     int64_t bytes; // bytes is incremented only on successful requests
 } pirate_stats_t;
-
-#if defined __has_include
-#if __has_include (<stdatomic.h>)
-#define HAVE_STD_ATOMIC 1
-#endif
-#endif
-
-#ifdef HAVE_STD_ATOMIC
-#include <stdatomic.h>
-typedef atomic_bool pirate_atomic_bool;
-#define PIRATE_ATOMIC_LOAD(PTR) atomic_load(PTR)
-#define PIRATE_ATOMIC_STORE(PTR, VAL) atomic_store(PTR, VAL)
-#else
-typedef int pirate_atomic_bool;
-#define PIRATE_ATOMIC_LOAD(PTR) __atomic_load(PTR, __ATOMIC_SEQ_CST)
-#define PIRATE_ATOMIC_STORE(PTR, VAL) __atomic_store(PTR, VAL, __ATOMIC_SEQ_CST)
-#endif
 
 //
 // API
