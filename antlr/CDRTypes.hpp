@@ -153,6 +153,8 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string identifierName() override { return identifier; }
+    // C will declare an enum type with the smallest size that is required.
+    // Our enums are always 4 bytes.
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }

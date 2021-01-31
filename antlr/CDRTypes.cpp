@@ -361,6 +361,8 @@ static std::string elementTypeName(TypeSpec* typeSpec, TargetLanguage languageTy
     if (!typeSpec->container()) {
         if (wire) {
             return "unsigned char";
+        } else if (languageType == TargetLanguage::CPP_LANG) {
+            return typeSpec->cppNamespacePrefix() + typeSpec->cppTypeName();
         } else {
             return typeSpec->cTypeName();
         }
