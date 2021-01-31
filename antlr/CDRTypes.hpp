@@ -70,8 +70,8 @@ public:
     virtual CDRTypeOf typeOf() = 0;
     virtual void cTypeDecl(std::ostream &ostream) = 0;
     virtual void cTypeDeclWire(std::ostream &ostream) = 0;
+    virtual std::string identifierName() { return ""; } // the identifier if the type has one
     virtual std::string cTypeName() = 0;
-    virtual std::string typeName() { return ""; }
     virtual std::string cppTypeName() { return cTypeName(); }
     virtual CDRBits cTypeBits() = 0;
     virtual std::string cppNamespacePrefix() = 0;
@@ -144,14 +144,14 @@ class EnumTypeSpec : public TypeSpec {
 public:
     std::string namespacePrefix;
     std::string identifier;
-    bool packed;
     std::vector<std::string> enumerators;
-    EnumTypeSpec(std::string namespacePrefix, std::string identifier, bool packed) :
+    EnumTypeSpec(std::string namespacePrefix, std::string identifier) :
         namespacePrefix(namespacePrefix), identifier(identifier),
-        packed(packed), enumerators() { }
+        enumerators() { }
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::ENUM_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
+    virtual std::string identifierName() override { return identifier; }
     virtual std::string cTypeName() override { return "uint32_t"; }
     virtual std::string cppTypeName() override { return identifier; }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
@@ -187,7 +187,7 @@ public:
     virtual void cTypeDecl(std::ostream &ostream) override { }
     virtual void cTypeDeclWire(std::ostream &ostream) override { }
     virtual std::string cTypeName() override { return child->cTypeName(); }
-    virtual std::string typeName() override { return child->typeName(); }
+    virtual std::string identifierName() override { return child->identifierName(); }
     virtual std::string cppTypeName() override { return child->cppTypeName(); }
     virtual std::string cppNamespacePrefix() override { return child->cppNamespacePrefix(); }
     virtual CDRBits cTypeBits() override { return child->cTypeBits(); }

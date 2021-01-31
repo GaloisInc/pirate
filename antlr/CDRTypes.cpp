@@ -370,7 +370,7 @@ static std::string elementTypeName(TypeSpec* typeSpec, TargetLanguage languageTy
     if (languageType == TargetLanguage::CPP_LANG) {
         ss << typeSpec->cppNamespacePrefix();
     }
-    ss << typeSpec->typeName();
+    ss << typeSpec->identifierName();
     if (wire) {
         ss << "_wire";
     }
@@ -483,7 +483,7 @@ void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarato
         convertByteOrderArrayPrefix(ostream, typeSpec, declarator, functionType, languageType, remotePrefix);
     }
 
-    std::string typeName = typeSpec->typeName();
+    std::string typeName = typeSpec->identifierName();
     if (languageType == TargetLanguage::C_LANG) {
         ostream << cCreateFunctionName(functionType, typeName) << "(";
         ostream << inptr << "," << " ";
