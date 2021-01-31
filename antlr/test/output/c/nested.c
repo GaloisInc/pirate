@@ -16,11 +16,6 @@ struct Bar {
 	double z __attribute__((aligned(8)));
 };
 
-struct OuterStruct {
-	struct Foo foo;
-	struct Bar bar;
-};
-
 enum DayOfWeek {
 	Monday,
 	Tuesday,
@@ -29,19 +24,30 @@ enum DayOfWeek {
 	Friday
 };
 
+struct OuterStruct {
+	struct Foo foo;
+	struct Bar bar[2][3][4];
+	uint32_t day __attribute__((aligned(4)));
+	uint32_t days[30] __attribute__((aligned(4)));
+};
+
 struct OuterUnion {
 	uint32_t tag __attribute__((aligned(4)));
 	union {
+		uint32_t day __attribute__((aligned(4)));
+		uint32_t days[30] __attribute__((aligned(4)));
 		struct Foo foo;
-		struct Bar bar;
+		struct Bar bar[2][3][4];
 	} data;
 };
 
 struct ScopedOuterUnion {
 	uint32_t tag __attribute__((aligned(4)));
 	union {
+		uint32_t day __attribute__((aligned(4)));
+		uint32_t days[30] __attribute__((aligned(4)));
 		struct Foo foo;
-		struct Bar bar;
+		struct Bar bar[2][3][4];
 	} data;
 };
 
@@ -59,22 +65,28 @@ struct Bar_wire {
 
 struct OuterStruct_wire {
 	struct Foo_wire foo;
-	struct Bar_wire bar;
+	struct Bar_wire bar[2][3][4];
+	unsigned char day[4] __attribute__((aligned(4)));
+	unsigned char days[30][4] __attribute__((aligned(4)));
 };
 
 struct OuterUnion_wire {
 	unsigned char tag[4];
 	union {
+		unsigned char day[4] __attribute__((aligned(4)));
+		unsigned char days[30][4] __attribute__((aligned(4)));
 		struct Foo_wire foo;
-		struct Bar_wire bar;
+		struct Bar_wire bar[2][3][4];
 	} data;
 };
 
 struct ScopedOuterUnion_wire {
 	unsigned char tag[4];
 	union {
+		unsigned char day[4] __attribute__((aligned(4)));
+		unsigned char days[30][4] __attribute__((aligned(4)));
 		struct Foo_wire foo;
-		struct Bar_wire bar;
+		struct Bar_wire bar[2][3][4];
 	} data;
 };
 
@@ -118,51 +130,115 @@ void encode_bar(struct Bar* input, struct Bar_wire* output) {
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void encode_outerstruct(struct OuterStruct* input, struct OuterStruct_wire* output) {
-	memset(output, 0, sizeof(*output));
-	encode_foo(&input->foo, &output->foo);
-	encode_bar(&input->bar, &output->bar);
-}
-
 uint32_t encode_dayofweek(uint32_t value) {
 	value = htobe32(value);
 	return value;
 }
 
+void encode_outerstruct(struct OuterStruct* input, struct OuterStruct_wire* output) {
+	uint32_t field_day;
+	uint32_t field_days;
+	memset(output, 0, sizeof(*output));
+	for (size_t days_0 = 0; days_0 < 30; days_0++) {
+		uint32_t* inptr = &input->days[days_0];
+		unsigned char* outptr = &output->days[days_0][0];
+		memcpy(&field_days, inptr, sizeof(uint32_t));
+		field_days = htobe32(field_days);
+		memcpy(outptr, &field_days, sizeof(uint32_t));
+	}
+	memcpy(&field_day, &input->day, sizeof(uint32_t));
+	field_day = htobe32(field_day);
+	memcpy(&output->day, &field_day, sizeof(uint32_t));
+	encode_foo(&input->foo, &output->foo);
+	for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+		for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+			for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+				struct Bar* inptr = &input->bar[bar_0][bar_1][bar_2];
+				struct Bar_wire* outptr = &output->bar[bar_0][bar_1][bar_2];
+				encode_bar(inptr, outptr);
+			}
+		}
+	}
+}
+
 void encode_outerunion(struct OuterUnion* input, struct OuterUnion_wire* output) {
 	uint32_t tag;
+	uint32_t data_day;
+	uint32_t data_days;
 	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint32_t));
 	tag = htobe32(tag);
 	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (input->tag) {
 	case Monday:
+		memcpy(&data_day, &input->data.day, sizeof(uint32_t));
+		data_day = htobe32(data_day);
+		memcpy(&output->data.day, &data_day, sizeof(uint32_t));
+		break;
 	case Tuesday:
+		for (size_t days_0 = 0; days_0 < 30; days_0++) {
+			uint32_t* inptr = &input->data.days[days_0];
+			unsigned char* outptr = &output->data.days[days_0][0];
+			memcpy(&data_days, inptr, sizeof(uint32_t));
+			data_days = htobe32(data_days);
+			memcpy(outptr, &data_days, sizeof(uint32_t));
+		}
+		break;
 	case Wednesday:
 		encode_foo(&input->data.foo, &output->data.foo);
 		break;
 	case Thursday:
 	case Friday:
-		encode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					encode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
 
 void encode_scopedouterunion(struct ScopedOuterUnion* input, struct ScopedOuterUnion_wire* output) {
 	uint32_t tag;
+	uint32_t data_day;
+	uint32_t data_days;
 	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint32_t));
 	tag = htobe32(tag);
 	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (input->tag) {
 	case Monday:
+		memcpy(&data_day, &input->data.day, sizeof(uint32_t));
+		data_day = htobe32(data_day);
+		memcpy(&output->data.day, &data_day, sizeof(uint32_t));
+		break;
 	case Tuesday:
+		for (size_t days_0 = 0; days_0 < 30; days_0++) {
+			uint32_t* inptr = &input->data.days[days_0];
+			unsigned char* outptr = &output->data.days[days_0][0];
+			memcpy(&data_days, inptr, sizeof(uint32_t));
+			data_days = htobe32(data_days);
+			memcpy(outptr, &data_days, sizeof(uint32_t));
+		}
+		break;
 	case Wednesday:
 		encode_foo(&input->data.foo, &output->data.foo);
 		break;
 	case Thursday:
 	case Friday:
-		encode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar_wire* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					encode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
@@ -197,48 +273,112 @@ void decode_bar(struct Bar_wire* input, struct Bar* output) {
 	memcpy(&output->z, &field_z, sizeof(uint64_t));
 }
 
-void decode_outerstruct(struct OuterStruct_wire* input, struct OuterStruct* output) {
-	decode_foo(&input->foo, &output->foo);
-	decode_bar(&input->bar, &output->bar);
-}
-
 uint32_t decode_dayofweek(uint32_t value) {
 	value = be32toh(value);
 	return value;
 }
 
+void decode_outerstruct(struct OuterStruct_wire* input, struct OuterStruct* output) {
+	uint32_t field_day;
+	uint32_t field_days;
+	for (size_t days_0 = 0; days_0 < 30; days_0++) {
+		unsigned char* inptr = &input->days[days_0][0];
+		uint32_t* outptr = &output->days[days_0];
+		memcpy(&field_days, inptr, sizeof(uint32_t));
+		field_days = be32toh(field_days);
+		memcpy(outptr, &field_days, sizeof(uint32_t));
+	}
+	memcpy(&field_day, &input->day, sizeof(uint32_t));
+	field_day = be32toh(field_day);
+	memcpy(&output->day, &field_day, sizeof(uint32_t));
+	decode_foo(&input->foo, &output->foo);
+	for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+		for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+			for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+				struct Bar_wire* inptr = &input->bar[bar_0][bar_1][bar_2];
+				struct Bar* outptr = &output->bar[bar_0][bar_1][bar_2];
+				decode_bar(inptr, outptr);
+			}
+		}
+	}
+}
+
 void decode_outerunion(struct OuterUnion_wire* input, struct OuterUnion* output) {
 	uint32_t tag;
+	uint32_t data_day;
+	uint32_t data_days;
 	memcpy(&tag, &input->tag, sizeof(uint32_t));
 	tag = be32toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (output->tag) {
 	case Monday:
+		memcpy(&data_day, &input->data.day, sizeof(uint32_t));
+		data_day = be32toh(data_day);
+		memcpy(&output->data.day, &data_day, sizeof(uint32_t));
+		break;
 	case Tuesday:
+		for (size_t days_0 = 0; days_0 < 30; days_0++) {
+			unsigned char* inptr = &input->data.days[days_0][0];
+			uint32_t* outptr = &output->data.days[days_0];
+			memcpy(&data_days, inptr, sizeof(uint32_t));
+			data_days = be32toh(data_days);
+			memcpy(outptr, &data_days, sizeof(uint32_t));
+		}
+		break;
 	case Wednesday:
 		decode_foo(&input->data.foo, &output->data.foo);
 		break;
 	case Thursday:
 	case Friday:
-		decode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					decode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }
 
 void decode_scopedouterunion(struct ScopedOuterUnion_wire* input, struct ScopedOuterUnion* output) {
 	uint32_t tag;
+	uint32_t data_day;
+	uint32_t data_days;
 	memcpy(&tag, &input->tag, sizeof(uint32_t));
 	tag = be32toh(tag);
 	memcpy(&output->tag, &tag, sizeof(uint32_t));
 	switch (output->tag) {
 	case Monday:
+		memcpy(&data_day, &input->data.day, sizeof(uint32_t));
+		data_day = be32toh(data_day);
+		memcpy(&output->data.day, &data_day, sizeof(uint32_t));
+		break;
 	case Tuesday:
+		for (size_t days_0 = 0; days_0 < 30; days_0++) {
+			unsigned char* inptr = &input->data.days[days_0][0];
+			uint32_t* outptr = &output->data.days[days_0];
+			memcpy(&data_days, inptr, sizeof(uint32_t));
+			data_days = be32toh(data_days);
+			memcpy(outptr, &data_days, sizeof(uint32_t));
+		}
+		break;
 	case Wednesday:
 		decode_foo(&input->data.foo, &output->data.foo);
 		break;
 	case Thursday:
 	case Friday:
-		decode_bar(&input->data.bar, &output->data.bar);
+		for (size_t bar_0 = 0; bar_0 < 2; bar_0++) {
+			for (size_t bar_1 = 0; bar_1 < 3; bar_1++) {
+				for (size_t bar_2 = 0; bar_2 < 4; bar_2++) {
+					struct Bar_wire* inptr = &input->data.bar[bar_0][bar_1][bar_2];
+					struct Bar* outptr = &output->data.bar[bar_0][bar_1][bar_2];
+					decode_bar(inptr, outptr);
+				}
+			}
+		}
 		break;
 	}
 }

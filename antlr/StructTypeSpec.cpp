@@ -160,18 +160,18 @@ void StructTypeSpec::cCppFunctionBody(std::ostream &ostream, CDRFunc functionTyp
         ostream << " " << "0" << ",";
         ostream << " " << "sizeof" << "(" << "*" << "output" << ")" << ")" << ";" << std::endl;
     }
-    cDeclareFunctionApply(false, true, [&ostream, functionType] (StructMember* member, Declarator* declarator)
-        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, "field_", ""); });
+    cDeclareFunctionApply(false, true, [&ostream, functionType, languageType] (StructMember* member, Declarator* declarator)
+        { cConvertByteOrderArray(ostream, member->typeSpec, declarator, functionType, languageType, "field_", ""); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryIn(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
+        { cCopyMemoryIn(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier, false); });
     cDeclareFunctionApply(true, false, [&ostream, functionType] (StructMember* member, Declarator* declarator)
         { cConvertByteOrder(ostream, member->typeSpec, "field_" + declarator->identifier, functionType); });
     cDeclareFunctionApply(true, false, [&ostream] (StructMember* member, Declarator* declarator)
-        { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier); });
+        { cCopyMemoryOut(ostream, member->typeSpec, "field_" + declarator->identifier, declarator->identifier, false); });
     for (StructMember* member : members) {
         for (Declarator* declarator : member->declarators) {
             cDeclareFunctionNested(ostream, member->typeSpec,
-                declarator->identifier, functionType, languageType);
+                declarator, functionType, languageType, "");
         }
     }
 }

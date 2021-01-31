@@ -306,14 +306,18 @@ void cDeclareLocalVar(std::ostream &ostream, TypeSpec* typeSpec, std::string ide
     ostream << bitsCType(cdrBits) << " " << identifier << ";" << std::endl;
 }
 
-void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input) {
+void cCopyMemoryIn(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string input, bool inputPtr) {
     CDRBits cdrBits = typeSpec->cTypeBits();
     if (cdrBits == CDRBits::UNDEFINED) {
         return;
     }
     ostream << "memcpy" << "(";
     ostream << "&" << local << "," << " ";
-    ostream << "&" << "input->" << input << "," << " ";
+    if (inputPtr) {
+        ostream << input << "," << " ";
+    } else {
+        ostream << "&" << "input->" << input << "," << " ";
+    }
     ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
     ostream << ")" << ";" << std::endl;
 }
@@ -335,21 +339,48 @@ void cConvertByteOrder(std::ostream &ostream, TypeSpec* typeSpec, std::string id
     ostream << "(" << identifier << ")" << ";" << std::endl;
 }
 
-void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output) {
+void cCopyMemoryOut(std::ostream &ostream, TypeSpec* typeSpec, std::string local, std::string output, bool outputPtr) {
     CDRBits cdrBits = typeSpec->cTypeBits();
     if (cdrBits == CDRBits::UNDEFINED) {
         return;
     }
     ostream << "memcpy" << "(";
-    ostream << "&" << "output->" << output << "," << " ";
+    if (outputPtr) {
+        ostream << output << "," << " ";
+    } else {
+        ostream << "&" << "output->" << output << "," << " ";
+    }
     ostream << "&" << local << "," << " ";
     ostream << "sizeof" << "(" << bitsCType(cdrBits) << ")";
     ostream << ")" << ";" << std::endl;
 }
 
-void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
-    Declarator* declarator, CDRFunc functionType,
-    std::string localPrefix, std::string remotePrefix) {
+static std::string elementTypeName(TypeSpec* typeSpec, TargetLanguage languageType, bool wire) {
+    std::stringstream ss;
+
+    if (!typeSpec->container()) {
+        if (wire) {
+            return "unsigned char";
+        } else if (languageType == TargetLanguage::CPP_LANG) {
+            return typeSpec->cppNamespacePrefix() + typeSpec->cppTypeName();
+        } else {
+            return typeSpec->cTypeName();
+        }
+    }
+    ss << "struct";
+    ss << " ";
+    if (languageType == TargetLanguage::CPP_LANG) {
+        ss << typeSpec->cppNamespacePrefix();
+    }
+    ss << typeSpec->identifierName();
+    if (wire) {
+        ss << "_wire";
+    }
+    return ss.str();
+}
+
+static void convertByteOrderArrayPrefix(std::ostream &ostream, TypeSpec* typeSpec,
+    Declarator* declarator, CDRFunc functionType, TargetLanguage languageType, std::string remotePrefix) {
 
     std::vector<int> dimensions = declarator->dimensions;
     std::string identifier = declarator->identifier;
@@ -369,13 +400,45 @@ void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
         std::string idx = identifier + "_" + std::to_string(i);
         dest << "[" << idx << "]";
     }
-    cCopyMemoryIn(ostream, typeSpec, localPrefix + identifier, remotePrefix + dest.str());
-    cConvertByteOrder(ostream, typeSpec, localPrefix + identifier, functionType);
-    cCopyMemoryOut(ostream, typeSpec, localPrefix + identifier, remotePrefix + dest.str());
+    if (languageType == TargetLanguage::CPP_LANG) {
+        ostream << "const" << " ";
+    }
+    ostream << elementTypeName(typeSpec, languageType, functionType == CDRFunc::DESERIALIZE) << "*" << " ";
+    ostream << "inptr" << " " << "=" << " ";
+    ostream << "&" << "input" << "->" << remotePrefix + dest.str();
+    if ((functionType == CDRFunc::DESERIALIZE) && !typeSpec->container()) {
+        ostream << "[" << "0" << "]";
+    }
+    ostream << ";" << std::endl;
+    ostream << elementTypeName(typeSpec, languageType, functionType == CDRFunc::SERIALIZE) << "*" << " ";
+    ostream << "outptr" << " " << "=" << " ";
+    ostream << "&" << "output" << "->" << remotePrefix + dest.str();
+    if ((functionType == CDRFunc::SERIALIZE) && !typeSpec->container()) {
+        ostream << "[" << "0" << "]";
+    }
+    ostream << ";" << std::endl;
+}
+
+static void convertByteOrderArraySuffix(std::ostream &ostream, Declarator* declarator) {
+    std::vector<int> dimensions = declarator->dimensions;
+    std::string identifier = declarator->identifier;
+    int len = dimensions.size();
     for(int i = 0; i < len; i++) {
         ostream << indent_manip::pop;
         ostream << "}" << std::endl;
     }
+}
+
+void cConvertByteOrderArray(std::ostream &ostream, TypeSpec* typeSpec,
+    Declarator* declarator, CDRFunc functionType,
+    TargetLanguage languageType, std::string localPrefix, std::string remotePrefix) {
+
+    std::string identifier = declarator->identifier;
+    convertByteOrderArrayPrefix(ostream, typeSpec, declarator, functionType, languageType, remotePrefix);
+    cCopyMemoryIn(ostream, typeSpec, localPrefix + identifier, "inptr", true);
+    cConvertByteOrder(ostream, typeSpec, localPrefix + identifier, functionType);
+    cCopyMemoryOut(ostream, typeSpec, localPrefix + identifier, "outptr", true);
+    convertByteOrderArraySuffix(ostream, declarator);
 }
 
 void cppPirateNamespaceHeader(std::ostream &ostream) {
@@ -403,32 +466,48 @@ void cppPirateNamespaceFooter(std::ostream &ostream) {
     ostream << "}" << std::endl;
 }
 
-void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, std::string fieldName,
-    CDRFunc functionType, TargetLanguage languageType) {
+void cDeclareFunctionNested(std::ostream &ostream, TypeSpec* typeSpec, Declarator* declarator,
+    CDRFunc functionType, TargetLanguage languageType, std::string remotePrefix) {
 
     if (!typeSpec->container()) {
         return;
     }
-    std::string typeName = typeSpec->typeName();
+    std::string inptr, outptr, outval;
+
+    if (declarator->dimensions.size() == 0) {
+        inptr = "&input->" + remotePrefix + declarator->identifier;
+        outptr = "&output->" + remotePrefix + declarator->identifier;
+        outval = "output->" + remotePrefix + declarator->identifier;
+    } else {
+        inptr = "inptr";
+        outptr = "outptr";
+        outval = "*outptr";
+        convertByteOrderArrayPrefix(ostream, typeSpec, declarator, functionType, languageType, remotePrefix);
+    }
+
+    std::string typeName = typeSpec->identifierName();
     if (languageType == TargetLanguage::C_LANG) {
         ostream << cCreateFunctionName(functionType, typeName) << "(";
-        ostream << "&" << "input" << "->" << fieldName << "," << " ";
-        ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
+        ostream << inptr << "," << " ";
+        ostream << outptr << ")" << ";" << std::endl;
     } else {
         switch (functionType) {
             case CDRFunc::SERIALIZE: {
                 ostream << "toWireType" << "(";
-                ostream << "&" << "input" << "->" << fieldName << "," << " ";
-                ostream << "&" << "output" << "->" << fieldName << ")" << ";" << std::endl;
+                ostream << inptr << "," << " ";
+                ostream << outptr << ")" << ";" << std::endl;
                 break;
             }
             case CDRFunc::DESERIALIZE: {
-                ostream << "output" << "->" << fieldName << " " << "=";
+                ostream << outval << " " << "=";
                 ostream << " " << "fromWireType" << "(";
-                ostream << "&" << "input" << "->" << fieldName << ")";
+                ostream << inptr << ")";
                 ostream << ";" << std::endl;
                 break;
             }
         }
+    }
+    if (declarator->dimensions.size() > 0) {
+        convertByteOrderArraySuffix(ostream, declarator);
     }
 }

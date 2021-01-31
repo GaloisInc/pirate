@@ -5,27 +5,33 @@ module NestedTypes {
   struct Bar {
     double x, y, z;
   };
+  enum DayOfWeek { Monday, Tuesday, Wednesday, Thursday, Friday };
   struct OuterStruct {
     Foo foo;
-    Bar bar;
+    Bar bar[2][3][4];
+    DayOfWeek day;
+    DayOfWeek days[30];
   };
-  enum DayOfWeek { Monday, Tuesday, Wednesday, Thursday, Friday };
   union OuterUnion switch (DayOfWeek) {
     case Monday:
+      DayOfWeek day;
     case Tuesday:
+      DayOfWeek days[30];
     case Wednesday:
       Foo foo;
     case Thursday:
     case Friday:
-      Bar bar;
+      Bar bar[2][3][4];
   };
   union ScopedOuterUnion switch (DayOfWeek) {
     case DayOfWeek::Monday:
+      DayOfWeek day;
     case DayOfWeek::Tuesday:
+      DayOfWeek days[30];
     case DayOfWeek::Wednesday:
       Foo foo;
     case DayOfWeek::Thursday:
     case DayOfWeek::Friday:
-      Bar bar;
+      Bar bar[2][3][4];
   };
 };
