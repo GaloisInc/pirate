@@ -474,7 +474,7 @@ const pirate_stats_t *pirate_get_stats(int gd);
 // requests: count of read or write requests
 // success: count of successful requests
 // errs: count of error requests. EAGAIN and EWOULDBLOCK are not errors
-// fuzzed: count of fuzzed requests.
+// fuzzed: count of fuzzed requests
 // bytes: sum of bytes over read or write requests
 
 void pirate_print_stats(FILE *stream, int pause_sec, pirate_atomic_bool* done, size_t ngds, int *gds);
