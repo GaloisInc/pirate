@@ -84,11 +84,11 @@ void pirate_print_stats(FILE *stream, int pause_sec, pirate_atomic_bool* done, s
             p->errs = n->errs - p->errs;
             p->fuzzed = n->fuzzed - p->fuzzed;
             p->bytes = n->bytes - p->bytes;
-            fprintf(stream, "[%s] LIBPIRATE %zu\trequests\t%f\n", timestamp, i, ((float) p->requests) / ((float) pause_sec));
-            fprintf(stream, "[%s] LIBPIRATE %zu\tsuccess\t\t%f\n", timestamp, i, ((float) p->success) / ((float) pause_sec));
-            fprintf(stream, "[%s] LIBPIRATE %zu\terrs\t\t%f\n", timestamp, i, ((float) p->errs) / ((float) pause_sec));
-            fprintf(stream, "[%s] LIBPIRATE %zu\tfuzzed\t\t%f\n", timestamp, i, ((float) p->fuzzed) / ((float) pause_sec));
-            fprintf(stream, "[%s] LIBPIRATE %zu\tbytes\t\t%f\n", timestamp, i, ((float) p->bytes) / ((float) pause_sec));
+            fprintf(stream, "[%s] TRACE gaps descriptor %zu\trequests\t%f\n", timestamp, i, ((float) p->requests) / ((float) pause_sec));
+            fprintf(stream, "[%s] TRACE gaps descriptor %zu\tsuccess\t\t%f\n", timestamp, i, ((float) p->success) / ((float) pause_sec));
+            fprintf(stream, "[%s] TRACE gaps descriptor %zu\terrs\t\t%f\n", timestamp, i, ((float) p->errs) / ((float) pause_sec));
+            fprintf(stream, "[%s] TRACE gaps descriptor %zu\tfuzzed\t\t%f\n", timestamp, i, ((float) p->fuzzed) / ((float) pause_sec));
+            fprintf(stream, "[%s] TRACE gaps descriptor %zu\tbytes\t\t%f\n", timestamp, i, ((float) p->bytes) / ((float) pause_sec));
         }
         memcpy(prev, next, sizeof(pirate_stats_t) * ngds);
     }
