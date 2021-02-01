@@ -134,7 +134,7 @@ The writer may specify 0.0.0.0 for the address and 0 for the port.
 ### UDP_SOCKET type
 
 ```
-"udp_socket,reader addr,reader port[,buffer_size=N,mtu=N]"
+"udp_socket,reader addr,reader port,writer addr,writer port[,buffer_size=N,mtu=N]"
 ```
 
 UDP socket communication. Host and port of the reader process must be specified.
