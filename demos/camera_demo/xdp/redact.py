@@ -17,7 +17,7 @@ from bcc import BPF
 import time
 
 device = "lo"
-b = BPF(src_file="transform.c")
+b = BPF(src_file="redact.c")
 fn = b.load_func("mpegts_filter", BPF.XDP)
 b.attach_xdp(device, fn, 0)
 

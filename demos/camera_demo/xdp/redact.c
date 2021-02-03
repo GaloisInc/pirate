@@ -10,17 +10,7 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
- */
-
-/*
- * ASSUMPTIONS
- * 
- * The metadata stream has MPEG-TS PID field of 0x101.
- * 
- * Only the first 8 MPEG-TS packets inside a UDP packet
- * are filtered.
- * 
+ * Copyright 2021 Two Six Labs, LLC.  All rights reserved.
  */
 
 #include <linux/bpf.h>
@@ -47,7 +37,7 @@ static struct udphdr* locate_udpheader(struct xdp_md *ctx) {
          if (ip->protocol == IPPROTO_UDP) {
             struct udphdr *udp = (void*)ip + sizeof(*ip);
             // bounds check for BPF virtual machine 
-            if ((void*)udp + sizeof(*udp) < data_end) {
+            if ((void*)udp + sizeof(*udp) <= data_end) {
                return udp;
             }
          }
@@ -62,17 +52,28 @@ int mpegts_filter(struct xdp_md *ctx) {
    if (udp_header == NULL) {
       return XDP_PASS;
    }
+#if SRC_PORT
+   if (ntohs(udp_header->source) != SRC_PORT) {
+      return XDP_PASS;
+   }
+#endif
+#if DST_PORT
+   if (ntohs(udp_header->dest) != DST_PORT) {
+      return XDP_PASS;
+   }
+#endif
    #pragma clang loop unroll(full)
    for (size_t i = 0; i < 8; i++) {
-      const void* packet_body = (void*)udp_header + sizeof(struct udphdr) + i * MPEG_TS_PACKET_SIZE;
-      const void* packet_end = packet_body + MPEG_TS_PACKET_SIZE;
-      uint16_t up_to_pid; /* First 16 bits after sync_byte up to and including PID. */
-      uint8_t* packet_bytes = (uint8_t*) packet_body;
+      const void* mpeg_packet = (void*)udp_header + sizeof(struct udphdr) + i * MPEG_TS_PACKET_SIZE;
+      const void* mpeg_packet_next = mpeg_packet + MPEG_TS_PACKET_SIZE;
+      uint8_t* packet_bytes = (uint8_t*) mpeg_packet;
+      uint16_t mpeg_header_second_third_bytes; // TEI, PUSI, transport priority, and PID
       uint16_t pid;
 
-      // if we do not have a complete MPEG-TS packet then stop
-      // bounds check for BPF virtual machine
-      if (data_end < packet_end) {
+      // MPEG-TS network packets are exactly MPEG_TS_PACKET_SIZE bytes in length.
+      // If the current network packet does not fit
+      // inside the bounds check then end.
+      if (mpeg_packet_next > data_end) {
          break;
       }
 
@@ -80,8 +81,8 @@ int mpegts_filter(struct xdp_md *ctx) {
       if (packet_bytes[0] != MPEG_TS_SYNC_BYTE) {
          continue;
       }
-      up_to_pid = ((packet_bytes[1] << 8 ) | packet_bytes[2]);
-      pid = up_to_pid & 0x1fff;
+      mpeg_header_second_third_bytes = ((packet_bytes[1] << 8 ) | packet_bytes[2]);
+      pid = mpeg_header_second_third_bytes & 0x1fff;
       // KLV data is stored in stream with METADATA_PID 
       if (pid != METADATA_PID) {
          continue;
@@ -89,7 +90,7 @@ int mpegts_filter(struct xdp_md *ctx) {
       packet_bytes[1] = 0x1F;
       packet_bytes[2] = 0xFF;
       packet_bytes[3] = 0x10;
-      memset(packet_bytes + 4, 0xFF, MPEG_TS_PACKET_SIZE - 4);
+      memset(packet_bytes + 4, 0, MPEG_TS_PACKET_SIZE - 4);
    }
    return XDP_PASS;
 }
