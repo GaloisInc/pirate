@@ -1,0 +1,69 @@
+#! /usr/bin/env pirate-deploy
+# This script is used to pack the files into enclaves
+
+enclaves:
+  - name: filter_ui_pal
+    path: ./filter_ui_pal
+    resources:
+      - name: ui_to_host
+        ids: 
+        - "filter_ui_pal/ui_to_host"
+        - "filter_host_pal/ui_to_host"
+        type: channel
+        contents:
+          channel_type: pipe
+          path: /tmp/filter_ui_to_host
+    host: machine1
+
+  - name: filter_host_pal
+    path: ./filter_host_pal
+    resources:
+      - name: host_to_ui
+        ids: 
+        - "filter_ui_pal/host_to_ui"
+        - "filter_host_pal/host_to_ui"
+        type: channel
+        contents:
+          channel_type: pipe
+          path: /tmp/filter_host_to_ui
+    host: machine1
+
+hosts:
+  - name: machine1
+    location: ip=127.0.0.1
+
+# TODO: Migrate these to the source files via annotations or a library.
+agents:
+  - name: gps
+    enclave: green
+  - name: rfs
+    enclave: orange
+  - name: uav
+    enclave: orange
+  - name: tgt
+    enclave: green
+
+#TODO: Migrate these to source code and the executables.
+timers:
+  - frequency: 10
+    target: gps.read
+  - frequency: 10
+    target: rfs.read
+
+# This describes routes.  We need information about where
+routes:
+  - source: gps.onPositionUpdate
+    target: tgt.onGpsPositionChange
+  - source: gps.onPositionUpdate
+    target: uav.onGpsPositionChange
+  - source: rfs.onDistanceUpdate
+    target: tgt.setDistance
+  - source: uav.onUpdateTrack
+    target: tgt.setUAVLocation
+
+config:
+  log_level: debug
+
+startup_order:
+  - filter_host_pal
+  - filter_ui_pal
