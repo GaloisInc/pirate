@@ -32,6 +32,7 @@ uint32_t encode_dayofweek(uint32_t value) {
 void encode_week_interval(struct Week_Interval* input, struct Week_Interval_wire* output) {
 	uint32_t field_begin;
 	uint32_t field_end;
+	memset(output, 0, sizeof(*output));
 	memcpy(&field_begin, &input->begin, sizeof(uint32_t));
 	memcpy(&field_end, &input->end, sizeof(uint32_t));
 	field_begin = htobe32(field_begin);

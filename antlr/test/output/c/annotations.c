@@ -50,6 +50,7 @@ void encode_annotation_struct_example(struct Annotation_Struct_Example* input, s
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
+	memset(output, 0, sizeof(*output));
 	memcpy(&field_u, &input->u, sizeof(uint32_t));
 	memcpy(&field_v, &input->v, sizeof(uint32_t));
 	memcpy(&field_x, &input->x, sizeof(uint64_t));
@@ -72,6 +73,7 @@ void encode_annotation_union_example(struct Annotation_Union_Example* input, str
 	uint16_t data_a;
 	uint32_t data_b;
 	uint32_t data_c;
+	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));

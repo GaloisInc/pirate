@@ -28,48 +28,104 @@
 #include "orion-sdk/Constants.hpp"
 #include "orion-sdk/OrionComm.hpp"
 
-int trilliumConnectUDPSocket(std::string trilliumUrl, int& sockFd)
+int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
 {
-    std::string host = "";
-    int port = 0, rv;
-    struct sockaddr_in dest_addr;
+    int rv = -1;
+    uint32_t address = INADDR_BROADCAST;
+    struct sockaddr_in sock_addr;
+    int enable = 1;
+    struct timeval tv;
 
-    if (trilliumUrl == "") {
-        std::cerr << "Missing required argument --trillium url" << std::endl;
+    // Validate the address
+    rv = inet_pton(AF_INET, trilliumIpAddress.c_str(), &address);
+    if (rv != 1)
+    {
+        std::cerr << "Invalid address format" << trilliumIpAddress << std::endl;
         return -1;
     }
 
-    std::size_t found = trilliumUrl.find(':');
-
-    if (found == std::string::npos) {
-        host = trilliumUrl;
-        port = UDP_IN_PORT;
-    } else {
-        host = trilliumUrl.substr(0, found);
-        port = std::stoi(trilliumUrl.substr(found + 1));
-    }
-
-    if ((host == "") || (port == 0)) {
-        std::cerr << "unable to parse trillium url " << trilliumUrl << std::endl;
-        return -1;
-    }
-
-    std::cout << "Connecting to trillium camera at " << host << ":" << port << std::endl;
-
+    // Create the UDP socket
     sockFd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockFd < 0) {
-        perror("Error creating socket");
+    if (sockFd < 0)
+    {
+        std::cerr << "Failed to create datagram socket" << std::endl;
         return -1;
     }
 
-    memset(&dest_addr, 0, sizeof(struct sockaddr_in));
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = inet_addr(host.c_str());
-    dest_addr.sin_port = htons(port);
+    // Allow multiple sockets in the same process use the Trillium command port
+    rv = setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+    if (rv < 0)
+    {
+        std::cerr << "Failed to set address reuse option" << std::endl;
+        goto err;
+    }
 
-    rv = connect(sockFd, (const struct sockaddr*) &dest_addr, sizeof(struct sockaddr_in));
-    if (rv < 0) {
-        perror("Error connecting socket");
+    // Bind
+    memset(&sock_addr, 0, sizeof(sock_addr));
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    sock_addr.sin_port = htons(UDP_PORT);
+
+    rv = bind(sockFd, (struct sockaddr *)&sock_addr, sizeof(sock_addr));
+    if (rv != 0)
+    {
+        std::cerr << "Failed to bind to the camera UDP port" << std::endl;
+        goto err;
+    }
+
+    // Connect
+    memset(&sock_addr, 0, sizeof(sock_addr));
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_addr.s_addr = address;
+    sock_addr.sin_port        = htons(UDP_PORT);
+    rv = connect(sockFd, (struct sockaddr *)&sock_addr, sizeof(sock_addr));
+    if (rv != 0)
+    {
+        std::cerr << "Connect failed" << std::endl;
+        goto err;
+    }
+
+    // Set the receive timeout to 1 second
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    if (setsockopt(sockFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+    {
+        std::cerr << "Failed to set socket receive timeout" << std::endl;
+        goto err;
+    }
+
+    // Success
+    return 0;
+err:
+    int err = errno;
+    close(sockFd);
+    sockFd = -1;
+    errno = err;
+    return -1;
+}
+
+int trilliumPktSend(int sockFd, OrionPkt_t& pkt)
+{
+    ssize_t len = pkt.Length + ORION_PKT_OVERHEAD;
+    ssize_t rv = -1;
+
+    rv = sendto(sockFd, (char *)&pkt, len, 0, (struct sockaddr *)NULL, 0);
+    if (rv != len)
+    {
+        std::perror("Failed to send datagram packet\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int trilliumPktRecv(int sockFd, OrionPkt_t& pkt)
+{
+    ssize_t rxLen;
+    rxLen = recvfrom(sockFd, (char *)&pkt, sizeof(OrionPkt_t), 0, (struct sockaddr *)NULL, NULL);
+
+    if (rxLen < ORION_PKT_OVERHEAD)
+    {
         return -1;
     }
 

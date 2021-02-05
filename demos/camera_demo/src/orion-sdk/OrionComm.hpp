@@ -14,6 +14,7 @@
 #define UDP_OUT_PORT        8745
 #define UDP_IN_PORT         8746
 #define TCP_PORT            8747
+#define UDP_PORT            8748
 
 // Macro to maintain backwards compatibility
 #define OrionCommOpenNetwork(void) OrionCommOpenNetworkIp("255.255.255.255")

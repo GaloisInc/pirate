@@ -26,6 +26,7 @@ The following types of video sources are supported:
 * Laptop or USB webcam
 * Trillium HD-series camera
 * MPEG-TS H.264 video stream
+* test video stream
 * no video source
 
 The demo supports exactly one video source, or zero sources if 'no video source' is selected.
@@ -89,15 +90,17 @@ Usage: camera_demo_monolith [OPTION...]
 Embedded application based on camera, position input and position driver
 
  video options:
-  -d, --video_device=device  video device
+  -d, --video_device=device  video device file path
   -D, --decoder=url          MPEG-TS H.264 decoder url (host:port)
-  -f, --flip=v|h             horizontal or vertical image flip
+  -f, --flip                 flip image and controls (rotate 180)
   -H, --height=pixels        image height
-  -t, --video_type=type      video type (jpeg|yuyv|h264|stream|none)
+  -t, --video_type=type      video type
+                             (jpeg|yuyv|h264|stream|trillium|test|none)
   -W, --width=pixels         image width
 
  frame processor options:
       --codec=type           encoder codec (mpeg1|mpeg2|h264)
+      --color_pick           object color pick tool
   -C, --color_track=RRGGBB   color tracking (RGB hex)
   -E, --encoder=url          MPEG-TS H.264 encoder url (host:port)
   -F, --filesystem           filesystem frame processor
@@ -119,7 +122,8 @@ Embedded application based on camera, position input and position driver
       --pan_min=val          pan axis minimum angle
       --tilt_max=val         tilt axis maximum angle
       --tilt_min=val         tilt axis minimum angle
-      --trillium=url         trillium command url (host:port)
+      --trillium=addr        trillium camera IP address
+      --trillium_cfg=path    optional Trillium configuration file
 
       --loglevel=val         ffmpeg libraries log level
   -v, --verbose              verbose output
@@ -155,6 +159,11 @@ The following playback settings introduce minimal latency:
 
 ```
 mpv udp://127.0.0.1:15004  --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
+```
+
+## Using the Trillium HD25 Camera with Keyboard Controls
+```
+./demos/camera_demo/camera_demo_monolith -t trillium --decoder [decoder IP address]:[decoder UDP port] --trillium [camera IP address] --in_keyboard --output trillium --xwindow
 ```
 
 ## Raspberry Pi Setup

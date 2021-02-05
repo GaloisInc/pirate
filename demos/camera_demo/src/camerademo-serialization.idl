@@ -1,12 +1,12 @@
 module CameraDemo {
-    enum OrientationOutputReqType { OutputGet, OutputSet, OutputUpdate };
-    struct OrientationOutputRequest {
+    enum CameraControlOutputReqType { OutputGet, OutputSet, OutputUpdate };
+    struct CameraControlOutputRequest {
         uint16 messageId;
-        OrientationOutputReqType reqType;
+        CameraControlOutputReqType reqType;
         float angularPositionPan;
         float angularPositionTilt;
     };
-    struct OrientationOutputResponse {
+    struct CameraControlOutputResponse {
         float angularPositionPan;
         float angularPositionTilt;
     };

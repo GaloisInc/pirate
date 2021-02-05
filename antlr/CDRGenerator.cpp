@@ -77,10 +77,10 @@ static int generate_cpp(std::ostream &ostream, CDRBuildTypes &buildTypes, Module
     return 0;
 }
 
-int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target) {
+int parse(std::istream &istream, std::ostream &ostream, std::ostream &estream, target_t target, bool packed) {
     CDRModuleCounter moduleCounter;
     antlr4::tree::ParseTreeWalker moduleWalker;
-    CDRBuildTypes buildTypes;
+    CDRBuildTypes buildTypes(packed);
     ANTLRInputStream input(istream);
     IDLLexer lexer(&input);
     CommonTokenStream tokens(&lexer);

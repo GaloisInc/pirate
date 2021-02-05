@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(auto_res)
 
 add_executable(auto_res_app auto_res_app.c)
-target_link_libraries(auto_res_app pal)
+target_link_libraries(auto_res_app pal ${PIRATE_APP_LIBS})
 target_link_options(auto_res_app PRIVATE
     SHELL:-fuse-ld=lld LINKER:-enclave,my_app)
 

@@ -16,6 +16,7 @@
 #pragma once
 
 #include "options.hpp"
+#include "testsource.hpp"
 #include "videosensor.hpp"
 #include "videosource.hpp"
 
@@ -39,6 +40,8 @@ public:
             case VIDEO_TRILLIUM:
                 return new TrilliumVideoSource(options, frameProcessors);
 #endif
+            case VIDEO_TEST:
+                return new TestSource(options, frameProcessors);
             case VIDEO_NULL:
                 return new VideoSource(options, frameProcessors);
             default:

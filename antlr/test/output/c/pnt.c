@@ -35,6 +35,7 @@ void encode_position(struct Position* input, struct Position_wire* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
+	memset(output, 0, sizeof(*output));
 	memcpy(&field_x, &input->x, sizeof(uint64_t));
 	memcpy(&field_y, &input->y, sizeof(uint64_t));
 	memcpy(&field_z, &input->z, sizeof(uint64_t));
@@ -50,6 +51,7 @@ void encode_distance(struct Distance* input, struct Distance_wire* output) {
 	uint64_t field_x;
 	uint64_t field_y;
 	uint64_t field_z;
+	memset(output, 0, sizeof(*output));
 	memcpy(&field_x, &input->x, sizeof(uint64_t));
 	memcpy(&field_y, &input->y, sizeof(uint64_t));
 	memcpy(&field_z, &input->z, sizeof(uint64_t));

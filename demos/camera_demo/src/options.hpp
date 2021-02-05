@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_TRILLIUM, VIDEO_NULL };
+enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_TRILLIUM, VIDEO_TEST, VIDEO_NULL };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
 enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor };
@@ -37,12 +37,12 @@ struct Options
         mEncoderCodecType(CODEC_H264),
         mImageWidth(640),
         mImageHeight(480),
-        mImageHorizontalFlip(false),
-        mImageVerticalFlip(false),
+        mImageFlip(false),
         mImageSlidingWindow(false),
         mImageTracking(false),
         mImageTrackingRGB{0, 0, 0},
         mImageTrackingThreshold(2048),
+        mImageColorPick(false),
         mFrameRateNumerator(1),
         mFrameRateDenominator(30),
         mImageOutputDirectory("/tmp"),
@@ -56,7 +56,8 @@ struct Options
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
-        mTrilliumUrl(""),
+        mTrilliumIpAddress(""),
+        mTrilliumConfig(""),
         mPanAxisMin(-45.0),
         mPanAxisMax(45.0),
         mTiltAxisMin(-45.0),
@@ -78,12 +79,12 @@ struct Options
     CodecType mEncoderCodecType;
     unsigned mImageWidth;
     unsigned mImageHeight;
-    bool mImageHorizontalFlip;
-    bool mImageVerticalFlip;
+    bool mImageFlip;
     bool mImageSlidingWindow;
     bool mImageTracking;
     unsigned char mImageTrackingRGB[3];
     unsigned mImageTrackingThreshold;
+    bool mImageColorPick;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
     std::string mImageOutputDirectory;
@@ -97,7 +98,8 @@ struct Options
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
-    std::string mTrilliumUrl;
+    std::string mTrilliumIpAddress;
+    std::string mTrilliumConfig;
     float mPanAxisMin;
     float mPanAxisMax;
     float mTiltAxisMin;

@@ -14,6 +14,7 @@
  */
 
 #include <cerrno>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -25,14 +26,15 @@
 #include <X11/Xutil.h>
 
 XWinFrameProcessor::XWinFrameProcessor(const Options& options,
-    CameraOrientationCallbacks angPosCallbacks) :
+    CameraControlCallbacks cameraControlCallbacks) :
 
     FrameProcessor(VIDEO_BGRX, options.mImageWidth, options.mImageHeight),
-    mCallbacks(angPosCallbacks),
+    mCallbacks(cameraControlCallbacks),
     mPanAxisMin(options.mPanAxisMin),
     mPanAxisMax(options.mPanAxisMax),
     mTiltAxisMin(options.mTiltAxisMin),
     mTiltAxisMax(options.mTiltAxisMax),
+    mColorPick(options.mImageColorPick),
     mImageSlidingWindow(options.mImageSlidingWindow),
     mDisplay(nullptr),
     mImage(nullptr),
@@ -82,9 +84,9 @@ void XWinFrameProcessor::slidingWindow() {
 
     float x_range = mPanAxisMax - mPanAxisMin;
     float y_range = mTiltAxisMax - mTiltAxisMin;
-    PanTilt position = mCallbacks.mGet();
+    PanTilt position = mCallbacks.mPosGet();
     float x_percent = (position.pan - mPanAxisMin) / x_range;
-    float y_percent = (position.tilt - mTiltAxisMin) / y_range;
+    float y_percent = (-position.tilt - mTiltAxisMin) / y_range;
     int x_center = mImageWidth * x_percent;
     int y_center = mImageHeight * y_percent;
     // min can go negative
@@ -129,14 +131,80 @@ int XWinFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType 
     if (dataStream != VideoData) {
         return 0;
     }
+
     if (length != (mImageWidth * mImageHeight * 4)) {
         std::cout << "xwindows unexpected frame length " << length << std::endl;
         return 1;
     }
+
     memcpy(mImageBuffer, data, length);
+
+    if (mColorPick) {
+        colorPick();
+    }
+
     if (mImageSlidingWindow) {
         slidingWindow();
     }
+
     renderImage();
     return 0;
+}
+
+void XWinFrameProcessor::colorPick()
+{
+    uint32_t * pixels = (uint32_t *) mImageBuffer;
+
+    const uint32_t imagePixCount = mImageWidth * mImageHeight;
+
+    const uint32_t centerXPix = mImageWidth / 2;
+    const uint32_t centerYPix = mImageHeight / 2;
+
+    const uint32_t upLeftOff = (centerYPix - mColorPickBoxSize / 2) * mImageWidth + 
+                                centerXPix - mColorPickBoxSize / 2;
+    const uint32_t bottomLeftOff = upLeftOff +  mColorPickBoxSize * mImageWidth;
+
+    struct {
+        uint64_t r;
+        uint64_t g;
+        uint64_t b;
+    } accum = {0, 0, 0};
+
+    uint32_t color = 0;
+    const uint32_t boxPixels = mColorPickBoxSize * mColorPickBoxSize;
+
+    for (uint32_t i = 0; i < mColorPickBoxSize; i++)
+    {
+        uint32_t pixOff = upLeftOff + i * mImageWidth;
+        for (uint32_t j = 0; j < mColorPickBoxSize; j++)
+        {
+            uint8_t *pixData = (uint8_t *)&pixels[pixOff + j];
+            accum.b += pixData[0] * pixData[0];
+            accum.g += pixData[1] * pixData[1];
+            accum.r += pixData[2] * pixData[2];
+        }
+    }
+
+    accum.b = sqrt(accum.b / boxPixels);
+    accum.g = sqrt(accum.g / boxPixels);
+    accum.r = sqrt(accum.r / boxPixels);
+
+    color = ((accum.r) << 16) + ((accum.g) << 8) + accum.b;
+
+    // Draw the box for target
+    for (uint32_t i = 0; i < mColorPickBoxSize; i++) {
+        pixels[upLeftOff + i] = mColorPickBoxColor;
+        pixels[upLeftOff + i * mImageWidth] = mColorPickBoxColor;
+        pixels[upLeftOff + i * mImageWidth + mColorPickBoxSize] = mColorPickBoxColor;
+        pixels[bottomLeftOff + i] = mColorPickBoxColor;
+    }
+
+    // Draw top and bottom strips to show the color
+    for (uint32_t i = 0; i < mImageWidth * (mImageHeight / 16); i++) {
+        pixels[i] = color;
+        pixels[imagePixCount - i] = color;
+    }
+
+    std::cout << "Color: "
+              << std::hex << std::setw(6) << std::setfill('0') << color << std::endl;
 }

@@ -66,6 +66,7 @@ scoped_name
 
 const_exp
    : literal
+   | scoped_name
    ;
 
 literal
@@ -217,6 +218,7 @@ union_type
 switch_type_spec
    : integer_type
    | enum_type
+   | scoped_name
    ;
 
 switch_body
@@ -277,7 +279,7 @@ identifier
 
 
 INTEGER_LITERAL
-   : ('0' | '1' .. '9' '0' .. '9'*) INTEGER_TYPE_SUFFIX?
+   : '-'? ('0' | '1' .. '9' '0' .. '9'*) INTEGER_TYPE_SUFFIX?
    ;
 
 
