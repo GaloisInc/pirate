@@ -1,8 +1,12 @@
+#define _POSIX_C_SOURCE 200809L
+#include <features.h>
+
 #include <pal/envelope.h>
 
 #include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -15,28 +19,25 @@
 
 #define min(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 
-int cstring_resource_handler(pal_env_t *env,
-        const struct app *app, pal_yaml_subdoc_t *sd)
+int cstring_resource_handler(pal_env_t *env, const struct app *app, pal_context_t *sd, const pal_config_node_t* root)
 {
     int ret = 0;
-    char *s = NULL;
+    const char *s = NULL;
 
-    if(pal_yaml_subdoc_find_string(&s, sd, true, 0))
+    if (pal_config_string(&s, sd, root, true, 0))
+        ret = -1;
+    else if (pal_add_to_env(env, (void*) s, strlen(s)))
         ret = -1;
 
-    else if(pal_add_to_env(env, s, strlen(s)))
-        ret = -1;
-
-    free(s);
+    free((void*) s);
     return ret;
 }
 
-int int64_resource_handler(pal_env_t *env,
-        const struct app *app, pal_yaml_subdoc_t *sd)
+int int64_resource_handler(pal_env_t *env, const struct app *app, pal_context_t *sd, const pal_config_node_t* root)
 {
     int64_t n;
 
-    if(pal_yaml_subdoc_find_int64(&n, sd, true, 0))
+    if (pal_config_int64(&n, sd, root, true, 0))
         return -1;
 
     if(pal_add_to_env(env, &n, sizeof n))
@@ -45,12 +46,11 @@ int int64_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int bool_resource_handler(pal_env_t *env,
-        const struct app *app, pal_yaml_subdoc_t *sd)
+int bool_resource_handler(pal_env_t *env, const struct app *app, pal_context_t *sd, const pal_config_node_t* root)
 {
     bool b;
 
-    if(pal_yaml_subdoc_find_bool(&b, sd, true, 0))
+    if(pal_config_bool(&b, sd, root, true, 0))
         return -1;
 
     if(pal_add_to_env(env, &b, sizeof b))
@@ -59,10 +59,9 @@ int bool_resource_handler(pal_env_t *env,
     return 0;
 }
 
-int file_resource_handler(pal_env_t *env,
-        const struct app *app, pal_yaml_subdoc_t *sd)
+int file_resource_handler(pal_env_t *env, const struct app *app, pal_context_t *sd, const pal_config_node_t* node)
 {
-    char *path = NULL;
+    const char *path = NULL;
     int flags = O_RDWR;
     int ret = 0;
     int fd;
@@ -87,11 +86,9 @@ int file_resource_handler(pal_env_t *env,
         PAL_YAML_ENUM_END
     };
 
-    pal_yaml_subdoc_find_string(&path, sd,
-                true, 1, PAL_MAP_FIELD("file_path"));
-    pal_yaml_subdoc_find_flags(&flags, fflags_schema, sd,
-                true, 1, PAL_MAP_FIELD("file_flags"));
-    if(pal_yaml_subdoc_error_count(sd) > 0)
+    pal_config_string(&path, sd, node, true, 1, "file_path");
+    pal_config_flags(&flags, fflags_schema, sd, node, true, 1, "file_flags");
+    if(pal_error_count(sd) > 0)
         ret = -1;
 
     else if((fd = open(path, flags)) < 0)
@@ -102,7 +99,7 @@ int file_resource_handler(pal_env_t *env,
     else if(pal_add_fd_to_env(env, fd))
         ret = -1;
 
-    free(path);
+    free((void*) path);
     return ret;
 }
 
@@ -123,38 +120,37 @@ static struct handler_table_entry {
     { NULL,             NULL,                             NULL },
 };
 
-char *get_plugin_dir(const char *cfg_path, struct top_level *tlp)
-{
-    char *pdir = tlp->tl_cfg.cfg_plugin_dir
-        ? tlp->tl_cfg.cfg_plugin_dir : DEFAULT_PLUGIN_DIR;
-
-    if(pdir[0] == '/')      // Plugin dir path is absolute
-        return strdup(pdir);
-
-    char *cfg_base = strchr(cfg_path, '/');
-    char *abs_pdir = NULL;
-    if(!cfg_base) {         // Config path is relative
-        size_t abs_pdir_len = 2 + strlen(pdir) + 1;
-        if(!(abs_pdir = malloc(abs_pdir_len)))
-            return NULL;
-        snprintf(abs_pdir, abs_pdir_len, "./%s", pdir);
-    } else {                // Config path is absolute
-        int cfg_dir_len = (int)(cfg_base - cfg_path);
-        size_t abs_pdir_len = cfg_dir_len + 1 + strlen(pdir) + 1;
-        if(!(abs_pdir = malloc(abs_pdir_len)))
-            return NULL;
-        snprintf(abs_pdir, abs_pdir_len, "%.*s/%s",
-                cfg_dir_len, cfg_path, pdir);
+const char* absolute_path(const char* path, const char* base) {
+    // If path starts with '/' then it is already absolute.
+    if (path[0] == '/') {
+        return strdup(path);
     }
+    size_t baseLen = strlen(base);
+    if (baseLen == 0) return 0;
+    size_t pathLen = strlen(path);
+    bool lastBaseCharIsSep = base[baseLen - 1] == '/';
 
-    return abs_pdir;
+    if (lastBaseCharIsSep) {
+        char* r = malloc(baseLen + pathLen + 1);
+        if (!r) return 0;
+        memcpy(r, base, baseLen);
+        memcpy(r + baseLen, path, pathLen + 1);
+        return r;
+    } else {
+        char* r = malloc(baseLen + pathLen + 2);
+        if (!r) return 0;
+        memcpy(r, base, baseLen);
+        r[baseLen] = '/';
+        memcpy(r + baseLen + 1, path, pathLen + 1);
+        return r;
+    }
 }
 
 void load_resource_plugins(const char *dirpath)
 {
     DIR *dir = opendir(dirpath);
     if(!dir) {
-        warn("Failed to open plugin directory `%s'", dirpath);
+        fatal("Failed to open plugin directory `%s'.", dirpath);
         return;
     }
 
@@ -174,7 +170,7 @@ void load_resource_plugins(const char *dirpath)
 
         void *dlhandle = dlopen(path, RTLD_NOW);
         if(!dlhandle) {
-            warn("Failed to open plugin for %s from %s", name, path);
+            fatal("Failed to open plugin for %s from %s", name, path);
             continue;
         }
 
@@ -248,22 +244,22 @@ static int make_epfd(struct app *apps, size_t apps_count)
     return epfd;
 }
 
-static struct resource *lookup_resource(char *app_name, char *rsc_name,
+static struct resource *lookup_resource(const char *app_name, char *rsc_name,
         struct resource *rscs, size_t rscs_count)
 {
     size_t id_size = strlen(app_name) + 1 + strlen(rsc_name) + 1;
     char id[id_size];
-    size_t i;
-
     snprintf(id, id_size, "%s/%s", app_name, rsc_name);
 
-    for(i = 0; i < rscs_count; ++i) {
-        size_t j;
+    for(size_t i = 0; i < rscs_count; ++i) {
+        
         struct resource *rsc = &rscs[i];
 
-        for(j = 0; j < rsc->r_ids_count; ++j)
-            if(!strcmp(id, rsc->r_ids[j]))
+        for(size_t j = 0; j < rsc->r_ids_count; ++j) {
+            if (!strcmp(id, rsc->r_ids[j])) {
                 return rsc;
+            }
+        }
     }
 
     return NULL;
@@ -298,15 +294,22 @@ static pal_resource_handler_t *lookup_handler(const char *type)
  * requesting an unknown resource or a resource of an incorrect or mismatched
  * type, as well as failures in the called resource handler.
  */
-static int handle_event(struct epoll_event *event,
-        struct resource *rscs, size_t rscs_count)
+static int handle_event(yaml_document_t* doc, struct epoll_event *event, struct resource *rscs, size_t rscs_count)
 {
     struct app *app = (struct app *)event->data.ptr;
     pal_resource_handler_t *handle;
 
+    pal_context_t* ctx = malloc(sizeof(pal_context_t));
+    if (!ctx) {
+        error("Failed to allocate context.");
+        return -1;
+    }
+    ctx->doc = doc;
+    ctx->error_count = 0;
+
     plog(LOGLVL_DEBUG, "Received an epoll event from %s", app->name);
 
-    if(event->events & EPOLLHUP) {
+    if (event->events & EPOLLHUP) {
         app->hangup = true;
         plog(LOGLVL_INFO, "Received hangup from %s", app->name);
     }
@@ -314,14 +317,14 @@ static int handle_event(struct epoll_event *event,
     if(event->events & EPOLLERR)
         plog(LOGLVL_DEFAULT, "Encountered an error on fd for %s", app->name);
 
-    if(event->events & EPOLLIN) {
+    if (event->events & EPOLLIN) {
         char *name = NULL, *type = NULL;
         struct resource *rsc = NULL;
         pal_env_t env = EMPTY_PAL_ENV(PAL_RESOURCE);
         int err;
 
-        err = pal_recv_resource_request(app->pipe_fd, &type, &name,
-                MSG_DONTWAIT);
+
+        err = pal_recv_resource_request(app->pipe_fd, &type, &name, MSG_DONTWAIT);
         if(err == PAL_ERR_EMPTY) {
             plog(LOGLVL_INFO, "Received connection-terminating empty message "
                     "from %s", app->name);
@@ -336,78 +339,82 @@ static int handle_event(struct epoll_event *event,
         plog(LOGLVL_INFO, "Received request for resource %s of type %s "
                 "from %s", name, type, app->name);
 
-        bool fatal = false;
+        bool fatal = true;
 
-        if(err)
+        if(err) {
             error("Encountered an error reading resource request from %s: %s",
                     app->name, err > 0 ? pal_strerror(err) : strerror(-err));
+            goto exit;
+        }
 
-        else if(!(rsc = lookup_resource(app->name, name, rscs, rscs_count))) {
+        if (!(rsc = lookup_resource(app->name, name, rscs, rscs_count))) {
             error("Unknown resource named %s of type %s from %s",
                     name, type, app->name);
-            fatal = true;
+            goto exit;
         }
 
-        else if(strcmp(rsc->r_type, type)) {
+        if (strcmp(rsc->r_type, type)) {
             error("Type %s of resource %s requested by %s does not match "
                     "config (%s)", type, name, app->name, rsc->r_type);
-            fatal = true;
+            goto exit;
         }
 
-        else if(!(handle = lookup_handler(type))) {
+        if (!(handle = lookup_handler(type))) {
             error("Received request for resource named %s of unknown type %s "
                     "from %s", name, type, app->name);
-            fatal = true;
+            goto exit;
         }
 
-        else if(handle(&env, app, &rsc->r_yaml)) {
+        if (handle(&env, app, ctx, rsc->r_config)) {
             error("Handler failed for resource named %s of type %s requested "
                     "by %s", name, type, app->name);
-            if(pal_yaml_subdoc_error_count(&rsc->r_yaml) > 0)
-                pal_yaml_subdoc_log_errors(&rsc->r_yaml);
-            fatal = true;
+            pal_context_flush_errors(ctx);
+            goto exit;
         }
+        pal_context_flush_errors(ctx);
 
-        else if((err = pal_send_env(app->pipe_fd, &env, MSG_DONTWAIT)))
+        if ((err = pal_send_env(app->pipe_fd, &env, MSG_DONTWAIT))) {
             error("Failed to send resource named %s of type %s to %s: %s",
                     name, type, app->name, strerror(-err));
+            goto exit;
+        }
 
-        else
-            plog(LOGLVL_INFO, "Sent a %lu-byte envelope with %lu fds to %s",
-                    env.size, env.fds_count, app->name);
+        plog(LOGLVL_INFO, "Sent a %lu-byte envelope with %lu fds to %s",
+                env.size, env.fds_count, app->name);
+        fatal = false;
 
-        free(type);
-        free(name);
-        pal_free_env(&env);
-        pal_yaml_subdoc_clear_errors(&rsc->r_yaml);
-        if(fatal)
-            return -1;
+
+        exit:
+            free(type);
+            free(name);
+            pal_free_env(&env);
+            if (fatal)
+                return -1;
     }
 
     return 0;
 }
 
-int handle_apps(struct app *apps, size_t apps_count,
-        struct resource *rscs, size_t rscs_count)
+int respond_to_apps(yaml_document_t* doc, struct app *apps, size_t apps_count, struct resource *rscs, size_t rscs_count)
 {
     int epfd;
     struct epoll_event event;
 
-    if((epfd = make_epfd(apps, apps_count)) < 0)
+    if ((epfd = make_epfd(apps, apps_count)) < 0) {
         return -1;
+    }
 
-    while(apps_count && epoll_wait(epfd, &event, 1, -1) != -1)
-        if(handle_event(&event, rscs, rscs_count)) {
+    while(apps_count && epoll_wait(epfd, &event, 1, -1) != -1) {
+        if (handle_event(doc, &event, rscs, rscs_count)) {
             struct app *app = event.data.ptr;
 
             if(epoll_ctl(epfd, EPOLL_CTL_DEL, app->pipe_fd, NULL))
-                error("Failed to deregister pipe fd for %s: %s",
-                        app->name, strerror(errno));
+                error("Failed to deregister pipe fd for %s: %s", app->name, strerror(errno));
             else
                 plog(LOGLVL_DEBUG, "Deregistered pipe fd for %s", app->name);
             app->pipe_fd = -1;
             --apps_count;
         }
-
+    }
     return apps_count;
 }

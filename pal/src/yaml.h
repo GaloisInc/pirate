@@ -1,5 +1,4 @@
-#ifndef _PIRATE_PAL_YAML_H
-#define _PIRATE_PAL_YAML_H
+#pragma once
 
 #include <stdint.h>
 
@@ -7,27 +6,65 @@
 
 #include "log.h"
 
+struct pal_context {
+    yaml_document_t* doc;
+
+    /* Each stack is a single error, with the context entries being
+     * below it on the stack. Error context is pushed to
+     * errors[error_count] until an error is pushed, at which point,
+     * error_count is incremented.
+     */
+    //struct pal_error *errors[512];
+
+    size_t error_count;
+};
+
+/**
+ * A node in the configuration file.
+ *
+ * May be a string value, map or object.
+ */
+struct pal_config_node {
+    const yaml_node_t yaml;
+};
+
+inline static
+const pal_config_node_t* mk_node(const yaml_node_t* n) {
+    return (const pal_config_node_t*) n;
+}
+
+/**
+ * Configuration of an enclave.
+ */
 struct enclave {
-    char *enc_name;
-    char *enc_path;
-    char *enc_directory;
-    char **enc_args;
+    const char *enc_name;
+    const char *enc_path;
+    const char *enc_directory;
+    /**
+     * Arguments to passed to enclave
+     * N.B. The strings are owned by the Yaml document, and do not need to be freed
+     */
+    const char **enc_args;    
     size_t enc_args_count;
-    char **enc_env;
+    /**
+     * Environment parameters to passed to enclave
+     * N.B. The strings are owned by the Yaml document, and do not need to be freed
+     */
+    const char **enc_env;
     size_t enc_env_count;
 };
 
 struct resource {
-    char *r_name;
-    char *r_type;
-    char **r_ids;
+    const char *r_name;
+    const char *r_type;
+    const char **r_ids;
     size_t r_ids_count;
-    pal_yaml_subdoc_t r_yaml;
+    const pal_config_node_t* r_config;
 };
 
 struct config {
     enum log_level cfg_loglvl;
-    char *cfg_plugin_dir;
+    const char *cfg_plugin_dir;
 };
 
 struct top_level {
@@ -38,10 +75,12 @@ struct top_level {
     struct config tl_cfg;
 };
 
-struct top_level *load_yaml(const char *fname);
+/**
+ * Load the resource yaml.
+ *
+ */
+struct top_level *load_yaml(yaml_document_t* doc, pal_context_t* sd, const char *fname);
 
 void log_yaml_data(enum log_level lvl, struct top_level *yaml);
 
 void free_yaml(struct top_level *tl);
-
-#endif // _PIRATE_PAL_YAML_H

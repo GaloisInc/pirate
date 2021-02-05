@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -5,278 +6,128 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include "yaml.h"
 
 #define ALEN(_a) (sizeof(_a)/sizeof(*_a))
-#define ERROR_MAX (ALEN(((pal_yaml_subdoc_t*)0)->errors))
 
 #define TRY_ERRNO(_op) do{ \
     if(!(_op)) \
         fatal("%s: %s\n", #_op, strerror(errno)); \
 }while(0)
 
-static void error_stack_free(struct pal_yaml_error_stack **topp)
-{
-    assert(topp != NULL);
-
-    struct pal_yaml_error_stack *top = *topp;
-    while(top) {
-        struct pal_yaml_error_stack *temp = top;
-        top = top->next;
-        free(temp);
-    }
-
-    *topp = NULL;
-}
-
-static void error_stack_push(struct pal_yaml_error_stack **top,
-        const char *fmt, va_list ap)
-{
-    assert(top != NULL);
-    assert(fmt != NULL);
-
-    struct pal_yaml_error_stack *new_top = *top;
-    TRY_ERRNO(new_top = malloc(sizeof *new_top));
-
-    vsnprintf(new_top->err, sizeof new_top->err, fmt, ap);
-    new_top->next = *top;
-    *top = new_top;
-}
-
-static void error_stack_copy(struct pal_yaml_error_stack **dst,
-        struct pal_yaml_error_stack *src)
-{
-    assert(dst != NULL);
-
-    if(!src)
-        return;
-
-    if(src->next)
-        error_stack_copy(dst, src->next);
-
-    struct pal_yaml_error_stack *new;
-    TRY_ERRNO(new = malloc(sizeof *new));
-
-    new->next = *dst;
-    snprintf(new->err, sizeof new->err, "%s", src->err);
-    *dst = new;
-}
-
-static void error_stack_append(struct pal_yaml_error_stack **dst,
-        struct pal_yaml_error_stack *src1,
-        struct pal_yaml_error_stack *src2)
-{
-    assert(dst != NULL);
-
-    while(src1) {
-        TRY_ERRNO(*dst = malloc(sizeof **dst));
-
-        memcpy((*dst)->err, src1->err, sizeof src1->err);
-        (*dst)->next = NULL;
-
-        dst = &(*dst)->next;
-        src1 = src1->next;
-    }
-    while(src2) {
-        TRY_ERRNO(*dst = malloc(sizeof **dst));
-
-        memcpy((*dst)->err, src2->err, sizeof src2->err);
-        (*dst)->next = NULL;
-
-        dst = &(*dst)->next;
-        src2 = src2->next;
-    }
-}
-
-size_t pal_yaml_subdoc_error_count(pal_yaml_subdoc_t *sd)
+size_t pal_error_count(pal_context_t *sd)
 {
     assert(sd != NULL);
     return sd->error_count;
 }
 
-void pal_yaml_subdoc_error_context_push(pal_yaml_subdoc_t *sd,
-        const char *fmt, ...)
+void pal_error(pal_context_t *ctx, const pal_config_node_t* node, const char *fmt, ...)
 {
-    assert(sd != NULL);
+    assert(ctx != NULL);
     assert(fmt != NULL);
 
-    if(sd->error_count >= ERROR_MAX)
+
+    const size_t size = 4092;
+    char* buf = malloc(size);
+    if (!buf) {
+        const char* e = "INTERNAL ERROR: Out of memory.\n";
+        write(STDERR_FILENO, e, strlen(e));
+    }
+
+    // Copy ERROR to start of buffer.
+    const yaml_node_t* yaml = &node->yaml;
+    const yaml_mark_t* start = &yaml->start_mark;
+    const yaml_mark_t* end   = &yaml->end_mark;
+    int cnt = snprintf(buf, size - 2, "Config error (%zu:%zu - %zu:%zu):\t", start->line + 1, start->column + 1, end->line + 1, end->column + 1);
+    if (cnt < 0) {
+        const char* e = "INTERNAL ERROR: Cannot format error message.\n";
+        write(STDERR_FILENO, e, strlen(e));
+        free(buf);
         return;
+    }
 
     va_list ap;
     va_start(ap, fmt);
+    int res = vsnprintf(buf + cnt, sizeof size - cnt - 2, fmt, ap);
+    va_end(ap);
+    if (res < 0) {
+        const char* e = "INTERNAL ERROR: Cannot format error message.\n";
+        write(STDERR_FILENO, e, strlen(e));
+        free(buf);
+        return;
+    }
+    cnt += res;
+    memcpy(buf + cnt, "\n", 2);
+    write(STDERR_FILENO, buf, cnt + 2);
+    free(buf);
+    ++ctx->error_count;
+}
 
-    error_stack_push(&sd->errors[sd->error_count], fmt, ap);
-
+static
+void errprintf(char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    char* buf;
+    int cnt = vasprintf(&buf, fmt, ap);
+    if (cnt < 0) {
+        const char* e = "INTERNAL ERROR: Cannot write error message.\n";
+        write(STDERR_FILENO, e, strlen(e));
+    } else {
+        write(STDERR_FILENO, buf, cnt);
+        free(buf);
+    }
     va_end(ap);
 }
 
-void pal_yaml_subdoc_error_push(pal_yaml_subdoc_t *sd,
-        const char *fmt, ...)
+static
+pal_yaml_result_t pal_yaml_subdoc_open(yaml_document_t* doc, const pal_config_node_t** root, const char *fname)
 {
-    assert(sd != NULL);
-    assert(fmt != NULL);
-
-    if(sd->error_count >= ERROR_MAX) {
-        return;
-    } else {
-        va_list ap;
-        va_start(ap, fmt);
-
-        error_stack_push(&sd->errors[sd->error_count], fmt, ap);
-
-        va_end(ap);
-    }
-
-    ++sd->error_count;
-}
-
-void pal_yaml_subdoc_error_pop(pal_yaml_subdoc_t *sd)
-{
-    assert(sd != NULL);
-
-    if(sd->error_count > 0)
-        error_stack_free(&sd->errors[--sd->error_count]);
-}
-
-void pal_yaml_subdoc_error_context_clear(pal_yaml_subdoc_t *sd)
-{
-    assert(sd != NULL);
-
-    if(sd->error_count >= ERROR_MAX)
-        return;
-
-    error_stack_free(&sd->errors[sd->error_count]);
-}
-
-void pal_yaml_subdoc_copy_errors(pal_yaml_subdoc_t *dst,
-        pal_yaml_subdoc_t *src)
-{
-    for(size_t i = 0; i < src->error_count && i < ERROR_MAX; ++i)
-        error_stack_copy(&dst->errors[dst->error_count++], src->errors[i]);
-}
-
-void pal_yaml_subdoc_log_errors(pal_yaml_subdoc_t *sd)
-{
-    assert(sd);
-
-    size_t i;
-    for(i = 0; i < sd->error_count && i < ERROR_MAX; ++i) {
-        char buf[8192], *bufp = buf;
-        size_t bufsz = sizeof buf;
-
-        struct pal_yaml_error_stack *e;
-        for(e = sd->errors[i]; e; e = e->next) {
-            size_t s = snprintf(bufp, bufsz, "%s%s\n",
-                    e == sd->errors[i] ? "" : "\t\t", e->err);
-            bufsz -= s;
-            bufp += s;
-        }
-        for(e = sd->context; e; e = e ->next) {
-            size_t s = snprintf(bufp, bufsz, "\t\t%s\n", e->err);
-            bufsz -= s;
-            bufp += s;
-        }
-
-        bufp[-1] = '\0';
-        error(buf);
-    }
-    if(sd->error_count >= ERROR_MAX)
-        error("Too many errors\n");
-}
-
-pal_yaml_result_t pal_yaml_subdoc_open(pal_yaml_subdoc_t *sd,
-        const char *fname)
-{
-    assert(sd != NULL);
     assert(fname != NULL);
+    *root = NULL;
 
+    // Open file.
     FILE *fp;
-    yaml_parser_t parser;
-
-    strcpy(sd->filename, fname);
-    memset(sd->errors, 0, sizeof sd->errors);
-    sd->error_count = 0;
-    sd->node = NULL;
-    sd->context = NULL;
-
-    if(!(fp = fopen(fname, "rb"))) {
-        pal_yaml_subdoc_error_push(sd, "Error opening file %s: %s",
-                fname, strerror(errno));
+    if (!(fp = fopen(fname, "rb"))) {
+        errprintf("Error opening file %s: %s\n", fname, strerror(errno));
         return PAL_YAML_NOT_FOUND;
     }
 
+    // Parse YAML
+    yaml_parser_t parser;
     yaml_parser_initialize(&parser);
     yaml_parser_set_input_file(&parser, fp);
-    int success = yaml_parser_load(&parser, &sd->doc);
-
-    if(!success)
-        pal_yaml_subdoc_error_push(sd,
-                "Error parsing %s: %s at %ld:%ld in %s at %ld:%ld",
-                fname, parser.problem, parser.problem_mark.line,
-                parser.problem_mark.column, parser.context,
-                parser.context_mark.line,
-                parser.context_mark.column);
-
-    yaml_parser_delete(&parser);
+    int success = yaml_parser_load(&parser, doc);
     fclose(fp);
 
-    if(success &&
-            !(sd->node = yaml_document_get_root_node(&sd->doc))) {
-        pal_yaml_subdoc_error_push(sd, "Error: %s is empty", fname);
+    if (!success) {
+        errprintf("Error parsing %s: %s at %ld:%ld in %s at %ld:%ld",
+            fname, parser.problem,
+            parser.problem_mark.line, parser.problem_mark.column,
+            parser.context,
+            parser.context_mark.line, parser.context_mark.column);
+    }
+
+    yaml_parser_delete(&parser);
+
+    if (success && !(*root = mk_node(yaml_document_get_root_node(doc)))) {
+        errprintf("Error: %s is empty", fname);
         success = false;
     }
 
-    if(!success) {
-        yaml_document_delete(&sd->doc);
+    if (!success) {
+        yaml_document_delete(doc);
         return PAL_YAML_PARSER_ERROR;
     }
-
-    sd->doc_ref_count = malloc(sizeof *sd->doc_ref_count);
-    *sd->doc_ref_count = 1;
 
     return PAL_YAML_OK;
 }
 
-void pal_yaml_subdoc_clear_errors(pal_yaml_subdoc_t *sd)
+void pal_context_flush_errors(pal_context_t *sd)
 {
-    if(sd) {
-        pal_yaml_subdoc_error_context_clear(sd);
-
-        while(sd->error_count)
-            pal_yaml_subdoc_error_pop(sd);
-    }
-}
-
-void pal_yaml_subdoc_close(pal_yaml_subdoc_t *sd)
-{
-    if(sd) {
-        if(sd->doc_ref_count && --*sd->doc_ref_count == 0) {
-            yaml_document_delete(&sd->doc);
-            free(sd->doc_ref_count);
-        }
-
-        pal_yaml_subdoc_clear_errors(sd);
-        error_stack_free(&sd->context);
-
-        sd->node = NULL;
-        sd->error_count = 0;
-    }
-}
-
-static const char *error_strings[] = {
-    [PAL_YAML_OK]           = "Success",
-    [PAL_YAML_NOT_FOUND]    = "File not found",
-    [PAL_YAML_PARSER_ERROR] = "Parser error",
-    [PAL_YAML_TYPE_ERROR]   = "Type error",
-};
-
-const char *pal_yaml_strerror(pal_yaml_result_t res)
-{
-    assert(0 <= res && res <= ALEN(error_strings));
-
-    return error_strings[res];
+    sd->error_count = 0;
 }
 
 static const char *node_type_strings[] = {
@@ -286,36 +137,15 @@ static const char *node_type_strings[] = {
     [YAML_SEQUENCE_NODE] = "sequence",
 };
 
-static const char *elem_string(struct pal_yaml_elem *elem)
-{
-    assert(elem != NULL);
-
-    static char buf[1024];
-
-    switch(elem->type) {
-        case PAL_YAML_ELEM_MAP:
-            snprintf(buf, sizeof buf,
-                    "mapping field `%s'", elem->map_elem);
-            break;
-        case PAL_YAML_ELEM_SEQ:
-            snprintf(buf, sizeof buf,
-                    "sequence index %lu", elem->seq_elem);
-            break;
-    }
-
-    return buf;
-}
-
-static yaml_node_t *lookup_in_mapping(yaml_document_t *doc,
-        yaml_node_t *node, const char *key)
+static yaml_node_t *lookup_in_mapping(yaml_document_t *doc, const yaml_node_t *node, const char *key)
 {
     assert(node != NULL);
     assert(node->type == YAML_MAPPING_NODE);
     assert(key != NULL);
 
-    yaml_node_pair_t *pair,
-                     *start = node->data.mapping.pairs.start,
-                     *top = node->data.mapping.pairs.top;
+    yaml_node_pair_t *pair;
+    yaml_node_pair_t *start = node->data.mapping.pairs.start;
+    yaml_node_pair_t *top = node->data.mapping.pairs.top;
 
     for(pair = start; pair < top; ++pair) {
         yaml_node_t *key_node;
@@ -324,15 +154,14 @@ static yaml_node_t *lookup_in_mapping(yaml_document_t *doc,
         assert(key_node != NULL);
         assert(key_node->type == YAML_SCALAR_NODE);
 
-        if(!strcmp((const char *)key_node->data.scalar.value, key))
+        if (!strcmp((const char *)key_node->data.scalar.value, key))
             return yaml_document_get_node(doc, pair->value);
     }
 
     return NULL;
 }
 
-yaml_node_t *lookup_in_sequence(yaml_document_t *doc,
-        yaml_node_t *node, size_t idx)
+yaml_node_t *lookup_in_sequence(yaml_document_t *doc, const yaml_node_t *node, size_t idx)
 {
     assert(node != NULL);
     assert(node->type == YAML_SEQUENCE_NODE);
@@ -345,7 +174,7 @@ yaml_node_t *lookup_in_sequence(yaml_document_t *doc,
             node->data.sequence.items.start[idx]);
 }
 
-static bool node_is_null(yaml_node_t *node)
+static bool node_is_null(const yaml_node_t* node)
 {
     assert(node != NULL);
 
@@ -358,995 +187,630 @@ static bool node_is_null(yaml_node_t *node)
                     "null");
 }
 
-static pal_yaml_result_t find_node(yaml_node_t **res,
-        pal_yaml_subdoc_t *sd, size_t depth, va_list ap)
+static pal_yaml_result_t deref_object_field(pal_context_t *ctx, const pal_config_node_t** res, pal_bool required, const pal_config_node_t* node, const char* field)
+{
+    if (node->yaml.type != YAML_MAPPING_NODE) {
+        pal_error(ctx, node,
+                  "Expected object with field %s but got %s",
+                  field,
+                  node_type_strings[node->yaml.type]);
+        return PAL_YAML_TYPE_ERROR;
+    }
+    yaml_node_t* r = lookup_in_mapping(ctx->doc, &node->yaml, field);
+    if(!r || node_is_null(r)) {
+        if (required)
+            pal_error(ctx, node, "Expected field named '%s'.", field);
+        return PAL_YAML_NOT_FOUND;
+    }
+
+    *res = mk_node(r);
+    return PAL_YAML_OK;
+}
+
+static
+pal_yaml_result_t
+vpal_config_node(const pal_config_node_t **res,
+          pal_context_t *sd, const pal_config_node_t* root,
+          pal_bool required, size_t count, va_list ap)
 {
     assert(res != NULL);
     assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    yaml_node_t *node = sd->node;
-
-    pal_yaml_subdoc_error_context_push(sd, "In %s at %s:%lu:%lu",
-            node_type_strings[node->type], sd->filename,
-            node->start_mark.line, node->start_mark.column);
 
     *res = NULL;
 
-    size_t d;
-    for(d = 0; d < depth; ++d) {
-        pal_yaml_elem_t elem = va_arg(ap, pal_yaml_elem_t);
-
-        switch(elem.type) {
-            case PAL_YAML_ELEM_MAP:
-                if(node->type != YAML_MAPPING_NODE) {
-                    pal_yaml_subdoc_error_push(sd,
-                            "Expected mapping but got %s",
-                            node_type_strings[node->type]);
-                    return PAL_YAML_TYPE_ERROR;
-                }
-                node = lookup_in_mapping(&sd->doc, node,
-                        elem.map_elem);
-                break;
-            case PAL_YAML_ELEM_SEQ:
-                if(node->type != YAML_SEQUENCE_NODE) {
-                    pal_yaml_subdoc_error_push(sd,
-                            "Expected sequence but got %s",
-                            node_type_strings[node->type]);
-                    return PAL_YAML_TYPE_ERROR;
-                }
-                node = lookup_in_sequence(&sd->doc, node,
-                        elem.seq_elem);
-                break;
-        }
-
-        if(!node || node_is_null(node)) {
-            pal_yaml_subdoc_error_push(sd,
-                    "No such %s", elem_string(&elem));
-            return PAL_YAML_NOT_FOUND;
-        }
-
-        pal_yaml_subdoc_error_context_push(sd, "In %s at %s:%lu:%lu",
-                elem_string(&elem), sd->filename,
-                node->start_mark.line, node->start_mark.column);
+    const pal_config_node_t* node = root;
+    while (count) {
+        const char* field = va_arg(ap, const char*);
+        pal_yaml_result_t r = deref_object_field(sd, &node, required, node, field);
+        if (r != PAL_YAML_OK) return r;
+        --count;
     }
 
     *res = node;
     return PAL_YAML_OK;
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_string(char **str,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
+static
+pal_yaml_result_t pal_node_as_scalar(const unsigned char **str, const char* expected, pal_context_t *sd, const pal_config_node_t* node) {
+    if(node->yaml.type != YAML_SCALAR_NODE) {
+        pal_error(sd, node, "Expected %s but got %s.", expected, node_type_strings[node->yaml.type]);
+        return PAL_YAML_TYPE_ERROR;
+    }
+
+    *str = node->yaml.data.scalar.value;
+    return PAL_YAML_OK;
+}
+
+bool hasInvalidChars(pal_context_t *ctx, const pal_config_node_t* node, const unsigned char* v) {
+    for (const unsigned char* p = v; *p; ++p) {
+        if (*p >= 0x80) {
+            pal_error(ctx, node, "String contains invalid character %x (%s)\n", *p, (const char*) v);
+            return true;
+        }
+    }
+    return false;
+}
+
+pal_yaml_result_t
+pal_config_node(
+    const pal_config_node_t** out,
+    pal_context_t *ctx, const pal_config_node_t* root,
+    pal_bool required, size_t count, ...) {
+
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t r = vpal_config_node(out, ctx, root, required, count, ap);
+    va_end(ap);
+    return r;
+}
+
+
+pal_yaml_result_t pal_config_string(const char **str,
+        pal_context_t *ctx, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(str != NULL);
+    assert(ctx != NULL);
+
+    const pal_config_node_t* node;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, ctx, root, required, count, ap);
+    va_end(ap);
+    if (res != PAL_YAML_OK) return res;
+
+    const unsigned char* v;
+    res = pal_node_as_scalar(&v, "string", ctx, node);
+    if (res != PAL_YAML_OK) return res;
+
+    if (hasInvalidChars(ctx, node, v))
+        return PAL_YAML_PARSER_ERROR;
+
+    *str = strdup((const char*) v);
+    if (!*str) {
+        pal_error(ctx, node, "Memory allocation failed.");
+        return PAL_YAML_PARSER_ERROR;
+    }
+    return PAL_YAML_OK;
+}
+
+pal_yaml_result_t pal_config_static_string(char *str,
+        size_t sz, pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
     assert(str != NULL);
     assert(sd != NULL);
-    assert(sd->node != NULL);
 
+    const pal_config_node_t* node;
     va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
     va_end(ap);
+    if (res != PAL_YAML_OK) return res;
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    const unsigned char* v;
+    res = pal_node_as_scalar(&v, "string", sd, node);
+    if (res != PAL_YAML_OK) return res;
 
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected string but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
+    snprintf(str, sz, "%s", (const char*) v);
+    return PAL_YAML_OK;
+}
 
-        TRY_ERRNO(*str = strdup((char*)node->data.scalar.value));
-        pal_yaml_subdoc_error_context_clear(sd);
+static pal_yaml_result_t vpal_config_int(const pal_config_node_t** node, int64_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, va_list ap)
+{
+    pal_yaml_result_t res = vpal_config_node(node, sd, root, required, count, ap);
+    if (res != PAL_YAML_OK) return res;
+
+    const unsigned char* str;
+    res = pal_node_as_scalar(&str, "signed integer", sd, *node);
+    if (res != PAL_YAML_OK) return res;
+
+    char *endp;
+    errno = 0;
+    *val = strtoll((const char *)str, &endp, 10);
+    if(!errno && !*endp) { // TODO: Check bounds based on vsize
         return PAL_YAML_OK;
     } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
+        pal_error(sd, *node,
+                "`%s' could not be parsed as a signed integer",
+                (const char *) str,
+                errno ? strerror(errno)
+                        : "Contains non-numeric characters");
+        return PAL_YAML_TYPE_ERROR;
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_static_string(char *str,
-        size_t sz, pal_yaml_subdoc_t *sd, bool required,
-        size_t depth, ...)
+pal_yaml_result_t pal_config_int64(int64_t *val,
+        pal_context_t *ctx, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
-    assert(str != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
+    assert(val != NULL);
 
+    const pal_config_node_t* node;
+    int64_t val64;
     va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_int(&node, &val64, ctx, root, required, count, ap);
     va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    *val = val64;
+    return PAL_YAML_OK;
+}
 
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected string but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
+pal_yaml_result_t pal_config_int32(int32_t *val,
+        pal_context_t *ctx, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(val != NULL);
 
-        snprintf(str, sz, "%s", (char*)node->data.scalar.value);
-        pal_yaml_subdoc_error_context_clear(sd);
+    const pal_config_node_t* node;
+    int64_t val64;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_int(&node, &val64, ctx, root, required, count, ap);
+    va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
+
+    if ((int64_t) (int32_t) val64 != val64) {
+        pal_error(ctx, node, "Expected 32bit int.");
+        return PAL_YAML_TYPE_ERROR;
+    }
+
+    *val = val64;
+    return PAL_YAML_OK;
+}
+
+pal_yaml_result_t pal_config_int16(int16_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(val != NULL);
+
+    const pal_config_node_t* node;
+    int64_t val64;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_int(&node, &val64, sd, root, required, count, ap);
+    va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
+
+    if ((int64_t) (int16_t) val64 != val64) {
+        pal_error(sd, node, "Expected 16bit int.");
+        return PAL_YAML_TYPE_ERROR;
+    }
+
+    *val = val64;
+    return PAL_YAML_OK;
+}
+
+static pal_yaml_result_t
+vpal_config_uint(const pal_config_node_t** node, uint64_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, va_list ap)
+{
+    assert(val != NULL);
+    assert(sd != NULL);
+
+    pal_yaml_result_t res = vpal_config_node(node, sd, root, required, count, ap);
+    if (res != PAL_YAML_OK) return res;
+
+    const unsigned char* str;
+    res = pal_node_as_scalar(&str, "signed integer", sd, *node);
+    if (res != PAL_YAML_OK) return res;
+
+    char *endp;
+    errno = 0;
+    *val = strtoull((const char *) str, &endp, 10);
+    if (!errno && !*endp) {
         return PAL_YAML_OK;
     } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
+        pal_error(sd, *node,
+                "`%s' could not be parsed as an "
+                "unsigned integer: %s",
+                (const char *) str,
+                errno ? strerror(errno)
+                        : "Contains non-numeric characters");
+        return PAL_YAML_TYPE_ERROR;
     }
 }
 
-static pal_yaml_result_t find_int(int64_t *val, size_t vsize,
-        pal_yaml_subdoc_t *sd, bool required,
-        size_t depth, va_list ap)
+pal_yaml_result_t pal_config_uint64(uint64_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
     assert(val != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
 
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
+    const pal_config_node_t* node;
+    uint64_t val64;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_uint(&node, &val64, sd, root, required, count, ap);
+    va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    *val = val64;
+    return PAL_YAML_OK;
+}
 
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected signed integer but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
+pal_yaml_result_t pal_config_uint32(uint32_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(val != NULL);
 
-        char *endp;
-        errno = 0;
-        *val = strtoll((char *)node->data.scalar.value, &endp, 10);
-        if(!errno && !*endp) { // TODO: Check bounds based on vsize
-            pal_yaml_subdoc_error_context_clear(sd);
-            return PAL_YAML_OK;
-        } else {
-            pal_yaml_subdoc_error_push(sd,
-                    "`%s' could not be parsed as a signed integer",
-                    (char *)node->data.scalar.value,
-                    errno ? strerror(errno)
-                          : "Contains non-numeric characters");
-            return PAL_YAML_TYPE_ERROR;
-        }
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
+    const pal_config_node_t* node;
+    uint64_t val64;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_uint(&node, &val64, sd, root, required, count, ap);
+    va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
+
+    if ((uint64_t) (uint32_t) val64 != val64) {
+        pal_error(sd, node, "Expected 32bit word.");
+        return PAL_YAML_TYPE_ERROR;
     }
+    *val = val64;
+    return PAL_YAML_OK;
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_int64(int64_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
+pal_yaml_result_t pal_config_uint16(uint16_t *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
     assert(val != NULL);
 
+    const pal_config_node_t* node;
+    uint64_t val64;
     va_list ap;
-    va_start(ap, depth);
-
-    int64_t val64;
-    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, required, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t ret = vpal_config_uint(&node, &val64, sd, root, required, count, ap);
     va_end(ap);
+    if (ret != PAL_YAML_OK) return ret;
 
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_int32(int32_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    int64_t val64;
-    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_int16(int16_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    int64_t val64;
-    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_int8(int8_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    int64_t val64;
-    pal_yaml_result_t ret = find_int(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-static pal_yaml_result_t find_uint(uint64_t *val, size_t vsize,
-        pal_yaml_subdoc_t *sd, bool required,
-        size_t depth, va_list ap)
-{
-    assert(val != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected unsigned integer but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
-
-        char *endp;
-        errno = 0;
-        *val = strtoull((char *)node->data.scalar.value, &endp, 10);
-        if(!errno && !*endp) { // TODO: Check bounds based on vsize
-            pal_yaml_subdoc_error_context_clear(sd);
-            return PAL_YAML_OK;
-        } else {
-            pal_yaml_subdoc_error_push(sd,
-                    "`%s' could not be parsed as an "
-                    "unsigned integer: %s",
-                    (char *)node->data.scalar.value,
-                    errno ? strerror(errno)
-                          : "Contains non-numeric characters");
-            return PAL_YAML_TYPE_ERROR;
-        }
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
+    if ((uint64_t) (uint16_t) val64 != val64) {
+        pal_error(sd, node, "Expected 16bit word.");
+        return PAL_YAML_TYPE_ERROR;
     }
+    *val = val64;
+    return PAL_YAML_OK;
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_uint64(uint64_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    uint64_t val64;
-    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_uint32(uint32_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    uint64_t val64;
-    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_uint16(uint16_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    uint64_t val64;
-    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_uint8(uint8_t *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    uint64_t val64;
-    pal_yaml_result_t ret = find_uint(&val64, sizeof *val,
-            sd, required, depth, ap);
-
-    va_end(ap);
-
-    if(ret == PAL_YAML_OK)
-        *val = val64;
-    return ret;
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_double(double *valp,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
+pal_yaml_result_t pal_config_double(double *valp,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
     assert(valp != NULL);
     assert(sd != NULL);
-    assert(sd->node != NULL);
 
+    const pal_config_node_t* node;
     va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
     va_end(ap);
+    if (res != PAL_YAML_OK) return res;
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    const unsigned char* str;
+    res = pal_node_as_scalar(&str, "decimal number", sd, node);
+    if (res != PAL_YAML_OK) return res;
 
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected decimal number but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
-
-        char *endp;
-        errno = 0;
-        double val = strtod((char *)node->data.scalar.value, &endp);
-        if(!errno && !*endp) {
-            pal_yaml_subdoc_error_context_clear(sd);
-            *valp = val;
-            return PAL_YAML_OK;
-        } else {
-            pal_yaml_subdoc_error_push(sd,
-                    "`%s' could not be parsed as a decimal number",
-                    (char *)node->data.scalar.value,
-                    errno ? strerror(errno)
-                          : "Contains non-numeric characters");
-            return PAL_YAML_TYPE_ERROR;
-        }
+    char *endp;
+    errno = 0;
+    double val = strtod((const char *) str, &endp);
+    if(!errno && !*endp) {
+        *valp = val;
+        return PAL_YAML_OK;
     } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
-    }
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_bool(bool *val,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    va_end(ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected boolean but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
-
-        if(!strcasecmp((const char *)node->data.scalar.value,
-                    "true")) {
-            pal_yaml_subdoc_error_context_clear(sd);
-            *val = true;
-            return PAL_YAML_OK;
-        } else if(!strcasecmp((const char *)node->data.scalar.value,
-                    "false")) {
-            pal_yaml_subdoc_error_context_clear(sd);
-            *val = false;
-            return PAL_YAML_OK;
-        } else {
-            pal_yaml_subdoc_error_push(sd,
-                    "`%s' could not be parsed as a boolean",
-                    (char *)node->data.scalar.value);
-            return PAL_YAML_TYPE_ERROR;
-        }
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
-    }
-}
-
-pal_yaml_result_t pal_yaml_subdoc_find_enum(int *val,
-        pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        bool required, size_t depth, ...)
-{
-    assert(val != NULL);
-    assert(enums != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    va_end(ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SCALAR_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected enumeration value but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
-        }
-
-        for(; enums->name; ++enums) {
-            if(!strcmp((const char *)node->data.scalar.value,
-                        enums->name)) {
-                pal_yaml_subdoc_error_context_clear(sd);
-                *val = enums->value;
-                return PAL_YAML_OK;
-            }
-        }
-
-        pal_yaml_subdoc_error_push(sd,
-                "No such enumeration value `%s'",
-                (char *)node->data.scalar.value);
+        pal_error(sd, node,
+                "`%s' could not be parsed as a decimal number",
+                (const char *) str,
+                errno ? strerror(errno)
+                        : "Contains non-numeric characters");
         return PAL_YAML_TYPE_ERROR;
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
     }
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_flags(int *val,
-        pal_yaml_enum_schema_t *enums, pal_yaml_subdoc_t *sd,
-        bool required, size_t depth, ...)
+pal_yaml_result_t pal_config_bool(bool *val,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(val != NULL);
+    assert(sd != NULL);
+
+    const pal_config_node_t* node;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
+    va_end(ap);
+    if (res != PAL_YAML_OK) return res;
+
+    const unsigned char* str;
+    res = pal_node_as_scalar(&str, "boolean", sd, node);
+    if (res != PAL_YAML_OK) return res;
+
+    if(!strcasecmp((const char *) str, "true")) {
+        *val = true;
+        return PAL_YAML_OK;
+    } else if (!strcasecmp((const char *) str, "false")) {
+        *val = false;
+        return PAL_YAML_OK;
+    } else {
+        pal_error(sd, node,
+                "`%s' could not be parsed as a boolean",
+                (const char *) str);
+        return PAL_YAML_TYPE_ERROR;
+    }
+}
+
+pal_yaml_result_t pal_config_enum(int *val,
+        pal_yaml_enum_schema_t *enums,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
     assert(val != NULL);
     assert(enums != NULL);
     assert(sd != NULL);
-    assert(sd->node != NULL);
 
+    const pal_config_node_t* node;
     va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
     va_end(ap);
+    if(res != PAL_YAML_OK) return res;
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    const unsigned char* str;
+    res = pal_node_as_scalar(&str, "enumeration value", sd, node);
+    if (res != PAL_YAML_OK) return res;
 
-        if(node->type != YAML_SEQUENCE_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected flags sequence but got %s",
-                    node_type_strings[node->type]);
-            return PAL_YAML_TYPE_ERROR;
+    for(; enums->name; ++enums) {
+        if (!strcmp((const char *) str, enums->name)) {
+            *val = enums->value;
+            return PAL_YAML_OK;
         }
-
-        int val_temp = 0;
-        yaml_node_item_t *item;
-        for(item = node->data.sequence.items.start;
-                item < node->data.sequence.items.top; ++item) {
-            assert(item != NULL);
-
-            yaml_node_t *elem = yaml_document_get_node(&sd->doc,
-                    *item);
-            assert(elem != NULL);
-
-            if(elem->type != YAML_SCALAR_NODE) {
-                pal_yaml_subdoc_error_context_push(sd,
-                        "In %s at %s:%lu:%lu",
-                        node_type_strings[elem->type],
-                        elem->start_mark.line,
-                        elem->start_mark.column);
-                pal_yaml_subdoc_error_push(sd,
-                        "Expected flags enumeration value but got "
-                        "%s", node_type_strings[elem->type]);
-                return PAL_YAML_TYPE_ERROR;
-            }
-
-            pal_yaml_enum_schema_t *e = enums;
-            bool found = false;
-            for(e = enums; e->name; ++e) {
-                if(!strcmp((char *)elem->data.scalar.value,
-                            e->name)) {
-                    val_temp |= e->value;
-                    found = true;
-                }
-            }
-
-            if(!found) {
-                pal_yaml_subdoc_error_push(sd,
-                        "No such enumeration value `%s'",
-                        (char *)elem->data.scalar.value);
-                return PAL_YAML_TYPE_ERROR;
-            }
-        }
-
-        pal_yaml_subdoc_error_context_clear(sd);
-        *val = val_temp;
-        return PAL_YAML_OK;
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
     }
+
+    pal_error(sd, node,
+            "No such enumeration value `%s'",
+            (const char *) str);
+    return PAL_YAML_TYPE_ERROR;
 }
 
-static void subdoc_from_node(pal_yaml_subdoc_t *dst,
-        yaml_node_t *node, pal_yaml_subdoc_t *sd)
+pal_yaml_result_t pal_config_flags(int *val,
+        pal_yaml_enum_schema_t *enums,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
 {
-    assert(dst != NULL);
+    assert(val != NULL);
+    assert(enums != NULL);
+    assert(sd != NULL);
+
+    const pal_config_node_t* node;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
+    va_end(ap);
+    if (res != PAL_YAML_OK) return res;
+
     assert(node != NULL);
-    assert(sd != NULL);
 
-    dst->doc = sd->doc;
-    dst->doc_ref_count = sd->doc_ref_count;
-    ++*dst->doc_ref_count;
+    if(node->yaml.type != YAML_SEQUENCE_NODE) {
+        pal_error(sd, node,
+                "Expected flags sequence but got %s",
+                node_type_strings[node->yaml.type]);
+        return PAL_YAML_TYPE_ERROR;
+    }
 
-    dst->node = node;
-    strcpy(dst->filename, sd->filename);
-    memset(dst->errors, 0, sizeof dst->errors);
-    dst->error_count = 0;
-    dst->context = NULL;
+    int val_temp = 0;
+    yaml_node_item_t *item;
+    for(item = node->yaml.data.sequence.items.start;
+            item < node->yaml.data.sequence.items.top; ++item) {
+        assert(item != NULL);
 
-    error_stack_append(&dst->context,
-            sd->errors[sd->error_count], sd->context);
-}
+        yaml_node_t *elem = yaml_document_get_node(sd->doc, *item);
+        assert(elem != NULL);
 
-pal_yaml_result_t pal_yaml_subdoc_find_sequence(
-        pal_yaml_subdoc_t *seq, size_t *len,
-        pal_yaml_subdoc_t *sd, bool required,
-        size_t depth, ...)
-{
-    assert(seq != NULL);
-    assert(len != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    va_end(ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SEQUENCE_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected sequence but got %s",
-                    node_type_strings[node->type]);
+        if(elem->type != YAML_SCALAR_NODE) {
+            pal_error(sd, node,
+                "Expected flags enumeration value but got %s.",
+                node_type_strings[elem->type]);
             return PAL_YAML_TYPE_ERROR;
         }
 
-        subdoc_from_node(seq, node, sd);
-        *len = node->data.sequence.items.top
-                - node->data.sequence.items.start;
-        pal_yaml_subdoc_error_context_clear(sd);
-        return PAL_YAML_OK;
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
-    }
-}
+        pal_yaml_enum_schema_t *e = enums;
+        bool found = false;
+        for(e = enums; e->name; ++e) {
+            if(!strcmp((char *)elem->data.scalar.value,
+                        e->name)) {
+                val_temp |= e->value;
+                found = true;
+            }
+        }
 
-pal_yaml_result_t pal_yaml_subdoc_find_string_sequence(
-        char ***strseqp, size_t *lenp,
-        pal_yaml_subdoc_t *sd, bool required,
-        size_t depth, ...)
-{
-    assert(strseqp != NULL);
-    assert(lenp != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
-    va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
-    va_end(ap);
-
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
-
-        if(node->type != YAML_SEQUENCE_NODE) {
-            pal_yaml_subdoc_error_push(sd,
-                    "Expected sequence but got %s",
-                    node_type_strings[node->type]);
+        if(!found) {
+            pal_error(sd, node,
+                "No such enumeration value `%s'.",
+                (char *)elem->data.scalar.value);
             return PAL_YAML_TYPE_ERROR;
         }
-
-        size_t len = node->data.sequence.items.top
-                - node->data.sequence.items.start;
-        char **strseq;
-        pal_yaml_subdoc_t seq;
-
-        subdoc_from_node(&seq, node, sd);
-        TRY_ERRNO(strseq = calloc(len, sizeof *strseq));
-
-        size_t i;
-        for(i = 0; i < len; ++i)
-            pal_yaml_subdoc_find_string(&strseq[i], &seq,
-                    true, 1, PAL_SEQ_IDX(i));
-
-        if(seq.error_count > 0) {
-            size_t i;
-            for(i = 0; i < len; ++i)
-                free(strseq[i]);
-            free(strseq);
-
-            for(i = 0; i < seq.error_count
-                    && sd->error_count < ERROR_MAX; ++i)
-                error_stack_append(&sd->errors[sd->error_count++],
-                        seq.errors[i], NULL);
-
-            return PAL_YAML_TYPE_ERROR;
-        }
-
-        pal_yaml_subdoc_close(&seq);
-        pal_yaml_subdoc_error_context_clear(sd);
-        *lenp = len;
-        *strseqp = strseq;
-        return PAL_YAML_OK;
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-        return res;
     }
+
+    *val = val_temp;
+    return PAL_YAML_OK;
 }
 
-pal_yaml_result_t pal_yaml_subdoc_find_subdoc(pal_yaml_subdoc_t *dst,
-        pal_yaml_subdoc_t *sd, bool required, size_t depth, ...)
-{
-    assert(dst != NULL);
-    assert(sd != NULL);
-    assert(sd->node != NULL);
-
+pal_yaml_result_t pal_config_sequence(
+        const pal_config_node_t*** seqPtr, size_t *lenPtr,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...) {
+    const pal_config_node_t* node;
     va_list ap;
-    va_start(ap, depth);
-
-    yaml_node_t *node;
-    pal_yaml_result_t res = find_node(&node, sd, depth, ap);
-
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
     va_end(ap);
 
-    if(res == PAL_YAML_OK) {
-        assert(node != NULL);
+    if (res != PAL_YAML_OK) return res;
+    assert(node != NULL);
 
-        subdoc_from_node(dst, node, sd);
-        pal_yaml_subdoc_error_context_clear(sd);
-        return PAL_YAML_OK;
-    } else {
-        if(!required && res == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
+    if(node->yaml.type != YAML_SEQUENCE_NODE) {
+        pal_error(sd, node,
+                "Expected sequence but got %s",
+                node_type_strings[node->yaml.type]);
+        return PAL_YAML_TYPE_ERROR;
+    }
+    size_t  len = node->yaml.data.sequence.items.top
+                - node->yaml.data.sequence.items.start;
+
+    const pal_config_node_t** array;
+    TRY_ERRNO(array = calloc(len, sizeof(const pal_config_node_t*)));
+    for (size_t i = 0; i != len; ++i) {
+        const yaml_node_t* r = yaml_document_get_node(sd->doc, node->yaml.data.sequence.items.start[i]);
+        if (!r || node_is_null(r)) {
+            pal_error(sd, node, "No such sequence index %lu", i);
+            free(array);
+            return PAL_YAML_PARSER_ERROR;
+        }
+        array[i] = mk_node(r);
+    }
+
+    *seqPtr = array;
+    *lenPtr = len;
+    return PAL_YAML_OK;
+}
+
+pal_yaml_result_t pal_config_string_sequence(
+        const char ***seqPtr, size_t *lenPtr,
+        pal_context_t *sd, const pal_config_node_t* root,
+        pal_bool required, size_t count, ...)
+{
+    assert(sd != NULL);
+    *seqPtr = 0;
+    *lenPtr = 0;
+
+    const pal_config_node_t* node;
+    va_list ap;
+    va_start(ap, count);
+    pal_yaml_result_t res = vpal_config_node(&node, sd, root, required, count, ap);
+    va_end(ap);
+    if (res != PAL_YAML_OK) return res;
+
+    if (node->yaml.type != YAML_SEQUENCE_NODE) {
+        pal_error(sd, node,
+                "Expected sequence but got %s",
+                node_type_strings[node->yaml.type]);
+        return PAL_YAML_TYPE_ERROR;
+    }
+
+    size_t len = node->yaml.data.sequence.items.top
+               - node->yaml.data.sequence.items.start;
+
+    const char **strseq;
+    TRY_ERRNO(strseq = calloc(len, sizeof *strseq));
+
+    size_t i = 0;
+    res = PAL_YAML_OK;
+    while (i < len) {
+        // Get node for ith element.
+        const yaml_node_t* r = yaml_document_get_node(sd->doc, node->yaml.data.sequence.items.start[i]);
+        if (!r || node_is_null(r)) {
+            pal_error(sd, node, "No such sequence index %lu", i);
+            res = PAL_YAML_NOT_FOUND;
+            break;
+        }
+        // Extract string.
+        const unsigned char* v;
+        res = pal_node_as_scalar(&v, "string", sd, mk_node(r));
+        if (res != PAL_YAML_OK) break;
+
+        if (hasInvalidChars(sd, node, v)) {
+            res = PAL_YAML_PARSER_ERROR;
+            break;
+        }
+        strseq[i] = (const char*) v;
+        ++i;
+    }
+    // Clean up if an error occured.
+    if (res != PAL_YAML_OK) {
+        free(strseq);
         return res;
     }
+    // Finally, assign result and return.
+    *lenPtr = len;
+    *seqPtr = strseq;
+    return PAL_YAML_OK;
 }
 
-/* FIXME: Integrate this into individual resource plugins.
- */
-static void load_resource_contents(struct rsc_contents *c,
-        pal_yaml_subdoc_t *sd)
-{
-    assert(c != NULL);
-
-    /* pirate_ and fd_channel
-     */
-    {
-        pal_yaml_enum_schema_t channel_type_schema[] = {
-            {"device",      DEVICE},
-            {"pipe",        PIPE},
-            {"unix_socket", UNIX_SOCKET},
-            {"tcp_socket",  TCP_SOCKET},
-            {"udp_socket",  UDP_SOCKET},
-            {"shmem",       SHMEM},
-            {"udp_shmem",   UDP_SHMEM},
-            {"uio",         UIO_DEVICE},
-            {"serial",      SERIAL},
-            {"mercury",     MERCURY},
-            {"ge_eth",      GE_ETH},
-        };
-        if(pal_yaml_subdoc_find_enum((int*)&c->cc_channel_type,
-                    channel_type_schema, sd,
-                    1, PAL_MAP_FIELD("channel_type"))
-                == PAL_YAML_NOT_FOUND)
-            pal_yaml_subdoc_error_pop(sd);
-    }
-    if(pal_yaml_subdoc_find_string(&c->cc_path, sd,
-                1, PAL_MAP_FIELD("path"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_min_tx_size, sd,
-                1, PAL_MAP_FIELD("min_tx_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_mtu, sd,
-                1, PAL_MAP_FIELD("mtu"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_buffer_size, sd,
-                1, PAL_MAP_FIELD("buffer_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_string(&c->cc_host, sd,
-                1, PAL_MAP_FIELD("host"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_max_tx_size, sd,
-                1, PAL_MAP_FIELD("max_tx_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_size, sd,
-                1, PAL_MAP_FIELD("packet_size"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_packet_count, sd,
-                1, PAL_MAP_FIELD("packet_count"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_region, sd,
-                1, PAL_MAP_FIELD("region"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_baud, sd,
-                1, PAL_MAP_FIELD("baud"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    if(pal_yaml_subdoc_find_unsigned(&c->cc_message_id, sd,
-                1, PAL_MAP_FIELD("message_id"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        pal_yaml_subdoc_t sess;
-        if(pal_yaml_subdoc_find_subdoc(&sess, sd,
-                    1, PAL_MAP_FIELD("session"))) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            struct session *s;
-            TRY_ERRNO(s = calloc(1, sizeof *c->cc_session));
-
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_level, &sess,
-                        1, PAL_MAP_FIELD("level"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_src_id, &sess,
-                        1, PAL_MAP_FIELD("src_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(&s->sess_dst_id, &sess,
-                        1, PAL_MAP_FIELD("dst_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned_sequence(
-                        &s->sess_messages,
-                        &s->sess_messages_count, &sess,
-                        1, PAL_MAP_FIELD("messages"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-            if(pal_yaml_subdoc_find_unsigned(
-                        &s->sess_id, &sess,
-                        1, PAL_MAP_FIELD("sess_id"))
-                    == PAL_YAML_NOT_FOUND)
-                pal_yaml_subdoc_error_pop(sd);
-
-            c->cc_session = s;
-            pal_yaml_subdoc_close(&sess);
-        }
-    }
-
-    /* Trivial resources
-     */
-    if(pal_yaml_subdoc_find_string(&c->cc_string_value, sd,
-                1, PAL_MAP_FIELD("string_value"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        int64_t int_val;
-        if(pal_yaml_subdoc_find_signed(&int_val, sd,
-                    1, PAL_MAP_FIELD("integer_value"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_integer_value
-                    = malloc(sizeof *c->cc_integer_value));
-            *c->cc_integer_value = int_val;
-        }
-    }
-    {
-        bool bool_val;
-        if(pal_yaml_subdoc_find_boolean(&bool_val, sd,
-                    1, PAL_MAP_FIELD("boolean_value"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_boolean_value
-                    = malloc(sizeof *c->cc_boolean_value));
-            *c->cc_boolean_value = bool_val;
-        }
-    }
-
-    /* File resource
-     */
-    if(pal_yaml_subdoc_find_string(&c->cc_file_path, sd,
-                1, PAL_MAP_FIELD("file_path"))
-            == PAL_YAML_NOT_FOUND)
-        pal_yaml_subdoc_error_pop(sd);
-    {
-        pal_yaml_enum_schema_t fflags_schema[] = {
-            {"O_RDONLY",    O_RDONLY},
-            {"O_WRONLY",    O_WRONLY},
-            {"O_RDWR",      O_RDWR},
-
-            {"O_APPEND",    O_APPEND},
-            {"O_ASYNC",     O_ASYNC},
-            {"O_CLOEXEC",   O_CLOEXEC},
-            {"O_CREAT",     O_CREAT},
-            {"O_DIRECTORY", O_DIRECTORY},
-            {"O_DSYNC",     O_DSYNC},
-            {"O_EXCL",      O_EXCL},
-            {"O_NOCTTY",    O_NOCTTY},
-            {"O_NOFOLLOW",  O_NOFOLLOW},
-            {"O_NONBLOCK",  O_NONBLOCK},
-            {"O_SYNC",      O_SYNC},
-            {"O_TRUNC",     O_TRUNC},
-        };
-        int fflags;
-        if(pal_yaml_subdoc_find_flags(&fflags, fflags_schema, sd,
-                    1, PAL_MAP_FIELD("file_flags"))
-                == PAL_YAML_NOT_FOUND) {
-            pal_yaml_subdoc_error_pop(sd);
-        } else {
-            TRY_ERRNO(c->cc_file_flags
-                    = malloc(sizeof *c->cc_file_flags));
-            *c->cc_file_flags = fflags;
-        }
-    }
-}
-
-struct top_level *load_yaml(const char *fname)
+struct top_level *load_yaml(yaml_document_t* doc, pal_context_t* ctx, const char *fname)
 {
     assert(fname != NULL);
 
-    struct top_level *tlp = calloc(1, sizeof *tlp);
-
-    pal_yaml_subdoc_t sd;
-    if(pal_yaml_subdoc_open(&sd, fname) != PAL_YAML_OK) {
-        pal_yaml_subdoc_log_errors(&sd);
-        pal_yaml_subdoc_clear_errors(&sd);
-        free(tlp);
+    const pal_config_node_t* root;
+    if (pal_yaml_subdoc_open(doc, &root, fname) != PAL_YAML_OK) {
         return NULL;
     }
 
+    // Initialize context
+    ctx->doc = doc;
+    ctx->error_count = 0;
+
+    struct top_level *tlp = calloc(1, sizeof *tlp);
     {
-        pal_yaml_subdoc_t encs;
-        pal_yaml_subdoc_find_sequence(
-                &encs, &tlp->tl_encs_count, &sd,
-                true, 1, PAL_MAP_FIELD("enclaves"));
-        if(tlp->tl_encs_count > 0)
-            tlp->tl_encs = calloc(tlp->tl_encs_count,
-                    sizeof(*tlp->tl_encs));
+        const pal_config_node_t** encs = 0;
+        pal_config_sequence(&encs, &tlp->tl_encs_count, ctx, root, false, 1, "enclaves");
+        if (tlp->tl_encs_count > 0)
+            tlp->tl_encs = calloc(tlp->tl_encs_count, sizeof(*tlp->tl_encs));
 
-        size_t i;
-        for(i = 0; i < tlp->tl_encs_count; ++i) {
+        for (size_t i = 0; i < tlp->tl_encs_count; ++i) {
             struct enclave *e = &tlp->tl_encs[i];
-
-            pal_yaml_subdoc_find_string(&e->enc_name, &encs,
-                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
-            pal_yaml_subdoc_find_string(&e->enc_path, &encs,
-                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("path"));
-            pal_yaml_subdoc_find_string_sequence(
-                    &e->enc_args, &e->enc_args_count, &encs,
-                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("args"));
-            pal_yaml_subdoc_find_string_sequence(
-                    &e->enc_env, &e->enc_env_count, &encs,
-                    false, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("env"));
+            const pal_config_node_t* child = encs[i];
+            pal_config_string(&e->enc_name, ctx, child, true, 1, "name");
+            pal_config_string(&e->enc_path, ctx, child, false, 1, "path");
+            pal_config_string_sequence(&e->enc_args, &e->enc_args_count, ctx, child, false, 1, "args");
+            pal_config_string_sequence(&e->enc_env,  &e->enc_env_count,  ctx, child, false, 1, "env");
         }
-
-        pal_yaml_subdoc_copy_errors(&sd, &encs);
-        pal_yaml_subdoc_close(&encs);
+        free(encs);
     }
 
     {
-        pal_yaml_subdoc_t rscs;
-        pal_yaml_subdoc_find_sequence(
-                &rscs, &tlp->tl_rscs_count, &sd,
-                true, 1, PAL_MAP_FIELD("resources"));
+        const pal_config_node_t** rscs = 0;
+        pal_config_sequence(&rscs, &tlp->tl_rscs_count, ctx, root, false, 1, "resources");
         if(tlp->tl_rscs_count > 0)
-            tlp->tl_rscs = calloc(tlp->tl_rscs_count,
-                    sizeof(*tlp->tl_rscs));
+            tlp->tl_rscs = calloc(tlp->tl_rscs_count, sizeof(*tlp->tl_rscs));
 
         size_t i;
+
         for(i = 0; i < tlp->tl_rscs_count; ++i) {
             struct resource *r = &tlp->tl_rscs[i];
-            pal_yaml_subdoc_find_string(&r->r_name, &rscs,
-                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("name"));
-            pal_yaml_subdoc_find_string(&r->r_type, &rscs,
-                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("type"));
-            pal_yaml_subdoc_find_string_sequence(
-                    &r->r_ids, &r->r_ids_count, &rscs,
-                    true, 2, PAL_SEQ_IDX(i), PAL_MAP_FIELD("ids"));
-            pal_yaml_subdoc_find_subdoc(&r->r_yaml, &rscs,
-                    true, 2, PAL_SEQ_IDX(i),
-                             PAL_MAP_FIELD("value"));
+            const pal_config_node_t* child = rscs[i];
+            pal_config_string(&r->r_name, ctx, child, true, 1, "name");
+            pal_config_string(&r->r_type, ctx, child, true, 1, "type");
+            pal_config_string_sequence(&r->r_ids, &r->r_ids_count, ctx, child, true, 1, "ids");
+            pal_yaml_result_t res = deref_object_field(ctx, &r->r_config, true, child, "value");
+            if (res != PAL_YAML_OK) break;
         }
-
-        pal_yaml_subdoc_copy_errors(&sd, &rscs);
-        pal_yaml_subdoc_close(&rscs);
+        free(rscs);
     }
 
     {
@@ -1355,22 +819,16 @@ struct top_level *load_yaml(const char *fname)
             { "info",    LOGLVL_INFO },
             { "debug",   LOGLVL_DEBUG }
         };
-        pal_yaml_subdoc_find_enum((int*)&tlp->tl_cfg.cfg_loglvl,
-                log_level_schema, &sd,
-                false, 2, PAL_MAP_FIELD("config"),
-                          PAL_MAP_FIELD("log_level"));
+        pal_config_enum((int*)&tlp->tl_cfg.cfg_loglvl, log_level_schema, ctx, root, false, 2, "config", "log_level");
     }
-    pal_yaml_subdoc_find_string(&tlp->tl_cfg.cfg_plugin_dir, &sd,
-            false, 2, PAL_MAP_FIELD("config"),
-                      PAL_MAP_FIELD("plugin_directory"));
+    pal_config_string(&tlp->tl_cfg.cfg_plugin_dir, ctx, root, false, 2, "config", "plugin_directory");
 
-    if(pal_yaml_subdoc_error_count(&sd) > 0) {
-        pal_yaml_subdoc_log_errors(&sd);
+    if (pal_error_count(ctx) > 0) {
+        pal_context_flush_errors(ctx);
         free_yaml(tlp);
         tlp = NULL;
     }
 
-    pal_yaml_subdoc_close(&sd);
     return tlp;
 }
 
@@ -1378,26 +836,19 @@ void free_yaml(struct top_level *tlp)
 {
     for(size_t i = 0; i < tlp->tl_encs_count; ++i) {
         struct enclave *e = &tlp->tl_encs[i];
-        free(e->enc_name);
-        free(e->enc_path);
-        for(size_t i = 0; i < e->enc_args_count; ++i)
-            free(e->enc_args[i]);
+        free((void*) e->enc_name);
+        free((void*) e->enc_path);
         free(e->enc_args);
-        for(size_t i = 0; i < e->enc_env_count; ++i)
-            free(e->enc_env[i]);
         free(e->enc_env);
     }
     free(tlp->tl_encs);
     for(size_t i = 0; i < tlp->tl_rscs_count; ++i) {
         struct resource *r = &tlp->tl_rscs[i];
-        free(r->r_name);
-        free(r->r_type);
-        for(size_t i = 0; i < r->r_ids_count; ++i)
-            free(r->r_ids[i]);
+        free((void*) r->r_name);
+        free((void*) r->r_type);
         free(r->r_ids);
-        pal_yaml_subdoc_close(&r->r_yaml);
     }
     free(tlp->tl_rscs);
-    free(tlp->tl_cfg.cfg_plugin_dir);
+    free((void*) tlp->tl_cfg.cfg_plugin_dir);
     free(tlp);
 }

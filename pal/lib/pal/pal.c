@@ -1,12 +1,14 @@
 #include <errno.h>
-#include <libpirate.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pal/pal.h"
+#include <libpirate.h>
+#include "unistd.h"
+#include <stdarg.h>
 
-#include <pal/pal.h>
-
+int vasprintf(char **ret, const char *format, va_list ap);
 /*
  * Application resource getters
  */
@@ -28,15 +30,27 @@ int get_pal_fd()
     return res;
 }
 
-// FIXME: Do we want to sort these in clang so we can search smarter here?
-char *lookup_pirate_resource_param(struct pirate_resource *pr,
-        const char *name)
-{
-    size_t i;
+static
+void debugLog(const char* fmt, ...) {
+    char* s;
+    va_list ap;
+    va_start(ap, fmt);
+    int r = vasprintf(&s, fmt, ap);
+    va_end(ap);
+    if (r < 0) {
+        const char* msg = "LOG FAILED.\n";
+        write(STDERR_FILENO, msg, strlen(msg));
+    }
+    write(STDERR_FILENO, s, strlen(s));
+}
 
-    for(i = 0; i < pr->pr_params_len; ++i)
-        if(!strcmp(pr->pr_params[i].prp_name, name))
+
+// FIXME: Do we want to sort these in clang so we can search smarter here?
+const char *lookup_pirate_resource_param(struct pirate_resource *pr, const char *name) {
+    for (size_t i = 0; i < pr->pr_params_len; ++i) {
+        if (!strcmp(pr->pr_params[i].prp_name, name))
             return pr->pr_params[i].prp_value;
+    }
 
     return NULL;
 }
@@ -192,8 +206,7 @@ extern struct pirate_resource __stop_pirate_res_string[];
 
 void __attribute__((constructor)) init_string_resources()
 {
-    init_resources_common("string", (get_func_t)&get_string_res,
-            __start_pirate_res_string, __stop_pirate_res_string);
+    init_resources_common("string", (get_func_t)&get_string_res, __start_pirate_res_string, __stop_pirate_res_string);
 }
 
 extern struct pirate_resource __start_pirate_res_integer[];
@@ -228,48 +241,63 @@ extern struct pirate_resource __stop_pirate_res_pirate_channel[];
 
 void __attribute__((constructor)) init_pirate_channel_resources()
 {
-    int fd;
-    struct pirate_resource *pr;
     struct pirate_resource *start = __start_pirate_res_pirate_channel;
     struct pirate_resource *stop = __stop_pirate_res_pirate_channel;
 
-    if(start == stop)
+    if (start == stop)
         return; // No resources present
 
-    if((fd = get_pal_fd()) < 0) {
-        fputs("PAL resources declared, but no PAL_FD present in environment. "
-                "Are we running with PAL?\n", stderr);
+    int fd = get_pal_fd();
+    if (fd < 0) {
+        debugLog("PAL resources declared, but no PAL_FD present in environment.\n"
+                 "Are we running with PAL?\n");
         exit(1);
     }
 
-    for(pr = start; pr < stop; ++pr) {
-        int err, perms = O_RDWR;
-        char *cfg, *permstr;
-
-        if(!pr || !pr->pr_name || !pr->pr_obj)
-            fputs("Invalid pirate resource section for `pirate_channel'\n",
-                    stderr);
-
-        if((err = get_pirate_channel_cfg(fd, pr->pr_name, &cfg))) {
-            fprintf(stderr, "Fatal error getting pirate_channel %s: %s\n",
-                    pr->pr_name,
-                    err > 0 ? pal_strerror(err) : strerror(-err));
-            exit(1);
+    bool errors = false;
+    for (struct pirate_resource *pr = start; pr < stop; ++pr) {
+        //int perms = O_RDWR;
+        if (!pr || !pr->pr_name || !pr->pr_obj) {
+            debugLog("Invalid pirate resource section for `pirate_channel'\n");
+            errors = true;
+            continue;
+        }
+ 
+        char *cfg;
+        int err = get_pirate_channel_cfg(fd, pr->pr_name, &cfg);        
+        if (err) {
+            debugLog("Fatal error getting pirate_channel %s: %s\n", pr->pr_name,
+                     err > 0 ? pal_strerror(err) : strerror(-err));
+            errors = true;
+            continue;
         }
 
-        if((permstr = lookup_pirate_resource_param(pr, "permissions"))) {
-            if(!strcmp(permstr, "readonly"))
-                perms = O_RDONLY;
-            else if(!strcmp(permstr, "writeonly"))
-                perms = O_WRONLY;
+        const char *permstr = lookup_pirate_resource_param(pr, "permissions");
+        if (!permstr) {
+            debugLog("Missing permissions on %s.\n", pr->pr_name);
+            errors = true;
+            continue;
         }
 
-        if((*(int *)pr->pr_obj = pirate_open_parse(cfg, perms)) < 0) {
-            fprintf(stderr, "Fatal error opening pirate_channel %s: %s\n",
-                    pr->pr_name, strerror(errno));
-            exit(1);
+        int perms;
+        if (!strcmp(permstr, "readonly")) {
+            perms = O_RDONLY;
+        } else if (!strcmp(permstr, "writeonly")) {
+            perms = O_WRONLY;
+        } else {
+            debugLog("Expected permissions of \"readonly\" or \"writeonly\" on %s: Found %s\n", pr->pr_name, permstr);
+            errors = true;
+            continue;
+        }
+
+        int* chanPtr = pr->pr_obj;
+        *chanPtr = pirate_open_parse(cfg, perms);
+        if (*chanPtr < 0) {
+            debugLog("Fatal error opening pirate_channel %s: %s\n", pr->pr_name, strerror(errno));
+            errors = true;
         }
 
         free(cfg);
     }
+    //if (errors) exit(-1);
 }

@@ -1,0 +1,20 @@
+enclaves:
+- name: server
+  path: pal_server
+- name: client
+  path: pal_client
+resources:
+- name: client-to-server
+  type: pirate_channel
+  ids: [ "client/client" ]
+  value:
+    channel_type: "pipe"
+    path: "/tmp/pal"
+- name: server-to-client
+  type: pirate_channel
+  ids: [ "server/client" ]
+  value:
+    channel_type: "pipe"
+    path: "/tmp/pal"
+
+#  ids: [ "client/client_start", "server/client_start" ]

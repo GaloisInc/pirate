@@ -15,6 +15,6 @@
  *
  * Return 0 on success. On error, return -1 and print an error message.
  */
-int launch(struct app *app, char *cfg_path, struct enclave *enc, char **envp);
+int launch(struct app *app, const char *cfg_path, struct enclave *enc, char **envp);
 
 #endif // _PIRATE_PAL_LAUNCH_H

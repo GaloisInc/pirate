@@ -20,8 +20,7 @@ project(pal)
 ###
 
 add_library(libpal_shared SHARED lib/pal/pal.c lib/pal/envelope.c)
-set_target_properties(libpal_shared
-    PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(libpal_shared PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
 target_include_directories(libpal_shared PUBLIC include)
 target_link_libraries(libpal_shared ${PIRATE_APP_LIBS})
 set_property(TARGET libpal_shared PROPERTY PREFIX "")
@@ -36,11 +35,11 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/pal DESTINATION include)
 
 add_library(pirate_channel_plugin SHARED lib/plugins/pirate_channel.c)
 set_target_properties(pirate_channel_plugin
-    PROPERTIES OUTPUT_NAME pirate_channel CLEAN_DIRECT_OUTPUT 1)
+    PROPERTIES OUTPUT_NAME pirate_channel LIBRARY_OUTPUT_DIRECTORY plugins CLEAN_DIRECT_OUTPUT 1)
 target_include_directories(pirate_channel_plugin PRIVATE include)
 target_link_libraries(pirate_channel_plugin ${PIRATE_APP_LIBS})
 set_property(TARGET pirate_channel_plugin PROPERTY PREFIX "")
-target_compile_options(pirate_channel_plugin PRIVATE SHELL:-Wall SHELL:-Werror)
+target_compile_options(pirate_channel_plugin PRIVATE -Wall -Werror -g)
 
 install(TARGETS pirate_channel_plugin DESTINATION lib/pirate/pal/plugins)
 
@@ -59,10 +58,14 @@ add_executable(exepal
 set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
 target_include_directories(exepal PRIVATE include)
 target_link_libraries(exepal yaml dl)
-target_compile_options(exepal PRIVATE -Wall -Werror)
+target_compile_options(exepal PRIVATE -Wall -Werror -g)
 target_link_options(exepal PRIVATE
     SHELL:-Wl,-export-dynamic # Allows plugins to access symbols defined in pal
 )
 
 install(TARGETS exepal DESTINATION bin)
 install(FILES include/pal/pal.h DESTINATION include/pal)
+
+if (NOT GAPS_DISABLE)
+  add_subdirectory(examples/pirate_channel)
+endif(NOT GAPS_DISABLE)

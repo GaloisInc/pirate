@@ -21,8 +21,7 @@
  * `path` should point to at least `strlen(cfg_path) + strlen(app_path) + 1`
  * bytes. Otherwise, the path may be truncated.
  */
-static void make_path(char *path, size_t path_len,
-        char *cfg_path, char *app_path)
+static void make_path(char *path, size_t path_len, const char *cfg_path, const char *app_path)
 {
     char *last_slash;
 
@@ -55,8 +54,8 @@ static size_t count_envp(char **envp)
  * The `new_envp` vector should contain space for at least
  * `env_count + old_envp_count + 2` strings.
  */
-static void make_envp(char **new_envp, char *pal_fd_env,
-        char **env, size_t env_count,
+static void make_envp(const char **new_envp, char *pal_fd_env,
+        const char **env, size_t env_count,
         char **old_envp, size_t old_envp_count)
 {
     size_t i;
@@ -78,8 +77,7 @@ static void make_envp(char **new_envp, char *pal_fd_env,
  * The `new_argv` vector should contain space for at least
  * `args_count + 2` strings.
  */
-static void make_argv(char **new_argv, char *path,
-        char **args, size_t args_count)
+static void make_argv(const char **new_argv, const char *path, const char **args, size_t args_count)
 {
     size_t i;
 
@@ -93,6 +91,7 @@ static void make_argv(char **new_argv, char *path,
  *
  * Return 0 on success. Otherwise, return -1 and leave `errno` set.
  */
+/*
 static int set_cloexec(int fd)
 {
     int flags;
@@ -105,17 +104,18 @@ static int set_cloexec(int fd)
 
     return 0;
 }
+*/
 
 #define PERROR(_op) error("Failed to %s: %s", _op, strerror(errno))
 
-int launch(struct app *app, char *cfg_path,
+int launch(struct app *app, const char *cfg_path,
         struct enclave *enc, char **envp)
 {
     int fds[2];
     size_t envp_count = count_envp(envp);
-    char *enc_path = enc->enc_path ? enc->enc_path : enc->enc_name;
-    char *new_argv[1 /*progname*/ + enc->enc_args_count + 1 /*NULL*/];
-    char *new_envp[1 /*PAL_FD*/ + enc->enc_env_count + envp_count + 1 /*NULL*/];
+    const char *enc_path = enc->enc_path ? enc->enc_path : enc->enc_name;
+    const char *new_argv[1 /*progname*/ + enc->enc_args_count + 1 /*NULL*/];
+    const char *new_envp[1 /*PAL_FD*/ + enc->enc_env_count + envp_count + 1 /*NULL*/];
     char path[strlen(cfg_path) + strlen(enc_path) + 1 /*\0*/];
     char pal_fd_env[32]; // Large enough for "PAL_FD=XXXX"
     int cwd = -1;
@@ -133,8 +133,8 @@ int launch(struct app *app, char *cfg_path,
     make_path(path, sizeof path, cfg_path, enc_path);
     make_argv(new_argv, path, enc->enc_args, enc->enc_args_count);
     make_envp(new_envp, pal_fd_env,
-            enc->enc_env, enc->enc_env_count,
-            envp, envp_count);
+              enc->enc_env, enc->enc_env_count,
+              envp, envp_count);
     app->name = enc->enc_name;
 
     if (enc->enc_directory) {
@@ -147,13 +147,17 @@ int launch(struct app *app, char *cfg_path,
 
     // Spawn the process
     plog(LOGLVL_INFO, "Spawning executable %s as app %s", path, app->name);
-    if (set_cloexec(fds[PARENT_END])) {
-        PERROR("set FD_CLOEXEC on pipe");
-        return -1;
-    } else if (posix_spawn(&app->pid, path, NULL, NULL, new_argv, new_envp)) {
-        PERROR("spawn process");
-        return -1;
+    pid_t p = fork();
+
+    // If in child
+    if (p == 0) {
+        close(fds[PARENT_END]);
+        execve(path, (char**) new_argv, (char**) new_envp);
+        PERROR("execve failed");
+        exit(-1);
     }
+    close(fds[CHILD_END]);
+    app->pid = p;
 
     close(fds[CHILD_END]);
     if (cwd >= 0) {
@@ -162,5 +166,6 @@ int launch(struct app *app, char *cfg_path,
         if (close(cwd))
             PERROR("close current directory");
     }
+    
     return 0;
 }
