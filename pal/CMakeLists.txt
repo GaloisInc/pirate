@@ -53,8 +53,8 @@ add_library(libpal_shared SHARED
 )
 set_target_properties(libpal_shared
     PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
-target_include_directories(libpal_shared PRIVATE include)
-target_link_libraries(libpal_shared pirate)
+target_include_directories(libpal_shared PUBLIC include)
+target_link_libraries(libpal_shared ${PIRATE_APP_LIBS})
 set_property(TARGET libpal_shared PROPERTY PREFIX "")
 target_compile_options(libpal_shared PRIVATE -Wall -Werror)
 
@@ -79,8 +79,7 @@ target_include_directories(exepal PRIVATE
     include
     ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml pirate pthread rt)
+target_link_libraries(exepal libcyaml ${PIRATE_APP_LIBS} pthread rt)
 Target_compile_options(exepal PRIVATE -Wall -Werror)
 
 install(TARGETS exepal DESTINATION bin)
-install(FILES include/pal/pal.h DESTINATION include/pal)

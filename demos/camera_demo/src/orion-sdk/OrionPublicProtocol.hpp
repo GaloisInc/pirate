@@ -192,7 +192,8 @@ typedef enum
     BOARD_CROWN, //!< The crown board (ins and communications)
     BOARD_PAYLOAD,//!< The payload board (camera)
     BOARD_LENSCTRL,//!< The lens control board
-    BOARD_MISSCOMP //!< The mission computer
+    BOARD_MISSCOMP, //!< The mission computer
+    BOARD_COUNT //!< Number of boards
 } OrionBoardEnumeration_t;
 
 /*!

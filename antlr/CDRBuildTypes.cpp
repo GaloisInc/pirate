@@ -35,7 +35,7 @@ antlrcpp::Any CDRBuildTypes::visitModule(IDLParser::ModuleContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   std::string parent = namespacePrefix.get(ctx);
   std::string newNamespace = parent + identifier + "::";
-  TypeSpec *typeSpec = new ModuleDecl(parent, identifier);
+  TypeSpec *typeSpec = new ModuleDecl(parent, identifier, packed);
   ModuleDecl *moduleDecl = dynamic_cast<ModuleDecl*>(typeSpec);
   std::vector<IDLParser::DefinitionContext*> definitions = ctx->definition();
   for (IDLParser::DefinitionContext* definitionCtx : definitions) {
@@ -259,7 +259,7 @@ antlrcpp::Any CDRBuildTypes::visitType_decl(IDLParser::Type_declContext *ctx) {
 antlrcpp::Any CDRBuildTypes::visitStruct_type(IDLParser::Struct_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   std::string parent = namespacePrefix.get(ctx);
-  TypeSpec *typeSpec = new StructTypeSpec(parent, identifier);
+  TypeSpec *typeSpec = new StructTypeSpec(parent, identifier, packed);
   StructTypeSpec *structSpec = dynamic_cast<StructTypeSpec*>(typeSpec);
   std::vector<IDLParser::MemberContext*> members = ctx->member_list()->member();
   for (IDLParser::MemberContext* memberCtx : members) {
@@ -289,9 +289,26 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
 
 antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
+
+  auto* st_ctx = ctx->switch_type_spec();
+  TypeSpec *switchType;
+  auto* scoped_name = st_ctx->scoped_name();
+  if (scoped_name != nullptr) {
+    std::string name = scoped_name->getText();
+    TypeSpec *typeSpecRef = typeDeclarations[name];
+    if (typeSpecRef == nullptr) {
+      errors.insert("unknown reference to type " + name + " on line " +
+        std::to_string(scoped_name->getStart()->getLine()));
+      switchType = BaseTypeSpec::errorType();
+    } else {
+      switchType = new TypeReference(typeSpecRef);
+    }
+  } else {
+    switchType = ctx->switch_type_spec()->accept(this);
+  }
+
   std::string parent = namespacePrefix.get(ctx);
-  TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType);
+  TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType, packed);
   UnionTypeSpec *unionSpec = dynamic_cast<UnionTypeSpec*>(typeSpec);
   std::vector<IDLParser::Case_stmtContext*> members = ctx->switch_body()->case_stmt();
   for (IDLParser::Case_stmtContext* caseCtx : members) {
@@ -300,6 +317,15 @@ antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) 
   }
   typeDeclarations[ctx->identifier()->getText()] = typeSpec;
   return typeSpec;
+}
+
+std::string CDRBuildTypes::stripScopedName(std::string name) {
+  size_t indexOf = name.find_last_of("::");
+  if ((indexOf == std::string::npos) || (indexOf == name.length() - 1)) {
+    return name;
+  } else {
+    return name.substr(indexOf + 1);
+  }
 }
 
 antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
@@ -311,7 +337,9 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
     if (labelCtx->const_exp() == nullptr) {
       member->setHasDefault();
     } else {
-      member->addLabel(labelCtx->const_exp()->getText());
+      // TODO: validate the scope of the name
+      std::string label = CDRBuildTypes::stripScopedName(labelCtx->const_exp()->getText());
+      member->addLabel(label);
     }
   }
   if (ctx->element_spec()->annapps() != nullptr) {

@@ -19,7 +19,7 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-set(LIBS rt pthread pirate)
+set(LIBS rt pthread ${PIRATE_APP_LIBS})
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
@@ -32,11 +32,12 @@ set(SRCS
     src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
-    src/keyboardorientationinput.cpp
-    src/orientationoutput.cpp
-    src/baseorientationoutput.cpp
-    src/remoteorientationoutput.cpp
-    src/trilliumorientationoutput.cpp
+    src/keyboardcameracontrolinput.cpp
+    src/cameracontroloutput.cpp
+    src/basecameracontroloutput.cpp
+    src/remotecameracontroloutput.cpp
+    src/testsource.cpp
+    src/trilliumcontrol.cpp
     src/trilliumutilities.cpp
     src/videosource.cpp
     src/videosensor.cpp
@@ -57,7 +58,7 @@ if (FREESPACE_LIB)
     message("-- Freespace library found")
     set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
+    set(SRCS ${SRCS} src/freespacecameracontrolinput.cpp)
 else ()
     message("-- Freespace library not found")
 endif (FREESPACE_LIB)
@@ -77,7 +78,7 @@ if (PIGPIO_LIB)
     message("-- Pigpio library found")
     set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
+    set(SRCS ${SRCS} src/piservocameracontroloutput.cpp)
 else ()
     message("-- Pigpio library not found")
 endif (PIGPIO_LIB)
@@ -112,3 +113,7 @@ target_include_directories(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE src/orion-sdk)
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
 configure_file(${SCRIPTS_DIR}/camera_demo.sh ${PROJECT_BINARY_DIR} COPYONLY)
+
+# Configuration files
+set(CONF_DIR ${PROJECT_SOURCE_DIR}/conf)
+configure_file(${CONF_DIR}/trilliumconfig.txt ${PROJECT_BINARY_DIR} COPYONLY)

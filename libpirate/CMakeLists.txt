@@ -34,18 +34,22 @@ endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
     .
+    include
     ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
 )
 
 add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
+target_include_directories(${PIRATE_STATIC_LIB} PUBLIC include)
 set_target_properties(${PIRATE_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
 add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
+target_include_directories(${PIRATE_SHARED_LIB} PUBLIC include)
 
-install(FILES libpirate.h libpirate.hpp shmem_buffer.h DESTINATION include)
+
+install(FILES include/libpirate.h include/libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 
@@ -114,3 +118,7 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         ./${GAPS_CHANNELS_TEST}
     )
 endif(PIRATE_UNIT_TEST)
+
+install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+install(FILES include/libpirate.h include/libpirate.hpp DESTINATION include)

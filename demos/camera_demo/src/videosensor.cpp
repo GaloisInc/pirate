@@ -41,8 +41,7 @@ VideoSensor::VideoSensor(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
     mDevicePath(options.mVideoDevice),
-    mFlipHorizontal(options.mImageHorizontalFlip),
-    mFlipVertical(options.mImageVerticalFlip),
+    mFlip(options.mImageFlip),
     mFrameRateNumerator(options.mFrameRateNumerator),
     mFrameRateDenominator(options.mFrameRateDenominator),
     mFd(-1),
@@ -279,8 +278,19 @@ int VideoSensor::initVideoDevice()
         }
     }
 
-    // Horizontal flip
-    if (mFlipHorizontal)
+    // Reset horizontal flip. Ignore errors
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_HFLIP;
+    ctrl.value = 0;
+    ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+
+    // Reset vertical flip. Ignore errors
+    std::memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_VFLIP;
+    ctrl.value = 0;
+    ioctlWait(mFd, VIDIOC_S_CTRL, &ctrl);
+
+    if (mFlip)
     {
         std::memset(&ctrl, 0, sizeof(ctrl));
         ctrl.id = V4L2_CID_HFLIP;
@@ -292,11 +302,7 @@ int VideoSensor::initVideoDevice()
             std::perror("V4L2: failed to set camera horizontal flip mode");
             return -1;
         }
-    }
 
-    // Vertical flip
-    if (mFlipVertical)
-    {
         std::memset(&ctrl, 0, sizeof(ctrl));
         ctrl.id = V4L2_CID_VFLIP;
         ctrl.value = 1;

@@ -17,15 +17,15 @@
 
 #include <thread>
 
-#include "orientationinput.hpp"
+#include "cameracontrolinput.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
 
-class ColorTracking : public OrientationInput, public FrameProcessor
+class ColorTracking : public CameraControlInput, public FrameProcessor
 {
 public:
     ColorTracking(const Options& options,
-        CameraOrientationCallbacks angPosCallbacks);
+        CameraControlCallbacks cameraControlCallbacks);
     virtual ~ColorTracking();
 
     virtual int init() override;
