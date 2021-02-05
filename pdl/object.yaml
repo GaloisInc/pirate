@@ -1,0 +1,48 @@
+#! /usr/bin/env pirate-deploy
+# This script is used to pack the files into enclaves
+
+enclaves:
+  - name: orange
+    path: ./pnt_pal_orange
+    resources:
+      - id: fixed-period
+        value: true
+    location: "ip=192.168.0.1"
+
+  - name: green
+    path: ./pnt_pal_green
+    resources:
+      - id: timer-duration
+        value: 0
+
+# TODO: Migrate these to the source files via annotations or a library.
+agents:
+  - name: gps
+    enclave: green
+  - name: rfs
+    enclave: orange
+  - name: uav
+    enclave: orange
+  - name: tgt
+    enclave: green
+
+#TODO: Migrate these to source code and the executables.
+timers:
+  - frequency: 10ms
+    target: gps.read
+  - frequency: 10ms
+    target: rfs.read
+
+# This describes routes.  We need information about where
+routes:
+  - source: gps.onPositionUpdate
+    target: tgt.onGpsPositionChange
+  - source: gps.onPositionUpdate
+    target: uav.onGpsPositionChange
+  - source: rfs.onDistanceUpdate
+    target: tgt.setDistance
+  - source: uav.onUpdateTrack
+    target: tgt.setUAVLocation
+
+config:
+  log_level: debug
