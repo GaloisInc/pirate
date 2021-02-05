@@ -4,14 +4,17 @@ Doesn't actually do the executing, but packages things up and dumps out
 the requisite info in a machine-readable format.
 """
 
-from os.path import isfile, join, split
-from shutil import copy, copytree
+from argparse import Namespace
+from os import symlink
+from os.path import isfile, join
+from shutil import copy
+from distutils.dir_util import copy_tree
 from sys import exit  # pylint: disable=redefined-builtin
 from tempfile import TemporaryDirectory
 from typing import List
 
 from .project import ProjectConfiguration
-from .yaml import generate_debug_pal_file
+from .yaml import generate_debug_pal_files
 
 
 def total_startup_order(prj: ProjectConfiguration) -> List[str]:
@@ -43,7 +46,7 @@ def total_startup_order(prj: ProjectConfiguration) -> List[str]:
     return complete_startup_order
 
 
-def debug(prj: ProjectConfiguration) -> None:
+def debug(prj: ProjectConfiguration, args: Namespace) -> None:
     """Execute a project configuration locally.
 
     Args:
@@ -56,12 +59,14 @@ def debug(prj: ProjectConfiguration) -> None:
             path = prj.enclaves_by_name[enc].path
             if not isfile(path):
                 exit("Enclave binary at " + path + " doesn't exist")
-            copy(path, join(tmpdir, enc))
-        generate_debug_pal_file(tmpdir, prj)
+            symlink(path, join(tmpdir, enc))
+            # copy(path, join(tmpdir, enc))
 
-        with open(join(tmpdir, 'startup_order'), 'w') as f:
+        generate_debug_pal_files(tmpdir, prj)
+
+        with open(join(tmpdir, 'startup_order'), 'w') as file:
             for enc in prj.startup_order:
-                f.write(enc)
-                f.write('\n')
+                file.write(enc)
+                file.write('\n')
 
-        copytree(tmpdir, "./debugout")
+        copy_tree(tmpdir, args.output_dir)

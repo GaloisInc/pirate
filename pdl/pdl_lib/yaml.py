@@ -1,6 +1,6 @@
 """The module responsible for working with the actual YAML files."""
 from io import open
-from os.path import isfile, join
+from os.path import isfile, join, abspath
 from sys import exit  # pylint: disable=redefined-builtin
 from typing import Dict
 
@@ -17,7 +17,7 @@ _channel_resource_schema: Dict = {
             'type': 'list',
             'schema': {'type': 'string'}
         },
-        'type': {'type': 'string', 'allowed': ['channel']},
+        'type': {'type': 'string', 'allowed': ['pirate_channel']},
         'contents': {
             'type': 'dict',
             'schema': {
@@ -50,7 +50,7 @@ _boolean_resource_schema: Dict = {
             'schema': {'type': 'string'}
         },
         'type': {'type': 'string', 'allowed': ['boolean']},
-        'contents': {'type': 'boolean'} 
+        'contents': {'type': 'boolean'}
     }
 }
 
@@ -66,7 +66,9 @@ _enclave_schema: Dict = {
         'resources': {
             'type': 'list',
             'schema': {
-                'anyof': [_integer_resource_schema, _boolean_resource_schema, _channel_resource_schema]
+                'anyof': [_integer_resource_schema,
+                          _boolean_resource_schema,
+                          _channel_resource_schema]
             }
         }
     }
@@ -173,8 +175,8 @@ def load_yaml(yaml_file: str) -> ProjectConfiguration:
     return ProjectConfiguration(data)
 
 
-def generate_enc_pal_file(path: str, enc: str,
-                          prj: ProjectConfiguration) -> None:
+def generate_enc_pal_file(path: str, _enc: str,
+                          _prj: ProjectConfiguration) -> None:
     """Generate PAL YAML files for each enclave.
 
     Args:
@@ -186,32 +188,38 @@ def generate_enc_pal_file(path: str, enc: str,
     dump({'enclaves': {'name': 'test_enclave', 'path': 'test_path'}}, stream)
 
 
-def generate_debug_pal_file(path: str, prj: ProjectConfiguration) -> None:
-    """Generate a single PAL YAML file for debugging, which forces everything
-    to be local.
+def generate_debug_pal_files(path: str, prj: ProjectConfiguration) -> None:
+    """Generate PAL YAML files for debugging which force channels to be local.
 
     Args:
         path (str): The directory where the file should be placed
         prj (ProjectConfiguration): The project for which to generate the configuration
     """
-    with open(join(path, 'pdl.yaml'), 'w') as f:
-        f.write("#!/usr/bin/env pal\n\n")
-        yaml: Dict = {}
-        yaml['enclaves'] = []
-        yaml['resources'] = []
-        for enc in prj.enclaves:
+    for enc in prj.enclaves:
+        with open(join(path, enc.name + '.yaml'), 'w') as file:
+            file.write("#!/usr/bin/env pal\n\n")
+            yaml: Dict = {}
+            yaml['enclaves'] = []
+            yaml['resources'] = []
+
             enc_dict: Dict = {'name': enc.name}
+            # enc_dict: Dict = {'name': abspath(enc.path)}
             yaml["enclaves"].append(enc_dict)
 
-            for res in enc.resources:
+            for res in prj.debug_resources:
                 res_dict: Dict = {
                     'name': res.name,
                     'ids': [],
                     'type': res.type
                 }
                 for ident in res.ids:
+                    # if (ident.split('/')[0] == enc.name):
                     res_dict['ids'].append(ident)
-                if res.type == 'channel':
+                    # res_dict['ids'].append(replace_name_path(enc.path, ident));
+                if res.type == 'pirate_channel':
+                    # TODO: this is probably buggy when the built-in channel
+                    # type isn't pipe.  We need to generate paths shared between
+                    # enclaves
                     res_dict['contents'] = {
                         'channel_type': 'pipe',
                         'path': res.path
@@ -222,6 +230,20 @@ def generate_debug_pal_file(path: str, prj: ProjectConfiguration) -> None:
                     res_dict['contents'] = res.contents_bool
                 yaml['resources'].append(res_dict)
 
-        yaml['config'] = {'log_level': prj.config.log_level}
+            yaml['config'] = {'log_level': prj.config.log_level}
 
-        dump(yaml, f)
+            dump(yaml, file)
+
+
+def replace_name_path(enc_path: str, ident: str) -> str:
+    """The resources in the pdl.yaml file are generally given IDs with the form
+    <enclave_name>/<identifier>.  However, since we aren't running in the same
+    directory as the executables, the enclave name actually needs to be the
+    fully resolved path.  This function does that same change for the resource
+    IDs.
+
+    Args:
+        enc_path (str): The (possibly relative) path to the executable
+        ident (str): The resource ID string
+    """
+    return abspath(enc_path) + '/' + ident.split('/')[1]

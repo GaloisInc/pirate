@@ -13,7 +13,7 @@ class Resource:
         self.name = yaml['name']
         self.ids : List[str] = yaml['ids']
         self.type = yaml['type']
-        if self.type == 'channel':
+        if self.type == 'pirate_channel':
             self.channel_type = yaml['contents']['channel_type']
             self.path = yaml['contents']['path']
         elif self.type == 'integer':
@@ -106,14 +106,20 @@ class ProjectConfiguration:
         for route in yaml['routes']:
             self.routes.append(Route(route))
 
+        self.debug_resources: List[Resource] = []
+        for enc in self.enclaves:
+            for res in enc.resources:
+                self.debug_resources.append(res)
+
+
         self.config: Config = Config(yaml['config'])
 
         self.startup_order: List[str] = yaml['startup_order']
-    
+
     def enclave_names(self) -> KeysView[str]:
         """Return just the list of enclave names"""
         return self.enclaves_by_name.keys()
-        
+
 
     def dump(self) -> None:
         """For debug purposes, print out a text representation of a project

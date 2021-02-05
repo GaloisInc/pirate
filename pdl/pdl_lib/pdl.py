@@ -58,4 +58,4 @@ def main() -> None:
     if args.command == 'deploy':
         tar_all(prj)
     elif args.command == 'debug':
-        debug(prj)
+        debug(prj, args)
