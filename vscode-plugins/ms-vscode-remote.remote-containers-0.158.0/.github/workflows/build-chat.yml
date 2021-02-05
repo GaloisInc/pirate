@@ -1,0 +1,33 @@
+name: Build Chat
+
+on:
+  workflow_run:
+    workflows:
+      - '**'
+    types:
+      - completed
+    branches:
+      - '**'
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Actions
+        uses: actions/checkout@v2
+        with:
+          repository: "microsoft/vscode-github-triage-actions"
+          path: ./actions
+          ref: chrmarti/buildchat
+      - name: Install Actions
+        run: npm install --production --prefix ./actions
+      - name: Build Chat
+        uses: ./actions/build-chat
+        with:
+          workflow_run_url: ${{ github.event.workflow_run.url }}
+          notify_authors: true
+          log_channel: bot-log
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          BUILD_CHAT_STORAGE_CONNECTION_STRING: ${{ secrets.BUILD_CHAT_STORAGE_CONNECTION_STRING }}

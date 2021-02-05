@@ -1,0 +1,29 @@
+name: Dev Containers CLI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@microsoft'
+    - run: yarn
+    - run: yarn compile
+    - run: yarn dev-containers-cli-prepare
+    - run: cd dev-containers-cli && yarn && yarn test
+      env:
+        GITHUB_TOKEN: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
+    - run: |
+        echo "COMMITED_VERSION=$(jq -r '.version' < dev-containers-cli/package.json)" | tee -a $GITHUB_ENV
+        echo "PUBLISHED_VERSION=$(npm view @microsoft/vscode-dev-containers-cli version)" | tee -a $GITHUB_ENV
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
+    - run: yarn dev-containers-cli-npm-publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
+      if: ${{ env.COMMITED_VERSION != env.PUBLISHED_VERSION }}

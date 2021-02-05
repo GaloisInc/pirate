@@ -1,0 +1,26 @@
+{
+	"name": "@microsoft/vscode-dev-containers-cli",
+	"version": "0.0.6",
+	"description": "Dev Containers CLI",
+	"bin": "cli.js",
+	"author": "Microsoft Corporation",
+	"publishConfig": {
+		"registry":"https://npm.pkg.github.com/"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/microsoft/vscode-remote-containers.git"
+	},
+	"license": "SEE LICENSE IN LICENSE.txt",
+	"aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
+	"scripts": {
+		"test": "env TS_NODE_PROJECT=test/tsconfig.json mocha -r ts-node/register --exit test/*.test.ts"
+	},
+	"devDependencies": {
+		"@types/mocha": "^8.2.0",
+		"mocha": "^8.2.1"
+	},
+	"dependencies": {
+		"node-pty": "^0.9.0"
+	}
+}
