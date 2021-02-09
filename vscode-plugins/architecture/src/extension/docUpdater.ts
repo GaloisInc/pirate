@@ -24,15 +24,18 @@ function lineSourceDelta(x: string): { line: number, lastCharCount: number } {
 }
 
 /**
- * This returns a position obtained by applying a line and column delt to an existing position.
+ * Returns a position at specified offset from existing position.
  */
 function modifyPosition(p: vscode.Position, lineDelta: number, columnDelta: number) {
     return new vscode.Position(p.line + lineDelta, p.character + columnDelta)
 }
 
-function modifyRange(r: vscode.Range, lineDelta: number, columnDelta: number): vscode.Range {
-    return new vscode.Range(modifyPosition(r.start, lineDelta, columnDelta),
-                            modifyPosition(r.end, lineDelta, columnDelta))
+/**
+ * Returns a range at specified line delta from existing position.
+ */
+function modifyRangeLine(r: vscode.Range, lineDelta: number): vscode.Range {
+    return new vscode.Range(modifyPosition(r.start, lineDelta, 0),
+                            modifyPosition(r.end, lineDelta, 0))
 }
 
 class Edit implements DocEdit {
@@ -210,12 +213,19 @@ export class TrackedDoc implements Tracker {
             // this edit.
             let idx = trackIndex + 1
             while (idx < nextTrackIndex && this.#ranges[idx].start.line === adjustedLine) {
-                this.#ranges[idx] = modifyRange(this.#ranges[idx], lineDelta, columnDelta)
+                const r = this.#ranges[idx]
+                // Modify starting position
+                const startPos = modifyPosition(r.start, lineDelta, columnDelta)
+                // Modify end position by line if it is also already on line.
+                const endPos = r.end.line === adjustedLine
+                             ? modifyPosition(r.end, lineDelta, columnDelta)
+                             : modifyPosition(r.end, lineDelta, 0)
+                this.#ranges[idx] = new vscode.Range(startPos, endPos)
                 ++idx
             }
             if (lineDelta !== 0) {
                 while (idx < nextTrackIndex) {
-                    this.#ranges[idx] = modifyRange(this.#ranges[idx], lineDelta, 0)
+                    this.#ranges[idx] = modifyRangeLine(this.#ranges[idx], lineDelta)
                     ++idx
                 }
             }
