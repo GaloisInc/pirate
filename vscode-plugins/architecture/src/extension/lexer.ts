@@ -1,6 +1,3 @@
-import { endianness } from 'os'
-import { mainModule } from 'process'
-import { start } from 'repl'
 import { TextPosition, TextRange } from '../shared/position'
 
 export interface Identifier extends TextRange {
@@ -18,9 +15,16 @@ export interface OperatorToken extends TextRange {
     readonly value: string
 }
 
+export interface StringError extends TextRange {
+    readonly message: string
+}
+
 export interface StringLiteral extends TextRange {
     readonly kind: '#string'
     readonly value: string
+
+    // Errors from reading contents of string literal.
+    readonly errors: StringError[]
 }
 
 export interface EndToken extends TextRange {
@@ -36,8 +40,6 @@ export type Token = Identifier|OperatorToken|NumberLiteral|StringLiteral|EndToke
 
 /**
  * Read digits from string starting from end.
- * @param x 
- * @param y 
  */
 export function readDigitsRev(s:string, endOff:number): { count: number, value: number } {
     const start = endOff
@@ -54,9 +56,20 @@ export function readDigitsRev(s:string, endOff:number): { count: number, value: 
     return { count: start - endOff, value: value}
 }
 
-export interface Options {
-    // Number of spaces a tab is used.
-    readonly tabstopWidth : number
+/**
+ * Read digits from string starting from index.
+ */
+export function readDigits(s:string, o:number): { count: number, value: number } {
+    const start = o
+    let value = 0
+    let c = s.charAt(o)
+    while ('0' <= c && c <= '9') {
+        const d = (c as any) - ('0' as any)
+        value = 10 * value + d
+        o++
+        c = s.charAt(o)
+    }
+    return { count: o - start, value: value}
 }
 
 /**
@@ -69,61 +82,162 @@ function isAlpha(c: string): boolean {
 /**
  * Return error token for unexpected character.
  */
-function unexpectedChar(p: TextPosition, msg:string): ErrorToken {
-    return { kind: '#error', start: p, end: p, message: msg }
+function unexpectedChar(start: TextPosition, end: TextPosition, msg:string): ErrorToken {
+    return { kind: '#error', start: start, end: end, message: msg }
 }
 
 export class Lexer {
     #input: string
-    #options: Options
 
     // Next token in string to return
-
     #next: Token
 
-    #index: number
-    #line: number
-    #column: number
+    #position: TextPosition
 
+    constructor(input: string) {
+        this.#input = input
+        this.#position = { index: 0, line: 0, character: 0 }
 
+        this.#next = this.getNext()
+    }
 
+    /**
+     * Reads a string literal after first double quite scanned scanned.
+     */
+    private readStringLit(start: TextPosition): StringLiteral {
+        const input = this.#input
+        // Advance position over first doublequote
+		let index = start.index+1
+		let line  = start.line
+        let character = start.character+1
+
+        let value: string = ""
+        const errors: StringError[] = []
+        while (true) {
+            const d = input.charAt(index)
+            switch (d) {
+            // End of string literal
+            case '"':
+                {
+                    const end:TextPosition = { index: index+1, line: line, character: character+1 }
+                    this.#position = end
+                    return { kind: '#string', start: start, end: end, value: value, errors: errors }
+                }
+            // End of file
+            case '':
+                {
+                    const end:TextPosition = { index: index, line: line, character: character }
+                    errors.push({ start: start, end: end, message: "Unterminated string literal." })
+                    this.#position = end
+                    return { kind: '#string', start: start, end: end, value: value, errors: errors }
+                }
+            case '\t':
+                {
+                    const start:TextPosition = { index: index, line: line, character: character }
+                    index++
+                    character++
+                    const end:TextPosition = { index: index, line: line, character: character }
+                    errors.push({start: start, end: end, message: "Unescaped tab characters not allowed in strings."})
+                    value = value + '\t'
+                }
+                break
+            case '\r':
+            case '\n':
+                {
+                    const start:TextPosition = { index: index, line: line, character: character }
+                    index++
+                    line++
+                    character = 0
+                    const end:TextPosition = { index: index, line: line, character: character }
+                    errors.push({start: start, end: end, message: "Unterminated string literal."})
+                    this.#position = end
+                    return { kind: '#string', start: start, end: end, value: value, errors: errors }
+               }
+            // Escape sequence
+            case '\\':
+                {
+                    const e = input.charAt(index+1)
+                    switch (e) {
+                    // Let outer loop handle end of string, tab, carriage return and newline.
+                    case '':
+                    case '\t':
+                    case '\r':
+                    case '\n':
+                        index++
+                        character++
+                        break
+                    // Escape sequences
+                    case 't':
+                        index+=2
+                        character+=2
+                        value = value + '\t'
+                        break
+                    case 'r':
+                        index+=2
+                        value = value + '\r'
+                        break
+                    case 'n':
+                        index+=2
+                        value = value + '\n'
+                        break
+                    case '\\':
+                        index+=2
+                        value = value + '\\'
+                        break
+                    case '"':
+                        index+=2
+                        value = value + '"'
+                        break
+                    default:
+                        {
+                            const escapeStart:TextPosition = { index: index, line: line, character: character }
+                            const end:TextPosition =   { index: index+1, line: line, character: character+1 }
+                            errors.push({ start: escapeStart, end: end, message: "Invalid escape sequence '\\" + e + "'" })
+                            index = index+2
+                            character = character + 2
+                        }
+                    }
+                }
+                break
+            default:
+                index++
+                character++
+                value = value + d
+                break
+            }
+        }
+    }
 
     private getNext(): Token {
         const input = this.#input
-        const tabstop = this.#options.tabstopWidth
-        let index = this.#index
-        let line = this.#line
-        let col = this.#column
+        let index = this.#position.index
+        let line = this.#position.line
+        let character = this.#position.character
 
         while (true) {
             const c = input.charAt(index)
             if (c === '') {
-                this.#index = index
-                this.#line = line  
-                this.#column = col
-                const p = { index: index, line: line, column: col }  
+                const p:TextPosition = { index: index, line: line, character: character }
+                this.#position = p
                 return { kind: '#end', start: p, end: p }
-            } else if (c === ' ') {
-                ++index; ++col
+            } else if (c === ' ' || c === '\t') {
+                ++index
+                ++character
             } else if (c === '\r') {
                 index += input.charAt(index+1) === '\n' ? 2 : 1
                 ++line
-                col = 1 
+                character = 0
             } else if (c === '\n') {
                 ++index
                 ++line
-                col = 1
-            } else if (c === '\t') {
-                const oldCol = col
-                col = tabstop * Math.ceil(col / tabstop) + 1
-                index += (col - oldCol)
+                character = 0
             } else if (c === '/') {
                 // If the next character is not / then, we have an invalid character
                 if (input.charAt(index+1) !== '/') {
-                    this.#index = index
-                    this.#line = line  
-                    this.#column = col
-                    return unexpectedChar({ index: index, line: line, column: col }, "Unexpected character '/'")
+                    let start:TextPosition = { index: index, line: line, character: character }
+                    let end:TextPosition = { index: index+2, line: line, character: character+2 }
+                    this.#position = end
+                    return unexpectedChar(start, end, "Unexpected character '/'")
                 }
                 // Check for comment that reads to end of line
                 index += 2
@@ -132,11 +246,9 @@ export class Lexer {
                     const c = input.charAt(index)
                     switch (input.charAt(index)) {
                     case '':
-                        this.#index = index
-                        this.#line = line  
-                        this.#column = col
-                        const p = { index: index, line: line, column: col }
-                        return { kind: '#end', start: p, end: p }    
+                        const p:TextPosition = { index: index, line: line, character: character }
+                        this.#position = p
+                        return { kind: '#end', start: p, end: p }
                     case '\r':
                         index += input.charAt(index+1) === '\n' ? 2 : 1
                         done = true
@@ -149,144 +261,52 @@ export class Lexer {
                         ++index
                     }
                 }
+                // Advance to next line
+                line++
+                character = 0
                 // Continue to read next character
             } else if (isAlpha(c)) {
                 // Read Keyword
-                const startIndex = index
-                let d = input.charAt(index+1)
-                while (isAlpha(d) || ['_'].indexOf(d) !== -1) {
-                    ++index
-                    d = input.charAt(index+1)
+                const start:TextPosition = { index: index, line: line, character: character }
+                let d = input.charAt(++index)
+                while (isAlpha(d) || '0' <= d && d <= '9' || ['_'].indexOf(d) !== -1)
+                    d = input.charAt(++index)
+                const v = input.substr(start.index, index - start.index)
+                const end:TextPosition = {
+                    index: index,
+                    line: line,
+                    character: character + (index - start.index)
                 }
-                this.#index = index+1
-                this.#line = line
-                this.#column = col + index + 1 - startIndex
-                const start = { index: startIndex, line: line, column: col }
-                const end = { index: index, line: line, column: col + index - startIndex }
-                const v = input.substr(startIndex, index + 1 - startIndex)
+                this.#position = end
                 return { kind: '#keyword', start: start, end: end, value: v}
             } else if ('0' <= c && c <= '9') {
                 // Read a number literal
-                let value: number = (c as any) - ('0' as any)
-                const startIndex = index
-                let d = input.charAt(index+1)
-                while ('0' <= d && d <= '9') {
-                    value = 10 * value + ((d as any) - ('0' as any))
-                    ++index
-                    d = input.charAt(index+1)
-                }
-                this.#index = index+1
-                this.#line = line
-                this.#column = col + index + 1 - startIndex
-                const start = { index: startIndex, line: line, column: col }
-                const end = { index: index, line: line, column: col + index - startIndex }
+                const start:TextPosition = { index: index, line: line, character: character }
+                let r = readDigits(input, index)
+                const value  = r.value
+                const end:TextPosition = {
+                    index: index + r.count,
+                    line: line,
+				    character: character + r.count
+			    }
+                this.#position = end
                 return { kind: '#number', start: start, end: end, value: value}
-
             } else if (c === '"') {
-                const startIndex = index
-                ++index
-                let value = ""
-                while (true) {
-                    const d = input.charAt(index)
-                    switch (d) {
-                    case '':
-                        {
-                            this.#index = index
-                            this.#line = line
-                            this.#column = col + (index - startIndex)
-                            const start = { index: startIndex, line: line, column: col }
-                            const end = { index: index, line: line, column: index-1-startIndex }
-                            return { kind: '#error', start: start, end: end, message: "Unterminated string literal." }
-                        }
-                    case '"':
-                        this.#index = index+1
-                        this.#line = line
-                        this.#column = col + (index-startIndex) + 1
-                        const start = { index: startIndex, line: line, column: col }                        
-                        const end = { index: index, line: line, column: col + (index-startIndex) }
-                        return { kind: '#string', start: start, end: end, value: value }
-                    case '\\':
-                        {
-                            const e = input.charAt(index+1)
-                            switch (e) {
-                            case '':
-                                {
-                                    const col2 = col + (index-startIndex)
-                                    this.#index = index
-                                    this.#line = line
-                                    this.#column = col2
-                                    const start = { index: index, line: line, column: col2 }
-                                    const end =   { index: index, line: line, column: col2 }
-
-                                    return { kind: '#error', start: start, end: end, message: "Unterminated escape sequence." }                                    
-                                }
-                            case 't':
-                                index+=2
-                                value = value + '\t'
-                                break
-                            case 'r':
-                                index+=2
-                                value = value + '\r'
-                                break
-                            case 'n':
-                                index+=2
-                                value = value + '\n'
-                                break
-                            case '\\':
-                                index+=2
-                                value = value + '\\'
-                                break
-                            case '"':
-                                index+=2
-                                value = value + '"'
-                                break
-                            default:
-                                const nextCol = col + (index-startIndex)
-                                this.#index = index+2
-                                this.#line = line
-                                this.#column = nextCol+2
-                                const start = { index: index, line: line, column: nextCol }
-                                const end =   { index: index+1, line: line, column: nextCol+1 }
-                                return { kind: '#error', start: start, end: end, message: "Invalid escape sequence '\\" + e + "'" }    
-                            }
-                        }
-
-                        if (['t', 'r', 'n'].indexOf(input))
-                        break
-                    case '\t':
-                        return unexpectedChar({ index: index, line: line, column: col+(index-startIndex) }, "Tab characters not allowed in strings.")
-                    case '\r':
-                    case '\n':
-                        return unexpectedChar({ index: index, line: line, column: col+(index-startIndex) }, "Unterminated string literal.")
-                    default:
-                        index++
-                        value = value + d
-                        break
-                    }
-                }
+				const start:TextPosition = { index: index, line: line, character: character }
+                return this.readStringLit(start)
             } else if ([';', '{', '}', ':', '.'].indexOf(c) !== -1) {
                 // Operator
-                this.#index = index+1
-                this.#line = line
-                this.#column = col+1
-                const p = { index: index, line: line, column: col }
-                const value = input.substr(index, 1)
-                return { kind: '#operator', start: p, end: p, value: value}
+                const start:TextPosition = { index: index, line: line, character: character }
+                const end:TextPosition   = { index: index+1, line: line, character: character+1 }
+                this.#position = end
+                return { kind: '#operator', start: start, end: end, value: c}
             } else {
-                return unexpectedChar({ index: index, line: line, column: col }, "Unexpected character '" + c + "'")
+                let start:TextPosition = { index: index,   line: line, character: character }
+                let end:TextPosition   = { index: index+1, line: line, character: character+1 }
+                this.#position = end
+                return unexpectedChar(start, end, "Unexpected character '" + c + "'")
             }
         }
-        
-    }
-
-    constructor(input: string, options: Options) {
-        this.#input = input
-        this.#options = options
-        this.#index = 0
-        this.#line = 1
-        this.#column = 1
-
-        this.#next = this.getNext()
     }
 
     peek(): Token {
@@ -297,5 +317,21 @@ export class Lexer {
         const r = this.#next
         this.#next = this.getNext()
         return r
+    }
+
+    /**
+     * Read to end of line and be ready to start tokenizing next line.
+     *
+     * Used for recovering parse tree.
+     */
+    skipToNewLine() : void {
+        const input = this.#input
+        const p = this.#position
+        let index = p.index
+        // Read to end of string, carriage return or newline
+        while (['', '\r', '\n'].indexOf(input.charAt(index)) === -1)
+            ++index
+        this.#position = { index: index, line: p.line, character: p.character }
+        this.#next = this.getNext()
     }
 }
