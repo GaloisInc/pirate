@@ -20,6 +20,7 @@
 #include <sstream>
 #include <iostream>
 
+#include <cpprest/http_client.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <math.h>
@@ -31,6 +32,9 @@
 
 #include "orion-sdk/KlvParser.hpp"
 #include "orion-sdk/KlvTree.hpp"
+
+using namespace web::http;
+using namespace web::http::client;
 
 MetaDataFrameProcessor::MetaDataFrameProcessor(const Options& options) :
     FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
@@ -168,7 +172,11 @@ int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamT
     }
 
     std::memcpy(mImageBuffer, mMapBuffer, mMapWidth * mMapHeight * 4);
-
+	web::json::value postData;
+	postData["latitude"] = web::json::value::number(39);
+	postData["longitude"] = web::json::value::number(-77);
+	http_client client = http_client(U("http://localhost:5000"));
+	client.request(methods::POST, U("/location"), postData).wait();
     // show the location if it has been updated within the past 1000 milliseconds
     if ((nowMillis - mTimestampMillis) < 1000) {
         toMercatorProjection(mLatitude, mLongitude, xCenter, yCenter);

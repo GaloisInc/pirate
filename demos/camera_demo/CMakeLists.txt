@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 
 project(camera_demo)
 set(CMAKE_BUILD_TYPE Debug)
@@ -19,7 +19,8 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-set(LIBS rt pthread pirate)
+find_package(cpprestsdk REQUIRED)
+set(LIBS rt pthread pirate cpprestsdk::cpprest)
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
