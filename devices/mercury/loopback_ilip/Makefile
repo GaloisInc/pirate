@@ -6,7 +6,7 @@ MY_CFLAGS += -g -DDEBUG
 ccflags-y += ${MY_CFLAGS}
 CC += ${MY_CFLAGS}
 
-gaps_ilip-objs := ilip_base.o ilip_nl.o
+gaps_ilip-objs := ilip_common.o ilip_loopback.o ilip_nl.o
 
 all:
 	$(MAKE) -C $(KDIR) M=$(shell pwd) modules

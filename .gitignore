@@ -21,7 +21,7 @@ devices/mercury/loopback_ilip/modules.order
 .antlr
 .devcontainer
 .vs
-/.vscode
+.vscode
 .project
 build
 vscode-plugins/*/node_modules/**/.vscode

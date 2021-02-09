@@ -46,8 +46,11 @@ typedef enum {
 typedef struct {
     uint32_t session;
     uint32_t message;
-    uint32_t count;
-    uint32_t data_tag;
+    uint32_t descriptor_type;
+    // The following field is labelled
+    // data tag for short messages and
+    // descriptor tag for long messages.
+    uint32_t tag;
 } ilip_header_t;
 
 typedef struct {
@@ -58,30 +61,50 @@ typedef struct {
 typedef struct ilip_message {
     ilip_header_t header;
     ilip_time_t time;
-    uint32_t data_length;
+    uint32_t dest_tag;
+    uint32_t immediate_length;
 } ilip_message_t;
+
+typedef struct ilip_long_message {
+    ilip_message_t immediate;
+    uint64_t data_hash_lo;
+    uint64_t data_hash_hi;
+    uint32_t data_tag;
+    uint64_t host_payload_address;
+    uint32_t data_length;
+} ilip_long_message_t;
+
 #pragma pack()
 
 static ssize_t mercury_message_pack(void *buf, const void *data,
         uint32_t data_len, const pirate_mercury_param_t *param) {
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
-    uint8_t *msg_data = (uint8_t *)buf + sizeof(ilip_message_t);
-    const size_t msg_len = data_len + sizeof(ilip_message_t);
     struct timespec tv;
     uint64_t linux_time;
 
-    if (msg_len > param->mtu) {
+    if ((param->session.mode == MERCURY_IMMEDIATE) && (data_len > PIRATE_MERCURY_IMMEDIATE_SIZE)) {
         errno = EMSGSIZE;
         return -1;
+    }
+
+    if ((param->mtu > 0) && (data_len > param->mtu)) {
+        errno = EMSGSIZE;
+        return -1;
+    }
+
+    // Hash computations require unused fields to be populated by zeros.
+    memset(buf, 0, PIRATE_MERCURY_DMA_DESCRIPTOR);
+
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        msg_hdr->header.descriptor_type = 0;
+    } else {
+        msg_hdr->header.descriptor_type = htobe32(0x10000000);
     }
 
     if(clock_gettime(CLOCK_REALTIME, &tv) != 0 ) {
         return -1;
     }
     linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
-
-    // Count is always 1 for now
-    msg_hdr->header.count = htobe32(1u);
 
     // Session
     msg_hdr->header.session = htobe32(param->session.id);
@@ -95,9 +118,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
-                case 2:   msg_hdr->header.data_tag = htobe32(3u);   break;
-                case 3:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                case 1:   msg_hdr->header.tag = htobe32(1u);   break;
+                case 2:   msg_hdr->header.tag = htobe32(3u);   break;
+                case 3:   msg_hdr->header.tag = htobe32(3u);   break;
                 default:  return -1;
             }
             break;
@@ -110,8 +133,8 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.data_tag = htobe32(2u);   break;
-                case 3:   msg_hdr->header.data_tag = htobe32(3u);   break;
+                case 2:   msg_hdr->header.tag = htobe32(2u);   break;
+                case 3:   msg_hdr->header.tag = htobe32(3u);   break;
                 default:  return -1;
             }
             break;
@@ -123,9 +146,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.data_tag = htobe32(1u);   break;
-                case 5:   msg_hdr->header.data_tag = htobe32(3u);   break;
-                case 6:   msg_hdr->header.data_tag = htobe32(4u);   break;
+                case 1:   msg_hdr->header.tag = htobe32(1u);   break;
+                case 5:   msg_hdr->header.tag = htobe32(3u);   break;
+                case 6:   msg_hdr->header.tag = htobe32(4u);   break;
                 default:  return -1;
             }
             break;
@@ -137,9 +160,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.data_tag = htobe32(1u);   break;
-                case 3:   msg_hdr->header.data_tag = htobe32(1u);   break;
-                case 4:   msg_hdr->header.data_tag = htobe32(2u);   break;
+                case 2:   msg_hdr->header.tag = htobe32(1u);   break;
+                case 3:   msg_hdr->header.tag = htobe32(1u);   break;
+                case 4:   msg_hdr->header.tag = htobe32(2u);   break;
                 default:  return -1;
             }
             break;
@@ -150,7 +173,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_tag = htobe32(data_tag);
+            msg_hdr->header.tag = htobe32(data_tag);
             break;
         }
 
@@ -159,7 +182,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 2};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_tag = htobe32(data_tag);
+            msg_hdr->header.tag = htobe32(data_tag);
             break;
         }
 
@@ -168,7 +191,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {2, 5};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_tag = htobe32(data_tag);
+            msg_hdr->header.tag = htobe32(data_tag);
             break;
         }
 
@@ -177,7 +200,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_tag = htobe32(data_tag);
+            msg_hdr->header.tag = htobe32(data_tag);
             break;
         }
 
@@ -187,43 +210,25 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
     msg_hdr->time.ilip_time  = 0ul;
     msg_hdr->time.linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
-    
-    msg_hdr->data_length     = htobe32(data_len);
-    memcpy(msg_data, data, data_len);
-    return ((ssize_t) msg_len);
-}
 
-
-static ssize_t mercury_message_unpack(const void *buf, size_t buf_len,
-                                        void *data, ssize_t count,
-                                        const pirate_mercury_param_t *param) {
-    const ilip_message_t *msg_hdr = (const ilip_message_t *)buf;
-    const uint8_t *msg_data = (const uint8_t *)buf + sizeof(ilip_message_t);
-    ssize_t payload_len;
-
-    if ((be32toh(msg_hdr->header.session) != param->session.id) ||
-        (be32toh(msg_hdr->header.count) != 1u)) {
-        return -1;
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        uint8_t *immediate_data = (uint8_t *)buf + sizeof(ilip_message_t);
+        msg_hdr->immediate_length = htobe32(data_len);
+        memcpy(immediate_data, data, data_len);
+    } else {
+        ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *)buf;
+        long_msg_hdr->host_payload_address = htobe64((uintptr_t) data);
+        long_msg_hdr->data_length = htobe32(data_len);
+        // TODO calculate message data siphash
     }
 
-    payload_len = be32toh(msg_hdr->data_length);
-    if ((payload_len + sizeof(ilip_message_t)) > buf_len) {
-        errno = EIO;
-        return -1;
-    }
-
-    count = MIN(payload_len, count);
-    memcpy(data, msg_data, count);
-    return count;
+    // TODO calculate DMA descriptor siphash
+    return PIRATE_MERCURY_DMA_DESCRIPTOR;
 }
 
 static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
     if (param->session.level == 0) {
         param->session.level = 1;
-    }
-
-    if (param->mtu == 0) {
-        param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
     }
 }
 
@@ -236,6 +241,12 @@ int pirate_mercury_parse_param(char *str, void *_param) {
         (strcmp(ptr, "mercury") != 0)) {
         return -1;
     }
+
+    if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    param->session.mode = strtol(ptr, NULL, 10);
 
     if ((ptr = strtok_r(NULL, OPT_DELIM, &saveptr1)) == NULL) {
         errno = EINVAL;
@@ -292,7 +303,8 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
         snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
     }
 
-    wr_sz = snprintf(wr, len, "mercury,%u,%u,%u%s",
+    wr_sz = snprintf(wr, len, "mercury,%d,%u,%u,%u%s",
+                        param->session.mode,
                         param->session.level,
                         param->session.source_id,
                         param->session.destination_id,
@@ -409,7 +421,7 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     }
 
     /* Allocate buffer for formatted messages */
-    ctx->buf = (uint8_t *) malloc(param->mtu);
+    ctx->buf = (uint8_t *) malloc(PIRATE_MERCURY_DMA_DESCRIPTOR);
     if (ctx->buf == NULL) {
         goto error;
     }
@@ -456,6 +468,7 @@ int pirate_mercury_close(void *_ctx) {
 ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t count) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
+    ilip_message_t *msg_hdr = (ilip_message_t *) ctx->buf;
     ssize_t rd_len;
 
     if (ctx->fd <= 0) {
@@ -463,12 +476,37 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
         return -1;
     }
 
-    rd_len = read(ctx->fd, ctx->buf, param->mtu);
-    if (rd_len < 0) {
+    memset(ctx->buf, 0, PIRATE_MERCURY_DMA_DESCRIPTOR);    
+
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        msg_hdr->header.descriptor_type = 0;
+    } else {
+        msg_hdr->header.descriptor_type = htobe32(0x10000000);
+    }
+
+    msg_hdr->header.session = htobe32(param->session.id);
+    if (param->session.mode == MERCURY_PAYLOAD) {
+        ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
+        long_msg_hdr->host_payload_address = htobe64((uintptr_t) buf);
+        long_msg_hdr->data_length = htobe32(count);
+    }
+
+    rd_len = read(ctx->fd, ctx->buf, PIRATE_MERCURY_DMA_DESCRIPTOR);
+    if (rd_len != PIRATE_MERCURY_DMA_DESCRIPTOR) {
         return -1;
     }
 
-    return mercury_message_unpack(ctx->buf, (size_t) rd_len, buf, count, param);
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        const uint8_t *msg_data = (const uint8_t *) ctx->buf + sizeof(ilip_message_t);
+        uint32_t payload_len = be32toh(msg_hdr->immediate_length);
+        count = MIN(payload_len, count);
+        memcpy(buf, msg_data, count);
+    } else {
+        ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
+        uint32_t payload_len = be32toh(long_msg_hdr->data_length);
+        count = MIN(payload_len, count);
+    }
+    return count;
 }
 
 ssize_t pirate_mercury_write_mtu(const void *_param, void *_ctx) {
@@ -476,7 +514,7 @@ ssize_t pirate_mercury_write_mtu(const void *_param, void *_ctx) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     size_t mtu = param->mtu;
     if (mtu == 0) {
-        mtu = PIRATE_MERCURY_DEFAULT_MTU;
+        return 0;
     }
     if (mtu < sizeof(ilip_message_t)) {
         errno = EINVAL;
