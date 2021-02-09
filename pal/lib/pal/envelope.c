@@ -1,13 +1,15 @@
 #include <assert.h>
 #include <errno.h>
-#include <pal/envelope.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <pal/envelope.h>
+
 #define alen(_arr) (sizeof(_arr) / sizeof(*_arr))
+#define min(_a, _b) ((_a) < (_b) ? (_a) : (_b))
 
 static const char *errstrs[] = {
     "Success",
@@ -300,25 +302,47 @@ int pal_recv_resource_request(int sock, char **typep, char **namep, int flags)
 
 pal_env_iterator_t pal_env_iterator_start(pal_env_t *env)
 {
+    assert(env != NULL);
     return env->buf;
 }
 
 pal_env_iterator_t pal_env_iterator_end(pal_env_t *env)
 {
+    assert(env != NULL);
     return &env->buf[env->size];
 }
 
 pal_env_size_t pal_env_iterator_size(pal_env_iterator_t it)
 {
+    assert(it != NULL);
     return *(pal_env_size_t *)it;
 }
 
-void * pal_env_iterator_data(pal_env_iterator_t it)
+void *pal_env_iterator_data(pal_env_iterator_t it)
 {
+    assert(it != NULL);
     return it + sizeof(pal_env_size_t);
+}
+
+char *pal_env_iterator_strdup(pal_env_iterator_t it)
+{
+    assert(it != NULL);
+    return strdupnz(pal_env_iterator_data(it), pal_env_iterator_size(it));
+}
+
+char *pal_env_iterator_strncpy(char *buf, pal_env_iterator_t it, size_t sz)
+{
+    assert(it != NULL);
+    assert(buf != NULL);
+
+    size_t cpy_size = min(sz - 1, pal_env_iterator_size(it));
+    memcpy(buf, pal_env_iterator_data(it), cpy_size);
+    buf[cpy_size] = '\0';
+    return buf;
 }
 
 pal_env_iterator_t pal_env_iterator_next(pal_env_iterator_t it)
 {
+    assert(it != NULL);
     return it + sizeof(pal_env_size_t) + pal_env_iterator_size(it);
 }

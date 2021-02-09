@@ -59,6 +59,7 @@ Additional information about Pirate is in the sections below:
 
    enclave_overview
    building_applications
+   resources
    elf_extensions
    unidirectional_channels
    tutorial

@@ -1,17 +1,9 @@
 #ifndef _PIRATE_PAL_LAUNCH_H
 #define _PIRATE_PAL_LAUNCH_H
 
-#include <stdbool.h>
-#include <sys/types.h>
+#include <pal/resource.h>
 
 #include "yaml.h"
-
-struct app {
-    char *name;
-    int pipe_fd;
-    bool hangup;
-    pid_t pid;
-};
 
 /* Launch and enclave and save information about it in `app`.
  *
@@ -23,6 +15,6 @@ struct app {
  *
  * Return 0 on success. On error, return -1 and print an error message.
  */
-int launch(struct app *app, char *cfg_path, struct enclave *enc, char **envp);
+int launch(struct app *app, const char *cfg_path, struct enclave *enc, char **envp);
 
 #endif // _PIRATE_PAL_LAUNCH_H

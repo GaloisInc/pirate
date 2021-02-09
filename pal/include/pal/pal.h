@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <libpirate.h>
+
+#include <pal/envelope.h>
 
 
 #ifdef __cplusplus
@@ -11,8 +12,8 @@ extern "C" {
 #endif
 
 struct pirate_resource_param {
-    char *prp_name;
-    char *prp_value;
+    const char *prp_name;
+    const char *prp_value;
 };
 
 struct pirate_resource {
@@ -41,8 +42,6 @@ struct pirate_resource _dummy_pirate_res_file[0]
     __attribute__((used, section(".pirate.res.file")));
 struct pirate_resource _dummy_pirate_res_pirate_channel[0]
     __attribute__((used, section(".pirate.res.pirate_channel")));
-// ^ FIXME: Remove this once it's taken care of in clang
-
 #endif
 
 /* Search environment for "PAL_FD=XXXX", where "XXXX" is a valid file
@@ -58,8 +57,7 @@ int get_pal_fd();
  * Return a pointer to the parameter value if one was found. Otherwise,
  * return NULL.
  */
-char *lookup_pirate_resource_param(struct pirate_resource *pr,
-        const char *name);
+const char *lookup_pirate_resource_param(struct pirate_resource *pr, const char *name);
 
 /* Get a resource of type "boolean" from the application launcher.
  *

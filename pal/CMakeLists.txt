@@ -16,43 +16,11 @@ project(pal)
 #endif(NOT YAML_LIB)
 
 ###
-# Adding libcyaml as an external project, ala
-# https://mirkokiefer.com/cmake-by-example-f95eb47d45b1
-###
-
-include(ExternalProject)
-ExternalProject_Add(project_libcyaml
-    GIT_REPOSITORY https://github.com/tlsa/libcyaml
-    GIT_TAG v1.0.2
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND make VARIANT=release
-    INSTALL_COMMAND make install
-    PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2
-    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcyaml-1.0.2/lib/libcyaml.so
-)
-
-add_library(libcyaml SHARED IMPORTED)
-ExternalProject_Get_Property(project_libcyaml install_dir)
-set(CYAML_INSTALL_DIR ${install_dir})
-add_dependencies(libcyaml project_libcyaml)
-set_property(TARGET libcyaml
-    PROPERTY IMPORTED_LOCATION ${CYAML_INSTALL_DIR}/lib/libcyaml.so)
-
-install(DIRECTORY ${CYAML_INSTALL_DIR}/lib/ DESTINATION lib
-    USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "libcyaml.so*")
-
-###
 # libpal shared library
 ###
 
-add_library(libpal_shared SHARED
-    lib/pal/pal.c include/pal/pal.h
-    lib/pal/envelope.c include/pal/envelope.h
-)
-set_target_properties(libpal_shared
-    PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
+add_library(libpal_shared SHARED lib/pal/pal.c lib/pal/envelope.c)
+set_target_properties(libpal_shared PROPERTIES OUTPUT_NAME libpal CLEAN_DIRECT_OUTPUT 1)
 target_include_directories(libpal_shared PUBLIC include)
 target_link_libraries(libpal_shared ${PIRATE_APP_LIBS})
 set_property(TARGET libpal_shared PROPERTY PREFIX "")
@@ -62,24 +30,42 @@ install(TARGETS libpal_shared DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/pal DESTINATION include)
 
 ###
+# pirate_channel resource plugin
+###
+
+add_library(pirate_channel_plugin SHARED lib/plugins/pirate_channel.c)
+set_target_properties(pirate_channel_plugin
+    PROPERTIES OUTPUT_NAME pirate_channel LIBRARY_OUTPUT_DIRECTORY plugins CLEAN_DIRECT_OUTPUT 1)
+target_include_directories(pirate_channel_plugin PRIVATE include)
+target_link_libraries(pirate_channel_plugin ${PIRATE_APP_LIBS})
+set_property(TARGET pirate_channel_plugin PROPERTY PREFIX "")
+target_compile_options(pirate_channel_plugin PRIVATE -Wall -Werror -g)
+
+install(TARGETS pirate_channel_plugin DESTINATION lib/pirate/pal/plugins)
+
+###
 # pal executable
 ###
 
 add_executable(exepal
     src/main.c
     src/handle_apps.c src/handle_apps.h
-    src/handlers.c src/handlers.h
     src/launch.c src/launch.h
     src/log.c src/log.h
     src/yaml.c src/yaml.h
     lib/pal/envelope.c include/pal/envelope.h
-    )
-set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
-target_include_directories(exepal PRIVATE
-    include
-    ${CYAML_INSTALL_DIR}/include
 )
-target_link_libraries(exepal libcyaml ${PIRATE_APP_LIBS} pthread rt)
-Target_compile_options(exepal PRIVATE -Wall -Werror)
+set_target_properties(exepal PROPERTIES OUTPUT_NAME pal)
+target_include_directories(exepal PRIVATE include)
+target_link_libraries(exepal yaml dl)
+target_compile_options(exepal PRIVATE -Wall -Werror -g)
+target_link_options(exepal PRIVATE
+    SHELL:-Wl,-export-dynamic # Allows plugins to access symbols defined in pal
+)
 
 install(TARGETS exepal DESTINATION bin)
+install(FILES include/pal/pal.h DESTINATION include/pal)
+
+if (NOT GAPS_DISABLE)
+  add_subdirectory(examples/pirate_channel)
+endif(NOT GAPS_DISABLE)
