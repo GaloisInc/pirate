@@ -299,5 +299,5 @@ void __attribute__((constructor)) init_pirate_channel_resources()
 
         free(cfg);
     }
-    //if (errors) exit(-1);
+    if (errors) exit(-1);
 }
