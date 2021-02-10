@@ -15,6 +15,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <math.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -24,6 +25,10 @@
 
 #include "options.hpp"
 #include "testsource.hpp"
+
+#include "orion-sdk/Constants.hpp"
+#include "orion-sdk/KlvParser.hpp"
+#include "orion-sdk/scaledencode.hpp"
 
 TestSource::TestSource(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
@@ -90,19 +95,54 @@ void TestSource::perturb()
 
 void TestSource::pollThread()
 {
-    int rv;
+    int index, rv;
+    double scale_lat, scale_lon;
     struct timespec req;
+    uint8_t klv_data[40];
+    uint64_t counter = 0;
 
     req.tv_sec = 0;
     req.tv_nsec = 1e9 / 60;
+    memset(klv_data, 0, sizeof(klv_data));
+    scale_lat = pow(2, 64) / (radians(90) - radians(-90));
+    scale_lon = pow(2, 64) / (radians(180) - radians(-180));
+
+    klv_data[16] = 20;
+    klv_data[17] = KLV_UAS_SENSOR_LAT;
+    klv_data[18] = 8;
+    klv_data[27] = KLV_UAS_SENSOR_LON;
+    klv_data[28] = 8;
+    index = 19;
+    float64ScaledTo8SignedBeBytes(radians(39.833333), klv_data, &index, scale_lat);
+    index = 29;
+    float64ScaledTo8SignedBeBytes(radians(-98.583333), klv_data, &index, scale_lon);
+
     while (mPoll)
     {
+        counter++;
         perturb();
-        // Process the frame
+
+        // Broadcast the metadata every frame for 5 seconds.
+        // Then stop broadcasting the metadata for 5 seconds.
+        // Repeat.
+        if ((counter % 600) < 300) {
+            rv = process(klv_data, 40, MetaData);
+            if (rv) {
+                std::cout << "metadata frame processor error " << rv << std::endl;
+            }
+        } else if ((counter % 600) == 300) {
+            double lat_degrees = drand48() * (49.3457868 - 24.743319) + 24.743319;
+            double lon_degrees = drand48() * (-66.9513812 - (-124.7844079)) + (-124.7844079);
+            index = 19;
+            float64ScaledTo8SignedBeBytes(radians(lat_degrees), klv_data, &index, scale_lat);
+            index = 29;
+            float64ScaledTo8SignedBeBytes(radians(lon_degrees), klv_data, &index, scale_lon);
+        }
         rv = process(mBuffer, mOutputWidth * mOutputHeight * 4, VideoData);
         if (rv) {
-            std::cout << "frame processor error " << rv << std::endl;
+            std::cout << "video frame processor error " << rv << std::endl;
         }
+
         nanosleep(&req, NULL);
     }
 }
