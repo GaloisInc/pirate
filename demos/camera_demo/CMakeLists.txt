@@ -20,7 +20,7 @@ find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
 find_package(cpprestsdk REQUIRED)
-set(LIBS rt pthread pirate cpprestsdk::cpprest)
+set(LIBS rt pthread cpprestsdk::cpprest ${PIRATE_APP_LIBS})
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)

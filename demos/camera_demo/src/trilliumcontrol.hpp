@@ -41,6 +41,7 @@ private:
     bool mReceive;
     int trilliumSensorConfig();
     int trilliumConfigParse(std::string file, OrionAptinaSettings_t &cfg);
+    int trilliumLimitsRequest();
     void reveiveThread();
     void processTrilliumPacket(OrionPkt_t& pkt);
     void processSoftwareDiagnostics(OrionPkt_t& pkt);
@@ -51,6 +52,7 @@ private:
         GeolocateTelemetryCore_t mGeo;
         GpsData_t mGps;
         OrionAptinaSettings_t mAptina;
+        OrionLimitsData_t mLimits;
         float mZoom;
         float mFocus;
         OrionDiagnostics_t mDiag;

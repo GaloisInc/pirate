@@ -30,7 +30,9 @@ public:
     virtual CDRTypeOf typeOf() override { return CDRTypeOf::MODULE_T; }
     virtual void cTypeDecl(std::ostream &ostream) override;
     virtual void cTypeDeclWire(std::ostream &ostream) override;
+    virtual std::string identifierName() override { return identifier; }
     virtual std::string cTypeName() override { throw std::runtime_error("module has no type name"); }
+    virtual std::string cppTypeName() override { throw std::runtime_error("module has no type name"); }
     virtual std::string cppNamespacePrefix() override { return namespacePrefix; }
     virtual CDRBits cTypeBits() override { return CDRBits::UNDEFINED; }
     virtual void cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) override;
@@ -39,7 +41,7 @@ public:
     virtual void cDeclareAsserts(std::ostream &ostream) override;
     virtual void cppDeclareHeader(std::ostream &ostream) override;
     virtual void cppTypeDecl(std::ostream &ostream) override;
-    virtual void cppTypeDeclWire(std::ostream &ostream) override { cTypeDeclWire(ostream); }
+    virtual void cppTypeDeclWire(std::ostream &ostream) override;
     virtual void cppDeclareAsserts(std::ostream &ostream) override { cDeclareAsserts(ostream); }
     virtual void cppDeclareFunctions(std::ostream &ostream) override;
     virtual void cppDeclareFooter(std::ostream &ostream) override;

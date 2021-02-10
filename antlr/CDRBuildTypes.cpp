@@ -234,7 +234,7 @@ antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specCo
 antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   std::string parent = namespacePrefix.get(ctx);
-  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier, packed);
+  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier);
   EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);
   std::vector<IDLParser::EnumeratorContext *> enumerators = ctx->enumerator();
   for (IDLParser::EnumeratorContext* enumCtx : enumerators) {
@@ -289,7 +289,24 @@ antlrcpp::Any CDRBuildTypes::visitMember(IDLParser::MemberContext *ctx) {
 
 antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
-  TypeSpec *switchType = ctx->switch_type_spec()->accept(this);
+
+  auto* st_ctx = ctx->switch_type_spec();
+  TypeSpec *switchType;
+  auto* scoped_name = st_ctx->scoped_name();
+  if (scoped_name != nullptr) {
+    std::string name = scoped_name->getText();
+    TypeSpec *typeSpecRef = typeDeclarations[name];
+    if (typeSpecRef == nullptr) {
+      errors.insert("unknown reference to type " + name + " on line " +
+        std::to_string(scoped_name->getStart()->getLine()));
+      switchType = BaseTypeSpec::errorType();
+    } else {
+      switchType = new TypeReference(typeSpecRef);
+    }
+  } else {
+    switchType = ctx->switch_type_spec()->accept(this);
+  }
+
   std::string parent = namespacePrefix.get(ctx);
   TypeSpec *typeSpec = new UnionTypeSpec(parent, identifier, switchType, packed);
   UnionTypeSpec *unionSpec = dynamic_cast<UnionTypeSpec*>(typeSpec);
@@ -302,6 +319,15 @@ antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) 
   return typeSpec;
 }
 
+std::string CDRBuildTypes::stripScopedName(std::string name) {
+  size_t indexOf = name.find_last_of("::");
+  if ((indexOf == std::string::npos) || (indexOf == name.length() - 1)) {
+    return name;
+  } else {
+    return name.substr(indexOf + 1);
+  }
+}
+
 antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
   TypeSpec* typeSpec = ctx->element_spec()->type_spec()->accept(this);
   Declarator* decl = ctx->element_spec()->declarator()->accept(this);
@@ -311,7 +337,9 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
     if (labelCtx->const_exp() == nullptr) {
       member->setHasDefault();
     } else {
-      member->addLabel(labelCtx->const_exp()->getText());
+      // TODO: validate the scope of the name
+      std::string label = CDRBuildTypes::stripScopedName(labelCtx->const_exp()->getText());
+      member->addLabel(label);
     }
   }
   if (ctx->element_spec()->annapps() != nullptr) {

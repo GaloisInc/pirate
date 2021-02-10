@@ -1,14 +1,11 @@
-import { TextRange } from "./position.js"
+import { TextLocated, TextRange } from "./position"
 
-export interface TextLocated<T> extends TextRange {
-    value: T
-}
+/** Integer that identifies a source locations in the document. */
+export type TrackIndex = number
 
-export interface SourceLocation {
-    readonly filename: string
-    readonly line: number
-    readonly column: number
-}
+/** Integer that identifies a file location in the underlying document. */
+export type LocationIndex = number
+
 
 export const enum Border {
     Left = 'left',
@@ -17,21 +14,40 @@ export const enum Border {
     Bottom = 'bottom'
 }
 
-export interface Port {
-    readonly name: TextLocated<string>
-    readonly location: TextLocated<SourceLocation>
-    readonly border: TextLocated<Border>
-    readonly offset: TextLocated<number>
+export interface StringField {
+    value: string
 }
 
-export interface Actor {
+/**
+ * A value whose source location is tracked so we can
+ * efficiently update the underlying document when it changes.
+ */
+export interface TrackedValue<T> {
+    readonly trackId: TrackIndex
+    readonly value: T
+}
+
+/**
+ * Common type for all named entiries in architecture.
+ */
+export interface NamedEntity {
     readonly name: TextLocated<string>
-    readonly location: TextLocated<SourceLocation>
-    readonly left: TextLocated<number>
-    readonly top: TextLocated<number>
-    readonly width: TextLocated<number>
-    readonly height: TextLocated<number>
-    readonly color: TextLocated<string>
+    readonly definition: TextRange
+}
+
+export interface Port extends NamedEntity {
+    readonly location: LocationIndex
+    readonly border: TrackedValue<Border>
+    readonly offset: TrackedValue<number>
+}
+
+export interface Actor extends NamedEntity {
+    readonly location: LocationIndex
+    readonly left: TrackedValue<number>
+    readonly top: TrackedValue<number>
+    readonly width: TrackedValue<number>
+    readonly height: TrackedValue<number>
+    readonly color: StringField
     readonly inPorts: Port[]
     readonly outPorts: Port[]
 }
@@ -46,16 +62,15 @@ export const enum BusOrientation {
 
 /**
  * A bus connects one or more input ports to one or more output ports.
- * 
+ *
  * All messages sent on any input ports are forwarded to output ports.
  */
-export interface Bus {
-    readonly name: TextLocated<string>
-    readonly orientation: TextLocated<BusOrientation>
-    readonly left:   TextLocated<number>
-    readonly top:    TextLocated<number>
-    readonly height: TextLocated<number>
-    readonly width:  TextLocated<number>
+export interface Bus extends NamedEntity {
+    readonly orientation: BusOrientation
+    readonly left:   number
+    readonly top:    number
+    readonly height: number
+    readonly width:  number
 }
 
 export const enum EndpointType { Port = 'port', Bus = 'bus' }
@@ -79,9 +94,23 @@ export interface Connection {
     readonly target : Endpoint
 }
 
-export interface SystemLayout {
-    readonly width: TextLocated<number>
-    readonly height: TextLocated<number>
+export const enum Units {
+    IN = "in",
+    CM = "cm"
+}
+
+/**
+ * Length with units
+ */
+export interface Length {
+    readonly value: number
+    readonly units: Units
+}
+
+export interface SystemModel {
+    readonly pagewidth: Length
+    readonly pageheight: Length
+    readonly width: number
     readonly actors: Actor[]
     readonly buses: Bus[]
     readonly connections: Connection[]

@@ -24,6 +24,21 @@ using namespace ticpp;
 
 namespace {
 
+const std::string license_header = "  Licensed to the Apache Software Foundation (ASF) under one or more\n\
+  contributor license agreements.  See the NOTICE file distributed with\n\
+  this work for additional information regarding copyright ownership.\n\
+  The ASF licenses this file to You under the Apache License, Version 2.0\n\
+  (the \"License\"); you may not use this file except in compliance with\n\
+  the License.  You may obtain a copy of the License at\n\
+\n\
+      http://www.apache.org/licenses/LICENSE-2.0\n\
+\n\
+  Unless required by applicable law or agreed to in writing, software\n\
+  distributed under the License is distributed on an \"AS IS\" BASIS,\n\
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n\
+  See the License for the specific language governing permissions and\n\
+  limitations under the License.";
+
 [[noreturn]] void
 not_implemented(char const* err)
 {
@@ -55,6 +70,7 @@ set_defaults(Element* defaults, bool packed)
     defaults->SetAttribute("encoding", "utf-8");
     defaults->SetAttribute("encodingErrorPolicy", "replace");
     defaults->SetAttribute("escapeSchemeRef", "");
+    defaults->SetAttribute("fillByte", "%#r20;");
     defaults->SetAttribute("floating", "no");
     defaults->SetAttribute("ignoreCase", "no");
     defaults->SetAttribute("initiatedContent", "no");
@@ -223,68 +239,135 @@ get_type_name(TypeSpec* typeSpec)
 
 void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed);
 
-void
-finish_type(Element* e, TypeSpec* typeSpec, bool packed)
+std::string
+case_label(TypeSpec* typeSpec, std::string const& label)
 {
-    if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
-        e->SetAttribute("ref", "idl:" + get_type_name(typeref->child));
-        e->RemoveAttribute("name");
-        return;
+    while (auto * ref = dynamic_cast<TypeReference*>(typeSpec)) {
+        typeSpec = ref->child;
     }
 
+    if (typeSpec->typeOf() == CDRTypeOf::ENUM_T) {
+        auto colon = label.find_last_of(':');
+        
+        // Strip away namespace
+        std::string label_
+          = std::string::npos == colon
+          ? label
+          : label.substr(colon+1);
+
+        auto* u = static_cast<EnumTypeSpec*>(typeSpec);
+        for (size_t i = 0; i < u->enumerators.size(); i++) {
+            if (u->enumerators[i] == label_) {
+                return std::to_string(i);
+            }
+        }
+    }
+    return label;
+}
+
+std::string
+construct_type(TypeSpec* typeSpec)
+{
     switch (typeSpec->typeOf()) {
         case CDRTypeOf::MODULE_T:
-            not_implemented("finish_type of module");
+            not_implemented("construct_type of module");
+        case CDRTypeOf::STRUCT_T:
+            not_implemented("construct_type of struct");
+        case CDRTypeOf::UNION_T:
+            not_implemented("construct_type of union");
         case CDRTypeOf::ENUM_T:
-            not_implemented("finish_type of enum");
+            not_implemented("construct_type of enum");
         case CDRTypeOf::LONG_DOUBLE_T:
-            not_implemented("finish_type of long double");
+            not_implemented("construct_type of long double");
         case CDRTypeOf::ERROR_T:
-            not_implemented("finish_type of error");
+            not_implemented("construct_type of error");
         case CDRTypeOf::FLOAT_T:
-            e->SetAttribute("type", "idl:float");
-            return;
+            return "idl:float";
         case CDRTypeOf::DOUBLE_T:
-            e->SetAttribute("type", "idl:double");
-            return;
+            return "idl:double";
         case CDRTypeOf::TINY_T:
-            e->SetAttribute("type", "idl:int8");
-            return;
+            return "idl:int8";
         case CDRTypeOf::SHORT_T:
-            e->SetAttribute("type", "idl:int16");
-            return;
+            return "idl:int16";
         case CDRTypeOf::LONG_T:
-            e->SetAttribute("type", "idl:int32");
-            return;
+            return "idl:int32";
         case CDRTypeOf::LONG_LONG_T:
-            e->SetAttribute("type", "idl:int64");
-            return;
+            return "idl:int64";
         case CDRTypeOf::UNSIGNED_TINY_T:
-            e->SetAttribute("type", "idl:uint8");
-            return;
+            return "idl:uint8";
         case CDRTypeOf::UNSIGNED_SHORT_T:
-            e->SetAttribute("type", "idl:uint16");
-            return;
+            return "idl:uint16";
         case CDRTypeOf::UNSIGNED_LONG_T:
-            e->SetAttribute("type", "idl:uint32");
-            return;
-        case CDRTypeOf::UNSIGNED_LONG_LONG_T: 
-            e->SetAttribute("type", "dl:uint64");
-            return;
+            return "idl:uint32";
+        case CDRTypeOf::UNSIGNED_LONG_LONG_T:
+            return "idl:uint64";
         case CDRTypeOf::CHAR_T:
-            e->SetAttribute("type", "idl:int8");
-            return;
+            return "idl:int8";
         case CDRTypeOf::BOOL_T:
-            e->SetAttribute("type", "idl:boolean");
-            return;
+            return "idl:boolean";
         case CDRTypeOf::OCTET_T:
-            e->SetAttribute("type", "idl:uint8");
-            return;
+            return "idl:uint8";
+        default:
+            not_implemented("construct_type of unknown type");
+    }
+}
+
+void
+finish_inner_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
+{
+    bool nestedType = false;
+    if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
+        e->SetAttribute("type", "idl:" + get_type_name(typeref));
+        return;
+    }
+    switch (typeSpec->typeOf()) {
+        case CDRTypeOf::STRUCT_T:
+            not_implemented("finish_inner_type of struct");
+            break;
+        case CDRTypeOf::UNION_T:
+            not_implemented("finish_inner_type of union");
+            break;
+        case CDRTypeOf::ENUM_T:
+            not_implemented("finish_inner_type of enum");
+            break;
+        default:
+            break;
+    }
+    if (decl != nullptr) {
+        for (auto ann : decl->annotations) {
+            if (dynamic_cast<ValueAnnotation*>(ann) == nullptr) {
+                nestedType = true;
+            }
+        }
+    }
+    if (!nestedType) {
+        e->SetAttribute("type", construct_type(typeSpec));
+    } else {
+        auto st = add_element(e, "xs:simpleType");
+        auto restrict = add_element(st, "xs:restriction");
+        restrict->SetAttribute("base", construct_type(typeSpec));
+        if (decl != nullptr) {
+            for (auto ann : decl->annotations) {
+                if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
+                    add_element(restrict, "xs:minInclusive")->SetAttribute("value", rangeAnn->min);
+                    add_element(restrict, "xs:maxInclusive")->SetAttribute("value", rangeAnn->max);
+                }
+            }
+        }
+    }
+}
+
+
+void
+declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
+{
+    switch (typeSpec->typeOf()) {
         case CDRTypeOf::STRUCT_T:
         {
             auto s = static_cast<StructTypeSpec const*>(typeSpec);
 
-            auto complex = add_element(e, "xs:complexType");
+            auto complex = add_element(schema, "xs:complexType");
+            complex->SetAttribute("name", get_type_name(typeSpec));
             auto sequence = add_element(complex, "xs:sequence");
 
             for (auto m : s->members) {
@@ -295,18 +378,22 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
                     construct_member(member, d, m->typeSpec, packed);
                 }
             }
-            return;
+            auto elem = add_element(schema, "xs:element");
+            elem->SetAttribute("name", s->identifier + "Decl");
+            elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
         }
         case CDRTypeOf::UNION_T:
         {
             auto u = static_cast<UnionTypeSpec*>(typeSpec);
 
-            auto complex = add_element(e, "xs:complexType");
+            auto complex = add_element(schema, "xs:complexType");
+            complex->SetAttribute("name", get_type_name(typeSpec));
             auto sequence = add_element(complex, "xs:sequence");
 
             auto tag = add_element(sequence, "xs:element");
             tag->SetAttribute("name", "tag");
-            finish_type(tag, u->switchType, packed);
+            finish_inner_type(tag, nullptr, u->switchType, packed);
 
             auto data = add_element(sequence, "xs:element");
             data->SetAttribute("name", "data");
@@ -325,10 +412,10 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
 
                 std::string labels;
                 for (auto const& l : m->labels) {
-                    labels += l;
+                    labels += case_label(u->switchType, l);
                     labels += " ";
                 }
-                labels.pop_back();
+                labels.pop_back(); // remove trailing space
 
                 auto member = add_element(unionchoice, "xs:element");
                 member->SetAttribute("dfdl:choiceBranchKey", labels);
@@ -336,9 +423,30 @@ finish_type(Element* e, TypeSpec* typeSpec, bool packed)
 
                 construct_member(member, m->declarator, m->typeSpec, packed);
             }
-            return;
+            auto elem = add_element(schema, "xs:element");
+            elem->SetAttribute("name", u->identifier + "Decl");
+            elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
         }
+        case CDRTypeOf::ENUM_T:
+        {
+            auto simple = add_element(schema, "xs:simpleType");
+            simple->SetAttribute("name", get_type_name(typeSpec));
+            auto rest = add_element(simple, "xs:restriction");
+            rest->SetAttribute("base", "idl:uint32");
+            // should we declare an element for this enum?
+            // auto ets = static_cast<EnumTypeSpec*>(typeSpec);
+            // auto elem = add_element(schema, "xs:element");
+            // elem->SetAttribute("name", ets->identifier + "Decl");
+            // elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
+        }
+        default:
+            not_implemented("declare_top_type on inner type");
+            break;
     }
+
+
 }
 
 void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
@@ -358,7 +466,7 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
         }
     }
 
-    finish_type(e, type, packed);
+    finish_inner_type(e, decl, type, packed);
 }
 
 }
@@ -392,14 +500,12 @@ int generate_dfdl(
 
     add_primitive_types(schema, moduleDecl->packed);
 
-
     for (auto * def : moduleDecl->definitions) {
-        auto name = get_type_name(def);
-        auto element = add_element(schema, "xs:element");
-        element->SetAttribute("name", get_type_name(def));
-        finish_type(element, def, moduleDecl->packed);
+        declare_top_type(schema, def, moduleDecl->packed);
     }
-
+    ostream << "<!--" << std::endl;
+    ostream << license_header << std::endl;
+    ostream << "-->" << std::endl;
     ostream << doc;
     return 0;
 }

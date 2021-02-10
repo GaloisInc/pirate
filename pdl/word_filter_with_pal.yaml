@@ -1,0 +1,20 @@
+#! /usr/bin/env pal
+
+enclaves:
+    - name: filter_ui_pal
+    - name: filter_host_pal
+resources:
+    - name: ui_to_host
+      ids: [ "filter_ui_pal/ui_to_host", "filter_host_pal/ui_to_host" ]
+      type: pirate_channel
+      contents:
+          channel_type: pipe
+          path: /tmp/filter_ui_to_host
+    - name: host_to_ui
+      ids: [ "filter_ui_pal/host_to_ui", "filter_host_pal/host_to_ui" ]
+      type: pirate_channel
+      contents:
+          channel_type: pipe
+          path: /tmp/filter_host_to_ui
+config:
+    log_level: default
