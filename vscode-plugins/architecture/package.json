@@ -61,7 +61,7 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./tsconfig.json && tsc -p ./tsconfig-webview.json",
 		"lint": "eslint src --ext ts",
-		"watch": "./node_modules/.bin/nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'npm run compile'",
+		"watch": "nodemon --watch src --ext ts --exec 'npm run compile'",
 		"pretest": "npm run compile && npm run lint",
 		"test": "node ./out/extension/test/runTest.js"
 	},
