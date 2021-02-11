@@ -284,32 +284,6 @@ public:
         ASSERT_EQ(0, errno);
     }
 
-    void WriterChannelPreClose() override
-    {
-        mercury_dev_stat_t test_stats;
-        int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        ASSERT_EQ(stats_wr.packets, test_stats.send_count);
-        ASSERT_EQ(0u, test_stats.send_reject_count);
-        ASSERT_EQ(stats_wr.packets, test_stats.send_ilip_count);
-        ASSERT_EQ(0u, test_stats.send_ilip_reject_count);
-    }
-
-    void ReaderChannelPreClose() override
-    {
-        mercury_dev_stat_t test_stats;
-        int rv = mercury_cmd_stat(mMercuryParam.session_id, &test_stats);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
-
-        ASSERT_EQ(stats_rd.packets, test_stats.receive_count);
-        ASSERT_EQ(0u, test_stats.receive_reject_count);
-        ASSERT_EQ(stats_rd.packets, test_stats.receive_ilip_count);
-        ASSERT_EQ(0u, test_stats.receive_ilip_reject_count);
-    }
-
 protected:
     MercuryTestParam mMercuryParam;
 };

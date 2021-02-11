@@ -145,8 +145,6 @@ jobs:
         sudo insmod gaps_ilip.ko
         sudo insmod gaps_loopback.ko
         test -c /dev/gaps_ilip_0_root || exit 1
-        test -c /dev/gaps_ilip_1_write || exit 1
-        test -c /dev/gaps_ilip_2_write || exit 1
     - name: Build libpirate
       run: |
         mkdir -p build
