@@ -409,7 +409,7 @@ int pirate_mercury_open(void *_param, void *_ctx) {
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.id, access == O_RDONLY ? "read" : "write");
+                    param->session.mode + 1, access == O_RDONLY ? "read" : "write");
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
                     param->session.id, access == O_RDONLY ? "read" : "write");
@@ -476,7 +476,7 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
         return -1;
     }
 
-    memset(ctx->buf, 0, PIRATE_MERCURY_DMA_DESCRIPTOR);    
+    memset(ctx->buf, 0, PIRATE_MERCURY_DMA_DESCRIPTOR);
 
     if (param->session.mode == MERCURY_IMMEDIATE) {
         msg_hdr->header.descriptor_type = 0;

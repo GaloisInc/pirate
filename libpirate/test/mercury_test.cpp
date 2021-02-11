@@ -143,8 +143,6 @@ TEST(ChannelMercuryTest, DefaultSession) {
     const ssize_t data_len = sizeof(wr_data);
     uint8_t rd_data[data_len] = { 0 };
     ssize_t io_size = -1;
-    mercury_dev_stat_t stats;
-    memset(&stats, 0, sizeof(stats));
 
     if (access(PIRATE_MERCURY_ROOT_DEV, R_OK | W_OK) != 0) {
         ASSERT_EQ(ENOENT, errno);
@@ -191,7 +189,6 @@ TEST(ChannelMercuryTest, DefaultSession) {
     ASSERT_EQ(0, rv);
 }
 
-
 typedef struct {
     mercury_mode_t mode;
     uint32_t    level;
@@ -233,10 +230,6 @@ public:
 
         ASSERT_EQ(MERCURY, param.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, param.channel.mercury.session.id);
-
-        rv = mercury_cmd_stat_clear(param.channel.mercury.session.id);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
     void ReaderChannelPostOpen() override
@@ -248,10 +241,6 @@ public:
 
         ASSERT_EQ(MERCURY, param.channel_type);
         ASSERT_EQ(mMercuryParam.session_id, param.channel.mercury.session.id);
-
-        rv = mercury_cmd_stat_clear(param.channel.mercury.session.id);
-        ASSERT_EQ(0, rv);
-        ASSERT_EQ(0, errno);
     }
 
 protected:
@@ -269,20 +258,34 @@ TEST_P(MercuryTest, Run)
 }
 
 #define IMM MERCURY_IMMEDIATE
+#define PAY MERCURY_PAYLOAD
 
 static MercuryTestParam MercuryParams [] = 
 {
-//   MODE,LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
-    { IMM,  1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
-//    { IMM,  2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
-//    { IMM,  1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
-//    { IMM,  2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
-//    { IMM,  1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
-//    { IMM,  2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
-//    { IMM,  1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
-//    { IMM,  2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
-//    { IMM,  1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
-//    { IMM,  2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
+/*
+ MODE,LVL,SRC,DST,MSG_CNT,[5 MSGS],        EXP SESSION_ID
+*/
+{ IMM, 1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
+{ IMM, 2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
+{ IMM, 1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
+{ IMM, 2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
+{ IMM, 1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
+{ IMM, 2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
+{ IMM, 1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
+{ IMM, 2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
+{ IMM, 1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
+{ IMM, 2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
+
+{ PAY, 1,  1,  0,  0,      {0, 0, 0, 0, 0}, 0x00000001},
+{ PAY, 2,  2,  0,  0,      {0, 0, 0, 0, 0}, 0x00000002},
+{ PAY, 1,  1,  2,  5,      {1, 3, 0, 0, 0}, 0xECA51756},
+{ PAY, 2,  2,  1,  5,      {1, 3, 0, 0, 0}, 0x67FF90F4},
+{ PAY, 1,  1,  2,  5,      {1, 6, 5, 0, 0}, 0x6BB83E13},
+{ PAY, 2,  2,  1,  5,      {2, 3, 4, 0, 0}, 0x8127AA5B},
+{ PAY, 1,  1,  2,  5,      {1, 1, 3, 4, 0}, 0x2C2B8E86},
+{ PAY, 2,  2,  1,  5,      {2, 1, 1, 2, 0}, 0x442D2490},
+{ PAY, 1,  1,  2,  5,      {1, 2, 5, 0, 0}, 0xBC5A32FB},
+{ PAY, 2,  2,  1,  5,      {2, 1, 3, 4, 0}, 0x574C9A21},
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,
