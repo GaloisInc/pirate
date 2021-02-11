@@ -238,7 +238,7 @@ typedef enum {
 } mercury_mode_t;
 
 // MERCURY parameters
-#define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
+#define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_1_write"
 #define PIRATE_MERCURY_IMMEDIATE_SIZE       192u
 #define PIRATE_MERCURY_DMA_DESCRIPTOR       256u
 #define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
