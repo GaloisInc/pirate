@@ -38,7 +38,7 @@ const int OPT_FREESPACE     = 2500;
 const int OPT_GAPS_REQ      = 2600;
 const int OPT_GAPS_RSP      = 2700;
 const int OPT_COLOR_PICK    = 2800;
-
+const int OPT_GDB           = 2900;
 
 static struct argp_option options[] =
 {
@@ -75,6 +75,7 @@ static struct argp_option options[] =
     { "gaps_req",     OPT_GAPS_REQ,     "channel",  0, "gaps request channel",                      0 },
     { "gaps_rsp",     OPT_GAPS_RSP,     "channel",  0, "gaps response channel",                     0 },
     { "verbose",      'v',              NULL,       0, "verbose output",                            4 },
+    { "gdb",          OPT_GDB,          NULL,       0, "gdb support (disable SIGINT trap)",         0 },
     { "loglevel",     OPT_LOGLEVEL,     "val",      0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,              NULL,       0, NULL,                                        0 },
 };
@@ -328,6 +329,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'v':
             opt->mVerbose = true;
+            break;
+
+        case OPT_GDB:
+            opt->mGDB = true;
             break;
 
         case OPT_GAPS_REQ:
