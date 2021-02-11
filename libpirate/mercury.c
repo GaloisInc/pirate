@@ -409,7 +409,7 @@ int pirate_mercury_open(void *_param, void *_ctx) {
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.mode + 1, access == O_RDONLY ? "read" : "write");
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
                     param->session.id, access == O_RDONLY ? "read" : "write");
