@@ -923,7 +923,7 @@ gaps_ilip_write_root
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
   /* Ubuntu 19.10 */
-  if (access_ok(buf, ocunt) == 0)
+  if (access_ok(buf, count) == 0)
   {
     return -EFAULT;
   }
