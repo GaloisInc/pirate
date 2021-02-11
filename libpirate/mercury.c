@@ -81,6 +81,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
     struct timespec tv;
     uint64_t linux_time;
+    uint32_t data_tag;
 
     if ((param->session.mode == MERCURY_IMMEDIATE) && (data_len > PIRATE_MERCURY_IMMEDIATE_SIZE)) {
         errno = EMSGSIZE;
@@ -110,7 +111,6 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     msg_hdr->header.session = htobe32(param->session.id);
 
     switch (param->session.id) {
-
         case 1:
         case 0xECA51756:
         {
@@ -118,9 +118,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
-                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
-                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
+                case 1:   data_tag = 1u;   break;
+                case 2:   data_tag = 3u;   break;
+                case 3:   data_tag = 3u;   break;
                 default:  return -1;
             }
             break;
@@ -133,8 +133,8 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(2u);   break;
-                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
+                case 2:   data_tag = 2u;   break;
+                case 3:   data_tag = 3u;   break;
                 default:  return -1;
             }
             break;
@@ -146,9 +146,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
-                case 5:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
-                case 6:   msg_hdr->header.data_or_descriptor_tag = htobe32(4u);   break;
+                case 1:   data_tag = 1u;   break;
+                case 5:   data_tag = 3u;   break;
+                case 6:   data_tag = 4u;   break;
                 default:  return -1;
             }
             break;
@@ -160,9 +160,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
-                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
-                case 4:   msg_hdr->header.data_or_descriptor_tag = htobe32(2u);   break;
+                case 2:   data_tag = 1u;   break;
+                case 3:   data_tag = 1u;   break;
+                case 4:   data_tag = 2u;   break;
                 default:  return -1;
             }
             break;
@@ -172,8 +172,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         {
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {1, 3, 4};
-            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
+            data_tag = data[linux_time % ARRAY_SZ(data)];
             break;
         }
 
@@ -181,8 +180,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         {
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 2};
-            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
+            data_tag = data[linux_time % ARRAY_SZ(data)];
             break;
         }
 
@@ -190,8 +188,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         {
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {2, 5};
-            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
+            data_tag = data[linux_time % ARRAY_SZ(data)];
             break;
         }
 
@@ -199,8 +196,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
         {
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 3, 4};
-            const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
+            data_tag = data[linux_time % ARRAY_SZ(data)];
             break;
         }
 
@@ -213,10 +209,12 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
 
     if (param->session.mode == MERCURY_IMMEDIATE) {
         uint8_t *immediate_data = (uint8_t *)buf + sizeof(ilip_message_t);
+        msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
         msg_hdr->immediate_length = htobe32(data_len);
         memcpy(immediate_data, data, data_len);
     } else {
         ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *)buf;
+        long_msg_hdr->data_tag = htobe32(data_tag);
         long_msg_hdr->host_payload_address = htobe64((uintptr_t) data);
         long_msg_hdr->data_length = htobe32(data_len);
         // TODO calculate message data siphash
