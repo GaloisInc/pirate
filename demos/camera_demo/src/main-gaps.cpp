@@ -169,7 +169,6 @@ void pirateCloseRemotes(const RemoteDescriptors &remotes) {
 int main(int argc, char *argv[])
 {
     int rv = 0, readerSuccess, writerSuccess;
-    bool tracing = false;
     Options options;
     RemoteDescriptors remotes;
     sigset_t set;
@@ -189,15 +188,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (ptrace(PTRACE_TRACEME, 0, 1, 0) < 0) {
-        tracing = true;
-    } else {
-        ptrace(PTRACE_DETACH, 0, 1, 0);
-    }
-
-    if (tracing) {
-        // allow SIGINT to continue working under gdb
-    } else {
+    if (!options.mGDB) {
         // block SIGINT for all threads except for the signalThread
         sigemptyset(&set);
         sigaddset(&set, SIGINT);
@@ -280,7 +271,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    if (!tracing) {
+    if (!options.mGDB) {
         signalThread = new std::thread(waitInterrupt, nullptr);
     }
 
