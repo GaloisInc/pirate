@@ -50,7 +50,7 @@ typedef struct {
     // The following field is labelled
     // data tag for short messages and
     // descriptor tag for long messages.
-    uint32_t tag;
+    uint32_t data_or_descriptor_tag;
 } ilip_header_t;
 
 typedef struct {
@@ -118,9 +118,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.tag = htobe32(1u);   break;
-                case 2:   msg_hdr->header.tag = htobe32(3u);   break;
-                case 3:   msg_hdr->header.tag = htobe32(3u);   break;
+                case 1:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
+                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
+                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
                 default:  return -1;
             }
             break;
@@ -133,8 +133,8 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.tag = htobe32(2u);   break;
-                case 3:   msg_hdr->header.tag = htobe32(3u);   break;
+                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(2u);   break;
+                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
                 default:  return -1;
             }
             break;
@@ -146,9 +146,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 1:   msg_hdr->header.tag = htobe32(1u);   break;
-                case 5:   msg_hdr->header.tag = htobe32(3u);   break;
-                case 6:   msg_hdr->header.tag = htobe32(4u);   break;
+                case 1:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
+                case 5:   msg_hdr->header.data_or_descriptor_tag = htobe32(3u);   break;
+                case 6:   msg_hdr->header.data_or_descriptor_tag = htobe32(4u);   break;
                 default:  return -1;
             }
             break;
@@ -160,9 +160,9 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             const uint32_t msg_tag = msg[linux_time % ARRAY_SZ(msg)];
             msg_hdr->header.message = htobe32(msg_tag);
             switch (msg_tag) {
-                case 2:   msg_hdr->header.tag = htobe32(1u);   break;
-                case 3:   msg_hdr->header.tag = htobe32(1u);   break;
-                case 4:   msg_hdr->header.tag = htobe32(2u);   break;
+                case 2:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
+                case 3:   msg_hdr->header.data_or_descriptor_tag = htobe32(1u);   break;
+                case 4:   msg_hdr->header.data_or_descriptor_tag = htobe32(2u);   break;
                 default:  return -1;
             }
             break;
@@ -173,7 +173,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.tag = htobe32(data_tag);
+            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
             break;
         }
 
@@ -182,7 +182,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 2};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.tag = htobe32(data_tag);
+            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
             break;
         }
 
@@ -191,7 +191,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(1u);
             const uint32_t data[] = {2, 5};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.tag = htobe32(data_tag);
+            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
             break;
         }
 
@@ -200,7 +200,7 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
             msg_hdr->header.message = htobe32(2u);
             const uint32_t data[] = {1, 3, 4};
             const uint32_t data_tag = data[linux_time % ARRAY_SZ(data)];
-            msg_hdr->header.tag = htobe32(data_tag);
+            msg_hdr->header.data_or_descriptor_tag = htobe32(data_tag);
             break;
         }
 
