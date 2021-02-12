@@ -28,24 +28,18 @@
       "properties": {
         "linker-errors.cmake.cmakePath": {
           "type": "string",
-          "default": "cmake",
+          "default": "/usr/bin/cmake",
           "description": "The full path to CMake, if it isn't already on your PATH"
-        },
-        "linker-errors.cmake.cmakeFlags": {
-          "type": "array",
-          "default": [
-            "-G",
-            "\"Unix Makefiles\"",
-            "-DCMAKE_BUILD_TYPE=Debug",
-            "-DCMAKE_C_FLAGS=-Wl,-pirate,enclaves_c.json",
-            "-DCMAKE_CXX_FLAGS=-Wl,-pirate,enclaves_cxx.json"
-          ],
-          "description": "Flags to pass to CMake when configuring this project to get linker errors.  Note that if you remove the defaults, things will break."
         },
         "linker-errors.make.makePath": {
           "type": "string",
-          "default": "make",
+          "default": "/usr/bin/make",
           "description": "The full path to make, if it isn't already on your PATH"
+        },
+        "linker-errors.PATH": {
+          "type": "string",
+          "default": "/usr/bin:/usr/local/bin",
+          "description": "Set the $PATH variable so VSCode can find cmake, make, compilers, etc.  Note that setting paths for individual executables will take precedence."
         }
       }
     }

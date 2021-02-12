@@ -22,8 +22,8 @@ class PirateLens {
             if (path.basename(file) === path.basename(document.uri.fsPath)) {
                 const range = new vscode.Range(line - 1, 0, line - 1, 999);
                 let cmd = {
-                    title: "Function has capability '" + item.caps + "'",
-                    tooltip: "Function has capability '" + item.caps + "'",
+                    title: "Function requires capability '" + item.caps + "'",
+                    tooltip: "Function requires capability '" + item.caps + "'",
                     command: '',
                 };
                 lenses.push(new vscode.CodeLens(range, cmd));
