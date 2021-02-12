@@ -319,9 +319,6 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     return ret_sz;
 }
 
-const char* read_const_str = "read";
-const char* write_const_str = "write";
-
 int pirate_mercury_open(void *_param, void *_ctx) {
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
@@ -330,8 +327,7 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     int fd_root = -1;
     unsigned wait_counter = 0;
     int access = ctx->flags & O_ACCMODE;
-    mode_t mode;
-    const char *access_suffix;
+    const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
 
     /* Open the root device to configure and establish a session */
     pirate_mercury_init_param(param);
@@ -404,14 +400,6 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     }
     fd_root = -1;
 
-    if (access == O_RDONLY) {
-        access_suffix = read_const_str;
-        mode = S_IRUSR;
-    } else {
-        access_suffix = write_const_str;
-        mode = S_IWUSR;
-    }
-
     if (param->session.message_count == 0) {
         if (param->session.level != param->session.id) {
             errno = EBADE;
@@ -419,10 +407,10 @@ int pirate_mercury_open(void *_param, void *_ctx) {
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.mode + 1, access_suffix);
+                    param->session.mode + 1, access == O_RDONLY ? "read" : "write");
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
-                    param->session.id, access_suffix);
+                    param->session.id, access == O_RDONLY ? "read" : "write");
     }
 
     /* Open the device */
@@ -501,8 +489,15 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
         long_msg_hdr->data_length = htobe32(count);
     }
 
-    rd_len = read(ctx->fd, ctx->buf, PIRATE_MERCURY_DMA_DESCRIPTOR);
-    if (rd_len != PIRATE_MERCURY_DMA_DESCRIPTOR) {
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR;
+    } else {
+        // this is fine
+        rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR + count;
+    }
+
+    rd_len = read(ctx->fd, ctx->buf, rd_len);
+    if (rd_len < 0) {
         return -1;
     }
 
