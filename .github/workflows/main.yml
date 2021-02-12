@@ -333,6 +333,13 @@ jobs:
         make
         ./idl_test
         make valgrind
+  # This builds the PDL deployment tool
+  pdl:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
   # This builds the VSCode plugins
   vscode-plugins:
     runs-on: ubuntu-20.04
