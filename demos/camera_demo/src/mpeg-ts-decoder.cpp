@@ -64,25 +64,10 @@ MpegTsDecoder::~MpegTsDecoder()
     term();
 }
 
-int MpegTsDecoder::init()
+init_video_result_t MpegTsDecoder::initVideo()
 {
     int rv;
     AVDictionary* opts = NULL;
-
-    if (mH264Url.empty()) {
-        std::cout << "decoder url must be specified on the command-line" << std::endl;
-        return 1;
-    }
-
-    rv = VideoSource::init();
-    if (rv) {
-        return rv;
-    }
-
-    av_log_set_level(mFFmpegLogLevel);
-    avcodec_register_all();
-    av_register_all();
-    avformat_network_init();
 
     mInputContext = avformat_alloc_context();
     
@@ -91,7 +76,7 @@ int MpegTsDecoder::init()
     if (avformat_open_input(&mInputContext, mH264Url.c_str(), NULL, &opts) < 0) {
         if (opts != NULL) av_dict_free(&opts);
         std::cout << "unable to open url " << mH264Url << std::endl;
-        return 1;
+        return INIT_TIMEOUT;
     } else {
         // on success opts will be destroyed and replaced
         // with a dict containing options that were not found
@@ -100,7 +85,7 @@ int MpegTsDecoder::init()
 
     if (mInputContext->nb_streams == 0) {
         std::cout << "no streams found at url " << mH264Url << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     mVideoStreamNum = av_find_best_stream(mInputContext, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
@@ -108,7 +93,7 @@ int MpegTsDecoder::init()
 
     if (mVideoStreamNum < 0) {
         std::cout << "no video streams found at url " << mH264Url << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     av_read_play(mInputContext);
@@ -122,12 +107,12 @@ int MpegTsDecoder::init()
     mInputFrame = av_frame_alloc();
     if (mInputFrame == nullptr) {
         std::cout << "unable to allocate input frame" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
     mOutputFrame = av_frame_alloc();
     if (mOutputFrame == nullptr) {
         std::cout << "unable to allocate output frame" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     mOutputFrame->format = BGRA_PIXEL_FORMAT;
@@ -137,20 +122,71 @@ int MpegTsDecoder::init()
     rv = av_frame_get_buffer(mOutputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate output image buffer" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
-
-    mImageBuffer = (unsigned char*) calloc(mOutputWidth * mOutputHeight * 4, 1);
 
     av_init_packet(&mPkt);
     mPkt.data = NULL;
     mPkt.size = 0;
+
+    return INIT_SUCCESS;
+}
+
+
+int MpegTsDecoder::init()
+{
+    int rv;
+    init_video_result_t result;
+
+    if (mH264Url.empty()) {
+        std::cout << "decoder url must be specified on the command-line" << std::endl;
+        return 1;
+    }
+
+    rv = VideoSource::init();
+    if (rv) {
+        return rv;
+    }
+
+    mImageBuffer = (unsigned char*) calloc(mOutputWidth * mOutputHeight * 4, 1);
+
+    av_log_set_level(mFFmpegLogLevel);
+    avcodec_register_all();
+    av_register_all();
+    avformat_network_init();
+
+    result = initVideo();
+    if (result != INIT_SUCCESS) {
+        return 1;
+    }
 
     // Start the capture thread
     mPoll = true;
     mPollThread = new std::thread(&MpegTsDecoder::pollThread, this);
 
     return 0;
+}
+
+void MpegTsDecoder::termVideo()
+{
+    if (mSwsContext != nullptr) {
+        sws_freeContext(mSwsContext);
+        mSwsContext = nullptr;
+    }
+    if (mOutputFrame != nullptr) {
+        av_frame_free(&mOutputFrame);
+    }
+    if (mInputFrame != nullptr) {
+        av_frame_free(&mInputFrame);
+    }
+    if (mCodecContext != nullptr) {
+        avcodec_free_context(&mCodecContext);
+    }
+    if (mInputContext != nullptr) {
+        avformat_close_input(&mInputContext);
+    }
+    mInputWidth = 0;
+    mInputHeight = 0;
 }
 
 void MpegTsDecoder::term()
@@ -165,29 +201,15 @@ void MpegTsDecoder::term()
             mPollThread = nullptr;
         }
     }
-    if (mSwsContext != nullptr) {
-        sws_freeContext(mSwsContext);
-    }
+    termVideo();
     if (mImageBuffer != nullptr) {
         free(mImageBuffer);
-    }
-    if (mOutputFrame != nullptr) {
-        av_frame_free(&mOutputFrame);
-    }
-    if (mInputFrame != nullptr) {
-        av_frame_free(&mInputFrame);
-    }
-    if (mCodecContext != nullptr) {
-        avcodec_close(mCodecContext);
-        avcodec_free_context(&mCodecContext);
-    }
-    if (mInputContext != nullptr) {
-        avformat_close_input(&mInputContext);
-        avformat_free_context(mInputContext);
     }
     if (mMetaData != nullptr) {
         free(mMetaData);
     }
+    // this is a workaround to fix a memory leak in the ffmpeg library
+    av_lockmgr_register(nullptr);
 }
 
 #ifndef MIN
@@ -346,14 +368,29 @@ int MpegTsDecoder::processVideoFrame() {
 
 void MpegTsDecoder::pollThread()
 {
-    int index, rv;
+    int index, rv, reconnect = 0;
+    init_video_result_t result;
 
     while (mPoll)
     {
+        if (reconnect) {
+            termVideo();
+            result = initVideo();
+            switch (result) {
+                case INIT_SUCCESS:
+                    reconnect = 0;
+                    break;
+                case INIT_FAILURE:
+                    return;
+                case INIT_TIMEOUT:
+                    continue;
+            }
+        }
         rv = av_read_frame(mInputContext, &mPkt);
         if (rv) {
             std::cout << "av_read_frame error " << rv << std::endl;
-            return;
+            reconnect = 1;
+            continue;
         }
 
         index = mPkt.stream_index;

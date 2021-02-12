@@ -33,6 +33,12 @@ extern "C" {
 #include "options.hpp"
 #include "videosource.hpp"
 
+typedef enum {
+    INIT_SUCCESS = 0,
+    INIT_TIMEOUT  = 1,
+    INIT_FAILURE  = 2
+} init_video_result_t;
+
 class MpegTsDecoder : public VideoSource
 {
 public:
@@ -69,6 +75,8 @@ private:
     std::thread *mPollThread;
     bool mPoll;
 
+    init_video_result_t initVideo();
+    void termVideo();
     void pollThread();
     int processDataFrame();
     int processVideoFrame();

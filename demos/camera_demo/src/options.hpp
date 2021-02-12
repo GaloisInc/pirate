@@ -64,6 +64,7 @@ struct Options
         mTiltAxisMax(45.0),
         mAngularPositionIncrement(1.0),
         mVerbose(false),
+        mGDB(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
         mHasInput(false),
         mHasOutput(false),
@@ -106,6 +107,7 @@ struct Options
     float mTiltAxisMax;
     float mAngularPositionIncrement;
     bool mVerbose;
+    bool mGDB;
     int mFFmpegLogLevel;
     bool mHasInput;
     bool mHasOutput;

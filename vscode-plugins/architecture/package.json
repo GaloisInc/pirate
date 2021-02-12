@@ -15,10 +15,17 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCustomEditor:pirate.graph"
+		"onCustomEditor:pirate.graph",
+		"onLanguage:piratemap"
 	],
 	"main": "./out/extension/extension/main.js",
 	"contributes": {
+		"languages": [
+			{
+				"id": "piratemap",
+				"extensions": [".piratemap"]
+			}
+		],
 		"customEditors": [
 			{
 				"viewType": "pirate.graph",
@@ -30,7 +37,25 @@
 				],
 				"priority": "default"
 			}
-		]
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "references",
+					"title": "References",
+					"icon": "eye.svg"
+
+				}
+			]
+		},
+		"views": {
+			"references": [
+				{
+					"id": "pirateTV",
+					"name": "References"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
