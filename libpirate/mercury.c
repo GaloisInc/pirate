@@ -467,49 +467,34 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
     ilip_message_t *msg_hdr = (ilip_message_t *) ctx->buf;
-    ssize_t rd_len;
 
     if (ctx->fd <= 0) {
         errno = ENODEV;
         return -1;
     }
 
-    memset(ctx->buf, 0, PIRATE_MERCURY_DMA_DESCRIPTOR);
-
     if (param->session.mode == MERCURY_IMMEDIATE) {
-        msg_hdr->header.descriptor_type = 0;
-    } else {
-        msg_hdr->header.descriptor_type = htobe32(0x10000000);
-    }
-
-    msg_hdr->header.session = htobe32(param->session.id);
-    if (param->session.mode == MERCURY_PAYLOAD) {
-        ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
-        long_msg_hdr->host_payload_address = (uintptr_t) buf;
-        long_msg_hdr->data_length = htobe32(count);
-    }
-
-    if (param->session.mode == MERCURY_IMMEDIATE) {
-        rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR;
-    } else {
-        // this is fine
-        rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR + count;
-    }
-
-    rd_len = read(ctx->fd, ctx->buf, rd_len);
-    if (rd_len < 0) {
-        return -1;
-    }
-
-    if (param->session.mode == MERCURY_IMMEDIATE) {
+        size_t rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR;
+        ssize_t rv = read(ctx->fd, ctx->buf, rd_len);
+        if (rv < 0) {
+            return -1;
+        }
         const uint8_t *msg_data = (const uint8_t *) ctx->buf + sizeof(ilip_message_t);
         uint32_t payload_len = be32toh(msg_hdr->immediate_length);
         count = MIN(payload_len, count);
         memcpy(buf, msg_data, count);
     } else {
+        size_t rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR + count;
+        uint8_t *temp = malloc(rd_len);
+        ssize_t rv = read(ctx->fd, temp, rd_len);
+        if (rv < 0) {
+            return -1;
+        }
         ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
         uint32_t payload_len = be32toh(long_msg_hdr->data_length);
         count = MIN(payload_len, count);
+        memcpy(buf, temp + PIRATE_MERCURY_DMA_DESCRIPTOR, count);
+        free(temp);
     }
     return count;
 }
