@@ -70,13 +70,13 @@ typedef struct ilip_long_message {
     uint64_t data_hash_lo;
     uint64_t data_hash_hi;
     uint32_t data_tag;
-    uint64_t host_payload_address;
     uint32_t data_length;
+    uint64_t host_payload_address;
 } ilip_long_message_t;
 
 #pragma pack()
 
-static ssize_t mercury_message_pack(void *buf, const void *data,
+static int mercury_message_pack(void *buf, const void *data,
         uint32_t data_len, const pirate_mercury_param_t *param) {
     ilip_message_t *msg_hdr = (ilip_message_t *)buf;
     struct timespec tv;
@@ -215,13 +215,13 @@ static ssize_t mercury_message_pack(void *buf, const void *data,
     } else {
         ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *)buf;
         long_msg_hdr->data_tag = htobe32(data_tag);
-        long_msg_hdr->host_payload_address = htobe64((uintptr_t) data);
+        long_msg_hdr->host_payload_address = (uintptr_t) data;
         long_msg_hdr->data_length = htobe32(data_len);
         // TODO calculate message data siphash
     }
 
     // TODO calculate DMA descriptor siphash
-    return PIRATE_MERCURY_DMA_DESCRIPTOR;
+    return 0;
 }
 
 static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
@@ -319,6 +319,9 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
     return ret_sz;
 }
 
+const char* read_const_str = "read";
+const char* write_const_str = "write";
+
 int pirate_mercury_open(void *_param, void *_ctx) {
     pirate_mercury_param_t *param = (pirate_mercury_param_t *)_param;
     mercury_ctx *ctx = (mercury_ctx *)_ctx;
@@ -327,7 +330,8 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     int fd_root = -1;
     unsigned wait_counter = 0;
     int access = ctx->flags & O_ACCMODE;
-    const mode_t mode = access == O_RDONLY ? S_IRUSR : S_IWUSR;
+    mode_t mode;
+    const char *access_suffix;
 
     /* Open the root device to configure and establish a session */
     pirate_mercury_init_param(param);
@@ -400,6 +404,14 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     }
     fd_root = -1;
 
+    if (access == O_RDONLY) {
+        access_suffix = read_const_str;
+        mode = S_IRUSR;
+    } else {
+        access_suffix = write_const_str;
+        mode = S_IWUSR;
+    }
+
     if (param->session.message_count == 0) {
         if (param->session.level != param->session.id) {
             errno = EBADE;
@@ -407,10 +419,10 @@ int pirate_mercury_open(void *_param, void *_ctx) {
         }
 
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_DEFAULT_FMT,
-                    param->session.mode + 1, access == O_RDONLY ? "read" : "write");
+                    param->session.mode + 1, access_suffix);
     } else {
         snprintf(ctx->path, PIRATE_LEN_NAME - 1, PIRATE_MERCURY_SESSION_FMT,
-                    param->session.id, access == O_RDONLY ? "read" : "write");
+                    param->session.id, access_suffix);
     }
 
     /* Open the device */
@@ -485,7 +497,7 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
     msg_hdr->header.session = htobe32(param->session.id);
     if (param->session.mode == MERCURY_PAYLOAD) {
         ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
-        long_msg_hdr->host_payload_address = htobe64((uintptr_t) buf);
+        long_msg_hdr->host_payload_address = (uintptr_t) buf;
         long_msg_hdr->data_length = htobe32(count);
     }
 
@@ -531,8 +543,15 @@ ssize_t pirate_mercury_write(const void *_param, void *_ctx, const void *buf, si
         return -1;
     }
 
-    if ((wr_len = mercury_message_pack(ctx->buf, buf, count, param)) < 0) {
+    if (mercury_message_pack(ctx->buf, buf, count, param)) {
         return -1;
+    }
+
+    if (param->session.mode == MERCURY_IMMEDIATE) {
+        wr_len = PIRATE_MERCURY_DMA_DESCRIPTOR;
+    } else {
+        // this is fine
+        wr_len = PIRATE_MERCURY_DMA_DESCRIPTOR + count;
     }
 
     rv = write(ctx->fd, ctx->buf, wr_len);
