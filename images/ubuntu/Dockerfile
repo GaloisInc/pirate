@@ -18,8 +18,7 @@ RUN wget -qO /root/pirate.tgz https://pirate.azureedge.net/dist/pirate/master/pi
  && rm -rf /root/pirate.tgz
 
 COPY pdl /usr/local/pdl
-WORKDIR /usr/local/pdl
-RUN python3 setup.py install
+RUN cd /usr/local/pdl && python3 setup.py install
 
 # Update library path to include libpirate
 RUN ldconfig
