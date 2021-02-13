@@ -403,7 +403,7 @@ jobs:
           -f pirate.${{matrix.name}}.tgz/pirate.${{matrix.name}}.tgz \
           -n dist/pirate/master/pirate.${{matrix.name}}.tgz
     - name: Build docker image
-      run: docker build -t ${{matrix.dockername}} -f ${{matrix.imagedir}}/Dockerfile .
+      run: docker build -t ${{matrix.dockername}} -f ${{matrix.imagedir}}/Dockerfile $GITHUB_WORKSPACE
     - name: Build demos on docker image
       run: |
         mkdir -p build
