@@ -46,7 +46,8 @@ function activate(context) {
         context.subscriptions.push(diagnosticCollection);
         context.subscriptions.push(watcher);
         const pirateLensProvider = new pirateLens_1.PirateLens(linkerRunner);
-        vscode.languages.registerCodeLensProvider("*", pirateLensProvider);
+        vscode.languages.registerCodeLensProvider('*', pirateLensProvider);
+        linkerRunner.runLinker(vscode.workspace.getConfiguration('linker-errors'), diagnosticCollection);
     }
 }
 exports.activate = activate;
