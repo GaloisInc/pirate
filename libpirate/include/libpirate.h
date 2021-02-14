@@ -233,6 +233,7 @@ typedef struct {
 } pirate_serial_param_t;
 
 typedef enum {
+    MERCURY_UNKNOWN,
     MERCURY_IMMEDIATE,
     MERCURY_PAYLOAD
 } mercury_mode_t;
@@ -241,18 +242,12 @@ typedef enum {
 #define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
 #define PIRATE_MERCURY_IMMEDIATE_SIZE       192u
 #define PIRATE_MERCURY_DMA_DESCRIPTOR       256u
-#define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
 typedef struct {
-    struct {
-        mercury_mode_t mode;
-        uint32_t level;
-        uint32_t source_id;
-        uint32_t destination_id;
-        uint32_t message_count;
-        uint32_t messages[PIRATE_MERCURY_MESSAGE_TABLE_LEN];
-        uint32_t id;
-    } session;
-
+    mercury_mode_t mode;
+    uint32_t session_id;
+    uint32_t message_id;
+    uint32_t data_tag;
+    uint32_t descriptor_tag;
     uint32_t mtu;
 } pirate_mercury_param_t;
 
