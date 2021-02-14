@@ -67,10 +67,10 @@ export const enum BusOrientation {
  */
 export interface Bus extends NamedEntity {
     readonly orientation: BusOrientation
-    readonly left:   number
-    readonly top:    number
-    readonly height: number
-    readonly width:  number
+    readonly left: TrackedValue<number>
+    readonly top: TrackedValue<number>
+    readonly height: TrackedValue<number>
+    readonly width: TrackedValue<number>
 }
 
 export const enum EndpointType { Port = 'port', Bus = 'bus' }
