@@ -58,23 +58,17 @@ endpoint_field_schema[] = {
     CYAML_FIELD_END,
 };
 
-static const cyaml_schema_value_t message_schema = {
-    CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint32_t),
-};
-
 static const cyaml_schema_field_t session_field_schema[] = {
-    CYAML_FIELD_UINT("level", CYAML_FLAG_OPTIONAL,
-            struct session, sess_level),
-    CYAML_FIELD_UINT("src_id", CYAML_FLAG_OPTIONAL,
-            struct session, sess_src_id),
-    CYAML_FIELD_UINT("dst_id", CYAML_FLAG_OPTIONAL,
-            struct session, sess_dst_id),
-    CYAML_FIELD_SEQUENCE("messages",
-            CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER_NULL,
-            struct session, sess_messages, &message_schema,
-            1, PIRATE_MERCURY_MESSAGE_TABLE_LEN),
-    CYAML_FIELD_UINT("id", CYAML_FLAG_OPTIONAL,
-            struct session, sess_id),
+    CYAML_FIELD_UINT("mode", CYAML_FLAG_OPTIONAL,
+            struct session, mode),
+    CYAML_FIELD_UINT("session_id", CYAML_FLAG_OPTIONAL,
+            struct session, session_id),
+    CYAML_FIELD_UINT("message_id", CYAML_FLAG_OPTIONAL,
+            struct session, message_id),
+    CYAML_FIELD_UINT("data_tag", CYAML_FLAG_OPTIONAL,
+            struct session, data_tag),
+    CYAML_FIELD_UINT("descriptor_tag", CYAML_FLAG_OPTIONAL,
+            struct session, descriptor_tag),
     CYAML_FIELD_END,
 };
 
