@@ -347,7 +347,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
     "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
     "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
+    "  MERCURY       mercury,mode=[immediate|payload],session=N,message=N,data=N[,descriptor=N,mtu=N]\n"               \
     "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.
