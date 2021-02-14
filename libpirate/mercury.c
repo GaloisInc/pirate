@@ -102,7 +102,7 @@ static int mercury_message_pack(void *buf, const void *data,
     msg_hdr->header.message = htobe32(param->message_id);
 
     msg_hdr->time.ilip_time  = 0ul;
-    msg_hdr->time.linux_time = tv.tv_sec * 1000000000ul + tv.tv_nsec;
+    msg_hdr->time.linux_time = linux_time;
 
     if (param->mode == MERCURY_IMMEDIATE) {
         uint8_t *immediate_data = (uint8_t *)buf + sizeof(ilip_message_t);
