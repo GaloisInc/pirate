@@ -1,8 +1,11 @@
-import { common, extension, webview } from "../shared/webviewProtocol.js"
 import * as A from "../shared/architecture.js"
-
-import { ActorView, XRange, YRange, Rect, SystemServices, ChangeSet, TrackedIndex } from "./actor.js"
+import { common, extension, webview } from "../shared/webviewProtocol.js"
+import { ActorView } from "./actor.js"
+import { BusView } from "./bus.js"
+import { ChangeSet, TrackedIndex } from "./changeSet.js"
+import { Rectangle, XRange, YRange } from "./geometry.js"
 import * as svg from "./svg.js"
+import { SystemServices } from './systemServices.js'
 
 function svgSetLength(e:SVGAnimatedLength, l:A.Length) {
     switch (l.units) {
@@ -22,7 +25,8 @@ class Webview implements SystemServices {
     // Container for SVG
     #svg:SVGSVGElement
 
-    #actors:ActorView[] = []
+    #actors: ActorView[] = []
+    #buses: BusView[] = []
 
     #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
 
@@ -50,6 +54,12 @@ class Webview implements SystemServices {
             var av = new ActorView(this, this.#svg, a)
             this.#actors.push(av)
         }
+
+        // Add new buses
+        for (const b of m.buses) {
+            var bv = new BusView(this, this.#svg, b)
+            this.#buses.push(bv)
+        }
     }
 
     clearModel(errorMsgText:string):void {
@@ -60,40 +70,48 @@ class Webview implements SystemServices {
 
     }
 
-    adjustX(thisActor:ActorView, r:YRange, width:number, oldLeft:number, newLeft:number):number {
-        const l = this.#actors
+    getCollidableObjects(): ReadonlyArray<Rectangle<number>> {
+        return ([] as ReadonlyArray<Rectangle<number>>).concat(
+            this.#actors.map(a => a.draggableRectangle),
+            this.#buses.map(b => b.draggableRectangle),
+        )
+    }
+
+    adjustX(thisObject: any, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
+        const collidables = this.getCollidableObjects()
+
         const top = r.top
         const bottom = top + r.height
         // If we move left
         if (newLeft < oldLeft) {
-            for (const o of l) {
-               if (o === thisActor) continue
-                if (bottom <= o.top) continue
-                if (o.bottom <= top) continue
+            for (const collidable of collidables) {
+                if (collidable === thisObject) continue
+                if (bottom <= collidable.top) continue
+                if (collidable.bottom <= top) continue
                 // If o is left of oldLeft and right of newLeft
-                if (o.right <= oldLeft)
-                    newLeft = Math.max(o.right, newLeft)
+                if (collidable.right <= oldLeft)
+                    newLeft = Math.max(collidable.right, newLeft)
             }
         }
         // If we move right
         if (newLeft > oldLeft) {
             let oldRight = oldLeft + width
             let newRight = newLeft + width
-            for (const o of l) {
-                if (o === thisActor) continue
-                if (bottom <= o.top) continue
-                if (o.bottom <= top) continue
+            for (const collidable of collidables) {
+                if (collidable === thisObject) continue
+                if (bottom <= collidable.top) continue
+                if (collidable.bottom <= top) continue
                 // If o is right of oldRight and left of newRight.
-                if (oldRight <= o.left)
-                    newRight = Math.min(newRight, o.left)
+                if (oldRight <= collidable.left)
+                    newRight = Math.min(newRight, collidable.left)
             }
             newLeft = newRight - width
         }
         return newLeft
     }
 
-    adjustY(thisActor:ActorView, r:XRange, height:number, oldTop:number, newTop:number):number {
-        const l = this.#actors
+    adjustY(thisActor: any, r: XRange<number>, height: number, oldTop: number, newTop: number): number {
+        const l = this.getCollidableObjects()
         const left = r.left
         const right = left + r.width
         // If we move up
@@ -125,18 +143,17 @@ class Webview implements SystemServices {
         return newTop
     }
 
-
-    overlaps(thisActor:ActorView, r:Rect):boolean {
-       const l = this.#actors
-       for (const o of l) {
-          if (o === thisActor) continue
-          if (r.right <= o.left) continue
-          if (o.right <= r.left) continue
-          if (r.bottom <= o.top) continue
-          if (o.bottom <= r.top) continue
-          return true
-       }
-       return false
+    overlaps(thisObject: any, r: Rectangle<number>): boolean {
+        const collidables = this.getCollidableObjects()
+        for (const collidable of collidables) {
+            if (collidable === thisObject) continue
+            if (r.right <= collidable.left) continue
+            if (collidable.right <= r.left) continue
+            if (r.bottom <= collidable.top) continue
+            if (collidable.bottom <= r.top) continue
+            return true
+        }
+        return false
     }
 
     private sendToExtension(r: webview.Event):void {
