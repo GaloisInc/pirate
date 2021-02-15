@@ -1,0 +1,20 @@
+{
+    "extends": "../../tsconfig-default.json",
+    "compilerOptions": {
+        "module": "CommonJS",
+        "outDir": "../../out/extension"
+    },
+    "files": [
+        "docUpdater.ts",
+        "lexer.ts",
+        "main.ts",
+        "modelResources.ts",
+        "modelWebview.ts",
+        "parser.ts"
+    ],
+    "references": [
+        {
+            "path": "../shared"
+        }
+    ]
+}
