@@ -139,7 +139,6 @@ The writer may specify 0.0.0.0 for the address and 0 for the port.
 
 UDP socket communication. Host and port of the reader process must be specified.
 The writer may specify 0.0.0.0 for the address and 0 for the port.
-If the writer port is not 0 then the writer address must be not 0.0.0.0.
 
 ### SHMEM type
 

@@ -296,7 +296,7 @@ int pirate_udp_socket_writer_open(pirate_udp_socket_param_t *param, common_ctx *
         }
     }
 
-    if (!src_addr_any) {
+    if (!src_addr_any || (param->writer_port > 0)) {
         rv = bind(ctx->fd, src_addr->ai_addr, src_addr->ai_addrlen);
         if (rv < 0) {
             err = errno;
@@ -333,10 +333,6 @@ int pirate_udp_socket_open(void *_param, void *_ctx) {
 
     pirate_udp_socket_init_param(param);
     if (param->reader_port == 0) {
-        errno = EINVAL;
-        return -1;
-    }
-    if ((param->writer_port > 0) && (strncmp(param->writer_addr, "0.0.0.0", 8) == 0)) {
         errno = EINVAL;
         return -1;
     }
