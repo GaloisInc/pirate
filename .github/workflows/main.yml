@@ -360,6 +360,7 @@ jobs:
           - name: ubuntu
             imagedir: images/ubuntu
             dockername: pirateteam/ubuntu
+            demo-cmake-args: -DPIRATE_APP_LIBS=pirate
           - name: centos7
             imagedir: images/centos7
             dockername: pirateteam/centos7
