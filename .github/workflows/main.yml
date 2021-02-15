@@ -363,7 +363,7 @@ jobs:
           - name: centos7
             imagedir: images/centos7
             dockername: pirateteam/centos7
-            demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+            demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1 -DPIRATE_APP_LIBS=pirate
     runs-on: ubuntu-20.04
     if: github.event_name == 'push' && github.ref == 'master' || github.event_name == 'release'
     steps:
