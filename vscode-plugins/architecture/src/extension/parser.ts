@@ -512,10 +512,10 @@ const actorType: ObjectField[] = [
 /** Parser for bus */
 const busType: ObjectField[] = [
     reqObjField('orientation', enumField([A.BusOrientation.Horizontal, A.BusOrientation.Vertical])),
-    reqObjField('left',   numberField),
-    reqObjField('top',    numberField),
-    reqObjField('width',  numberField),
-    reqObjField('height', numberField),
+    reqObjField('left',   trackedNumberField),
+    reqObjField('top',    trackedNumberField),
+    reqObjField('width',  trackedNumberField),
+    reqObjField('height', trackedNumberField),
 ]
 
 /**

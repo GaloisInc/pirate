@@ -1,51 +1,9 @@
 import * as A from "../shared/architecture.js"
+import { ChangeSet } from "./changeSet.js"
+import { DraggableRectangle } from "./draggableRectangle.js"
 import * as D from "./dragHandlers.js"
-import { common, webview } from "../shared/webviewProtocol.js"
-
 import * as svg from './svg.js'
-
-export type TrackedIndex = number
-
-export class ChangeSet {
-    #edits: common.TrackUpdate[] = []
-
-    replace(locationId: number, newText: number|string): void {
-        this.#edits.push({trackIndex: locationId, newText: newText.toString()})
-    }
-
-    get edits() { return this.#edits }
-}
-
-export interface SystemServices {
-    /**
-     * Return true if @r@ does overlaps with any service other than `thisService`.
-     */
-    overlaps(thisActor:ActorView, r:Rect):boolean
-    /**
-     * Adjust the left coordinate to avoid overlapping.
-     */
-    adjustX(thisActor:ActorView, r:YRange, width:number, oldLeft:number, newLeft:number):number;
-    /**
-     * Adjust the left coordinate to avoid overlapping.
-     */
-    adjustY(thisActor:ActorView, r:XRange, height:number, oldTop:number, newTop:number):number;
-    /**
-     * Request we open a text editor at the given location.
-     */
-    visitURI(idx:A.LocationIndex):void
-    /**
-     * Send an update doc request
-     */
-    sendUpdateDoc(changes: ChangeSet):void
-    /**
-     * Add listener to respond to when a tracked value changes.
-     */
-    whenStringTrackChanged(trackedIndex:TrackedIndex, listener:(newValue:string) => void):void
-    /**
-     * Add listener to respond to when a tracked value changes.
-     */
-    whenIntTrackChanged(trackedIndex:TrackedIndex, listener:(newValue:number) => void):void
-}
+import { SystemServices } from './systemServices.js'
 
 /** `outsideRangeDist(x,l,h)` returns the amount `x` is outside the range `[l,h]`. */
 function outsideRangeDist(x:number, l:number, h:number):number {
@@ -155,8 +113,6 @@ function setPortElementPosition(svg:SVGSVGElement, elt:SVGUseElement, bbox:DOMRe
     return offset
 }
 
-const svgns = svg.ns
-
 /**
  * Represents a port on a service.
  */
@@ -226,73 +182,26 @@ class PortView {
 
 }
 
-export interface XRange {
-    readonly left:  number;
-    readonly width: number;
-}
-
-export interface YRange {
-    readonly top:    number;
-    readonly height: number;
-}
-
-export interface Rect {
-    readonly left:  number;
-    readonly right: number;
-    readonly top:    number;
-    readonly bottom: number;
-}
-
 export class ActorView {
-    readonly #sys: SystemServices
-    readonly #svgContainer:SVGSVGElement
-    readonly #leftTrackId:TrackedIndex
-    readonly #topTrackId:TrackedIndex
-    readonly #widthTrackId:TrackedIndex
-    readonly #heightTrackId:TrackedIndex
+    readonly draggableRectangle: DraggableRectangle
 
-    constructor(sys:SystemServices, parentSVG:SVGSVGElement, a:A.Actor) {
-        this.#sys = sys
-        this.#leftTrackId = a.left.trackId
-        this.#topTrackId = a.top.trackId
-        this.#widthTrackId = a.width.trackId
-        this.#heightTrackId = a.height.trackId
+    constructor(sys: SystemServices, parentSVG: SVGSVGElement, a: A.Actor) {
+
+        this.draggableRectangle = new DraggableRectangle(
+            sys,
+            parentSVG,
+            {
+                left: a.left,
+                top: a.top,
+                width: a.width,
+                height: a.height,
+            }
+        )
 
         const width = a.width.value
         const height = a.height.value
 
-        // Offset for content
-        const offset = { x : 20, y: 20 }
-
-        // Create content
-        const svgContainer  = document.createElementNS(svgns, 'svg') as SVGSVGElement
-        svg.setUserUnits(svgContainer.x, a.left.value)
-        svg.setUserUnits(svgContainer.y, a.top.value)
-        svg.setUserUnits(svgContainer.width, width)
-        svg.setUserUnits(svgContainer.height, height)
-        this.#svgContainer = svgContainer
-        sys.whenIntTrackChanged(this.#leftTrackId, (newValue) => {
-            svgContainer.x.baseVal.value = newValue
-        })
-        sys.whenIntTrackChanged(this.#topTrackId, (newValue) => {
-            svgContainer.y.baseVal.value = newValue
-        })
-        sys.whenIntTrackChanged(this.#widthTrackId, (newValue) => {
-            svgContainer.width.baseVal.value = newValue
-        })
-        sys.whenIntTrackChanged(this.#heightTrackId, (newValue) => {
-            svgContainer.height.baseVal.value = newValue
-        })
-
-        const rect = document.createElementNS(svgns, 'rect') as SVGRectElement
-        rect.classList.add('enclave')
-        svg.setPercentageUnits(rect.x, 0)
-        svg.setPercentageUnits(rect.y, 0)
-        svg.setPercentageUnits(rect.width, 100)
-        svg.setPercentageUnits(rect.height, 100)
-        rect.style.fill = a.color.value
-
-        D.addSVGDragHandlers(parentSVG, svgContainer, (e) => this.drag(e))
+        this.draggableRectangle.rect.style.fill = a.color.value
 
         var div = document.createElement('div')
         var enclaveName = document.createElement('span') as HTMLSpanElement
@@ -309,66 +218,17 @@ export class ActorView {
         div.appendChild(visitClass)
         div.onpointerdown = e => { e.stopImmediatePropagation() }
 
-        const contentObject = document.createElementNS(svgns, 'foreignObject') as SVGForeignObjectElement
-        contentObject.x.baseVal.value = offset.x
-        contentObject.y.baseVal.value = offset.y
-        svg.setPercentageUnits(contentObject.width, 100)
-        svg.setPercentageUnits(contentObject.height, 100)
-        contentObject.appendChild(div)
-
-        svgContainer.appendChild(rect)
-        svgContainer.appendChild(contentObject)
-        parentSVG.appendChild(svgContainer)
+        this.draggableRectangle.contentObject.appendChild(div)
 
         for (const p of a.inPorts)
-            new PortView(sys, this.#svgContainer, PortDir.In, p)
+            new PortView(sys, this.draggableRectangle.svgContainer, PortDir.In, p)
         for (const p of a.outPorts)
-            new PortView(sys, this.#svgContainer, PortDir.Out, p)
+            new PortView(sys, this.draggableRectangle.svgContainer, PortDir.Out, p)
     }
-
-    drag(evt:D.SVGDragEvent) {
-        const svgContainer = this.#svgContainer
-        const sys = this.#sys
-        let newLeft = evt.left
-        let newTop  = evt.top
-        const width  = svgContainer.width.baseVal.value
-        const height = svgContainer.height.baseVal.value
-
-        // Adjust to not overlap
-        newLeft = sys.adjustX(this, { top:  newTop, height: height }, width, svgContainer.x.baseVal.value, newLeft)
-        newTop  = sys.adjustY(this, { left: newLeft, width: width }, height, svgContainer.y.baseVal.value, newTop)
-
-        // Get new coordinates
-        let r = { left:   newLeft,
-                  top:    newTop,
-                  right:  newLeft + width,
-                  bottom: newTop  + height
-                }
-        if (!sys.overlaps(this, r)) {
-            let changes = new ChangeSet()
-            if (svgContainer.x.baseVal.value !== newLeft) {
-                svgContainer.x.baseVal.value = newLeft
-                changes.replace(this.#leftTrackId, newLeft)
-            }
-            if (svgContainer.y.baseVal.value !== newTop) {
-                svgContainer.y.baseVal.value = newTop
-                changes.replace(this.#topTrackId, newTop)
-            }
-            sys.sendUpdateDoc(changes)
-        }
-    };
-
-
 
     /** Remove all components from SVG */
     dispose() {
-        this.#svgContainer.remove()
+        this.draggableRectangle.dispose()
     }
 
-    get left():number   { return this.#svgContainer.x.baseVal.value }
-    get top():number    { return this.#svgContainer.y.baseVal.value }
-    get width():number  { return this.#svgContainer.width.baseVal.value }
-    get height():number { return this.#svgContainer.height.baseVal.value }
-    get right():number  { return this.left + this.width }
-    get bottom():number { return this.top + this.height }
 }
