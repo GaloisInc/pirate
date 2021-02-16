@@ -1,7 +1,7 @@
-import * as A from "../shared/architecture.js"
-import { DraggableRectangle } from "./draggableRectangle.js"
-import * as svg from './svg.js'
-import { SystemServices } from "./systemServices.js"
+import * as A from "../../shared/architecture.js"
+import { DraggableRectangle } from "../draggableRectangle.js"
+import * as svg from '../svg.js'
+import { SystemServices } from "../systemServices.js"
 
 export class BusView {
     readonly draggableRectangle: DraggableRectangle
