@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+
 import * as vscode from 'vscode'
 
 import * as A from '../shared/architecture'
@@ -47,11 +48,11 @@ export class ModelWebview {
      * Potentially the VSCode extension can update the model multiple
      * times while
      */
-    #setSystemModelWaitCount: number = 0
+    #setSystemModelWaitCount = 0
 
     private model: A.SystemModel|null=null
 
-    readonly #disposables: { dispose: () => any }[] = []
+    readonly #disposables: { dispose: () => void }[] = []
 
     constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, webviewPanel: vscode.WebviewPanel) {
         const view = webviewPanel.webview
@@ -128,14 +129,14 @@ export class ModelWebview {
     public setModel(s: A.SystemModel): void {
         this.model = s
         this.#setSystemModelWaitCount++
-        let msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
+        const msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
         this.postEvent(msg)
     }
 
     public invalidateModel(): void {
         this.model = null
         this.#setSystemModelWaitCount++
-        let msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
+        const msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
         this.postEvent(msg)
     }
 
@@ -146,8 +147,8 @@ export class ModelWebview {
     /**
      * Tell the webview about edits made by other components.
      */
-    public notifyDocumentEdited(edits: readonly common.TrackUpdate[]) {
-        let msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
+    public notifyDocumentEdited(edits: readonly common.TrackUpdate[]): void {
+        const msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
         this.postEvent(msg)
     }
 }

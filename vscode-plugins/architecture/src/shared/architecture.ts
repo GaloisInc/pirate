@@ -1,4 +1,4 @@
-import { TextLocated, TextRange } from "./position"
+import { TextLocated, TextRange } from './position'
 
 /** Integer that identifies a source locations in the document. */
 export type TrackIndex = number
@@ -95,8 +95,8 @@ export interface Connection {
 }
 
 export const enum Units {
-    IN = "in",
-    CM = "cm"
+    IN = 'in',
+    CM = 'cm'
 }
 
 /**

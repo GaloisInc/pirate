@@ -1,20 +1,21 @@
-import * as A from "../shared/architecture.js"
-import { common, extension, webview } from "../shared/webviewProtocol.js"
-import { ActorView } from "./views/actor.js"
-import { BusView } from "./views/bus.js"
-import { ChangeSet, TrackedIndex } from "./changeSet.js"
-import { Rectangle, XRange, YRange } from "./geometry.js"
-import * as svg from "./svg.js"
-import { SystemServices } from './systemServices.js'
+import * as A from '../shared/architecture.js'
+import { common, extension, webview } from '../shared/webviewProtocol.js'
 
-function svgSetLength(e:SVGAnimatedLength, l:A.Length) {
+import { ChangeSet, TrackedIndex } from './changeSet.js'
+import { Rectangle, XRange, YRange } from './geometry.js'
+import * as svg from './svg.js'
+import { SystemServices } from './systemServices.js'
+import { ActorView } from './views/actor.js'
+import { BusView } from './views/bus.js'
+
+function svgSetLength(e: SVGAnimatedLength, l: A.Length) {
     switch (l.units) {
-    case A.Units.CM:
-        svg.setCmUnits(e, l.value)
-        break
-    case A.Units.IN:
-        svg.setInchUnits(e, l.value)
-        break
+        case A.Units.CM:
+            svg.setCmUnits(e, l.value)
+            break
+        case A.Units.IN:
+            svg.setInchUnits(e, l.value)
+            break
     }
 }
 
@@ -23,22 +24,22 @@ function svgSetLength(e:SVGAnimatedLength, l:A.Length) {
  */
 class Webview implements SystemServices {
     // Container for SVG
-    #svg:SVGSVGElement
+    #svg: SVGSVGElement
 
     #actors: ActorView[] = []
     #buses: BusView[] = []
 
     #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
 
-    constructor(thisSVG:SVGSVGElement) {
+    constructor(thisSVG: SVGSVGElement) {
         this.#svg = thisSVG
         thisSVG.preserveAspectRatio.baseVal.align = thisSVG.preserveAspectRatio.baseVal.SVG_PRESERVEASPECTRATIO_XMINYMIN
     }
 
-    setSystemModel(m:A.SystemModel):void {
+    setSystemModel(m: A.SystemModel): void {
         console.log('setSystemModel')
         // Dispose existing components
-        this.clearModel("")
+        this.clearModel('')
 
         const thisSVG = this.#svg
 
@@ -46,23 +47,23 @@ class Webview implements SystemServices {
         svgSetLength(thisSVG.height, m.pageheight)
         thisSVG.height.baseVal.convertToSpecifiedUnits(thisSVG.width.baseVal.unitType)
 
-        thisSVG.viewBox.baseVal.width  = m.width
+        thisSVG.viewBox.baseVal.width = m.width
         thisSVG.viewBox.baseVal.height = m.width * (thisSVG.height.baseVal.value / thisSVG.width.baseVal.value)
 
         // Add new actors
         for (const a of m.actors) {
-            var av = new ActorView(this, this.#svg, a)
+            const av = new ActorView(this, this.#svg, a)
             this.#actors.push(av)
         }
 
         // Add new buses
         for (const b of m.buses) {
-            var bv = new BusView(this, this.#svg, b)
+            const bv = new BusView(this, this.#svg, b)
             this.#buses.push(bv)
         }
     }
 
-    clearModel(errorMsgText:string):void {
+    clearModel(errorMsgText: string): void {
         for (const a of this.#actors) a.dispose()
         this.#actors = []
         if (this.#errormsgDiv)
@@ -70,14 +71,14 @@ class Webview implements SystemServices {
 
     }
 
-    getCollidableObjects(): ReadonlyArray<Rectangle<number>> {
-        return ([] as ReadonlyArray<Rectangle<number>>).concat(
+    getCollidableObjects(): readonly Rectangle<number>[] {
+        return ([] as readonly Rectangle<number>[]).concat(
             this.#actors.map(a => a.draggableRectangle),
             this.#buses.map(b => b.draggableRectangle),
         )
     }
 
-    adjustX(thisObject: any, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
+    adjustX(thisObject: unknown, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
         const collidables = this.getCollidableObjects()
 
         const top = r.top
@@ -95,7 +96,7 @@ class Webview implements SystemServices {
         }
         // If we move right
         if (newLeft > oldLeft) {
-            let oldRight = oldLeft + width
+            const oldRight = oldLeft + width
             let newRight = newLeft + width
             for (const collidable of collidables) {
                 if (collidable === thisObject) continue
@@ -110,7 +111,7 @@ class Webview implements SystemServices {
         return newLeft
     }
 
-    adjustY(thisActor: any, r: XRange<number>, height: number, oldTop: number, newTop: number): number {
+    adjustY(thisActor: unknown, r: XRange<number>, height: number, oldTop: number, newTop: number): number {
         const l = this.getCollidableObjects()
         const left = r.left
         const right = left + r.width
@@ -127,7 +128,7 @@ class Webview implements SystemServices {
         }
         // If we move right
         if (newTop > oldTop) {
-            let oldBottom = oldTop + height
+            const oldBottom = oldTop + height
             let newBottom = newTop + height
             for (const o of l) {
                 if (o === thisActor) continue
@@ -143,7 +144,7 @@ class Webview implements SystemServices {
         return newTop
     }
 
-    overlaps(thisObject: any, r: Rectangle<number>): boolean {
+    overlaps(thisObject: unknown, r: Rectangle<number>): boolean {
         const collidables = this.getCollidableObjects()
         for (const collidable of collidables) {
             if (collidable === thisObject) continue
@@ -156,12 +157,12 @@ class Webview implements SystemServices {
         return false
     }
 
-    private sendToExtension(r: webview.Event):void {
+    private sendToExtension(r: webview.Event): void {
         vscode.postMessage(r)
     }
 
-    visitURI(idx:A.LocationIndex): void {
-        const cmd:webview.VisitURI = {
+    visitURI(idx: A.LocationIndex): void {
+        const cmd: webview.VisitURI = {
             tag: webview.Tag.VisitURI,
             locationIdx: idx
         }
@@ -169,27 +170,27 @@ class Webview implements SystemServices {
     }
 
     setSystemModelDone(): void {
-        let upd:webview.SetSystemModelDone = {tag: webview.Tag.SetSystemModelDone}
+        const upd: webview.SetSystemModelDone = { tag: webview.Tag.SetSystemModelDone }
         this.sendToExtension(upd)
     }
 
     sendUpdateDoc(s: ChangeSet) {
         if (s.edits.length > 0) {
-            let msg:webview.UpdateDocument = {tag: webview.Tag.UpdateDocument, edits: s.edits }
+            const msg: webview.UpdateDocument = { tag: webview.Tag.UpdateDocument, edits: s.edits }
             this.sendToExtension(msg)
         }
     }
 
-    #trackListeners:Map<TrackedIndex, (newValue:string) => void> = new Map()
+    #trackListeners: Map<TrackedIndex, (newValue: string) => void> = new Map()
 
-    whenStringTrackChanged(idx:TrackedIndex, listener:(newValue:string) => void):void {
+    whenStringTrackChanged(idx: TrackedIndex, listener: (newValue: string) => void): void {
         this.#trackListeners.set(idx, listener)
     }
 
-    whenIntTrackChanged(idx:TrackedIndex, listener:(newValue:number) => void):void {
+    whenIntTrackChanged(idx: TrackedIndex, listener: (newValue: number) => void): void {
         this.#trackListeners.set(idx, (newValue) => {
-            let i = parseInt(newValue)
-            if (i === NaN) {
+            const i = parseInt(newValue)
+            if (isNaN(i)) {
                 console.log('Received ' + newValue + ' when int expected.')
                 return
             }
@@ -197,7 +198,7 @@ class Webview implements SystemServices {
         })
     }
 
-    documentEdited(edits:readonly common.TrackUpdate[]) {
+    documentEdited(edits: readonly common.TrackUpdate[]) {
         for (const e of edits) {
             const listener = this.#trackListeners.get(e.trackIndex)
             if (listener)
@@ -206,7 +207,7 @@ class Webview implements SystemServices {
     }
 }
 
-declare var acquireVsCodeApi: any
+declare const acquireVsCodeApi: any
 
 const vscode = acquireVsCodeApi()
 
@@ -222,17 +223,17 @@ const vscode = acquireVsCodeApi()
         window.addEventListener('message', event => {
             const message = event.data as extension.Event // The json data that the extension sent
             switch (message.tag) {
-            case extension.Tag.SetSystemModel:
-                sys.setSystemModel(message.system)
-                sys.setSystemModelDone()
-                break
-            case extension.Tag.InvalidateModel:
-                sys.clearModel("Invalid model.")
-                sys.setSystemModelDone()
-                break
-            case extension.Tag.DocumentEdited:
-                sys.documentEdited(message.edits)
-                break
+                case extension.Tag.SetSystemModel:
+                    sys.setSystemModel(message.system)
+                    sys.setSystemModelDone()
+                    break
+                case extension.Tag.InvalidateModel:
+                    sys.clearModel('Invalid model.')
+                    sys.setSystemModelDone()
+                    break
+                case extension.Tag.DocumentEdited:
+                    sys.documentEdited(message.edits)
+                    break
             }
         })
     }

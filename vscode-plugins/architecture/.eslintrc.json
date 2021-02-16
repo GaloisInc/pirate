@@ -1,4 +1,11 @@
 {
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/errors",
+        "plugin:import/warnings",
+        "plugin:import/typescript"
+    ],
     "root": true,
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -6,12 +13,65 @@
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "import"
     ],
     "rules": {
-        "@typescript-eslint/semi":  ["warn", "never"],
+        "@typescript-eslint/semi": [
+            "warn",
+            "never"
+        ],
+        "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
         "eqeqeq": "warn",
+        "import/order": [
+            "error",
+            {
+                "alphabetize": {
+                    "order": "asc"
+                },
+                "groups": [
+                    "builtin",
+                    "external",
+                    "parent",
+                    "sibling",
+                    "index",
+                    "internal"
+                ],
+                "newlines-between": "always"
+            }
+        ],
+        "import/no-unresolved": "error",
+        "no-constant-condition": ["error", { "checkLoops": false }],
         "no-throw-literal": "warn",
+        "no-unused-vars": "off", // use @typescript-eslint/no-unused-vars
+        "quotes": [
+            "warn",
+            "single",
+            {
+                "avoidEscape": true
+            }
+        ],
         "semi": "off"
+    },
+    "settings": {
+        "import/parsers": {
+            "@typescript-eslint/parser": [
+                ".ts"
+            ]
+        },
+        "import/resolver": {
+            "typescript": {
+                "alwaysTryTypes": true, // always try to resolve types under `<root>@types` directory even it doesn't contain any source code, like `@types/unist`
+                // Choose from one of the "project" configs below or omit to use <root>/tsconfig.json by default
+                "project": [
+                    "tsconfig.json",
+                    "src/extension/tsconfig.json",
+                    "src/shared/tsconfig.json",
+                    "src/test/tsconfig.json",
+                    "src/webview/tsconfig.json"
+                ]
+            }
+        }
     }
 }

@@ -1,15 +1,15 @@
 import * as vscode from 'vscode'
-import * as p from 'child_process'
 
 import { ModelResources } from './modelResources'
 
+
 // Language ID in vscode to identify pirate model files.
-const piratemodelLangID:string = "piratemap"
+const piratemodelLangID = 'piratemap'
 
 /**
  * Manages global state for the Pirate plugin Provider for PIRATE project files.
  */
-class PirateArchitectureExtension  {
+class PirateArchitectureExtension {
     readonly #dc = vscode.languages.createDiagnosticCollection('PIRATE')
 
     // Map from URIs of open pirate system model text documents to tracker content.
@@ -17,13 +17,15 @@ class PirateArchitectureExtension  {
     readonly #c: vscode.OutputChannel
 
     /** Things to dispose when plugin is deactivated */
-    readonly #subscriptions: { dispose(): any }[] = []
+    readonly #subscriptions: { dispose(): void }[] = []
 
     /**
      * Initialize Pirate architecture extension
      */
-    constructor(private readonly context: vscode.ExtensionContext) {
-        let subscribe = (d:{ dispose():any}) => this.#subscriptions.push(d)
+    constructor(
+        private readonly context: vscode.ExtensionContext
+    ) {
+        const subscribe = (d: { dispose(): void }) => this.#subscriptions.push(d)
 
         // Register our custom editor providers
         this.#c = vscode.window.createOutputChannel('pirate')
@@ -35,20 +37,19 @@ class PirateArchitectureExtension  {
         subscribe(vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this))
 
         // Register document symbol provider
-        const ext=this
         vscode.languages.registerDocumentSymbolProvider(piratemodelLangID, {
-            provideDocumentSymbols(doc, _token): vscode.DocumentSymbol[] {
-                return ext.getModelForDoc(doc).getDocumentSymbols()
+            provideDocumentSymbols: (doc, _token): vscode.DocumentSymbol[] => {
+                return this.getModelForDoc(doc).getDocumentSymbols()
             }
         })
 
         // Enable and register custom editor
         subscribe(vscode.window.registerCustomEditorProvider('pirate.graph', {
-            resolveCustomTextEditor: (d,p,t) => this.resolvePirateGraphViewer(d,p,t)
+            resolveCustomTextEditor: (d, p, t) => this.resolvePirateGraphViewer(d, p, t)
         }))
 
         // Create sample tree view in case it is useful later.
-        const tdProvider:vscode.TreeDataProvider<string> = {
+        const tdProvider: vscode.TreeDataProvider<string> = {
             getTreeItem(element: string): vscode.TreeItem | Thenable<vscode.TreeItem> {
                 return new vscode.TreeItem(element)
             },
@@ -60,7 +61,7 @@ class PirateArchitectureExtension  {
                     return null
             }
         }
-        const tv = vscode.window.createTreeView<string>("pirateTV", {
+        const tv = vscode.window.createTreeView<string>('pirateTV', {
             treeDataProvider: tdProvider
         })
         subscribe(tv)
@@ -68,16 +69,16 @@ class PirateArchitectureExtension  {
 
     /** Deactivate plugin */
     public dispose() {
-        for(const d of this.#subscriptions)
+        for (const d of this.#subscriptions)
             d.dispose()
     }
 
     /** This retrieves the model for a piratelang file. */
-    getModelForDoc(doc: vscode.TextDocument):ModelResources {
+    getModelForDoc(doc: vscode.TextDocument): ModelResources {
         const uri = doc.uri.toString()
         let mdlRes = this.#openModels.get(uri)
         if (mdlRes) return mdlRes
-        mdlRes = new ModelResources(this.#dc, (msg:string) => this.#c.appendLine(msg), doc)
+        mdlRes = new ModelResources(this.#dc, (msg: string) => this.#c.appendLine(msg), doc)
         this.#openModels.set(uri, mdlRes)
         return mdlRes
     }
@@ -118,7 +119,7 @@ class PirateArchitectureExtension  {
         const uri = initialDocument.uri
         const mdl = this.#openModels.get(uri.toString())
         if (mdl === undefined) {
-            this.#c.appendLine("Could not find open model.")
+            this.#c.appendLine('Could not find open model.')
             return
         }
 
@@ -128,11 +129,11 @@ class PirateArchitectureExtension  {
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(new PirateArchitectureExtension(context))
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {
-
+export function deactivate(): void {
+    return
 }
