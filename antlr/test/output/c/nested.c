@@ -71,7 +71,7 @@ struct OuterStruct_wire {
 };
 
 struct OuterUnion_wire {
-	unsigned char tag[4];
+	unsigned char tag[4] __attribute__((aligned(4)));
 	union {
 		unsigned char day[4] __attribute__((aligned(4)));
 		unsigned char days[30][4] __attribute__((aligned(4)));
@@ -81,7 +81,7 @@ struct OuterUnion_wire {
 };
 
 struct ScopedOuterUnion_wire {
-	unsigned char tag[4];
+	unsigned char tag[4] __attribute__((aligned(4)));
 	union {
 		unsigned char day[4] __attribute__((aligned(4)));
 		unsigned char days[30][4] __attribute__((aligned(4)));
