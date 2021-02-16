@@ -18,7 +18,7 @@
 		"onCustomEditor:pirate.graph",
 		"onLanguage:piratemap"
 	],
-	"main": "./out/extension/extension/main.js",
+	"main": "./out/extension/main.js",
 	"contributes": {
 		"languages": [
 			{
@@ -59,11 +59,11 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./tsconfig.json && tsc -p ./tsconfig-webview.json",
+		"compile": "tsc -b ./tsconfig.json",
 		"lint": "eslint src --ext ts",
 		"watch": "./node_modules/.bin/nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'npm run compile'",
 		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/extension/test/runTest.js"
+		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.3",

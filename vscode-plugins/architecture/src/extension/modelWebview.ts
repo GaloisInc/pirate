@@ -58,7 +58,7 @@ export class ModelWebview {
         this.#webview = view
 
         const staticPath = context.asAbsolutePath('webview-static')
-        const scriptPath = context.asAbsolutePath(path.join('out', 'webview'))
+        const scriptPath = context.asAbsolutePath('out')
 
         // Setup initial content for the webview
         view.options = {
