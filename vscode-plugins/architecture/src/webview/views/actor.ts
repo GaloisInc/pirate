@@ -1,7 +1,7 @@
-import * as A from "../../shared/architecture.js"
-import { ChangeSet } from "../changeSet.js"
-import { DraggableRectangle } from "../draggableRectangle.js"
-import * as D from "../dragHandlers.js"
+import * as A from '../../shared/architecture.js'
+import { ChangeSet } from '../changeSet.js'
+import * as D from '../dragHandlers.js'
+import { DraggableRectangle } from '../draggableRectangle.js'
 import * as svg from '../svg.js'
 import { SystemServices } from '../systemServices.js'
 
@@ -29,7 +29,7 @@ function euclid2Dist(x:number, y:number) {
         return Math.sqrt(x * x + y * y)
 }
 
-enum PortDir { Out = "Out", In = "In"}
+enum PortDir { Out = 'Out', In = 'In'}
 
 /**
  * Clamp a number between a minimum and maximum value.
@@ -130,9 +130,9 @@ class PortView {
         actorSVG.appendChild(elt)
         this.elt = elt
 
-        var bbox = elt.getBBox()
+        const bbox = elt.getBBox()
 
-        let curBorder = p.border.value
+        const curBorder = p.border.value
         let curOffset  = p.offset.value
 
         setPortElementPosition(actorSVG, elt, bbox, portType, curBorder, p.offset.value)
@@ -143,9 +143,9 @@ class PortView {
             // Maximum top value
             const maxTop = actorSVG.height.baseVal.value - bbox.height
             // Calculate x distance above or below max.
-            let xDist = outsideRangeDist(evt.left, 0, maxLeft)
+            const xDist = outsideRangeDist(evt.left, 0, maxLeft)
             // Calculate y distance above or below max.
-            let yDist = outsideRangeDist(evt.top, 0, maxTop)
+            const yDist = outsideRangeDist(evt.top, 0, maxTop)
 
             const distLeft   = euclid2Dist(Math.abs(evt.left),           yDist)
             const distRight  = euclid2Dist(Math.abs(maxLeft - evt.left), yDist)
@@ -169,7 +169,7 @@ class PortView {
                 offset = evt.left
             }
             offset = setPortElementPosition(actorSVG, elt, bbox, portType, border, offset)
-            let changes = new ChangeSet()
+            const changes = new ChangeSet()
             if (curBorder !== border)
                 changes.replace(p.border.trackId, border)
             if (curOffset !== offset) {
@@ -198,21 +198,18 @@ export class ActorView {
             }
         )
 
-        const width = a.width.value
-        const height = a.height.value
-
         this.draggableRectangle.rect.style.fill = a.color.value
 
-        var div = document.createElement('div')
-        var enclaveName = document.createElement('span') as HTMLSpanElement
+        const div = document.createElement('div')
+        const enclaveName = document.createElement('span') as HTMLSpanElement
         enclaveName.classList.add('enclave-name')
         enclaveName.innerHTML = a.name.value
 
-        var visitClass = document.createElement('a')
+        const visitClass = document.createElement('a')
         visitClass.classList.add('enclave-visit-class')
         visitClass.innerHTML = '[Visit Class]'
-        let loc = a.location
-        visitClass.onclick = e => sys.visitURI(loc)
+        const loc = a.location
+        visitClass.onclick = () => sys.visitURI(loc)
 
         div.appendChild(enclaveName)
         div.appendChild(visitClass)
@@ -227,7 +224,7 @@ export class ActorView {
     }
 
     /** Remove all components from SVG */
-    dispose() {
+    dispose(): void {
         this.draggableRectangle.dispose()
     }
 

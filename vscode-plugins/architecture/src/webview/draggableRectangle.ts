@@ -1,9 +1,10 @@
-import { TrackedValue } from "../shared/architecture.js"
-import { SystemServices } from "./systemServices.js"
-import { ChangeSet, TrackedIndex } from "./changeSet.js"
-import * as D from "./dragHandlers.js"
-import { XYRange } from "./geometry.js"
+import { TrackedValue } from '../shared/architecture.js'
+
+import { ChangeSet, TrackedIndex } from './changeSet.js'
+import * as D from './dragHandlers.js'
+import { XYRange } from './geometry.js'
 import * as svg from './svg.js'
+import { SystemServices } from './systemServices.js'
 
 type TrackedIds = XYRange<TrackedIndex>
 
@@ -73,7 +74,7 @@ export class DraggableRectangle {
         parentSVG.appendChild(svgContainer)
     }
 
-    drag(evt: D.SVGDragEvent) {
+    drag(evt: D.SVGDragEvent): void {
         const svgContainer = this.svgContainer
         const sys = this.#sys
         let newLeft = evt.left
@@ -86,7 +87,7 @@ export class DraggableRectangle {
         newTop = sys.adjustY(this, { left: newLeft, width: width }, height, svgContainer.y.baseVal.value, newTop)
 
         // Get new coordinates
-        let r = {
+        const r = {
             left: newLeft,
             top: newTop,
             right: newLeft + width,
@@ -94,7 +95,7 @@ export class DraggableRectangle {
         }
 
         if (!sys.overlaps(this, r)) {
-            let changes = new ChangeSet()
+            const changes = new ChangeSet()
             if (svgContainer.x.baseVal.value !== newLeft) {
                 svgContainer.x.baseVal.value = newLeft
                 changes.replace(this.#trackedIds.left, newLeft)
@@ -105,10 +106,10 @@ export class DraggableRectangle {
             }
             sys.sendUpdateDoc(changes)
         }
-    };
+    }
 
     /** Remove all components from SVG */
-    dispose() {
+    dispose(): void {
         this.svgContainer.remove()
     }
 

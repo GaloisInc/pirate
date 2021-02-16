@@ -1,4 +1,4 @@
-import { common } from "../shared/webviewProtocol.js"
+import { common } from '../shared/webviewProtocol.js'
 
 export type TrackedIndex = number
 
@@ -12,5 +12,5 @@ export class ChangeSet {
         })
     }
 
-    get edits() { return this.#edits }
+    get edits(): common.TrackUpdate[] { return this.#edits }
 }

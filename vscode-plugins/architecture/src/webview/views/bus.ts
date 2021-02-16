@@ -1,7 +1,6 @@
-import * as A from "../../shared/architecture.js"
-import { DraggableRectangle } from "../draggableRectangle.js"
-import * as svg from '../svg.js'
-import { SystemServices } from "../systemServices.js"
+import * as A from '../../shared/architecture.js'
+import { DraggableRectangle } from '../draggableRectangle.js'
+import { SystemServices } from '../systemServices.js'
 
 export class BusView {
     readonly draggableRectangle: DraggableRectangle
@@ -21,8 +20,8 @@ export class BusView {
 
         this.draggableRectangle.rect.style.fill = 'red'
 
-        var div = document.createElement('div')
-        var enclaveName = document.createElement('span') as HTMLSpanElement
+        const div = document.createElement('div')
+        const enclaveName = document.createElement('span') as HTMLSpanElement
         enclaveName.classList.add('enclave-name')
         enclaveName.innerHTML = b.name.value
 
@@ -33,7 +32,7 @@ export class BusView {
     }
 
     /** Remove all components from SVG */
-    dispose() {
+    dispose(): void {
         this.draggableRectangle.dispose()
     }
 
