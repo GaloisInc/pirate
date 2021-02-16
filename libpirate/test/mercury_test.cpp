@@ -102,7 +102,7 @@ TEST_P(MercuryTest, Run)
 
 static pirate_mercury_param_t MercuryParams [] =
 {
-// these are the magic values that work
+// these are the values that work
 // MODE, SESS, MSG, DATA, DESC, MTU
 {  IMM,    1,    1,   1,    0,    0},
 {  IMM,    1,    1,   3,    0,    0},
@@ -111,6 +111,8 @@ static pirate_mercury_param_t MercuryParams [] =
 {  IMM,    2,    2,   1,    0,    0},
 {  IMM,    2,    2,   2,    0,    0},
 {  IMM,    2,    3,   3,    0,    0},
+
+{  PAY,    1,    1,   1,    0,    0}, // doesn't work
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,

@@ -63,6 +63,8 @@ typedef struct ilip_long_message {
     uint32_t data_tag;
     uint32_t data_length;
     uint64_t host_payload_address;
+    uint8_t unused[176];
+    uint64_t desc_hash;
 } ilip_long_message_t;
 
 #pragma pack()
