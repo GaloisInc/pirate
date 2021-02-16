@@ -5,8 +5,6 @@
         "outDir": "../../out/webview"
     },
     "files": [
-        "actor.ts",
-        "bus.ts",
         "changeSet.ts",
         "debugLog.ts",
         "draggableRectangle.ts",
@@ -14,6 +12,8 @@
         "geometry.ts",
         "svg.ts",
         "systemServices.ts",
+        "views/actor.ts",
+        "views/bus.ts",
         "webview.ts"
     ],
     "references": [

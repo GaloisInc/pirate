@@ -1,9 +1,9 @@
-import * as A from "../shared/architecture.js"
-import { ChangeSet } from "./changeSet.js"
-import { DraggableRectangle } from "./draggableRectangle.js"
-import * as D from "./dragHandlers.js"
-import * as svg from './svg.js'
-import { SystemServices } from './systemServices.js'
+import * as A from "../../shared/architecture.js"
+import { ChangeSet } from "../changeSet.js"
+import { DraggableRectangle } from "../draggableRectangle.js"
+import * as D from "../dragHandlers.js"
+import * as svg from '../svg.js'
+import { SystemServices } from '../systemServices.js'
 
 /** `outsideRangeDist(x,l,h)` returns the amount `x` is outside the range `[l,h]`. */
 function outsideRangeDist(x:number, l:number, h:number):number {
