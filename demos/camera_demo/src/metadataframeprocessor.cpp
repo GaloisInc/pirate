@@ -48,7 +48,9 @@ MetaDataFrameProcessor::MetaDataFrameProcessor(const Options& options) :
     mSquareHeight(16),
     mLatitude(0.0),
     mLongitude(0.0),
-    mTimestampMillis(0)
+    mTimestampMillis(0),
+    mOpenLayersApi(options.mOpenLayersApi),
+    mOpenLayersApiUrl(options.mOpenLayersApiUrl)
 {
 
 }
@@ -60,6 +62,10 @@ MetaDataFrameProcessor::~MetaDataFrameProcessor()
 
 int MetaDataFrameProcessor::init()
 {
+    // the angular demo is a replacement for the USA map display; avoid showing both
+    if (mOpenLayersApi) {
+        return 0;
+    }
     ImageConvert mapImageConvert(mMapWidth, mMapHeight);
     unsigned char *mapBuffer;
     size_t mapLength = 0;
@@ -125,7 +131,7 @@ void MetaDataFrameProcessor::paintSquare(int xCenter, int yCenter)
     int yMax = yCenter + (mSquareHeight / 2);
 
     for(k = y = 0; y < (int) mMapHeight; y++) {
-	    for(x = 0; x < (int) mMapWidth; x++, k += 4) {
+        for(x = 0; x < (int) mMapWidth; x++, k += 4) {
             if ((x > xMin) && (x < xMax) && (y > yMin) && (y < yMax)) {
                 mImageBuffer[k+0]=255;
                 mImageBuffer[k+1]=0;
@@ -149,6 +155,15 @@ void MetaDataFrameProcessor::toMercatorProjection(float lat, float lon, int& x, 
     y = mMapHeight - ((int) ((worldMapWidth / 2.0 * log((1.0 + sin(latRad)) / (1.0 - sin(latRad)))) - mapOffsetY));
 }
 
+void MetaDataFrameProcessor::sendLocation()
+{
+    web::json::value postData;
+    postData["latitude"] = web::json::value::number(mLatitude);
+    postData["longitude"] = web::json::value::number(mLongitude);
+    http_client client = http_client(U(mOpenLayersApiUrl));
+    client.request(methods::POST, U("/location"), postData).wait();
+}
+
 int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
     int xCenter, yCenter;
@@ -168,23 +183,19 @@ int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamT
             mLatitude = lat * 180.0 / M_PI;
             mLongitude = lon * 180.0 / M_PI;
             mTimestampMillis = nowMillis;
+
+            if (mOpenLayersApi) {
+                sendLocation();
+            }
         }
     }
 
     std::memcpy(mImageBuffer, mMapBuffer, mMapWidth * mMapHeight * 4);
-	web::json::value postData;
-	postData["latitude"] = web::json::value::number(39);
-	postData["longitude"] = web::json::value::number(-77);
-	http_client client = http_client(U("http://localhost:5000"));
-	client.request(methods::POST, U("/location"), postData).wait();
     // show the location if it has been updated within the past 1000 milliseconds
-    if ((nowMillis - mTimestampMillis) < 1000) {
+    if (!mOpenLayersApi && (nowMillis - mTimestampMillis) < 1000) {
         toMercatorProjection(mLatitude, mLongitude, xCenter, yCenter);
         paintSquare(xCenter, yCenter);
+        renderImage();
     }
-
-    renderImage();
-
     return 0;
 }
-

@@ -51,8 +51,12 @@ private:
     float mLatitude, mLongitude;
     uint64_t mTimestampMillis;
 
+    const bool         mOpenLayersApi;
+    const std::string  mOpenLayersApiUrl;
+
     void renderImage();
     void toMercatorProjection(float lat, float lon, int& x, int& y);
     void paintSquare(int xCenter, int yCenter);
+    void sendLocation();
 };
 

@@ -53,6 +53,8 @@ struct Options
         mFilesystemProcessor(false),
         mXWinProcessor(false),
         mMetaDataProcessor(false),
+        mOpenLayersApi(false),
+        mOpenLayersApiUrl(""),
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
@@ -95,6 +97,8 @@ struct Options
     bool mFilesystemProcessor;
     bool mXWinProcessor;
     bool mMetaDataProcessor;
+    bool mOpenLayersApi;
+    std::string mOpenLayersApiUrl;
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
