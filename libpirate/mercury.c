@@ -125,7 +125,9 @@ static int mercury_message_pack(void *buf, const void *data,
 }
 
 static void pirate_mercury_init_param(pirate_mercury_param_t *param) {
-    (void) param;
+    if (param->mtu == 0) {
+        param->mtu = PIRATE_MERCURY_DEFAULT_MTU;
+    }
 }
 
 int pirate_mercury_parse_param(char *str, void *_param) {
@@ -175,7 +177,7 @@ int pirate_mercury_parse_param(char *str, void *_param) {
 int pirate_mercury_get_channel_description(const void *_param, char *desc, int len) {
     const pirate_mercury_param_t *param = (const pirate_mercury_param_t *)_param;
     int ret_sz = 0;
-    char mode[16];
+    char mode[16], mtu_str[32];
 
     switch (param->mode) {
         case MERCURY_IMMEDIATE:
@@ -189,13 +191,18 @@ int pirate_mercury_get_channel_description(const void *_param, char *desc, int l
             break;
     }
 
-    ret_sz = snprintf(desc, len, "mercury,mode=%s,session=%u,message=%u,data=%u,descriptor=%u,mtu=%u",
+    mtu_str[0] = 0;
+    if (param->mtu != 0) {
+        snprintf(mtu_str, 32, ",mtu=%u", param->mtu);
+    }
+
+    ret_sz = snprintf(desc, len, "mercury,mode=%s,session=%u,message=%u,data=%u,descriptor=%u%s",
                         mode,
                         param->session_id,
                         param->message_id,
                         param->data_tag,
                         param->descriptor_tag,
-                        param->mtu);
+                        mtu_str);
     return ret_sz;
 }
 
@@ -266,7 +273,12 @@ int pirate_mercury_open(void *_param, void *_ctx) {
     }
 
     /* Allocate buffer for formatted messages */
-    ctx->buf = (uint8_t *) malloc(PIRATE_MERCURY_DMA_DESCRIPTOR);
+    if ((param->mode == MERCURY_PAYLOAD) && (access == O_RDONLY)) {
+        // this should go away when the read() API is fixed
+        ctx->buf = (uint8_t *) malloc(param->mtu + PIRATE_MERCURY_DMA_DESCRIPTOR);
+    } else {
+        ctx->buf = (uint8_t *) malloc(PIRATE_MERCURY_DMA_DESCRIPTOR);
+    }
     if (ctx->buf == NULL) {
         goto error;
     }
@@ -333,17 +345,14 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
     } else {
         // this is fine (ᓄ ᴥ ᓇ)
         size_t rd_len = PIRATE_MERCURY_DMA_DESCRIPTOR + count;
-
-        uint8_t *temp = malloc(rd_len);
-        ssize_t rv = read(ctx->fd, temp, rd_len);
+        ssize_t rv = read(ctx->fd, ctx->buf, rd_len);
         if (rv < PIRATE_MERCURY_DMA_DESCRIPTOR) {
             return -1;
         }
-        // It would appear that the data_length field of the descriptor is not set.
+        // The data_length field of the descriptor is not set.
         // Use the read() return value instead.
         count = MIN((size_t) (rv - PIRATE_MERCURY_DMA_DESCRIPTOR), count);
-        memcpy(buf, temp + PIRATE_MERCURY_DMA_DESCRIPTOR, count);
-        free(temp);
+        memcpy(buf, ctx->buf + PIRATE_MERCURY_DMA_DESCRIPTOR, count);
     }
     return count;
 }

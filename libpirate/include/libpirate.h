@@ -240,6 +240,10 @@ typedef enum {
 
 // MERCURY parameters
 #define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
+// The mercury mtu is needed while the
+// read() API does not use host_payload_address
+// pointer. If that is changed then remove the mtu.
+#define PIRATE_MERCURY_DEFAULT_MTU          65536u
 #define PIRATE_MERCURY_IMMEDIATE_SIZE       192u
 #define PIRATE_MERCURY_DMA_DESCRIPTOR       256u
 typedef struct {
