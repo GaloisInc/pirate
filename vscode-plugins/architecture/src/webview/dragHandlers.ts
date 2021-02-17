@@ -46,7 +46,7 @@ export function addSVGDragHandlers(
             rx: innerSVG.x.baseVal.value,
             ry: innerSVG.y.baseVal.value,
             px: evt.pageX,
-            py: evt.pageY
+            py: evt.pageY,
         }
         innerSVG.setPointerCapture(evt.pointerId)
         evt.stopImmediatePropagation()

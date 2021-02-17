@@ -138,7 +138,7 @@ export class Lexer {
                         character++
                         const end: TextPosition = { index: index, line: line, character: character }
                         errors.push({ start: start, end: end, message: 'Unescaped tab characters not allowed in strings.' })
-                        value = value + '\t'
+                        value = `${value}\t`
                     }
                     break
                 case '\r':
@@ -170,29 +170,29 @@ export class Lexer {
                             case 't':
                                 index += 2
                                 character += 2
-                                value = value + '\t'
+                                value = `${value}\t`
                                 break
                             case 'r':
                                 index += 2
-                                value = value + '\r'
+                                value = `${value}\r`
                                 break
                             case 'n':
                                 index += 2
-                                value = value + '\n'
+                                value = `${value}\n`
                                 break
                             case '\\':
                                 index += 2
-                                value = value + '\\'
+                                value = `${value}\\`
                                 break
                             case '"':
                                 index += 2
-                                value = value + '"'
+                                value = `${value}"`
                                 break
                             default:
                                 {
                                     const escapeStart: TextPosition = { index: index, line: line, character: character }
                                     const end: TextPosition = { index: index + 1, line: line, character: character + 1 }
-                                    errors.push({ start: escapeStart, end: end, message: "Invalid escape sequence '\\" + e + "'" })
+                                    errors.push({ start: escapeStart, end: end, message: `Invalid escape sequence '\\${e}'` })
                                     index = index + 2
                                     character = character + 2
                                 }
@@ -269,13 +269,12 @@ export class Lexer {
                 // Read Keyword
                 const start: TextPosition = { index: index, line: line, character: character }
                 let d = input.charAt(++index)
-                while (isAlpha(d) || '0' <= d && d <= '9' || ['_'].indexOf(d) !== -1)
-                    d = input.charAt(++index)
+                while (isAlpha(d) || '0' <= d && d <= '9' || ['_'].indexOf(d) !== -1) { d = input.charAt(++index) }
                 const v = input.substr(start.index, index - start.index)
                 const end: TextPosition = {
                     index: index,
                     line: line,
-                    character: character + (index - start.index)
+                    character: character + (index - start.index),
                 }
                 this.#position = end
                 return { kind: '#keyword', start: start, end: end, value: v }
@@ -287,7 +286,7 @@ export class Lexer {
                 const end: TextPosition = {
                     index: index + r.count,
                     line: line,
-                    character: character + r.count
+                    character: character + r.count,
                 }
                 this.#position = end
                 return { kind: '#number', start: start, end: end, value: value }
@@ -304,7 +303,7 @@ export class Lexer {
                 const start: TextPosition = { index: index, line: line, character: character }
                 const end: TextPosition = { index: index + 1, line: line, character: character + 1 }
                 this.#position = end
-                return unexpectedChar(start, end, "Unexpected character '" + c + "'")
+                return unexpectedChar(start, end, `Unexpected character '${c}'`)
             }
         }
     }
@@ -329,8 +328,7 @@ export class Lexer {
         const p = this.#position
         let index = p.index
         // Read to end of string, carriage return or newline
-        while (['', '\r', '\n'].indexOf(input.charAt(index)) === -1)
-            ++index
+        while (['', '\r', '\n'].indexOf(input.charAt(index)) === -1) { ++index }
         this.#position = { index: index, line: p.line, character: p.character }
         this.#next = this.getNext()
     }

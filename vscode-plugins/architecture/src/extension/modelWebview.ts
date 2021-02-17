@@ -68,8 +68,8 @@ export class ModelWebview {
             // And restrict the webview to only loading content.
             localResourceRoots: [
                 vscode.Uri.file(staticPath),
-                vscode.Uri.file(scriptPath)
-            ]
+                vscode.Uri.file(scriptPath),
+            ],
         }
         // Local path to script and css for the webview
         const cssWebviewUri    = view.asWebviewUri(vscode.Uri.file(path.join(staticPath, 'webview.css')))
@@ -94,8 +94,7 @@ export class ModelWebview {
         let visible = webviewPanel.visible
 
         this.#disposables.push(webviewPanel.onDidChangeViewState((e) => {
-            if (!visible && e.webviewPanel.visible && this.model)
-                this.setModel(this.model)
+            if (!visible && e.webviewPanel.visible && this.model) { this.setModel(this.model) }
             visible = e.webviewPanel.visible
         }))
 
@@ -103,14 +102,12 @@ export class ModelWebview {
         this.#disposables.push(view.onDidReceiveMessage((e:webview.Event) => {
             switch (e.tag) {
             case webview.Tag.VisitURI:
-                if (this.#setSystemModelWaitCount === 0)
-                    svc.showDocument(e.locationIdx)
+                if (this.#setSystemModelWaitCount === 0) { svc.showDocument(e.locationIdx) }
                 break
             case webview.Tag.UpdateDocument:
                 // Only apply update doc requests when we reject update doc requests if the system is waiting
                 // for a system layout wait count request.
-                if (this.#setSystemModelWaitCount === 0)
-                    svc.synchronizeEdits(this, e.edits)
+                if (this.#setSystemModelWaitCount === 0) { svc.synchronizeEdits(this, e.edits) }
                 break
             case webview.Tag.SetSystemModelDone:
                 this.#setSystemModelWaitCount--

@@ -22,7 +22,32 @@
             "never"
         ],
         "@typescript-eslint/no-namespace": "off",
-        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "^_"
+            }
+        ],
+        "block-spacing": [
+            "error",
+            "always"
+        ],
+        "brace-style": [
+            "warn",
+            "1tbs",
+            {
+                "allowSingleLine": true
+            }
+        ],
+        "comma-dangle": [
+            "warn",
+            "always-multiline"
+        ],
+        "curly": [
+            "error",
+            "multi-line",
+            "consistent"
+        ],
         "eqeqeq": "warn",
         "import/order": [
             "error",
@@ -42,9 +67,16 @@
             }
         ],
         "import/no-unresolved": "error",
-        "no-constant-condition": ["error", { "checkLoops": false }],
+        "no-constant-condition": [
+            "error",
+            {
+                "checkLoops": false
+            }
+        ],
         "no-throw-literal": "warn",
+        "no-trailing-spaces": "error",
         "no-unused-vars": "off", // use @typescript-eslint/no-unused-vars
+        "prefer-template": "error",
         "quotes": [
             "warn",
             "single",
@@ -52,7 +84,8 @@
                 "avoidEscape": true
             }
         ],
-        "semi": "off"
+        "semi": "off",
+        "template-curly-spacing": ["error", "never"]
     },
     "settings": {
         "import/parsers": {
