@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+
 import * as vscode from 'vscode'
 
 import * as A from '../shared/architecture'
@@ -47,18 +48,18 @@ export class ModelWebview {
      * Potentially the VSCode extension can update the model multiple
      * times while
      */
-    #setSystemModelWaitCount: number = 0
+    #setSystemModelWaitCount = 0
 
     private model: A.SystemModel|null=null
 
-    readonly #disposables: { dispose: () => any }[] = []
+    readonly #disposables: { dispose: () => void }[] = []
 
     constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, webviewPanel: vscode.WebviewPanel) {
         const view = webviewPanel.webview
         this.#webview = view
 
         const staticPath = context.asAbsolutePath('webview-static')
-        const scriptPath = context.asAbsolutePath(path.join('out', 'webview'))
+        const scriptPath = context.asAbsolutePath('out')
 
         // Setup initial content for the webview
         view.options = {
@@ -67,8 +68,8 @@ export class ModelWebview {
             // And restrict the webview to only loading content.
             localResourceRoots: [
                 vscode.Uri.file(staticPath),
-                vscode.Uri.file(scriptPath)
-            ]
+                vscode.Uri.file(scriptPath),
+            ],
         }
         // Local path to script and css for the webview
         const cssWebviewUri    = view.asWebviewUri(vscode.Uri.file(path.join(staticPath, 'webview.css')))
@@ -93,8 +94,7 @@ export class ModelWebview {
         let visible = webviewPanel.visible
 
         this.#disposables.push(webviewPanel.onDidChangeViewState((e) => {
-            if (!visible && e.webviewPanel.visible && this.model)
-                this.setModel(this.model)
+            if (!visible && e.webviewPanel.visible && this.model) { this.setModel(this.model) }
             visible = e.webviewPanel.visible
         }))
 
@@ -102,14 +102,12 @@ export class ModelWebview {
         this.#disposables.push(view.onDidReceiveMessage((e:webview.Event) => {
             switch (e.tag) {
             case webview.Tag.VisitURI:
-                if (this.#setSystemModelWaitCount === 0)
-                    svc.showDocument(e.locationIdx)
+                if (this.#setSystemModelWaitCount === 0) { svc.showDocument(e.locationIdx) }
                 break
             case webview.Tag.UpdateDocument:
                 // Only apply update doc requests when we reject update doc requests if the system is waiting
                 // for a system layout wait count request.
-                if (this.#setSystemModelWaitCount === 0)
-                    svc.synchronizeEdits(this, e.edits)
+                if (this.#setSystemModelWaitCount === 0) { svc.synchronizeEdits(this, e.edits) }
                 break
             case webview.Tag.SetSystemModelDone:
                 this.#setSystemModelWaitCount--
@@ -128,14 +126,14 @@ export class ModelWebview {
     public setModel(s: A.SystemModel): void {
         this.model = s
         this.#setSystemModelWaitCount++
-        let msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
+        const msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
         this.postEvent(msg)
     }
 
     public invalidateModel(): void {
         this.model = null
         this.#setSystemModelWaitCount++
-        let msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
+        const msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
         this.postEvent(msg)
     }
 
@@ -146,8 +144,8 @@ export class ModelWebview {
     /**
      * Tell the webview about edits made by other components.
      */
-    public notifyDocumentEdited(edits: readonly common.TrackUpdate[]) {
-        let msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
+    public notifyDocumentEdited(edits: readonly common.TrackUpdate[]): void {
+        const msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
         this.postEvent(msg)
     }
 }

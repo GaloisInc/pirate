@@ -12,6 +12,7 @@ RUN yum install -y centos-release-scl epel-release \
            valgrind \
            openssl11 openssl11-devel \
            libjpeg-devel libX11-devel \
+           python3 \
  && yum clean all \
  && rm -rf /var/cache/yum
 
@@ -24,6 +25,9 @@ RUN ln -s /usr/bin/openssl11 /usr/local/bin/openssl
 RUN wget -qO /root/pirate.tgz https://pirate.azureedge.net/dist/pirate/master/pirate.centos7.tgz \
  && tar -C /usr/local -xz --strip-components=1 -f /root/pirate.tgz \
  && rm -rf /root/pirate.tgz
+
+COPY pdl /usr/local/pdl
+RUN cd /usr/local/pdl && python3 setup.py install
 
 # Update library path to include libpirate
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/libc.conf

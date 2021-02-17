@@ -23,10 +23,21 @@ export class LinkerRunner {
     diagnosticCollection.clear();
 
     const buildDir = tmp.dirSync();
+
+    let configPath: string = config.get('PATH');
+    if (!configPath) {
+      configPath = '/usr/local/bin:/usr/bin/';
+    }
+
     const opts: child_process.SpawnSyncOptions = {
       cwd: buildDir.name,
       encoding: 'utf8',
       shell: true,
+      env: {
+        CC: 'clang',
+        CXX: 'clang',
+        PATH: configPath,
+      },
     };
     let buildCommands = await this.runCmake(
       opts,
@@ -255,25 +266,14 @@ export class LinkerRunner {
         'The Pirate Linker extension requires you to open a workspace'
       );
       return undefined;
-    } else if (!this.executableExists('cmake')) {
-      console.log("Can't find cmake on the PATH");
-      return undefined;
     }
     if (!cmakePath) {
       cmakePath = 'cmake';
     }
-    if (!cmakeFlags) {
-      cmakeFlags = [
-        '-G',
-        '"Unix Makefiles"',
-        '-DCMAKE_BUILD_TYPE=Debug',
-        '-DCMAKE_C_FLAGS=-Wl,-pirate,enclaves.json',
-        // '-DCMAKE_CXX_FLAGS=-Wl,-pirate,enclaves_cxx.json',
-      ];
-    }
+
     child_process.spawnSync(
       cmakePath,
-      cmakeFlags.concat([folders[0].uri.fsPath]),
+      [folders[0].uri.fsPath],
       opts
     );
     if (!makePath) {

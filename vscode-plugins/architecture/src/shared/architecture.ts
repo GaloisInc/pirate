@@ -1,4 +1,4 @@
-import { TextLocated, TextRange } from "./position"
+import { TextLocated, TextRange } from './position'
 
 /** Integer that identifies a source locations in the document. */
 export type TrackIndex = number
@@ -67,10 +67,10 @@ export const enum BusOrientation {
  */
 export interface Bus extends NamedEntity {
     readonly orientation: BusOrientation
-    readonly left:   number
-    readonly top:    number
-    readonly height: number
-    readonly width:  number
+    readonly left: TrackedValue<number>
+    readonly top: TrackedValue<number>
+    readonly height: TrackedValue<number>
+    readonly width: TrackedValue<number>
 }
 
 export const enum EndpointType { Port = 'port', Bus = 'bus' }
@@ -95,8 +95,8 @@ export interface Connection {
 }
 
 export const enum Units {
-    IN = "in",
-    CM = "cm"
+    IN = 'in',
+    CM = 'cm'
 }
 
 /**

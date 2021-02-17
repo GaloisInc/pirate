@@ -1,0 +1,12 @@
+{
+    "extends": "../../tsconfig-default.json",
+    "compilerOptions": {
+        "moduleResolution": "Node",
+        "outDir": "../../out/test"
+    },
+    "files": [
+        "runTest.ts",
+        "suite/extension.test.ts",
+        "suite/index.ts"
+    ]
+}

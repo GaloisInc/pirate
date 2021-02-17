@@ -14,7 +14,7 @@ struct Union_Example {
 };
 
 struct Union_Example_wire {
-	unsigned char tag[2];
+	unsigned char tag[2] __attribute__((aligned(2)));
 	union {
 		unsigned char a[1] __attribute__((aligned(1)));
 		unsigned char b[4] __attribute__((aligned(4)));
