@@ -45,10 +45,8 @@ function mkSymbols(mdl:A.SystemModel):vscode.DocumentSymbol[] {
         const selRange = mkvscodeRange(a.name)
         const asym = new vscode.DocumentSymbol(a.name.value, 'actor', kind, range, selRange)
         symbols.push(asym)
-        for (const p of a.inPorts)
-            addPortSymbol(asym.children, p)
-        for (const p of a.outPorts)
-            addPortSymbol(asym.children, p)
+        for (const p of a.inPorts) { addPortSymbol(asym.children, p) }
+        for (const p of a.outPorts) { addPortSymbol(asym.children, p) }
     }
     return symbols
 }
@@ -105,8 +103,7 @@ export class ModelResources implements ModelWebviewServices {
             if (model !== undefined) {
                 this.system = model
                 this.trackedDoc = t
-                for (const view of this.#activeWebviews)
-                    view.setModel(model)
+                for (const view of this.#activeWebviews) { view.setModel(model) }
             } else {
                 this.system = null
                 this.trackedDoc = null
@@ -160,29 +157,19 @@ export class ModelResources implements ModelWebviewServices {
         const doEdit = () => {
             this.#expectedEdits = edit
             for (const v of this.#activeWebviews) {
-                if (v !== source)
-                    v.notifyDocumentEdited(edit.array)
+                if (v !== source) { v.notifyDocumentEdited(edit.array) }
             }
             const wsEdit = doc.mkWorkspaceEdit(edit)
             vscode.workspace.applyEdit(wsEdit).then((success) => {
                 if (success) doc.updateRanges(edit)
-                if (thisOnNext.next)
-                    thisOnNext.next()
-                else
-                    this.#onNext = null
+                if (thisOnNext.next) { thisOnNext.next() } else { this.#onNext = null }
 
             }, (rsn) => {
-                this.#logger('Edit failed' + rsn)
-                if (thisOnNext.next)
-                    thisOnNext.next()
-                else
-                    this.#onNext = null
+                this.#logger(`Edit failed${rsn}`)
+                if (thisOnNext.next) { thisOnNext.next() } else { this.#onNext = null }
             })
         }
-        if (lastOnNext === null)
-            doEdit()
-        else
-            lastOnNext.next = doEdit
+        if (lastOnNext === null) { doEdit() } else { lastOnNext.next = doEdit }
     }
 
     /**

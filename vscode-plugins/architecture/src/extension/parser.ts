@@ -58,7 +58,7 @@ class ParserStream {
         this.errors.push({
             start: t.start,
             end: t.end,
-            message: msg
+            message: msg,
         })
     }
 
@@ -77,7 +77,7 @@ function consumeOperator(p: ParserStream, v: string): lexer.OperatorToken | unde
         return t
     }
 
-    p.pushError(t, "Expected '" + v + "'")
+    p.pushError(t, `Expected '${v}'`)
     return undefined
 }
 
@@ -171,8 +171,7 @@ const stringParser: Parser<TextLocated<string>> = (p: ParserStream) => {
             p.pushError(t, 'Expected string literal.')
             return undefined
     }
-    for (const e of t.errors)
-        p.pushError(e, e.message)
+    for (const e of t.errors) { p.pushError(e, e.message) }
     return mkLocated(t, t.value)
 }
 
@@ -220,10 +219,10 @@ const lengthParser: Parser<A.Length> = (p: ParserStream) => {
     const choices: string[] = [A.Units.IN, A.Units.CM]
     const unitsString = token.slice(idx)
     if (unitsString === '') {
-        p.pushError(t, 'Units missing: ' + choicesMessage(choices))
+        p.pushError(t, `Units missing: ${choicesMessage(choices)}`)
         return undefined
     } else if (choices.indexOf(unitsString) === -1) {
-        p.pushError(t, 'Could not parse units: ' + choicesMessage(choices))
+        p.pushError(t, `Could not parse units: ${choicesMessage(choices)}`)
         return undefined
     }
 
@@ -235,12 +234,11 @@ function choicesMessage(choices: string[]): string {
         case 0:
             return 'internal error: Invalid enumerator choices.'
         case 1:
-            return "Expected '" + choices[0] + "'."
+            return `Expected '${choices[0]}'.`
         default: {
-            let v = "Expected '" + choices[0]
-            for (let i = 1; i < choices.length - 1; ++i)
-                v = v + "', '" + choices[i]
-            return v + "' or '" + choices[choices.length - 1] + "'."
+            let v = `Expected '${choices[0]}`
+            for (let i = 1; i < choices.length - 1; ++i) { v = `${v}', '${choices[i]}` }
+            return `${v}' or '${choices[choices.length - 1]}'.`
         }
     }
 }
@@ -326,8 +324,8 @@ const locationField: Parser<A.LocationIndex> = (p: ParserStream) => {
     }
     lastIdx -= linePair.count
     if (v.charAt(lastIdx) !== ':') {
-        p.pushError(t, 'Could not find line separator '
-            + colPair.value + ' ' + linePair.value + ' ' + lastIdx.toString() + ' ' + v.charAt(lastIdx) + ' ' + linePair.count)
+        p.pushError(t, `Could not find line separator ${
+             colPair.value} ${linePair.value} ${lastIdx.toString()} ${v.charAt(lastIdx)} ${linePair.count}`)
         return undefined
     }
 
@@ -336,7 +334,7 @@ const locationField: Parser<A.LocationIndex> = (p: ParserStream) => {
     const loc: SourceLocation = {
         filename: filename,
         line: linePair.value,
-        column: colPair.value
+        column: colPair.value,
     }
 
     return p.tracker.location(t, loc)
@@ -362,7 +360,7 @@ function reqObjField<T>(nm: string, tp: Parser<T>, lexName?: string): ObjectFiel
         arity: Arity.Required,
         setter: (p: ParserStream, obj: any, key: lexer.Identifier) => {
             if (obj[nm] !== undefined) {
-                p.pushError(key, nm + ' already defined.')
+                p.pushError(key, `${nm} already defined.`)
                 return false
             }
 
@@ -387,7 +385,7 @@ function reqObjField<T>(nm: string, tp: Parser<T>, lexName?: string): ObjectFiel
 
             obj[nm] = r
             return true
-        }
+        },
     }
 }
 
@@ -396,7 +394,7 @@ function arrayObjField(fieldName: string, lexName: string, fields: ObjectField[]
         fieldName: fieldName,
         lexName: lexName,
         arity: Arity.Array,
-        setter: (p: ParserStream, o: any, k: lexer.Identifier) => objectType(fields, p, o, fieldName, k)
+        setter: (p: ParserStream, o: any, k: lexer.Identifier) => objectType(fields, p, o, fieldName, k),
     }
 }
 
@@ -430,8 +428,7 @@ function objectType(fields: ObjectField[],
     const nameField: TextLocated<string> = mkLocated(name, name.value)
     const partial: Partial = { name: nameField }
     for (const c of fields) {
-        if (c.arity === Arity.Array)
-            partial[c.fieldName] = []
+        if (c.arity === Arity.Array) { partial[c.fieldName] = [] }
     }
 
     let rcurly: lexer.OperatorToken | undefined = undefined
@@ -456,7 +453,7 @@ function objectType(fields: ObjectField[],
                         break
                     }
                     if (!found) {
-                        p.pushError(t, 'Unknown keyword ' + t.value)
+                        p.pushError(t, `Unknown keyword ${t.value}`)
                         p.lexer.skipToNewLine()
                     }
                     break
@@ -482,7 +479,7 @@ function objectType(fields: ObjectField[],
     for (const c of fields) {
         if (c.arity === Arity.Required && partial[c.fieldName] === undefined) {
             hasUndefined = true
-            p.pushError(r, 'Missing ' + c.lexName + '.')
+            p.pushError(r, `Missing ${c.lexName}.`)
         }
     }
     if (hasUndefined) return false
@@ -494,7 +491,7 @@ function objectType(fields: ObjectField[],
 const portType: ObjectField[] = [
     reqObjField('location', locationField),
     reqObjField('border', trackedEnumField([A.Border.Left, A.Border.Right, A.Border.Top, A.Border.Bottom])),
-    reqObjField('offset', trackedNumberField)
+    reqObjField('offset', trackedNumberField),
 ]
 
 /** Parser for actors */
@@ -527,8 +524,7 @@ const busType: ObjectField[] = [
 function topLevelDecls<T>(p: ParserStream, choices: ObjectField[]): T | undefined {
     const partial: Partial = {}
     for (const c of choices) {
-        if (c.arity === Arity.Array)
-            partial[c.fieldName] = []
+        if (c.arity === Arity.Array) { partial[c.fieldName] = [] }
     }
 
     let recovering = false
@@ -547,7 +543,7 @@ function topLevelDecls<T>(p: ParserStream, choices: ObjectField[]): T | undefine
                     }
                 }
                 if (!found && !recovering) {
-                    p.pushError(t, 'Unexpected identifier ' + t.value)
+                    p.pushError(t, `Unexpected identifier ${t.value}`)
                     recovering = true
                 }
                 break
@@ -578,8 +574,7 @@ function topLevelDecls<T>(p: ParserStream, choices: ObjectField[]): T | undefine
         if (c.arity === Arity.Required) {
             const v = partial[c.fieldName]
             complete = v && complete
-            if (v === undefined)
-                p.pushError(r, 'Missing ' + c.lexName + '.')
+            if (v === undefined) { p.pushError(r, `Missing ${c.lexName}.`) }
         }
     }
     return complete ? (partial as T) : undefined
@@ -633,8 +628,8 @@ function consumeLayout(p: ParserStream): A.SystemModel | undefined {
                 if (!consumeOperator(p, ';')) return false
                 partial.connections.push({ source: x, target: y })
                 return true
-            }
-        }
+            },
+        },
     ])
 }
 
@@ -650,6 +645,6 @@ export function parseArchitectureFile(text: string, tracker: Tracker): ParseResu
         // This is a pure grammar, the value will be undefined until we add embedded actions
         // or enable automatic CST creation.
         value: r,
-        errors: p.errors
+        errors: p.errors,
     }
 }

@@ -91,7 +91,7 @@ export class DraggableRectangle {
             left: newLeft,
             top: newTop,
             right: newLeft + width,
-            bottom: newTop + height
+            bottom: newTop + height,
         }
 
         if (!sys.overlaps(this, r)) {

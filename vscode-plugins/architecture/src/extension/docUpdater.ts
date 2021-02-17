@@ -67,8 +67,7 @@ export class NormalizedEdits {
         const r: Edit[] = []
         if (edits.length > 0) {
             for (let i = 0; i + 1 !== sorted.length; ++i) {
-                if (sorted[i].trackIndex < sorted[i + 1].trackIndex)
-                    r.push(sorted[i])
+                if (sorted[i].trackIndex < sorted[i + 1].trackIndex) { r.push(sorted[i]) }
             }
             r.push(sorted[sorted.length - 1])
         }
@@ -97,10 +96,8 @@ export class NormalizedEdits {
                 ++newIdx
             }
         }
-        while (oldIdx < oldEdits.length)
-            res.push(oldEdits[oldIdx++])
-        while (newIdx < newEdits.length)
-            res.push(newEdits[newIdx++])
+        while (oldIdx < oldEdits.length) { res.push(oldEdits[oldIdx++]) }
+        while (newIdx < newEdits.length) { res.push(newEdits[newIdx++]) }
         return new NormalizedEdits(res)
     }
 }
@@ -149,14 +146,13 @@ export class TrackedDoc implements Tracker {
         const lastEnd = m.length > 0 ? m[m.length-1].end : undefined
 
         // Fail if last end position was not at or before the start of this one.
-        if (lastEnd && lastEnd.isAfter(start))
-            return undefined
+        if (lastEnd && lastEnd.isAfter(start)) { return undefined }
 
         m.push(new vscode.Range(start, end))
         return m.length - 1
     }
 
-    get locations(): readonly LocationInfo[] { return this.#locations}
+    get locations(): readonly LocationInfo[] { return this.#locations }
 
     location(r: TextRange, loc:SourceLocation): A.LocationIndex|undefined {
         const trackIdx = this.track(r)
@@ -235,8 +231,7 @@ export class TrackedDoc implements Tracker {
 
     mkWorkspaceEdit(edits:NormalizedEdits):vscode.WorkspaceEdit {
         const edit = new vscode.WorkspaceEdit()
-        for (const e of edits.array)
-            edit.replace(this.#uri, this.#ranges[e.trackIndex], e.newText)
+        for (const e of edits.array) { edit.replace(this.#uri, this.#ranges[e.trackIndex], e.newText) }
         return edit
     }
 
@@ -274,8 +269,7 @@ export class TrackedDoc implements Tracker {
         for (const ce of changes) {
             const idx = this.findEditIndex(edits, ce.range, ce.text)
             // Fail if we cannot find this edit or we have already seen it
-            if (idx === null || seen[idx])
-                return false
+            if (idx === null || seen[idx]) { return false }
             seen[idx] = true
         }
         // By pigeon hole principle we know we have seen all edits.

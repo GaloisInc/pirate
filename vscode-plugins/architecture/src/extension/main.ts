@@ -40,12 +40,12 @@ class PirateArchitectureExtension {
         vscode.languages.registerDocumentSymbolProvider(piratemodelLangID, {
             provideDocumentSymbols: (doc, _token): vscode.DocumentSymbol[] => {
                 return this.getModelForDoc(doc).getDocumentSymbols()
-            }
+            },
         })
 
         // Enable and register custom editor
         subscribe(vscode.window.registerCustomEditorProvider('pirate.graph', {
-            resolveCustomTextEditor: (d, p, t) => this.resolvePirateGraphViewer(d, p, t)
+            resolveCustomTextEditor: (d, p, t) => this.resolvePirateGraphViewer(d, p, t),
         }))
 
         // Create sample tree view in case it is useful later.
@@ -55,22 +55,18 @@ class PirateArchitectureExtension {
             },
 
             getChildren(element?: string): vscode.ProviderResult<string[]> {
-                if (element === undefined)
-                    return ['sample1', 'sample2', 'sample3']
-                else
-                    return null
-            }
+                if (element === undefined) { return ['sample1', 'sample2', 'sample3'] } else { return null }
+            },
         }
         const tv = vscode.window.createTreeView<string>('pirateTV', {
-            treeDataProvider: tdProvider
+            treeDataProvider: tdProvider,
         })
         subscribe(tv)
     }
 
     /** Deactivate plugin */
     public dispose() {
-        for (const d of this.#subscriptions)
-            d.dispose()
+        for (const d of this.#subscriptions) { d.dispose() }
     }
 
     /** This retrieves the model for a piratelang file. */
@@ -84,13 +80,11 @@ class PirateArchitectureExtension {
     }
 
     private onDidOpenTextDocument(doc: vscode.TextDocument) {
-        if (doc.languageId === piratemodelLangID)
-            this.getModelForDoc(doc)
+        if (doc.languageId === piratemodelLangID) { this.getModelForDoc(doc) }
     }
 
     private onDidCloseTextDocument(doc: vscode.TextDocument) {
-        if (doc.languageId === piratemodelLangID)
-            this.#openModels.delete(doc.uri.toString())
+        if (doc.languageId === piratemodelLangID) { this.#openModels.delete(doc.uri.toString()) }
     }
 
     /**
@@ -104,8 +98,7 @@ class PirateArchitectureExtension {
         const uri = doc.uri.toString()
         // Stop if existing model is defined and all changes are expected
         const model = this.#openModels.get(uri)
-        if (model)
-            model.onDidChangeTextDocument(e)
+        if (model) { model.onDidChangeTextDocument(e) }
     }
 
     /**

@@ -66,8 +66,7 @@ class Webview implements SystemServices {
     clearModel(errorMsgText: string): void {
         for (const a of this.#actors) a.dispose()
         this.#actors = []
-        if (this.#errormsgDiv)
-            this.#errormsgDiv.innerText = errorMsgText
+        if (this.#errormsgDiv) { this.#errormsgDiv.innerText = errorMsgText }
 
     }
 
@@ -90,8 +89,7 @@ class Webview implements SystemServices {
                 if (bottom <= collidable.top) continue
                 if (collidable.bottom <= top) continue
                 // If o is left of oldLeft and right of newLeft
-                if (collidable.right <= oldLeft)
-                    newLeft = Math.max(collidable.right, newLeft)
+                if (collidable.right <= oldLeft) { newLeft = Math.max(collidable.right, newLeft) }
             }
         }
         // If we move right
@@ -103,8 +101,7 @@ class Webview implements SystemServices {
                 if (bottom <= collidable.top) continue
                 if (collidable.bottom <= top) continue
                 // If o is right of oldRight and left of newRight.
-                if (oldRight <= collidable.left)
-                    newRight = Math.min(newRight, collidable.left)
+                if (oldRight <= collidable.left) { newRight = Math.min(newRight, collidable.left) }
             }
             newLeft = newRight - width
         }
@@ -122,8 +119,7 @@ class Webview implements SystemServices {
                 if (right <= o.left) continue
                 if (o.right <= left) continue
                 // If o is above of oldTop
-                if (o.bottom <= oldTop)
-                    newTop = Math.max(o.bottom, newTop)
+                if (o.bottom <= oldTop) { newTop = Math.max(o.bottom, newTop) }
             }
         }
         // If we move right
@@ -135,8 +131,7 @@ class Webview implements SystemServices {
                 if (right <= o.left) continue
                 if (o.right <= left) continue
                 // If o is right of oldRight and left of newRight.
-                if (oldBottom <= o.top)
-                    newBottom = Math.min(newBottom, o.top)
+                if (oldBottom <= o.top) { newBottom = Math.min(newBottom, o.top) }
 
             }
             newTop = newBottom - height
@@ -164,7 +159,7 @@ class Webview implements SystemServices {
     visitURI(idx: A.LocationIndex): void {
         const cmd: webview.VisitURI = {
             tag: webview.Tag.VisitURI,
-            locationIdx: idx
+            locationIdx: idx,
         }
         this.sendToExtension(cmd)
     }
@@ -191,7 +186,7 @@ class Webview implements SystemServices {
         this.#trackListeners.set(idx, (newValue) => {
             const i = parseInt(newValue)
             if (isNaN(i)) {
-                console.log('Received ' + newValue + ' when int expected.')
+                console.log(`Received ${newValue} when int expected.`)
                 return
             }
             listener(i)
@@ -201,8 +196,7 @@ class Webview implements SystemServices {
     documentEdited(edits: readonly common.TrackUpdate[]) {
         for (const e of edits) {
             const listener = this.#trackListeners.get(e.trackIndex)
-            if (listener)
-                listener(e.newText)
+            if (listener) { listener(e.newText) }
         }
     }
 }
