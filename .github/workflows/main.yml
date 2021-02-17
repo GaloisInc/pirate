@@ -34,22 +34,22 @@ jobs:
           - name: standard-clang
             container: ubuntu:focal
             packager: apt-get
-            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev libcpprest-dev
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
           - name: standard-clang-shmem
             container: ubuntu:focal
             packager: apt-get
-            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            extra-packages: clang wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev libcpprest-dev
             extra-cmake: -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON -DPIRATE_SHMEM_FEATURE=ON
           - name: standard-gcc
             container: ubuntu:focal
             packager: apt-get
-            extra-packages: g++ wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev
+            extra-packages: g++ wget ca-certificates cmake make git libc6-dev libssl-dev libjpeg-dev libx11-dev libcpprest-dev
             extra-cmake: -DCMAKE_C_COMPILER=gcc -DIPV6_TESTS=OFF -DGAPS_DISABLE=ON
           - name: ubuntu
             container: ubuntu:focal
             packager: apt-get
-            extra-packages: wget ca-certificates libtinfo-dev binutils git cmake make libstdc++-9-dev libedit2 libpython3.8 libssl-dev libjpeg-dev libx11-dev
+            extra-packages: wget ca-certificates libtinfo-dev binutils git cmake make libstdc++-9-dev libedit2 libpython3.8 libssl-dev libjpeg-dev libx11-dev libcpprest-dev
             extra-cmake: -DIPV6_TESTS=OFF
             upload-artifact: true
             pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.ubuntu.tgz
