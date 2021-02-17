@@ -64,7 +64,7 @@ The following types of frame processors are supported:
 * xwindows display
 * MPEG-TS H.264 encoding
 * Trillium camera metadata processor
-  * X (default) or OpenLayers (--openlayers <url>) metadata visualization
+* X or OpenLayers metadata visualization
 
 The demo supports zero or more frame processors.
 
@@ -77,7 +77,7 @@ The following steps are required to run the Open Layers metadata visualization:
 * Start the Open Layers camera demo Angular frontend
     * See `openlayers_demo/README.md`
 * Open a browser to 'http://localhost:4200' to view the running OpenLayers demo
-* Run the camera demo with options `--metadata` and `--openlayers localhost:5000`
+* Run the camera demo with option `--openlayers localhost:5000`
 * Points pulled from the metadata will be displayed on the Open Layers map
 
 ## GAPS Channels
