@@ -112,7 +112,13 @@ static pirate_mercury_param_t MercuryParams [] =
 {  IMM,    2,    2,   2,    0,    0},
 {  IMM,    2,    3,   3,    0,    0},
 
-{  PAY,    1,    1,   1,    0,    0}, // doesn't work
+{  PAY,    1,    1,   1,    0,    0},
+{  PAY,    1,    1,   3,    0,    0},
+{  PAY,    1,    2,   3,    0,    0},
+{  PAY,    1,    3,   3,    0,    0},
+{  PAY,    2,    2,   1,    0,    0},
+{  PAY,    2,    2,   2,    0,    0},
+{  PAY,    2,    3,   3,    0,    0},
 };
 
 INSTANTIATE_TEST_SUITE_P(MercuryFunctionalTest, MercuryTest,

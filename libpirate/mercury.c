@@ -336,12 +336,12 @@ ssize_t pirate_mercury_read(const void *_param, void *_ctx, void *buf, size_t co
 
         uint8_t *temp = malloc(rd_len);
         ssize_t rv = read(ctx->fd, temp, rd_len);
-        if (rv < 0) {
+        if (rv < PIRATE_MERCURY_DMA_DESCRIPTOR) {
             return -1;
         }
-        ilip_long_message_t *long_msg_hdr = (ilip_long_message_t *) ctx->buf;
-        uint32_t payload_len = be32toh(long_msg_hdr->data_length);
-        count = MIN(payload_len, count);
+        // It would appear that the data_length field of the descriptor is not set.
+        // Use the read() return value instead.
+        count = MIN((size_t) (rv - PIRATE_MERCURY_DMA_DESCRIPTOR), count);
         memcpy(buf, temp + PIRATE_MERCURY_DMA_DESCRIPTOR, count);
         free(temp);
     }
