@@ -31,6 +31,10 @@
 #include "mpeg-ts-encoder.hpp"
 #endif
 
+#if RESTSDK_PRESENT
+#include "metadataopenlayers.hpp"
+#endif
+
 class FrameProcessorCreator {
 public:
     static void add(
@@ -56,6 +60,11 @@ public:
 #if FFMPEG_PRESENT
             case H264Stream:
                 fp = new MpegTsEncoder(options);
+                break;
+#endif
+#if RESTSDK_PRESENT
+            case MetaDataProcessorOpenLayers:
+                fp = new MetaDataOpenLayers(options);
                 break;
 #endif
             case Filesystem:

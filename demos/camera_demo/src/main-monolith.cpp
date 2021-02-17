@@ -113,6 +113,10 @@ int main(int argc, char *argv[])
         FrameProcessorCreator::add(MetaDataProcessor, frameProcessors, options, cameraControlCallbacks);
     }
 
+    if (options.mOpenLayersApi) {
+        FrameProcessorCreator::add(MetaDataProcessorOpenLayers, frameProcessors, options, cameraControlCallbacks);
+    }
+
     if (options.mH264Encoder) {
         FrameProcessorCreator::add(H264Stream, frameProcessors, options, cameraControlCallbacks);
     }

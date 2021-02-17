@@ -21,7 +21,7 @@
 enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_TRILLIUM, VIDEO_TEST, VIDEO_NULL };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor };
+enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor, MetaDataProcessorOpenLayers };
 enum DataStreamType { VideoData, MetaData };
 enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 

@@ -6,7 +6,7 @@ Requirements:
 * Flask
 * Flask CORS
 
-`pip install -r requirements.txt`
+`pip3 install -r requirements.txt`
 
 ## Run server
 * Default host:port (localhost:5000)

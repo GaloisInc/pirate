@@ -10,22 +10,21 @@
  * computer software, or portions thereof marked with this legend must also
  * reproduce this marking.
  *
- * Copyright 2020 Two Six Labs, LLC.  All rights reserved.
+ * Copyright 2021 Two Six Labs, LLC.  All rights reserved.
  */
 
 #pragma once
 
 #include <string>
-#include <X11/Xlib.h>
 
 #include "frameprocessor.hpp"
 #include "imageconvert.hpp"
 
-class MetaDataFrameProcessor : public FrameProcessor
+class MetaDataOpenLayers : public FrameProcessor
 {
 public:
-    MetaDataFrameProcessor(const Options& options);
-    virtual ~MetaDataFrameProcessor();
+    MetaDataOpenLayers(const Options& options);
+    virtual ~MetaDataOpenLayers();
 
     virtual int init() override;
     virtual void term() override;
@@ -34,25 +33,10 @@ protected:
     virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
-    Display*                   mDisplay;
-    Window                     mWindow;
-    XImage*                    mImage;
-    unsigned char*             mImageBuffer;
-    GC                         mContext;
-    XGCValues                  mContextVals;
-
-    const unsigned  mMapWidth;
-    const unsigned  mMapHeight;
-    unsigned char*  mMapBuffer;
-
-    const unsigned  mSquareWidth;
-    const unsigned  mSquareHeight;
+    const std::string  mOpenLayersApiUrl;
 
     float mLatitude, mLongitude;
-    uint64_t mTimestampMillis;
 
-    void renderImage();
-    void toMercatorProjection(float lat, float lon, int& x, int& y);
-    void paintSquare(int xCenter, int yCenter);
+    void sendLocation();
 };
 

@@ -5,12 +5,13 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 ## Installation
 * Install Node
 * Install Angular CLI: `npm install -g @angular/cli`
-* Install and run the backend Flask API in the `flask_api` directory
+* Install and run the backend Flask API in the `flask_api` directory (follow the directions in the flask_api README.md)
   * If not using the default host:port (localhost:5000), you must update the `locationUrl` in `src/app/location.service.ts`
+* Run the npm magic incantations: `npm install`, `ng update`, `npm update`
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files. You want to use the Flask server (defaults to localhost:5000) as the endpoint you provide to the camera demo application.
 
 ## Code scaffolding
 
