@@ -58,7 +58,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.locationService.getLocation().subscribe(location => {
       this.location = [location.longitude, location.latitude];
       this.setLocationMarker();
-      console.log(this.location);
     });
   }
 }

@@ -7,6 +7,7 @@ import Attribution from 'ol/control/Attribution';
 import SourceOsm from 'ol/source/OSM';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import {Fill, Stroke, Circle, Style} from 'ol/style';
 import { defaults as defaultControls } from 'ol/control';
 
 /**
@@ -15,14 +16,24 @@ import { defaults as defaultControls } from 'ol/control';
 export class GeoMap {
   readonly map: Map;
   readonly source: VectorSource;
+  style: Style;
 
   constructor() {
+    this.style = new Style({
+      image: new Circle({
+        fill: new Fill({
+          color: '#39C'
+        }),
+        radius: 7
+      })
+    });
+
     this.source = new VectorSource();
     this.map = new Map({
       target: 'map',
       layers: [
         new LayerTile({source: new SourceOsm()}),
-        new VectorLayer({source: this.source})
+        new VectorLayer({source: this.source, style: this.style})
       ],
       view: new View({
         projection: 'EPSG:4326',
