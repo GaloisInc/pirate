@@ -1,9 +1,9 @@
 import setuptools
 
 setuptools.setup(
-    name="pdl-pkg-karl",
+    name="pdl-pkg",
     version="0.0.1",
-    author="Karl Smeltzer",
+    author="Pirate Team",
     python_requires='>=3.6',
     packages=setuptools.find_packages(),
     scripts=["bin/pdl"],

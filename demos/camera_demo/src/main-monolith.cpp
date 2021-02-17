@@ -58,22 +58,15 @@ static int waitInterrupt(void* arg) {
 int main(int argc, char *argv[])
 {
     int rv = 0;
-    bool tracing = false;
     Options options;
     sigset_t set;
     struct sigaction newaction;
     std::thread *signalThread = nullptr;
     std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
+ 
+    parseArgs(argc, argv, &options);
 
-    if (ptrace(PTRACE_TRACEME, 0, 1, 0) < 0) {
-        tracing = true;
-    } else {
-        ptrace(PTRACE_DETACH, 0, 1, 0);
-    }
-
-    if (tracing) {
-        // allow SIGINT to continue working under gdb
-    } else {
+    if (!options.mGDB) {
         // block SIGINT for all threads except for the signalThread
         sigemptyset(&set);
         sigaddset(&set, SIGINT);
@@ -83,8 +76,6 @@ int main(int argc, char *argv[])
         sigemptyset(&newaction.sa_mask);
         sigaction(SIGINT, &newaction, NULL);
     }
-
-    parseArgs(argc, argv, &options);
 
     CameraControlOutput *cameraControlOutput = nullptr;
     std::vector<std::shared_ptr<CameraControlInput>> cameraControlInputs;
@@ -163,7 +154,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    if (!tracing) {
+    if (!options.mGDB) {
         signalThread = new std::thread(waitInterrupt, nullptr);
     }
 

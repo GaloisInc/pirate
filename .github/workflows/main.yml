@@ -143,6 +143,7 @@ jobs:
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
+        sudo insmod gaps_loopback.ko
         test -c /dev/gaps_ilip_0_root || exit 1
     - name: Build libpirate
       run: |
@@ -360,10 +361,11 @@ jobs:
           - name: ubuntu
             imagedir: images/ubuntu
             dockername: pirateteam/ubuntu
+            demo-cmake-args: -DPIRATE_APP_LIBS=pirate
           - name: centos7
             imagedir: images/centos7
             dockername: pirateteam/centos7
-            demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
+            demo-cmake-args: -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1 -DPIRATE_APP_LIBS=pirate
     runs-on: ubuntu-20.04
     if: github.event_name == 'push' && github.ref == 'master' || github.event_name == 'release'
     steps:
@@ -403,7 +405,9 @@ jobs:
           -f pirate.${{matrix.name}}.tgz/pirate.${{matrix.name}}.tgz \
           -n dist/pirate/master/pirate.${{matrix.name}}.tgz
     - name: Build docker image
-      run: docker build -t ${{matrix.dockername}} ${{matrix.imagedir}}
+      run: |
+        cp -R pdl ${{matrix.imagedir}}/pdl
+        docker build -t ${{matrix.dockername}} ${{matrix.imagedir}}
     - name: Build demos on docker image
       run: |
         mkdir -p build

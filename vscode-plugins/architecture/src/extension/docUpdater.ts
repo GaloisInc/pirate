@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
 
-import * as A     from "../shared/architecture"
-import { common } from "../shared/webviewProtocol"
+import * as A from '../shared/architecture'
+import { TextRange } from '../shared/position'
+import { common } from '../shared/webviewProtocol'
 
-import { Tracker, SourceLocation } from "./parser"
-import { TextRange } from "../shared/position"
+import { SourceLocation, Tracker } from './parser'
+
 
 type DocEdit = common.TrackUpdate
 
@@ -15,11 +16,11 @@ type DocEdit = common.TrackUpdate
  * and treats DOS newlines (\r\n) as a single newline.
  */
 function lineSourceDelta(x: string): { line: number, lastCharCount: number } {
-    let lines = x.match(/^.*(\r\n)?/gm)
+    const lines = x.match(/^.*(\r\n)?/gm)
     // The match should not ever fail, but we just return a reasonable default.
     if (!lines) return { line: 1, lastCharCount: x.length }
 
-    let n = lines.length
+    const n = lines.length
     return { line: n, lastCharCount: lines[n - 1].length }
 }
 
@@ -62,12 +63,11 @@ export class NormalizedEdits {
     }
 
     static fromArray(edits: readonly DocEdit[]):NormalizedEdits {
-        let sorted = edits.map((e) => new Edit(e)).sort(compareTrackIndex)
-        let r: Edit[] = []
+        const sorted = edits.map((e) => new Edit(e)).sort(compareTrackIndex)
+        const r: Edit[] = []
         if (edits.length > 0) {
             for (let i = 0; i + 1 !== sorted.length; ++i) {
-                if (sorted[i].trackIndex < sorted[i + 1].trackIndex)
-                    r.push(sorted[i])
+                if (sorted[i].trackIndex < sorted[i + 1].trackIndex) { r.push(sorted[i]) }
             }
             r.push(sorted[sorted.length - 1])
         }
@@ -82,7 +82,7 @@ export class NormalizedEdits {
 
         let oldIdx = 0
         let newIdx = 0
-        let res: Edit[] = []
+        const res: Edit[] = []
 
         while (oldIdx < oldEdits.length && newIdx < newEdits.length) {
             const o = oldEdits[oldIdx]
@@ -96,10 +96,8 @@ export class NormalizedEdits {
                 ++newIdx
             }
         }
-        while (oldIdx < oldEdits.length)
-            res.push(oldEdits[oldIdx++])
-        while (newIdx < newEdits.length)
-            res.push(newEdits[newIdx++])
+        while (oldIdx < oldEdits.length) { res.push(oldEdits[oldIdx++]) }
+        while (newIdx < newEdits.length) { res.push(newEdits[newIdx++]) }
         return new NormalizedEdits(res)
     }
 }
@@ -148,14 +146,13 @@ export class TrackedDoc implements Tracker {
         const lastEnd = m.length > 0 ? m[m.length-1].end : undefined
 
         // Fail if last end position was not at or before the start of this one.
-        if (lastEnd && lastEnd.isAfter(start))
-            return undefined
+        if (lastEnd && lastEnd.isAfter(start)) { return undefined }
 
         m.push(new vscode.Range(start, end))
         return m.length - 1
     }
 
-    get locations(): readonly LocationInfo[] { return this.#locations}
+    get locations(): readonly LocationInfo[] { return this.#locations }
 
     location(r: TextRange, loc:SourceLocation): A.LocationIndex|undefined {
         const trackIdx = this.track(r)
@@ -167,23 +164,23 @@ export class TrackedDoc implements Tracker {
     /**
      * Use edits to update the file ranges associated with locations.
      */
-    public updateRanges(edits: NormalizedEdits) {
+    public updateRanges(edits: NormalizedEdits): void {
         // Delta to modify lines by
-        let lineDelta: number = 0
+        let lineDelta = 0
         // Line that previous edit moved columns for that may still need to b
         // considered
-        let adjustedLine: number = 0
+        let adjustedLine = 0
         // Number of characters to adjust column in adjusted line by
-        let columnDelta: number = 0
-        let editArray = edits.array
+        let columnDelta = 0
+        const editArray = edits.array
         for (let editIndex = 0; editIndex < editArray.length; ++editIndex) {
-            let e = edits.array[editIndex]
-            let trackIndex = e.trackIndex
-            let newTextDelta = lineSourceDelta(e.newText)
+            const e = edits.array[editIndex]
+            const trackIndex = e.trackIndex
+            const newTextDelta = lineSourceDelta(e.newText)
 
-            let editLoc = this.#ranges[trackIndex]
-            let editStart = editLoc.start
-            let editEnd = editLoc.end
+            const editLoc = this.#ranges[trackIndex]
+            const editStart = editLoc.start
+            const editEnd = editLoc.end
 
             // Compute new start position
             const newStartCol
@@ -234,8 +231,7 @@ export class TrackedDoc implements Tracker {
 
     mkWorkspaceEdit(edits:NormalizedEdits):vscode.WorkspaceEdit {
         const edit = new vscode.WorkspaceEdit()
-        for (const e of edits.array)
-            edit.replace(this.#uri, this.#ranges[e.trackIndex], e.newText)
+        for (const e of edits.array) { edit.replace(this.#uri, this.#ranges[e.trackIndex], e.newText) }
         return edit
     }
 
@@ -270,15 +266,13 @@ export class TrackedDoc implements Tracker {
 
         const seen:(boolean|undefined)[] = new Array(editArray.length)
         // Check to see if all changes are expected
-        let r = true
         for (const ce of changes) {
-            let idx = this.findEditIndex(edits, ce.range, ce.text)
+            const idx = this.findEditIndex(edits, ce.range, ce.text)
             // Fail if we cannot find this edit or we have already seen it
-            if (idx === null || seen[idx])
-                return false
+            if (idx === null || seen[idx]) { return false }
             seen[idx] = true
         }
-        // By pigeon hole principal we know we have seen all edits.
+        // By pigeon hole principle we know we have seen all edits.
         return true
     }
 }

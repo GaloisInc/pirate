@@ -9,12 +9,16 @@ RUN apt-get update \
        git cmake make libstdc++-9-dev \
        libedit2 libpython3.8 \
        libjpeg-dev libssl-dev libx11-dev libyaml-dev openssl \
+       python3 python3-pip \
  && rm -rf /var/lib/apt/lists/*
 
 # Download pirate artifacts
 RUN wget -qO /root/pirate.tgz https://pirate.azureedge.net/dist/pirate/master/pirate.ubuntu.tgz \
  && tar -C /usr/local -xz --strip-components=1 -f /root/pirate.tgz \
  && rm -rf /root/pirate.tgz
+
+COPY pdl /usr/local/pdl
+RUN cd /usr/local/pdl && python3 setup.py install
 
 # Update library path to include libpirate
 RUN ldconfig

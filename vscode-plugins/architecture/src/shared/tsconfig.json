@@ -1,0 +1,11 @@
+{
+    "extends": "../../tsconfig-default.json",
+    "compilerOptions": {
+        "outDir": "../../out/shared"
+    },
+    "files": [
+        "architecture.ts",
+        "position.ts",
+        "webviewProtocol.ts"
+    ]
+}
