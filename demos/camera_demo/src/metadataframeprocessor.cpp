@@ -20,7 +20,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <cpprest/http_client.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <math.h>
@@ -33,8 +32,13 @@
 #include "orion-sdk/KlvParser.hpp"
 #include "orion-sdk/KlvTree.hpp"
 
+#ifdef RESTSDK_PRESENT
+// conflicts with X11 library
+#undef BadRequest
+#include <cpprest/http_client.h>
 using namespace web::http;
 using namespace web::http::client;
+#endif
 
 MetaDataFrameProcessor::MetaDataFrameProcessor(const Options& options) :
     FrameProcessor(options.mVideoOutputType, options.mImageWidth, options.mImageHeight),
@@ -157,11 +161,13 @@ void MetaDataFrameProcessor::toMercatorProjection(float lat, float lon, int& x, 
 
 void MetaDataFrameProcessor::sendLocation()
 {
+#ifdef RESTSDK_PRESENT
     web::json::value postData;
     postData["latitude"] = web::json::value::number(mLatitude);
     postData["longitude"] = web::json::value::number(mLongitude);
     http_client client = http_client(U(mOpenLayersApiUrl));
     client.request(methods::POST, U("/location"), postData).wait();
+#endif
 }
 
 int MetaDataFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)

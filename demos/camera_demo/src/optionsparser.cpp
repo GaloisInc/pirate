@@ -105,6 +105,7 @@ static std::string parseStreamUrl(std::string url, struct argp_state * state, bo
     }
 }
 
+#ifdef RESTSDK_PRESENT
 static std::string parseApiUrl(std::string url, struct argp_state * state)
 {
     if (url.find(':') == std::string::npos)
@@ -117,6 +118,7 @@ static std::string parseApiUrl(std::string url, struct argp_state * state)
         return "http://" + url;
     }
 }
+#endif
 
 static error_t parseOpt(int key, char * arg, struct argp_state * state)
 {
@@ -260,8 +262,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
 
         case OPT_OPENLAYERS:
+#ifdef RESTSDK_PRESENT
             opt->mOpenLayersApi = true;
             opt->mOpenLayersApiUrl = parseApiUrl(ss.str(), state);
+#else
+            argp_error(state, "missing required library cpprestsdk");
+#endif
             break;
 
         case 'E':

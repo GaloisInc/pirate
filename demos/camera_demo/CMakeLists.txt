@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(camera_demo)
 set(CMAKE_BUILD_TYPE Debug)
@@ -19,12 +19,20 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-find_package(cpprestsdk REQUIRED)
-set(LIBS rt pthread cpprestsdk::cpprest ${PIRATE_APP_LIBS})
+find_library(CPPREST_LIB cpprest)
+find_library(BOOST_SYSTEM_LIB boost_system)
+find_library(CRYPTO_LIB crypto)
+find_library(SSL_LIB ssl)
+
+set(LIBS rt pthread ${PIRATE_APP_LIBS})
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
 endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
+
+if (CPPREST_LIB AND BOOST_SYSTEM_LIB AND CRYPTO_LIB AND SSL_LIB)
+    set(RESTSDK_LIBS 1)
+endif (CPPREST_LIB AND BOOST_SYSTEM_LIB AND CRYPTO_LIB AND SSL_LIB)
 
 # Source files
 set(SRCS
@@ -54,6 +62,14 @@ set(SRCS
     src/orion-sdk/scaledencode.cpp
     src/orion-sdk/TrilliumPacket.cpp
 )
+
+if (RESTSDK_LIBS)
+    message("-- Restsdk library found")
+    set(BUILD_FLAGS -DRESTSDK_PRESENT=1 ${BUILD_FLAGS})
+    set(LIBS ${BOOST_SYSTEM_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${CPPREST_LIB} ${LIBS})
+else ()
+    message("-- Restsdk library not found")
+endif (RESTSDK_LIBS)
 
 if (FREESPACE_LIB)
     message("-- Freespace library found")
