@@ -334,6 +334,7 @@ gaps_ilip_access_read
 (
   uint32_t session,
   uint32_t message,
+  uint32_t desc,
   uint32_t data
 ); 
 
@@ -354,10 +355,11 @@ gaps_ilip_access_read
 (
   uint32_t session,
   uint32_t message,
+  uint32_t desc,
   uint32_t data
 )
 {
-  int i;
+  int i, j;
 
   for (i=0; i < ILIP_NUM_ACM_ENTRIES; i++)
   {
@@ -367,7 +369,18 @@ gaps_ilip_access_read
           (ilip_acm_dst[i].message == message) &&
           (ilip_acm_dst[i].data == data))
       {
-        return true;
+        for (j=0; j < ILIP_NUM_ACM_ENTRIES; j++)
+        {
+          if (ntohl(ilip_acm_src[j].valid) == 0x00000001)
+          {
+            if ((ilip_acm_dst[j].session == session) &&
+                (ilip_acm_dst[j].message == message) &&
+                (ilip_acm_dst[j].data == desc))
+            {
+              return true;
+            }
+          }
+        }
       }
     }
   }
@@ -385,7 +398,7 @@ gaps_ilip_access_write
   uint32_t * pindex
 )
 {
-  uint32_t i;
+  uint32_t i, j;
 
   *pindex = 0xffffffffu;
 
@@ -403,6 +416,11 @@ gaps_ilip_access_write
     }
   }
 
+  if (*pindex == 0xffffffffu)
+  {
+    return false;
+  }
+
   /* Next find the go/no-go entry */
   for (i=0; i < ILIP_NUM_ACM_ENTRIES; i++)
   {
@@ -412,7 +430,18 @@ gaps_ilip_access_write
           (ilip_acm_src[i].message == message) &&
           (ilip_acm_src[i].data == data))
       {
-        return true;
+        for (j=0; j < ILIP_NUM_ACM_ENTRIES; j++)
+        {
+          if (ntohl(ilip_acm_src[j].valid) == 0x00000001)
+          {
+            if ((ilip_acm_src[j].session == session) &&
+                (ilip_acm_src[j].message == message) &&
+                (ilip_acm_src[j].data == desc))
+            {
+              return true;
+            }
+          }
+        }
       }
     }
   }
@@ -846,6 +875,7 @@ gaps_ilip_copy
   {
     if (gaps_ilip_access_read(msg->u.imm.header.session_tag,
                               msg->u.imm.header.message_tag,
+                              msg->u.imm.header.data_tag,
                               msg->u.imm.header.data_tag) == false)
     {
       /* Free the allocated buffer */
@@ -861,6 +891,7 @@ gaps_ilip_copy
   {
     if (gaps_ilip_access_read(msg->u.pay.header.session_tag,
                               msg->u.pay.header.message_tag,
+                              msg->u.pay.header.desc_tag,
                               msg->u.pay.payload.data_tag) == false)
     {
       /* Free the allocated buffer */
@@ -1770,3 +1801,4 @@ module_init(gaps_loopback_init_module);
 module_exit(gaps_loopback_exit_module);
 
 /* ================================================================ */
+
