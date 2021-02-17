@@ -17,6 +17,7 @@ export class GeoMap {
   readonly map: Map;
   readonly source: VectorSource;
   style: Style;
+  view: View;
 
   constructor() {
     this.style = new Style({
@@ -28,6 +29,13 @@ export class GeoMap {
       })
     });
 
+    this.view = new View({
+      projection: 'EPSG:4326',
+      center: [0, 0],
+      zoom: 2
+    });
+
+    this.zoomToUSA();
     this.source = new VectorSource();
     this.map = new Map({
       target: 'map',
@@ -35,13 +43,7 @@ export class GeoMap {
         new LayerTile({source: new SourceOsm()}),
         new VectorLayer({source: this.source, style: this.style})
       ],
-      view: new View({
-        projection: 'EPSG:4326',
-        center: [0, 0],
-        zoom: 2,
-        constrainResolution: true,
-        extent: [-180, -90, 180, 90]
-      }),
+      view: this.view,
       controls: defaultControls().extend([
         new Attribution(),
         new FullScreen(),
@@ -52,5 +54,13 @@ export class GeoMap {
         })
       ])
     });
+  }
+
+  zoomToLocation(location: [number, number]) {
+    this.view.animate({center: location}, {zoom: 16.5});
+  }
+
+  zoomToUSA() {
+    this.view.fit([-125, 25, -66.5, 49.5], {duration: 1000});
   }
 }

@@ -41,6 +41,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (this.feature) {
         this.map.source.removeFeature(this.feature);
         this.feature = null;
+        console.log('removed location', this.location);
+        this.map.zoomToUSA();
       }
       return;
     }
@@ -49,14 +51,25 @@ export class MapComponent implements OnInit, AfterViewInit {
         geometry: new Point(this.location)
       });
       this.map.source.addFeature(this.feature);
+      this.map.zoomToLocation(this.location);
     } else {
-      (this.feature.getGeometry() as Point).setCoordinates(this.location);
+      const point: Point = this.feature.getGeometry() as Point;
+      const coordinates = point.getCoordinates();
+      if (coordinates[0] != this.location[0] || coordinates[1] != this.location[1]) {
+        point.setCoordinates(this.location);
+        console.log('moved location', this.location);
+        this.map.zoomToLocation(this.location);
+      }
     }
   }
 
   getLocation(): void {
     this.locationService.getLocation().subscribe(location => {
-      this.location = [location.longitude, location.latitude];
+      if (location.longitude !== undefined && location.latitude !== undefined) {
+        this.location = [location.longitude, location.latitude];
+      } else {
+        this.location = null;
+      }
       this.setLocationMarker();
     });
   }
