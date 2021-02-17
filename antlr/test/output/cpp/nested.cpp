@@ -78,7 +78,7 @@ namespace NestedTypes {
 	};
 
 	struct OuterUnion_wire {
-		unsigned char tag[4];
+		unsigned char tag[4] __attribute__((aligned(4)));
 		union {
 			unsigned char day[4] __attribute__((aligned(4)));
 			unsigned char days[30][4] __attribute__((aligned(4)));
@@ -88,7 +88,7 @@ namespace NestedTypes {
 	};
 
 	struct ScopedOuterUnion_wire {
-		unsigned char tag[4];
+		unsigned char tag[4] __attribute__((aligned(4)));
 		union {
 			unsigned char day[4] __attribute__((aligned(4)));
 			unsigned char days[30][4] __attribute__((aligned(4)));

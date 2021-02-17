@@ -84,6 +84,9 @@ void UnionTypeSpec::cTypeDeclWire(std::ostream &ostream) {
     int tagAlign = bitsAlignment(switchType->cTypeBits());
     ostream << "unsigned" << " " << "char" << " " << "tag";
     ostream << "[" << tagAlign << "]";
+    if (!packed) {
+        ostream << " " << "__attribute__((aligned(" << tagAlign << ")))";
+    }
     ostream << ";" << std::endl;
     ostream << "union" << " " << "{" << std::endl;
     ostream << indent_manip::push;

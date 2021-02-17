@@ -1,0 +1,24 @@
+{
+    "extends": "../../tsconfig-default.json",
+    "compilerOptions": {
+        "module": "ES6",
+        "outDir": "../../out/webview"
+    },
+    "files": [
+        "changeSet.ts",
+        "debugLog.ts",
+        "draggableRectangle.ts",
+        "dragHandlers.ts",
+        "geometry.ts",
+        "svg.ts",
+        "systemServices.ts",
+        "views/actor.ts",
+        "views/bus.ts",
+        "webview.ts"
+    ],
+    "references": [
+        {
+            "path": "../shared"
+        }
+    ]
+}

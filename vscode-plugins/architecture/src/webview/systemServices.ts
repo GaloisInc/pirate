@@ -1,34 +1,35 @@
-import * as A from "../shared/architecture.js"
-import { ChangeSet, TrackedIndex } from "./changeSet.js"
-import { Rectangle, XRange, YRange } from "./geometry.js"
+import * as A from '../shared/architecture.js'
+
+import { ChangeSet, TrackedIndex } from './changeSet.js'
+import { Rectangle, XRange, YRange } from './geometry.js'
 
 export interface SystemServices {
     /**
      * Return true if @r@ overlaps with any object other than `thisObject`.
      */
-    overlaps(thisObject: any, r: Rectangle<number>): boolean
+    overlaps(_thisObject: unknown, _r: Rectangle<number>): boolean
     /**
      * Adjust the left coordinate to avoid overlapping.
      */
-    adjustX(thisObject: any, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number;
+    adjustX(_thisObject: unknown, _r: YRange<number>, _width: number, _oldLeft: number, _newLeft: number): number;
     /**
      * Adjust the left coordinate to avoid overlapping.
      */
-    adjustY(thisObject: any, r: XRange<number>, height: number, oldTop: number, newTop: number): number;
+    adjustY(_thisObject: unknown, _r: XRange<number>, _height: number, _oldTop: number, _newTop: number): number;
     /**
      * Request we open a text editor at the given location.
      */
-    visitURI(idx: A.LocationIndex): void
+    visitURI(_idx: A.LocationIndex): void
     /**
      * Send an update doc request
      */
-    sendUpdateDoc(changes: ChangeSet): void
+    sendUpdateDoc(_changes: ChangeSet): void
     /**
      * Add listener to respond to when a tracked value changes.
      */
-    whenStringTrackChanged(trackedIndex: TrackedIndex, listener: (newValue: string) => void): void
+    whenStringTrackChanged(_trackedIndex: TrackedIndex, _listener: (_newValue: string) => void): void
     /**
      * Add listener to respond to when a tracked value changes.
      */
-    whenIntTrackChanged(trackedIndex: TrackedIndex, listener: (newValue: number) => void): void
+    whenIntTrackChanged(_trackedIndex: TrackedIndex, _listener: (_newValue: number) => void): void
 }

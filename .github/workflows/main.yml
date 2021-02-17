@@ -143,6 +143,7 @@ jobs:
         cd devices/mercury/loopback_ilip
         make
         sudo insmod gaps_ilip.ko
+        sudo insmod gaps_loopback.ko
         test -c /dev/gaps_ilip_0_root || exit 1
     - name: Build libpirate
       run: |

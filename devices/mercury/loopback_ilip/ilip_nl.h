@@ -1,42 +1,47 @@
-#pragma once
+#ifndef _MERCURY_ILIP_NL_H
+#define _MERCURY_ILIP_NL_H
 
-/* ------------------ MERCURY SYSTEMS INC IP COPYRIGHT HEADER  ------------------------
+/* ------------- MERCURY SYSTEMS INC IP COPYRIGHT HEADER  -------------------
  *
  * Copyright:
  *  Copyright (c) 1984-2020,  Mercury Systems, Inc.,
  *  Andover MA.,and all third party embedded software sources.
- *  All rights reserved under the Copyright laws of US. and international treaties.
+ *  All rights reserved under the Copyright laws of US. 
+ *  and international treaties.
  *
- * ------------------ MERCURY SYSTEMS INC IP COPYRIGHT HEADER  ------------------------*/
+ * ------------- MERCURY SYSTEMS INC IP COPYRIGHT HEADER  -------------------*/
 
 /*
- * This material is based upon work supported by the Defense Advanced Research Projects 
- * Agency (DARPA) under Contract No. HR011-19-C-0105. 
- * Any opinions, findings and conclusions or recommendations expressed in this 
- * material are those of the author(s) and do not necessarily reflect the views 
- * of the Defense Advanced Research Projects Agency (DARPA).
+ * This material is based upon work supported by the Defense Advanced 
+ * Research Projects Agency (DARPA) under Contract No. HR011-19-C-0105. 
+ * Any opinions, findings and conclusions or recommendations expressed 
+ * in this material are those of the author(s) and do not necessarily 
+ * reflect the views of the Defense Advanced Research Projects Agency 
+ * (DARPA).
  */
 
 /* 
- * Portions of this file have been copied from:
+ * Portions of this filoe have been copied from:
  * 
  * This file is part of the Xilinx DMA IP Core driver for Linux
  *
  * Copyright (c) 2017-2019,  Xilinx, Inc.
  * All rights reserved.
  *
- * This source code is free software; you can redistribute it and/or modify it
- * under the terms and conditions of the GNU General Public License,
- * version 2, as published by the Free Software Foundation.
+ * This source code is free software; you can redistribute it and/or 
+ * modify it under the terms and conditions of the GNU General Public 
+ * License, version 2, as published by the Free Software Foundation.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANT-
+ * ABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General 
+ * Public License for more details.
  *
- * The full GNU General Public License is included in this distribution in
- * the file called "COPYING".
+ * The full GNU General Public License is included in this distribution 
+ * in the file called "COPYING".
  */
+
+#include "ilip_common.h"
 
 /** ILIP physical function name (no more than 15 characters) */
 #define ILIP_NAME_PF		"ilip_pf"
@@ -55,7 +60,12 @@
  * 
  * @return int 0 on success otherwise an error occured
  */
-int ilip_nl_init(void);
+int 
+ilip_nl_init
+(
+  void
+);
+
 /**
  * @brief Tear down the netlink interface
  * 
@@ -63,4 +73,10 @@ int ilip_nl_init(void);
  * 
  * @param void 
  */
-void ilip_nl_exit(void);
+void 
+ilip_nl_exit
+(
+  void
+);
+
+#endif /* !defined _MERCURY_ILIP_NL_H */

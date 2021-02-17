@@ -115,7 +115,7 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_custom_target(valgrind COMMAND valgrind
         --leak-check=full
         --error-exitcode=1
-        ./${GAPS_CHANNELS_TEST}
+        ./${GAPS_CHANNELS_TEST} --gtest_filter=-*MercuryFunctionalTest*
     )
 endif(PIRATE_UNIT_TEST)
 

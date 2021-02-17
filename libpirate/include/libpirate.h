@@ -232,20 +232,26 @@ typedef struct {
     unsigned max_tx;
 } pirate_serial_param_t;
 
+typedef enum {
+    MERCURY_UNKNOWN,
+    MERCURY_IMMEDIATE,
+    MERCURY_PAYLOAD
+} mercury_mode_t;
+
 // MERCURY parameters
 #define PIRATE_MERCURY_ROOT_DEV             "/dev/gaps_ilip_0_root"
-#define PIRATE_MERCURY_DEFAULT_MTU          256u
-#define PIRATE_MERCURY_MESSAGE_TABLE_LEN    16u
+// The mercury mtu is needed while the
+// read() API does not use host_payload_address
+// pointer. If that is changed then remove the mtu.
+#define PIRATE_MERCURY_DEFAULT_MTU          65536u
+#define PIRATE_MERCURY_IMMEDIATE_SIZE       192u
+#define PIRATE_MERCURY_DMA_DESCRIPTOR       256u
 typedef struct {
-    struct {
-        uint32_t level;
-        uint32_t source_id;
-        uint32_t destination_id;
-        uint32_t message_count;
-        uint32_t messages[PIRATE_MERCURY_MESSAGE_TABLE_LEN];
-        uint32_t id;
-    } session;
-
+    mercury_mode_t mode;
+    uint32_t session_id;
+    uint32_t message_id;
+    uint32_t data_tag;
+    uint32_t descriptor_tag;
     uint32_t mtu;
 } pirate_mercury_param_t;
 
@@ -345,7 +351,7 @@ int pirate_unparse_channel_param(const pirate_channel_param_t *param, char *str,
     "  UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]\n"      \
     "  UIO           uio[,path=N,max_tx_size=N,mtu=N]\n"                                       \
     "  SERIAL        serial,path[,baud=N,max_tx_size=N,mtu=N]\n"                               \
-    "  MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]\n"                       \
+    "  MERCURY       mercury,mode=[immediate|payload],session=N,message=N,data=N[,descriptor=N,mtu=N]\n"               \
     "  GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]\n"
 
 // Copies channel parameters from configuration into param argument.

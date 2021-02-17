@@ -182,21 +182,16 @@ int pirate_channel_resource_handler(pal_env_t *env,
         case MERCURY:
             params.channel.mercury.mtu
                     = rsc->r_contents.cc_mtu;
-            params.channel.mercury.session.level
-                    = rsc->r_contents.cc_session->sess_level;
-            params.channel.mercury.session.source_id
-                    = rsc->r_contents.cc_session->sess_src_id;
-            params.channel.mercury.session.destination_id
-                    = rsc->r_contents.cc_session->sess_dst_id;
-            params.channel.mercury.session.message_count
-                    = rsc->r_contents.cc_session->sess_messages_count;
-            if(rsc->r_contents.cc_session->sess_messages)
-                memcpy(params.channel.mercury.session.messages,
-                        rsc->r_contents.cc_session->sess_messages,
-                        rsc->r_contents.cc_session->sess_messages_count
-                            * sizeof(uint32_t));
-            params.channel.mercury.session.id
-                    = rsc->r_contents.cc_session->sess_id;
+            params.channel.mercury.mode
+                    = rsc->r_contents.cc_session->mode;
+            params.channel.mercury.session_id
+                    = rsc->r_contents.cc_session->session_id;
+            params.channel.mercury.message_id
+                    = rsc->r_contents.cc_session->message_id;
+            params.channel.mercury.data_tag
+                    = rsc->r_contents.cc_session->data_tag;
+            params.channel.mercury.descriptor_tag
+                    = rsc->r_contents.cc_session->descriptor_tag;
             break;
         case GE_ETH:
             if(rsc->r_contents.cc_reader_host)

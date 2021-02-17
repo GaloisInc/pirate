@@ -27,7 +27,7 @@ namespace Arrays {
 	};
 
 	struct Union_Array_Field_wire {
-		unsigned char tag[2];
+		unsigned char tag[2] __attribute__((aligned(2)));
 		union {
 			unsigned char a[1] __attribute__((aligned(1)));
 			unsigned char b[10][4] __attribute__((aligned(4)));
