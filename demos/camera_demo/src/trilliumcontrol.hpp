@@ -36,7 +36,7 @@ private:
     const std::string mTrilliumConfig;
     int mSockFd;
 
-    const bool mVerbose;
+    const bool mPrintState;
     std::thread *mReceiveThread;
     bool mReceive;
     int trilliumSensorConfig();
@@ -57,6 +57,11 @@ private:
         float mFocus;
         OrionDiagnostics_t mDiag;
         OrionSoftwareDiagnostics_t mSoftDiad[BOARD_COUNT]; 
+        struct {
+            float mPan;
+            float mTilt;
+            float mZoom;
+        } mLastCmd;
         struct {
             unsigned mID;
             unsigned mLength;

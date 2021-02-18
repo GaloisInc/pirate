@@ -28,6 +28,7 @@ const int OPT_MAX_OUT       = 1500;
 const int OPT_SLIDE         = 1600;
 const int OPT_TRILLIUM      = 1700;
 const int OPT_TRILLIUM_CFG  = 1701;
+const int OPT_TRILLIUM_PRNT = 1702;
 const int OPT_PAN_MIN       = 1800;
 const int OPT_PAN_MAX       = 1900;
 const int OPT_TILT_MIN      = 2000;
@@ -43,43 +44,44 @@ const int OPT_GDB           = 2900;
 
 static struct argp_option options[] =
 {
-    { 0,              0,                0,          0, "video options:",                            1 },
-    { "video_device", 'd',              "device",   0, "video device file path",                    0 },
-    { "video_type",   't',              "type",     0, "video type (jpeg|yuyv|h264|stream|trillium|test|none)", 0 },
-    { "width",        'W',              "pixels",   0, "image width",                               0 },
-    { "height",       'H',              "pixels",   0, "image height",                              0 },
-    { "flip",         'f',              NULL,       0, "flip image and controls (rotate 180)",      0 },
-    { "decoder",      'D',              "url",      0, "MPEG-TS H.264 decoder url (host:port)",     0 },
-    { 0,              0,                0,          0, "frame processor options:",                  2 },
-    { "color_track",  'C',              "RRGGBB",   0, "color tracking (RGB hex)",                  0 },
-    { "color_pick",   OPT_COLOR_PICK,   NULL,       0, "object color pick tool",                    0 },
-    { "threshold",    OPT_THRESH,       "val",      0, "color tracking threshold",                  0 },
-    { "xwindows",     'X',              NULL,       0, "xwindows frame processor",                  0 },
-    { "filesystem",   'F',              NULL,       0, "filesystem frame processor",                0 },
-    { "metadata",     OPT_METADATA,     NULL,       0, "metadata frame processor",                  0 },
-    { "openlayers",   OPT_OPENLAYERS,   "url",      0, "open layers rest api url (host:port)",      0 },
-    { "encoder",      'E',              "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
-    { "codec",        OPT_CODEC,        "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
-    { "out_dir",      OPT_OUT_DIR,      "path",     0, "image output directory",                    0 },
-    { "out_count",    OPT_MAX_OUT,      "val",      0, "image output maximum file count",           0 },
-    { "sliding",      OPT_SLIDE,        NULL,       0, "sliding window image filter",               0 },
-    { 0,              0,                0,          0, "input/output options:",                     3 },
-    { "in_keyboard",  OPT_KBD,          NULL,       0, "read position input from keyboard",         0 },
-    { "in_freespace", OPT_FREESPACE,    NULL,       0, "read position input from freespace device", 0 },
-    { "output",       'o',              "type",     0, "controller (servo|trillium|print|none)",    0 },
-    { "trillium",     OPT_TRILLIUM,     "addr",     0, "trillium camera IP address",                0 },
-    { "trillium_cfg", OPT_TRILLIUM_CFG, "path",     0, "optional Trillium configuration file",      0 },
-    { "pan_min",      OPT_PAN_MIN,      "val",      0, "pan axis minimum angle",                    0 },
-    { "pan_max",      OPT_PAN_MAX,      "val",      0, "pan axis maximum angle",                    0 },
-    { "tilt_min",     OPT_TILT_MIN,     "val",      0, "tilt axis minimum angle",                   0 },
-    { "tilt_max",     OPT_TILT_MAX,     "val",      0, "tilt axis maximum angle",                   0 },
-    { "output_incr",  OPT_INC,          "val",      0, "angular position increment",                0 },
-    { "gaps_req",     OPT_GAPS_REQ,     "channel",  0, "gaps request channel",                      0 },
-    { "gaps_rsp",     OPT_GAPS_RSP,     "channel",  0, "gaps response channel",                     0 },
-    { "verbose",      'v',              NULL,       0, "verbose output",                            4 },
-    { "gdb",          OPT_GDB,          NULL,       0, "gdb support (disable SIGINT trap)",         0 },
-    { "loglevel",     OPT_LOGLEVEL,     "val",      0, "ffmpeg libraries log level",                0 },
-    { NULL,            0 ,              NULL,       0, NULL,                                        0 },
+    { 0,               0,                 0,          0, "video options:",                            1 },
+    { "video_device",  'd',               "device",   0, "video device file path",                    0 },
+    { "video_type",    't',               "type",     0, "video type (jpeg|yuyv|h264|stream|trillium|test|none)", 0 },
+    { "width",         'W',               "pixels",   0, "image width",                               0 },
+    { "height",        'H',               "pixels",   0, "image height",                              0 },
+    { "flip",          'f',               NULL,       0, "flip image and controls (rotate 180)",      0 },
+    { "decoder",       'D',               "url",      0, "MPEG-TS H.264 decoder url (host:port)",     0 },
+    { 0,               0,                 0,          0, "frame processor options:",                  2 },
+    { "color_track",   'C',               "RRGGBB",   0, "color tracking (RGB hex)",                  0 },
+    { "color_pick",    OPT_COLOR_PICK,    NULL,       0, "object color pick tool",                    0 },
+    { "threshold",     OPT_THRESH,        "val",      0, "color tracking threshold",                  0 },
+    { "xwindows",      'X',               NULL,       0, "xwindows frame processor",                  0 },
+    { "filesystem",    'F',               NULL,       0, "filesystem frame processor",                0 },
+    { "metadata",      OPT_METADATA,      NULL,       0, "metadata frame processor",                  0 },
+    { "openlayers",    OPT_OPENLAYERS,    "url",      0, "open layers rest api url (host:port)",      0 },
+    { "encoder",       'E',               "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
+    { "codec",         OPT_CODEC,         "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
+    { "out_dir",       OPT_OUT_DIR,       "path",     0, "image output directory",                    0 },
+    { "out_count",     OPT_MAX_OUT,       "val",      0, "image output maximum file count",           0 },
+    { "sliding",       OPT_SLIDE,         NULL,       0, "sliding window image filter",               0 },
+    { 0,               0,                 0,          0, "input/output options:",                     3 },
+    { "in_keyboard",   OPT_KBD,           NULL,       0, "read position input from keyboard",         0 },
+    { "in_freespace",  OPT_FREESPACE,     NULL,       0, "read position input from freespace device", 0 },
+    { "output",        'o',               "type",     0, "controller (servo|trillium|print|none)",    0 },
+    { "trillium",      OPT_TRILLIUM,      "addr",     0, "trillium camera IP address",                0 },
+    { "trillium_cfg",  OPT_TRILLIUM_CFG,  "path",     0, "optional Trillium configuration file",      0 },
+    { "trillium_prnt", OPT_TRILLIUM_PRNT,  NULL,      0, "display Trillium state messages",           0 },
+    { "pan_min",       OPT_PAN_MIN,       "val",      0, "pan axis minimum angle",                    0 },
+    { "pan_max",       OPT_PAN_MAX,       "val",      0, "pan axis maximum angle",                    0 },
+    { "tilt_min",      OPT_TILT_MIN,      "val",      0, "tilt axis minimum angle",                   0 },
+    { "tilt_max",      OPT_TILT_MAX,      "val",      0, "tilt axis maximum angle",                   0 },
+    { "output_incr",   OPT_INC,           "val",      0, "angular position increment",                0 },
+    { "gaps_req",      OPT_GAPS_REQ,      "channel",  0, "gaps request channel",                      0 },
+    { "gaps_rsp",      OPT_GAPS_RSP,      "channel",  0, "gaps response channel",                     0 },
+    { "verbose",       'v',               NULL,       0, "verbose output",                            4 },
+    { "gdb",           OPT_GDB,           NULL,       0, "gdb support (disable SIGINT trap)",         0 },
+    { "loglevel",      OPT_LOGLEVEL,      "val",      0, "ffmpeg libraries log level",                0 },
+    { NULL,             0 ,               NULL,       0, NULL,                                        0 },
 };
 
 static std::string parseStreamUrl(std::string url, struct argp_state * state, bool encoder)
@@ -279,6 +281,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_TRILLIUM_CFG:
             ss >> opt->mTrilliumConfig;
+            break;
+
+        case OPT_TRILLIUM_PRNT:
+            opt->mTrilliumPrintState = true;
             break;
 
         case OPT_PAN_MIN:

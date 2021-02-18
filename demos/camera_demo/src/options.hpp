@@ -60,6 +60,7 @@ struct Options
         mH264DecoderUrl(""),
         mTrilliumIpAddress(""),
         mTrilliumConfig(""),
+        mTrilliumPrintState(false),
         mPanAxisMin(-45.0),
         mPanAxisMax(45.0),
         mTiltAxisMin(-45.0),
@@ -105,6 +106,7 @@ struct Options
     std::string mH264DecoderUrl;
     std::string mTrilliumIpAddress;
     std::string mTrilliumConfig;
+    bool mTrilliumPrintState;
     float mPanAxisMin;
     float mPanAxisMax;
     float mTiltAxisMin;

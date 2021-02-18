@@ -59,7 +59,7 @@ TrilliumControl::TrilliumControl(const Options& options) :
     mTrilliumIpAddress(options.mTrilliumIpAddress),
     mTrilliumConfig(options.mTrilliumConfig),
     mSockFd(-1),
-    mVerbose(options.mVerbose),
+    mPrintState(options.mTrilliumPrintState),
     mReceiveThread(nullptr),
     mReceive(false),
     mFlip(options.mImageFlip)
@@ -160,6 +160,14 @@ bool TrilliumControl::applyAngularPosition(PanTilt angularPosition)
     cmd.Stabilized = 0;
     cmd.ImpulseTime = 0;
 
+    mState.mLastCmd.mPan = cmd.Target[0];
+    mState.mLastCmd.mTilt = cmd.Target[1];
+
+    if (mPrintState)
+    {
+        printCameraStatus();
+    }
+
     encodeOrionCmdPacket(&pkt, &cmd);
     return trilliumPktSend(mSockFd, pkt) == 0;
 }
@@ -194,6 +202,12 @@ void TrilliumControl::updateZoom(CameraZoom zoom)
     else if (mState.mZoom > mZoomMax)
     {
         mState.mZoom = mZoomMax;
+    }
+
+    mState.mLastCmd.mZoom = mState.mZoom;
+    if (mPrintState)
+    {
+        printCameraStatus();
     }
 
     encodeOrionCameraStatePacket(&pkt, mState.mZoom, -1, 0);
@@ -310,7 +324,7 @@ void TrilliumControl::reveiveThread()
     while(mReceive)
     {
         rv = trilliumPktRecv(mSockFd, pkt);
-        if ((rv == 0) && mVerbose)
+        if ((rv == 0) && mPrintState)
         {
             processTrilliumPacket(pkt);
         }
@@ -407,6 +421,10 @@ void TrilliumControl::printCameraStatus()
     const uint32_t width = mState.mGeo.pixelWidth;
     const uint32_t height = mState.mGeo.pixelHeight;
     const uint32_t sats = mState.mGps.TrackedSats;
+
+    const float cmdPan = rad2degf(mState.mLastCmd.mPan);
+    const float cmdTilt = rad2degf(mState.mLastCmd.mTilt);
+    const float cmdZoom = mState.mLastCmd.mZoom;
 
     const float minExposure = mState.mAptina.MinExposure;
     const float maxExposure = mState.mAptina.MaxExposure;
@@ -510,11 +528,16 @@ void TrilliumControl::printCameraStatus()
       << std::string(5, ' ')
       << "  Focus = " << std::setprecision(8) << std::setw(10) << mState.mFocus
       << std::string(19, ' ') <<  "|\n";
-
     s << "|" << std::string(11, ' ')
       << "Resolution = " << std::setw(4) << width << " x " 
       << std::left << std::setw(4) << height
       << std::string(43, ' ') <<  "|\n";
+
+    s << "+" << std::string(78, '-') << "+\n";
+    s << "|CONTROL:" << std::string(6, ' ')
+      << "    Pan = " << std::setprecision(4) << std::setw(10) << cmdPan << " deg "
+      << "   Tilt = " << std::setprecision(4) << std::setw(10) << cmdTilt << " deg "
+      << " Zoom = " << std::setprecision(4) << std::setw(6) << cmdZoom << "|\n";
 
     s << "+" << std::string(78, '-') << "+\n";
     s << "|      SENSOR:" 

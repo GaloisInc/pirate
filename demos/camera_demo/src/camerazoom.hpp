@@ -17,7 +17,7 @@
 
 enum CameraZoom
 {
+    Reset,
     Increment,
-    Decrement,
-    Reset
+    Decrement
 };
