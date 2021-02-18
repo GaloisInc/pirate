@@ -7,6 +7,10 @@ import * as svg from './svg.js'
 import { SystemServices } from './systemServices.js'
 import { ActorView } from './views/actor.js'
 import { BusView } from './views/bus.js'
+import { Connectable, ConnectionView } from './views/connection.js'
+import { PortView } from './views/port.js'
+
+type TrackedValueListener = (newValue: string) => void
 
 function svgSetLength(e: SVGAnimatedLength, l: A.Length) {
     switch (l.units) {
@@ -28,6 +32,7 @@ class Webview implements SystemServices {
 
     #actors: ActorView[] = []
     #buses: BusView[] = []
+    #connections: ConnectionView[] = []
 
     #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
 
@@ -61,10 +66,35 @@ class Webview implements SystemServices {
             const bv = new BusView(this, this.#svg, b)
             this.#buses.push(bv)
         }
+
+        // Add connections (must be after actors and buses)
+        for (const c of m.connections) {
+            const connectables = this.findConnectables(
+                c,
+                this.#actors,
+                this.#buses,
+            )
+            if (!connectables) { continue }
+            const source = connectables.source
+            const target = connectables.target
+            const cv = new ConnectionView(this, this.#svg, source, target)
+            this.#connections.push(cv)
+        }
+    }
+
+    getConnectablePosition(c: Connectable): number {
+        if (c instanceof BusView) {
+            return c.draggableRectangle.left
+        }
+        if (c instanceof PortView) {
+            return c.offset
+        }
+        console.log('Expected an instance of BusView of PortView, please report.')
+        return 0
     }
 
     clearModel(errorMsgText: string): void {
-        for (const a of this.#actors) a.dispose()
+        for (const a of this.#actors) { a.dispose() }
         this.#actors = []
         if (this.#errormsgDiv) { this.#errormsgDiv.innerText = errorMsgText }
 
@@ -77,7 +107,36 @@ class Webview implements SystemServices {
         )
     }
 
-    adjustX(thisObject: unknown, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
+    findEndpoint(
+        endpoint: A.Endpoint,
+        actors: ReadonlyArray<ActorView>,
+        buses: ReadonlyArray<BusView>,
+    ): Connectable | undefined {
+        switch (endpoint.type) {
+            case A.EndpointType.Port: {
+                const actor = actors.find(a => a.name === endpoint.actor)
+                if (!actor) { return }
+                return actor.allPorts.find(p => p.name === endpoint.port)
+            }
+            case A.EndpointType.Bus: {
+                return buses.find(b => b.name === endpoint.bus)
+            }
+        }
+    }
+
+    findConnectables(
+        connection: A.Connection,
+        actors: ReadonlyArray<ActorView>,
+        buses: ReadonlyArray<BusView>,
+    ): { source: Connectable, target: Connectable } | undefined {
+        const source = this.findEndpoint(connection.source, actors, buses)
+        if (!source) { return }
+        const target = this.findEndpoint(connection.target, actors, buses)
+        if (!target) { return }
+        return { source, target }
+    }
+
+    adjustX(thisObject: any, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
         const collidables = this.getCollidableObjects()
 
         const top = r.top
@@ -171,32 +230,65 @@ class Webview implements SystemServices {
 
     sendUpdateDoc(s: ChangeSet) {
         if (s.edits.length > 0) {
-            const msg: webview.UpdateDocument = { tag: webview.Tag.UpdateDocument, edits: s.edits }
+            const msg: webview.UpdateDocument = {
+                tag: webview.Tag.UpdateDocument,
+                edits: s.edits,
+            }
             this.sendToExtension(msg)
         }
     }
 
-    #trackListeners: Map<TrackedIndex, (newValue: string) => void> = new Map()
+    #trackListeners: Map<TrackedIndex, TrackedValueListener[]> = new Map()
+
+    /* Returns the array of listeners for that index. This is **not** a copy, so
+     * one can mutate it to change the listeners. */
+    getListeners(idx: TrackedIndex): TrackedValueListener[] {
+        let listeners = this.#trackListeners.get(idx)
+        if (! listeners) {
+            listeners = []
+            this.#trackListeners.set(idx, listeners)
+        }
+        return listeners
+    }
+
+    whenTrackedChanged<V>(
+        idx: TrackedIndex,
+        parser: (newValue: string) => V | undefined,
+        listener: (newValue: V) => void,
+    ): void {
+        const listeners = this.getListeners(idx)
+        const handler = (newValue: string) => {
+            const parsed = parser(newValue)
+            if (parsed) { listener(parsed) }
+        }
+        listeners.push(handler)
+    }
 
     whenStringTrackChanged(idx: TrackedIndex, listener: (newValue: string) => void): void {
-        this.#trackListeners.set(idx, listener)
+        this.whenTrackedChanged(idx, s => s, listener)
     }
 
     whenIntTrackChanged(idx: TrackedIndex, listener: (newValue: number) => void): void {
-        this.#trackListeners.set(idx, (newValue) => {
-            const i = parseInt(newValue)
-            if (isNaN(i)) {
-                console.log(`Received ${newValue} when int expected.`)
-                return
-            }
-            listener(i)
-        })
+        this.whenTrackedChanged(
+            idx,
+            (newValue) => {
+                const i = parseInt(newValue)
+                if (isNaN(i)) {
+                    console.log(`Received ${newValue} when int expected.`)
+                    return
+                }
+                return i
+            },
+            listener
+        )
     }
 
     documentEdited(edits: readonly common.TrackUpdate[]) {
         for (const e of edits) {
-            const listener = this.#trackListeners.get(e.trackIndex)
-            if (listener) { listener(e.newText) }
+            const listeners = this.getListeners(e.trackIndex)
+            for (const listener of listeners) {
+                listener(e.newText)
+            }
         }
     }
 }
