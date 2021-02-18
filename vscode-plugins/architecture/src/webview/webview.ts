@@ -230,5 +230,6 @@ const vscode = acquireVsCodeApi()
                     break
             }
         })
+        vscode.postMessage({tag:  webview.Tag.Ready})
     }
 }

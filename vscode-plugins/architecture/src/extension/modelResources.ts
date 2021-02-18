@@ -177,7 +177,7 @@ export class ModelResources implements ModelWebviewServices {
      */
     public resolvePirateGraphViewer(context: vscode.ExtensionContext, webviewPanel: vscode.WebviewPanel): void {
         // Create webview
-        const view:ModelWebview = new ModelWebview(context, this, webviewPanel)
+        const view:ModelWebview = new ModelWebview(context, this, webviewPanel, this.system)
         // Append new system model webview to active webviews.
         this.#activeWebviews.add(view)
         // Make sure we get rid of the listener when our editor is closed.
@@ -186,7 +186,5 @@ export class ModelResources implements ModelWebviewServices {
             this.#activeWebviews.delete(view)
             view.dispose()
         })
-        const mdl = this.system
-        if (mdl) view.setModel(mdl)
     }
 }

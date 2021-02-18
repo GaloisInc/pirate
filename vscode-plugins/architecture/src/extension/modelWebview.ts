@@ -40,6 +40,13 @@ function getHtmlContents(staticPath: string): string {
  */
 export class ModelWebview {
     readonly #webview : vscode.Webview
+
+    /**
+     * Indicates the ready command has been received from a newly created
+     * webview.  Prior to this we do not know if messages will be received.
+     */
+    #ready = false
+
     /**
      * Number of `SetSystemLayout` requests outstanding.
      *
@@ -54,7 +61,7 @@ export class ModelWebview {
 
     readonly #disposables: { dispose: () => void }[] = []
 
-    constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, webviewPanel: vscode.WebviewPanel) {
+    constructor(context: vscode.ExtensionContext, svc:ModelWebviewServices, webviewPanel: vscode.WebviewPanel, mdl: A.SystemModel|null) {
         const view = webviewPanel.webview
         this.#webview = view
 
@@ -98,9 +105,14 @@ export class ModelWebview {
             visible = e.webviewPanel.visible
         }))
 
+        this.model = mdl
         // Receive message from the webview.
         this.#disposables.push(view.onDidReceiveMessage((e:webview.Event) => {
             switch (e.tag) {
+            case webview.Tag.Ready:
+                this.#ready = true
+                if (this.model) { this.setModel(this.model) }
+                break
             case webview.Tag.VisitURI:
                 if (this.#setSystemModelWaitCount === 0) { svc.showDocument(e.locationIdx) }
                 break
@@ -120,32 +132,30 @@ export class ModelWebview {
         this.#disposables.forEach((d) => d.dispose)
     }
 
+    private postEvent(m : extension.Event) {
+        this.#webview.postMessage(m)
+    }
+
     /**
      * Update the document associated with the given webview.
      */
     public setModel(s: A.SystemModel): void {
         this.model = s
-        this.#setSystemModelWaitCount++
-        const msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
-        this.postEvent(msg)
-    }
-
-    public invalidateModel(): void {
-        this.model = null
-        this.#setSystemModelWaitCount++
-        const msg:extension.InvalidateModel = { tag: extension.Tag.InvalidateModel }
-        this.postEvent(msg)
-    }
-
-    private postEvent(m : extension.Event) {
-        this.#webview.postMessage(m)
+        if (this.#ready) {
+            this.#setSystemModelWaitCount++
+            const msg:extension.SetSystemModel = { tag: extension.Tag.SetSystemModel, system: s }
+            this.postEvent(msg)
+        }
     }
 
     /**
      * Tell the webview about edits made by other components.
      */
     public notifyDocumentEdited(edits: readonly common.TrackUpdate[]): void {
-        const msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
-        this.postEvent(msg)
+        // If not yet ready then we can ignore edits.
+        if (this.#ready) {
+            const msg:extension.DocumentEdited = { tag: extension.Tag.DocumentEdited, edits: edits }
+            this.postEvent(msg)
+        }
     }
 }
