@@ -24,6 +24,7 @@ devices/mercury/loopback_ilip/modules.order
 .vscode
 .project
 build
+.idea
 vscode-plugins/*/node_modules/**/.vscode
 .pyc
 __pycache__

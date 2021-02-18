@@ -21,6 +21,7 @@
 
 const int OPT_THRESH        = 1100;
 const int OPT_METADATA      = 1200;
+const int OPT_OPENLAYERS    = 1201;
 const int OPT_CODEC         = 1300;
 const int OPT_OUT_DIR       = 1400;
 const int OPT_MAX_OUT       = 1500;
@@ -56,6 +57,7 @@ static struct argp_option options[] =
     { "xwindows",     'X',              NULL,       0, "xwindows frame processor",                  0 },
     { "filesystem",   'F',              NULL,       0, "filesystem frame processor",                0 },
     { "metadata",     OPT_METADATA,     NULL,       0, "metadata frame processor",                  0 },
+    { "openlayers",   OPT_OPENLAYERS,   "url",      0, "open layers rest api url (host:port)",      0 },
     { "encoder",      'E',              "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
     { "codec",        OPT_CODEC,        "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
     { "out_dir",      OPT_OUT_DIR,      "path",     0, "image output directory",                    0 },
@@ -100,6 +102,19 @@ static std::string parseStreamUrl(std::string url, struct argp_state * state, bo
     else
     {
         return "udp://" + url;
+    }
+}
+
+static std::string parseApiUrl(std::string url, struct argp_state * state)
+{
+    if (url.find(':') == std::string::npos)
+    {
+        argp_error(state, "openlayers argument '%s' must be host:port", url.c_str());
+        return "";
+    }
+    else
+    {
+        return "http://" + url;
     }
 }
 
@@ -242,6 +257,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_METADATA:
             opt->mMetaDataProcessor = true;
+            break;
+
+        case OPT_OPENLAYERS:
+            opt->mOpenLayersApi = true;
+            opt->mOpenLayersApiUrl = parseApiUrl(ss.str(), state);
             break;
 
         case 'E':
