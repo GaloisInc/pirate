@@ -54,7 +54,8 @@ def main():
 
         channel_args = ["-c",  args.test_channel_1, "-s", args.sync_channel_1, "-S", args.sync_channel_2]
         pattern1 = re.compile(r'average throughput: ([0-9.]+) MB/s')
-        pattern2 = re.compile(r'drop rate: ([0-9.]+) %')
+        pattern2 = re.compile(r'packet rate: ([0-9.]+) packets/s')
+        pattern3 = re.compile(r'drop rate: ([0-9.]+) %')
         if args.iterations is None:
             args.iterations = 64
     else:
@@ -63,6 +64,7 @@ def main():
         channel_args = ["-c",  args.test_channel_1, "-C",  args.test_channel_2, "-s", args.sync_channel_1, "-S", args.sync_channel_2]
         pattern1 = re.compile(r'average latency: (\d+) ns')
         pattern2 = None
+        pattern3 = None
         if args.iterations is None:
             args.iterations = 32
 
@@ -95,11 +97,14 @@ def main():
                 out, _ = reader_proc.communicate()
                 results1 = extract(out, pattern1)
                 results2 = extract(out, pattern2)
+                results3 = extract(out, pattern3)
                 if results1 is None:
                     results1 = "error"
                 if results2 is None:
                     results2 = ""
-                print(args.scenario_name, message_size, results1, results2, flush=True)
+                if results3 is None:
+                    results3 = ""
+                print(args.scenario_name, message_size, results1, results2, results3, flush=True)
 
 if __name__ == "__main__":
     main()

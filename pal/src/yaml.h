@@ -11,6 +11,7 @@
 struct enclave {
     char *enc_name;
     char *enc_path;
+    char *enc_directory;
     char **enc_args;
     size_t enc_args_count;
     char **enc_env;
@@ -29,12 +30,12 @@ struct endpoint {
 };
 
 struct session {
-    uint32_t sess_level;
-    uint32_t sess_src_id;
-    uint32_t sess_dst_id;
-    uint32_t *sess_messages;
-    uint32_t sess_messages_count;
-    uint32_t sess_id;
+    uint32_t mode;
+    uint32_t session_id;
+    uint32_t message_id;
+    uint32_t data_tag;
+    uint32_t descriptor_tag;
+    uint32_t mtu;
 };
 
 struct rsc_contents {

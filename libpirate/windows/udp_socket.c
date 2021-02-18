@@ -235,7 +235,7 @@ int pirate_udp_socket_open(void *_param, void *_ctx) {
     int access = ctx->flags & O_ACCMODE;
 
     pirate_udp_socket_init_param(param);
-    if (param->reader_port <= 0) {
+    if (param->reader_port == 0) {
         SetLastError(WSAEINVAL);
         return -1;
     }

@@ -21,6 +21,7 @@
 
 const int OPT_THRESH        = 1100;
 const int OPT_METADATA      = 1200;
+const int OPT_OPENLAYERS    = 1201;
 const int OPT_CODEC         = 1300;
 const int OPT_OUT_DIR       = 1400;
 const int OPT_MAX_OUT       = 1500;
@@ -38,7 +39,7 @@ const int OPT_FREESPACE     = 2500;
 const int OPT_GAPS_REQ      = 2600;
 const int OPT_GAPS_RSP      = 2700;
 const int OPT_COLOR_PICK    = 2800;
-
+const int OPT_GDB           = 2900;
 
 static struct argp_option options[] =
 {
@@ -56,6 +57,7 @@ static struct argp_option options[] =
     { "xwindows",     'X',              NULL,       0, "xwindows frame processor",                  0 },
     { "filesystem",   'F',              NULL,       0, "filesystem frame processor",                0 },
     { "metadata",     OPT_METADATA,     NULL,       0, "metadata frame processor",                  0 },
+    { "openlayers",   OPT_OPENLAYERS,   "url",      0, "open layers rest api url (host:port)",      0 },
     { "encoder",      'E',              "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
     { "codec",        OPT_CODEC,        "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
     { "out_dir",      OPT_OUT_DIR,      "path",     0, "image output directory",                    0 },
@@ -75,6 +77,7 @@ static struct argp_option options[] =
     { "gaps_req",     OPT_GAPS_REQ,     "channel",  0, "gaps request channel",                      0 },
     { "gaps_rsp",     OPT_GAPS_RSP,     "channel",  0, "gaps response channel",                     0 },
     { "verbose",      'v',              NULL,       0, "verbose output",                            4 },
+    { "gdb",          OPT_GDB,          NULL,       0, "gdb support (disable SIGINT trap)",         0 },
     { "loglevel",     OPT_LOGLEVEL,     "val",      0, "ffmpeg libraries log level",                0 },
     { NULL,            0 ,              NULL,       0, NULL,                                        0 },
 };
@@ -99,6 +102,19 @@ static std::string parseStreamUrl(std::string url, struct argp_state * state, bo
     else
     {
         return "udp://" + url;
+    }
+}
+
+static std::string parseApiUrl(std::string url, struct argp_state * state)
+{
+    if (url.find(':') == std::string::npos)
+    {
+        argp_error(state, "openlayers argument '%s' must be host:port", url.c_str());
+        return "";
+    }
+    else
+    {
+        return "http://" + url;
     }
 }
 
@@ -243,6 +259,11 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mMetaDataProcessor = true;
             break;
 
+        case OPT_OPENLAYERS:
+            opt->mOpenLayersApi = true;
+            opt->mOpenLayersApiUrl = parseApiUrl(ss.str(), state);
+            break;
+
         case 'E':
             opt->mH264Encoder = true;
             opt->mH264EncoderUrl = parseStreamUrl(ss.str(), state, true);
@@ -328,6 +349,10 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'v':
             opt->mVerbose = true;
+            break;
+
+        case OPT_GDB:
+            opt->mGDB = true;
             break;
 
         case OPT_GAPS_REQ:

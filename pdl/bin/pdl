@@ -1,0 +1,5 @@
+#!/usr/bin/env python3.6
+from pdl_lib.pdl import main
+
+if __name__ == "__main__":
+    main()

@@ -21,7 +21,7 @@
 enum VideoType { VIDEO_JPEG, VIDEO_YUYV, VIDEO_H264, VIDEO_BGRX, VIDEO_STREAM, VIDEO_TRILLIUM, VIDEO_TEST, VIDEO_NULL };
 enum CodecType { CODEC_MPEG1, CODEC_MPEG2, CODEC_H264 };
 enum InputType { Freespace, Keyboard };
-enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor };
+enum FrameProcessorType { Filesystem, XWindows, H264Stream, MetaDataProcessor, MetaDataProcessorOpenLayers };
 enum DataStreamType { VideoData, MetaData };
 enum OutputType { PiServoOutput, TrilliumOutput, PrintOutput, NoneOutput };
 
@@ -53,6 +53,8 @@ struct Options
         mFilesystemProcessor(false),
         mXWinProcessor(false),
         mMetaDataProcessor(false),
+        mOpenLayersApi(false),
+        mOpenLayersApiUrl(""),
         mH264Encoder(false),
         mH264EncoderUrl(""),
         mH264DecoderUrl(""),
@@ -64,6 +66,7 @@ struct Options
         mTiltAxisMax(45.0),
         mAngularPositionIncrement(1.0),
         mVerbose(false),
+        mGDB(false),
         mFFmpegLogLevel(8 /*AV_LOG_FATAL*/),
         mHasInput(false),
         mHasOutput(false),
@@ -95,6 +98,8 @@ struct Options
     bool mFilesystemProcessor;
     bool mXWinProcessor;
     bool mMetaDataProcessor;
+    bool mOpenLayersApi;
+    std::string mOpenLayersApiUrl;
     bool mH264Encoder;
     std::string mH264EncoderUrl;
     std::string mH264DecoderUrl;
@@ -106,6 +111,7 @@ struct Options
     float mTiltAxisMax;
     float mAngularPositionIncrement;
     bool mVerbose;
+    bool mGDB;
     int mFFmpegLogLevel;
     bool mHasInput;
     bool mHasOutput;

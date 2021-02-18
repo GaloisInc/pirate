@@ -42,42 +42,50 @@ namespace pirate {
 	};
 #endif // _PIRATE_SERIALIZATION_H
 
+	inline void toWireType(const struct EnumType::Week_Interval* input, struct EnumType::Week_Interval_wire* output) {
+		uint32_t field_begin;
+		uint32_t field_end;
+		memset(output, 0, sizeof(*output));
+		memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+		memcpy(&field_end, &input->end, sizeof(uint32_t));
+		field_begin = htobe32(field_begin);
+		field_end = htobe32(field_end);
+		memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+		memcpy(&output->end, &field_end, sizeof(uint32_t));
+	}
+
+	inline struct EnumType::Week_Interval fromWireType(const struct EnumType::Week_Interval_wire* input) {
+		struct EnumType::Week_Interval retval;
+		struct EnumType::Week_Interval* output = &retval;
+		uint32_t field_begin;
+		uint32_t field_end;
+		memcpy(&field_begin, &input->begin, sizeof(uint32_t));
+		memcpy(&field_end, &input->end, sizeof(uint32_t));
+		field_begin = be32toh(field_begin);
+		field_end = be32toh(field_end);
+		memcpy(&output->begin, &field_begin, sizeof(uint32_t));
+		memcpy(&output->end, &field_end, sizeof(uint32_t));
+		return retval;
+	}
+
 	template<>
 	struct Serialization<struct EnumType::Week_Interval> {
 		static void toBuffer(struct EnumType::Week_Interval const& val, std::vector<char>& buf) {
 			buf.resize(sizeof(struct EnumType::Week_Interval));
 			struct EnumType::Week_Interval_wire* output = (struct EnumType::Week_Interval_wire*) buf.data();
 			const struct EnumType::Week_Interval* input = &val;
-			uint32_t field_begin;
-			uint32_t field_end;
-			memset(output, 0, sizeof(*output));
-			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
-			memcpy(&field_end, &input->end, sizeof(uint32_t));
-			field_begin = htobe32(field_begin);
-			field_end = htobe32(field_end);
-			memcpy(&output->begin, &field_begin, sizeof(uint32_t));
-			memcpy(&output->end, &field_end, sizeof(uint32_t));
+			toWireType(input, output);
 		}
 
 		static struct EnumType::Week_Interval fromBuffer(std::vector<char> const& buf) {
-			struct EnumType::Week_Interval retval;
 			const struct EnumType::Week_Interval_wire* input = (const struct EnumType::Week_Interval_wire*) buf.data();
-			struct EnumType::Week_Interval* output = &retval;
 			if (buf.size() != sizeof(struct EnumType::Week_Interval)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for EnumType::Week_Interval type did not receive a buffer of size ") +
 					std::to_string(sizeof(struct EnumType::Week_Interval));
 				throw std::length_error(error_msg);
 			}
-			uint32_t field_begin;
-			uint32_t field_end;
-			memcpy(&field_begin, &input->begin, sizeof(uint32_t));
-			memcpy(&field_end, &input->end, sizeof(uint32_t));
-			field_begin = be32toh(field_begin);
-			field_end = be32toh(field_end);
-			memcpy(&output->begin, &field_begin, sizeof(uint32_t));
-			memcpy(&output->end, &field_end, sizeof(uint32_t));
-			return retval;
+			return fromWireType(input);
 		}
 	};
 }

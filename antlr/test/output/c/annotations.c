@@ -32,7 +32,7 @@ struct Annotation_Struct_Example_wire {
 };
 
 struct Annotation_Union_Example_wire {
-	unsigned char tag[2];
+	unsigned char tag[2] __attribute__((aligned(2)));
 	union {
 		unsigned char a[2] __attribute__((aligned(2)));
 		unsigned char b[4] __attribute__((aligned(4)));

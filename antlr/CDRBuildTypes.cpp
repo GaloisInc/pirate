@@ -234,7 +234,7 @@ antlrcpp::Any CDRBuildTypes::visitSimple_type_spec(IDLParser::Simple_type_specCo
 antlrcpp::Any CDRBuildTypes::visitEnum_type(IDLParser::Enum_typeContext *ctx) {
   std::string identifier = ctx->identifier()->getText();
   std::string parent = namespacePrefix.get(ctx);
-  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier, packed);
+  TypeSpec *typeSpec = new EnumTypeSpec(parent, identifier);
   EnumTypeSpec *enumSpec = dynamic_cast<EnumTypeSpec*>(typeSpec);
   std::vector<IDLParser::EnumeratorContext *> enumerators = ctx->enumerator();
   for (IDLParser::EnumeratorContext* enumCtx : enumerators) {
@@ -319,6 +319,15 @@ antlrcpp::Any CDRBuildTypes::visitUnion_type(IDLParser::Union_typeContext *ctx) 
   return typeSpec;
 }
 
+std::string CDRBuildTypes::stripScopedName(std::string name) {
+  size_t indexOf = name.find_last_of("::");
+  if ((indexOf == std::string::npos) || (indexOf == name.length() - 1)) {
+    return name;
+  } else {
+    return name.substr(indexOf + 1);
+  }
+}
+
 antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
   TypeSpec* typeSpec = ctx->element_spec()->type_spec()->accept(this);
   Declarator* decl = ctx->element_spec()->declarator()->accept(this);
@@ -327,10 +336,10 @@ antlrcpp::Any CDRBuildTypes::visitCase_stmt(IDLParser::Case_stmtContext *ctx) {
   for (IDLParser::Case_labelContext* labelCtx : labels) {
     if (labelCtx->const_exp() == nullptr) {
       member->setHasDefault();
-    } else if (labelCtx->const_exp()->scoped_name() != nullptr) {
-      member->addLabel(typeSpec->cppNamespacePrefix() + labelCtx->const_exp()->getText());
     } else {
-      member->addLabel(labelCtx->const_exp()->getText());
+      // TODO: validate the scope of the name
+      std::string label = CDRBuildTypes::stripScopedName(labelCtx->const_exp()->getText());
+      member->addLabel(label);
     }
   }
   if (ctx->element_spec()->annapps() != nullptr) {

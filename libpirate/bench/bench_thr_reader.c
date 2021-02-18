@@ -26,6 +26,7 @@ int run(bench_thr_t *bench) {
     ssize_t rv;
     const uint32_t iter = bench->nbytes / bench->message_len;
     uint64_t read_off = 0;
+    uint64_t packet_count = 0;
     struct timespec start, stop;
     uint64_t delta;
     int timeout = 0;
@@ -67,6 +68,7 @@ int run(bench_thr_t *bench) {
                 return -1;
             }
             read_off += rv;
+            packet_count++;
             count -= rv;
         }
     }
@@ -137,6 +139,9 @@ int run(bench_thr_t *bench) {
     // 1e6 bytes per megabytes
     printf("average throughput: %f MB/s\n",
            ((1e9 / 1e6) * read_off) / delta);
+    // 1e9 nanoseconds per second
+    printf("packet rate: %f packets/s\n",
+           (1e9 * packet_count) / delta);
     printf("drop rate: %f %%\n",
         ((bench->nbytes - read_off) / ((float) (bench->nbytes))) * 100.0);
 

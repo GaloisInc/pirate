@@ -64,8 +64,21 @@ The following types of frame processors are supported:
 * xwindows display
 * MPEG-TS H.264 encoding
 * Trillium camera metadata processor
+* X or OpenLayers metadata visualization
 
 The demo supports zero or more frame processors.
+
+#### Open Layers Metadata Visualization
+
+The following steps are required to run the Open Layers metadata visualization:
+* Start the Open Layers camera demo Flask rest API
+    * See `openlayers_demo/flask_api/README.md`
+    * Default url (localhost:5000)
+* Start the Open Layers camera demo Angular frontend
+    * See `openlayers_demo/README.md`
+* Open a browser to 'http://localhost:4200' to view the running OpenLayers demo
+* Run the camera demo with option `--openlayers localhost:5000`
+* Points pulled from the metadata will be displayed on the Open Layers map
 
 ## GAPS Channels
 
@@ -86,7 +99,7 @@ etc. The sliding window component requires a response channel.
 ## Usage
 
 ```
-Usage: camera_demo_monolith [OPTION...]
+Usage: camera_demo_monolith [OPTION...] 
 Embedded application based on camera, position input and position driver
 
  video options:
@@ -105,6 +118,7 @@ Embedded application based on camera, position input and position driver
   -E, --encoder=url          MPEG-TS H.264 encoder url (host:port)
   -F, --filesystem           filesystem frame processor
       --metadata             metadata frame processor
+      --openlayers=url       open layers rest api url (host:port)
       --out_count=val        image output maximum file count
       --out_dir=path         image output directory
       --sliding              sliding window image filter
@@ -130,6 +144,7 @@ Embedded application based on camera, position input and position driver
 
   -?, --help                 Give this help list
       --usage                Give a short usage message
+
 ```
 
 Example usage:

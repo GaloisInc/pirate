@@ -276,7 +276,7 @@ construct_type(TypeSpec* typeSpec)
         case CDRTypeOf::UNION_T:
             not_implemented("construct_type of union");
         case CDRTypeOf::ENUM_T:
-            return "idl:uint32";
+            not_implemented("construct_type of enum");
         case CDRTypeOf::LONG_DOUBLE_T:
             not_implemented("construct_type of long double");
         case CDRTypeOf::ERROR_T:
@@ -313,21 +313,61 @@ construct_type(TypeSpec* typeSpec)
 }
 
 void
-finish_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
+finish_inner_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
 {
     bool nestedType = false;
     if (auto * typeref = dynamic_cast<TypeReference*>(typeSpec)) {
-        e->SetAttribute("ref", "idl:" + get_type_name(typeref->child));
-        e->RemoveAttribute("name");
+        e->SetAttribute("type", "idl:" + get_type_name(typeref));
         return;
     }
+    switch (typeSpec->typeOf()) {
+        case CDRTypeOf::STRUCT_T:
+            not_implemented("finish_inner_type of struct");
+            break;
+        case CDRTypeOf::UNION_T:
+            not_implemented("finish_inner_type of union");
+            break;
+        case CDRTypeOf::ENUM_T:
+            not_implemented("finish_inner_type of enum");
+            break;
+        default:
+            break;
+    }
+    if (decl != nullptr) {
+        for (auto ann : decl->annotations) {
+            if (dynamic_cast<ValueAnnotation*>(ann) == nullptr) {
+                nestedType = true;
+            }
+        }
+    }
+    if (!nestedType) {
+        e->SetAttribute("type", construct_type(typeSpec));
+    } else {
+        auto st = add_element(e, "xs:simpleType");
+        auto restrict = add_element(st, "xs:restriction");
+        restrict->SetAttribute("base", construct_type(typeSpec));
+        if (decl != nullptr) {
+            for (auto ann : decl->annotations) {
+                if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
+                    add_element(restrict, "xs:minInclusive")->SetAttribute("value", rangeAnn->min);
+                    add_element(restrict, "xs:maxInclusive")->SetAttribute("value", rangeAnn->max);
+                }
+            }
+        }
+    }
+}
 
+
+void
+declare_top_type(Element* schema, TypeSpec* typeSpec, bool packed)
+{
     switch (typeSpec->typeOf()) {
         case CDRTypeOf::STRUCT_T:
         {
             auto s = static_cast<StructTypeSpec const*>(typeSpec);
 
-            auto complex = add_element(e, "xs:complexType");
+            auto complex = add_element(schema, "xs:complexType");
+            complex->SetAttribute("name", get_type_name(typeSpec));
             auto sequence = add_element(complex, "xs:sequence");
 
             for (auto m : s->members) {
@@ -338,18 +378,22 @@ finish_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
                     construct_member(member, d, m->typeSpec, packed);
                 }
             }
-            return;
+            auto elem = add_element(schema, "xs:element");
+            elem->SetAttribute("name", s->identifier + "Decl");
+            elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
         }
         case CDRTypeOf::UNION_T:
         {
             auto u = static_cast<UnionTypeSpec*>(typeSpec);
 
-            auto complex = add_element(e, "xs:complexType");
+            auto complex = add_element(schema, "xs:complexType");
+            complex->SetAttribute("name", get_type_name(typeSpec));
             auto sequence = add_element(complex, "xs:sequence");
 
             auto tag = add_element(sequence, "xs:element");
             tag->SetAttribute("name", "tag");
-            finish_type(tag, nullptr, u->switchType, packed);
+            finish_inner_type(tag, nullptr, u->switchType, packed);
 
             auto data = add_element(sequence, "xs:element");
             data->SetAttribute("name", "data");
@@ -379,36 +423,30 @@ finish_type(Element* e, Declarator* decl, TypeSpec* typeSpec, bool packed)
 
                 construct_member(member, m->declarator, m->typeSpec, packed);
             }
-            return;
+            auto elem = add_element(schema, "xs:element");
+            elem->SetAttribute("name", u->identifier + "Decl");
+            elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
+        }
+        case CDRTypeOf::ENUM_T:
+        {
+            auto simple = add_element(schema, "xs:simpleType");
+            simple->SetAttribute("name", get_type_name(typeSpec));
+            auto rest = add_element(simple, "xs:restriction");
+            rest->SetAttribute("base", "idl:uint32");
+            // should we declare an element for this enum?
+            // auto ets = static_cast<EnumTypeSpec*>(typeSpec);
+            // auto elem = add_element(schema, "xs:element");
+            // elem->SetAttribute("name", ets->identifier + "Decl");
+            // elem->SetAttribute("type", "idl:" + get_type_name(typeSpec));
+            break;
         }
         default:
-            // do nothing
+            not_implemented("declare_top_type on inner type");
             break;
     }
 
-    if (decl != nullptr) {
-        for (auto ann : decl->annotations) {
-            if (dynamic_cast<ValueAnnotation*>(ann) == nullptr) {
-                nestedType = true;
-            }
-        }
-    }
 
-    if (!nestedType) {
-        e->SetAttribute("type", construct_type(typeSpec));
-    } else {
-        auto st = add_element(e, "xs:simpleType");
-        auto restrict = add_element(st, "xs:restriction");
-        restrict->SetAttribute("base", construct_type(typeSpec));
-        if (decl != nullptr) {
-            for (auto ann : decl->annotations) {
-                if (auto * rangeAnn = dynamic_cast<RangeAnnotation*>(ann)) {
-                    add_element(restrict, "xs:minInclusive")->SetAttribute("value", rangeAnn->min);
-                    add_element(restrict, "xs:maxInclusive")->SetAttribute("value", rangeAnn->max);
-                }
-            }
-        }
-    }
 }
 
 void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
@@ -428,7 +466,7 @@ void construct_member(Element* e, Declarator* decl, TypeSpec* type, bool packed)
         }
     }
 
-    finish_type(e, decl, type, packed);
+    finish_inner_type(e, decl, type, packed);
 }
 
 }
@@ -462,12 +500,8 @@ int generate_dfdl(
 
     add_primitive_types(schema, moduleDecl->packed);
 
-
     for (auto * def : moduleDecl->definitions) {
-        auto name = get_type_name(def);
-        auto element = add_element(schema, "xs:element");
-        element->SetAttribute("name", get_type_name(def));
-        finish_type(element, nullptr, def, moduleDecl->packed);
+        declare_top_type(schema, def, moduleDecl->packed);
     }
     ostream << "<!--" << std::endl;
     ostream << license_header << std::endl;
