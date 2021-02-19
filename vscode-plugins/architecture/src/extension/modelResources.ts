@@ -157,7 +157,7 @@ export class ModelResources implements ModelWebviewServices {
         const doEdit = () => {
             this.#expectedEdits = edit
             for (const v of this.#activeWebviews) {
-                if (v !== source) { v.notifyDocumentEdited(edit.array) }
+                v.notifyDocumentEdited(edit.array)
             }
             const wsEdit = doc.mkWorkspaceEdit(edit)
             vscode.workspace.applyEdit(wsEdit).then((success) => {

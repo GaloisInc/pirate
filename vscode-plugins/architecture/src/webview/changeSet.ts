@@ -12,5 +12,5 @@ export class ChangeSet {
         })
     }
 
-    get edits(): common.TrackUpdate[] { return this.#edits }
+    get edits(): readonly common.TrackUpdate[] { return this.#edits }
 }

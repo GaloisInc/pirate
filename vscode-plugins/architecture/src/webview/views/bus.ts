@@ -4,8 +4,13 @@ import { SystemServices } from '../systemServices.js'
 
 export class BusView {
     readonly draggableRectangle: DraggableRectangle
+    readonly name: string
+    readonly orientation: A.BusOrientation
 
     constructor(sys: SystemServices, parentSVG: SVGSVGElement, b: A.Bus) {
+
+        this.name = b.name.value
+        this.orientation = b.orientation
 
         this.draggableRectangle = new DraggableRectangle(
             sys,

@@ -16,7 +16,7 @@ export class DraggableRectangle {
     readonly rect: SVGRectElement
     readonly #sys: SystemServices
     readonly svgContainer: SVGSVGElement
-    readonly #trackedIds: TrackedIds
+    readonly trackedIds: TrackedIds
 
     constructor(
         sys: SystemServices,
@@ -24,7 +24,7 @@ export class DraggableRectangle {
         trackedValues: TrackedValues,
     ) {
         this.#sys = sys
-        this.#trackedIds = {
+        this.trackedIds = {
             left: trackedValues.left.trackId,
             top: trackedValues.top.trackId,
             width: trackedValues.width.trackId,
@@ -41,16 +41,16 @@ export class DraggableRectangle {
         svg.setUserUnits(svgContainer.width, trackedValues.width.value)
         svg.setUserUnits(svgContainer.height, trackedValues.height.value)
         this.svgContainer = svgContainer
-        sys.whenIntTrackChanged(this.#trackedIds.left, (newValue) => {
+        sys.whenIntTrackChanged(this.trackedIds.left, (newValue) => {
             svgContainer.x.baseVal.value = newValue
         })
-        sys.whenIntTrackChanged(this.#trackedIds.top, (newValue) => {
+        sys.whenIntTrackChanged(this.trackedIds.top, (newValue) => {
             svgContainer.y.baseVal.value = newValue
         })
-        sys.whenIntTrackChanged(this.#trackedIds.width, (newValue) => {
+        sys.whenIntTrackChanged(this.trackedIds.width, (newValue) => {
             svgContainer.width.baseVal.value = newValue
         })
-        sys.whenIntTrackChanged(this.#trackedIds.height, (newValue) => {
+        sys.whenIntTrackChanged(this.trackedIds.height, (newValue) => {
             svgContainer.height.baseVal.value = newValue
         })
 
@@ -75,34 +75,29 @@ export class DraggableRectangle {
     }
 
     drag(evt: D.SVGDragEvent): void {
-        const svgContainer = this.svgContainer
         const sys = this.#sys
         let newLeft = evt.left
         let newTop = evt.top
-        const width = svgContainer.width.baseVal.value
-        const height = svgContainer.height.baseVal.value
 
         // Adjust to not overlap
-        newLeft = sys.adjustX(this, { top: newTop, height: height }, width, svgContainer.x.baseVal.value, newLeft)
-        newTop = sys.adjustY(this, { left: newLeft, width: width }, height, svgContainer.y.baseVal.value, newTop)
+        newLeft = sys.adjustX(this, { top: newTop, height: this.height }, this.width, this.left, newLeft)
+        newTop = sys.adjustY(this, { left: newLeft, width: this.width }, this.height, this.top, newTop)
 
         // Get new coordinates
         const r = {
             left: newLeft,
             top: newTop,
-            right: newLeft + width,
-            bottom: newTop + height,
+            right: newLeft + this.width,
+            bottom: newTop + this.height,
         }
 
         if (!sys.overlaps(this, r)) {
             const changes = new ChangeSet()
-            if (svgContainer.x.baseVal.value !== newLeft) {
-                svgContainer.x.baseVal.value = newLeft
-                changes.replace(this.#trackedIds.left, newLeft)
+            if (this.left !== newLeft) {
+                changes.replace(this.trackedIds.left, newLeft)
             }
-            if (svgContainer.y.baseVal.value !== newTop) {
-                svgContainer.y.baseVal.value = newTop
-                changes.replace(this.#trackedIds.top, newTop)
+            if (this.top !== newTop) {
+                changes.replace(this.trackedIds.top, newTop)
             }
             sys.sendUpdateDoc(changes)
         }

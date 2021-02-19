@@ -14,6 +14,8 @@
         "systemServices.ts",
         "views/actor.ts",
         "views/bus.ts",
+        "views/connection.ts",
+        "views/port.ts",
         "webview.ts"
     ],
     "references": [
