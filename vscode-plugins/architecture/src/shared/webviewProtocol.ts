@@ -56,16 +56,22 @@ export namespace extension {
 // Namespace for messages and types passed from webview to extension
 export namespace webview {
     export const enum Tag {
+        Ready, // Indicates webview is now listening.
         VisitURI,
         UpdateDocument,
         SetSystemModelDone
     }
 
     /** Type for events from view to extension. */
-    export type Event = VisitURI | UpdateDocument | SetSystemModelDone
+    export type Event = Ready | VisitURI | UpdateDocument | SetSystemModelDone
+
+    /** Indicates webview is now ready for other events. */
+    export interface Ready {
+        readonly tag: Tag.Ready
+    }
 
     /**
-     *  Class for commands to visit a URI in the editor.
+     *  Command to visit a URI in the editor.
      */
     export interface VisitURI {
         readonly tag: Tag.VisitURI
