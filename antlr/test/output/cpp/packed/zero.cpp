@@ -43,7 +43,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Zero::Zero> {
 		static void toBuffer(struct Zero::Zero const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Zero::Zero));
+			buf.resize(sizeof(struct Zero::Zero_wire));
 			struct Zero::Zero_wire* output = (struct Zero::Zero_wire*) buf.data();
 			const struct Zero::Zero* input = &val;
 			toWireType(input, output);

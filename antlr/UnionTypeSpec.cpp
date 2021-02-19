@@ -294,7 +294,7 @@ void UnionTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
     ostream << "buf" << "." << "resize" << "(";
-    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << "_wire)";
     ostream << ")" << ";" << std::endl;
     ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "output" << " " << "=" << " ";

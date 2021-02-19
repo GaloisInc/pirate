@@ -56,9 +56,9 @@ void
 set_defaults(Element* defaults, bool packed)
 {
     if (packed) {
-        defaults->SetAttribute("alignment", "8");
+        defaults->SetAttribute("alignment", "1");
     }
-    defaults->SetAttribute("alignmentUnits", "bits");
+    defaults->SetAttribute("alignmentUnits", "bytes");
     defaults->SetAttribute("binaryBooleanFalseRep", "0");
     defaults->SetAttribute("binaryBooleanTrueRep", "1");
     defaults->SetAttribute("binaryFloatRep", "ieee");
@@ -77,7 +77,7 @@ set_defaults(Element* defaults, bool packed)
     defaults->SetAttribute("initiator", "");
     defaults->SetAttribute("leadingSkip", "0");
     defaults->SetAttribute("lengthKind", "implicit");
-    defaults->SetAttribute("lengthUnits", "bits");
+    defaults->SetAttribute("lengthUnits", "bytes");
     defaults->SetAttribute("occursCountKind", "implicit");
     defaults->SetAttribute("prefixIncludesPrefixLength", "no");
     defaults->SetAttribute("representation", "binary");
@@ -112,17 +112,17 @@ add_primitive_type(
 void
 add_primitive_types(Element* schema, bool packed)
 {
-    add_primitive_type(schema, "float", "xs:float", "32", packed);
-    add_primitive_type(schema, "double", "xs:double", "64", packed);
-    add_primitive_type(schema, "int8", "xs:byte", "8", packed);
-    add_primitive_type(schema, "int16", "xs:short", "16", packed);
-    add_primitive_type(schema, "int32", "xs:int", "32", packed);
-    add_primitive_type(schema, "int64", "xs:long", "64", packed);
-    add_primitive_type(schema, "uint8", "xs:unsignedByte", "8", packed);
-    add_primitive_type(schema, "uint16", "xs:unsignedShort", "16", packed);
-    add_primitive_type(schema, "uint32", "xs:unsignedInt", "32", packed);
-    add_primitive_type(schema, "uint64", "xs:unsignedLong", "64", packed);
-    add_primitive_type(schema, "boolean", "xs:boolean", "8", packed);
+    add_primitive_type(schema, "float", "xs:float", "4", packed);
+    add_primitive_type(schema, "double", "xs:double", "8", packed);
+    add_primitive_type(schema, "int8", "xs:byte", "1", packed);
+    add_primitive_type(schema, "int16", "xs:short", "2", packed);
+    add_primitive_type(schema, "int32", "xs:int", "4", packed);
+    add_primitive_type(schema, "int64", "xs:long", "8", packed);
+    add_primitive_type(schema, "uint8", "xs:unsignedByte", "1", packed);
+    add_primitive_type(schema, "uint16", "xs:unsignedShort", "2", packed);
+    add_primitive_type(schema, "uint32", "xs:unsignedInt", "4", packed);
+    add_primitive_type(schema, "uint64", "xs:unsignedLong", "8", packed);
+    add_primitive_type(schema, "boolean", "xs:boolean", "1", packed);
 }
 
 int
@@ -133,27 +133,27 @@ type_size(TypeSpec* type)
     }
 
     switch (type->typeOf()) {
-        case CDRTypeOf::ENUM_T: not_implemented("type_size of enum");
+        case CDRTypeOf::ENUM_T: return 4;
         case CDRTypeOf::LONG_DOUBLE_T: not_implemented("type_size of enum");
         case CDRTypeOf::MODULE_T: not_implemented("type_size of module");
         case CDRTypeOf::ERROR_T: not_implemented("type_size of error");
-        case CDRTypeOf::FLOAT_T: return 32;
-        case CDRTypeOf::DOUBLE_T: return 64;
-        case CDRTypeOf::TINY_T: return 8;
-        case CDRTypeOf::SHORT_T: return 16;
-        case CDRTypeOf::LONG_T: return 32;
-        case CDRTypeOf::LONG_LONG_T: return 64;
-        case CDRTypeOf::UNSIGNED_TINY_T: return 8;
-        case CDRTypeOf::UNSIGNED_SHORT_T: return 16;
-        case CDRTypeOf::UNSIGNED_LONG_T: return 32;
-        case CDRTypeOf::UNSIGNED_LONG_LONG_T: return 64;
-        case CDRTypeOf::CHAR_T: return 8;
-        case CDRTypeOf::BOOL_T: return 8;
-        case CDRTypeOf::OCTET_T: return 8;
+        case CDRTypeOf::FLOAT_T: return 4;
+        case CDRTypeOf::DOUBLE_T: return 8;
+        case CDRTypeOf::TINY_T: return 1;
+        case CDRTypeOf::SHORT_T: return 2;
+        case CDRTypeOf::LONG_T: return 4;
+        case CDRTypeOf::LONG_LONG_T: return 8;
+        case CDRTypeOf::UNSIGNED_TINY_T: return 1;
+        case CDRTypeOf::UNSIGNED_SHORT_T: return 2;
+        case CDRTypeOf::UNSIGNED_LONG_T: return 4;
+        case CDRTypeOf::UNSIGNED_LONG_LONG_T: return 8;
+        case CDRTypeOf::CHAR_T: return 1;
+        case CDRTypeOf::BOOL_T: return 1;
+        case CDRTypeOf::OCTET_T: return 1;
         case CDRTypeOf::UNION_T:
         {
             auto u = static_cast<UnionTypeSpec*>(type);
-            int acc = 8;
+            int acc = 1;
             for (auto m : u->members) {
                 acc = std::max(acc, type_size(m->typeSpec));
             }
@@ -164,7 +164,13 @@ type_size(TypeSpec* type)
             auto s = static_cast<StructTypeSpec*>(type);
             int acc = 0;
             for (auto m : s->members) {
-                acc += type_size(m->typeSpec) * m->declarators.size();
+                for (auto d : m->declarators) {
+                    int sz = type_size(m->typeSpec);
+                    for (auto dim : d->dimensions) {
+                        sz *= dim;
+                    }
+                    acc += sz;
+                }
             }
             return acc;
         }
@@ -180,23 +186,23 @@ type_alignment(TypeSpec* type)
     }
 
     switch (type->typeOf()) {
-        case CDRTypeOf::ENUM_T: not_implemented("type_alignment of enum");
+        case CDRTypeOf::ENUM_T: return 4;
         case CDRTypeOf::LONG_DOUBLE_T: not_implemented("type_alignment of enum");
         case CDRTypeOf::MODULE_T: not_implemented("type_alignment of module");
         case CDRTypeOf::ERROR_T: not_implemented("type_alignment of error");
-        case CDRTypeOf::FLOAT_T: return 32;
-        case CDRTypeOf::DOUBLE_T: return 64;
-        case CDRTypeOf::TINY_T: return 8;
-        case CDRTypeOf::SHORT_T: return 16;
-        case CDRTypeOf::LONG_T: return 32;
-        case CDRTypeOf::LONG_LONG_T: return 64;
-        case CDRTypeOf::UNSIGNED_TINY_T: return 8;
-        case CDRTypeOf::UNSIGNED_SHORT_T: return 16;
-        case CDRTypeOf::UNSIGNED_LONG_T: return 32;
-        case CDRTypeOf::UNSIGNED_LONG_LONG_T: return 64;
-        case CDRTypeOf::CHAR_T: return 8;
-        case CDRTypeOf::BOOL_T: return 8;
-        case CDRTypeOf::OCTET_T: return 8;
+        case CDRTypeOf::FLOAT_T: return 4;
+        case CDRTypeOf::DOUBLE_T: return 8;
+        case CDRTypeOf::TINY_T: return 1;
+        case CDRTypeOf::SHORT_T: return 2;
+        case CDRTypeOf::LONG_T: return 4;
+        case CDRTypeOf::LONG_LONG_T: return 8;
+        case CDRTypeOf::UNSIGNED_TINY_T: return 1;
+        case CDRTypeOf::UNSIGNED_SHORT_T: return 2;
+        case CDRTypeOf::UNSIGNED_LONG_T: return 4;
+        case CDRTypeOf::UNSIGNED_LONG_LONG_T: return 8;
+        case CDRTypeOf::CHAR_T: return 1;
+        case CDRTypeOf::BOOL_T: return 1;
+        case CDRTypeOf::OCTET_T: return 1;
         case CDRTypeOf::UNION_T:
         {
             auto u = static_cast<UnionTypeSpec*>(type);

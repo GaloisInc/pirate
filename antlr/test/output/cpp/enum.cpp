@@ -71,7 +71,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct EnumType::Week_Interval> {
 		static void toBuffer(struct EnumType::Week_Interval const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct EnumType::Week_Interval));
+			buf.resize(sizeof(struct EnumType::Week_Interval_wire));
 			struct EnumType::Week_Interval_wire* output = (struct EnumType::Week_Interval_wire*) buf.data();
 			const struct EnumType::Week_Interval* input = &val;
 			toWireType(input, output);

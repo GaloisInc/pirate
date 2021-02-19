@@ -83,7 +83,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct PNT::Position> {
 		static void toBuffer(struct PNT::Position const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct PNT::Position));
+			buf.resize(sizeof(struct PNT::Position_wire));
 			struct PNT::Position_wire* output = (struct PNT::Position_wire*) buf.data();
 			const struct PNT::Position* input = &val;
 			toWireType(input, output);
@@ -137,7 +137,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct PNT::Distance> {
 		static void toBuffer(struct PNT::Distance const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct PNT::Distance));
+			buf.resize(sizeof(struct PNT::Distance_wire));
 			struct PNT::Distance_wire* output = (struct PNT::Distance_wire*) buf.data();
 			const struct PNT::Distance* input = &val;
 			toWireType(input, output);

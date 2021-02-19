@@ -221,7 +221,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Primitives::Primitives> {
 		static void toBuffer(struct Primitives::Primitives const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Primitives::Primitives));
+			buf.resize(sizeof(struct Primitives::Primitives_wire));
 			struct Primitives::Primitives_wire* output = (struct Primitives::Primitives_wire*) buf.data();
 			const struct Primitives::Primitives* input = &val;
 			toWireType(input, output);
