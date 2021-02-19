@@ -10,6 +10,7 @@
         "draggableRectangle.ts",
         "dragHandlers.ts",
         "geometry.ts",
+        "mathematics.ts",
         "svg.ts",
         "systemServices.ts",
         "views/actor.ts",
