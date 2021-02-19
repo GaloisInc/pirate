@@ -1,4 +1,5 @@
 import * as A from '../../shared/architecture.js'
+import * as M from '../mathematics.js'
 import * as svg from '../svg.js'
 import { SystemServices } from '../systemServices.js'
 
@@ -14,7 +15,7 @@ export class ConnectionView {
     updateSourcePosition(): void {
 
         if (this.source instanceof BusView) {
-            this.x1 = this.x2
+            this.x1 = horizontalClamp(this.x2, this.source)
             this.y1 = this.source.draggableRectangle.top
         }
 
@@ -23,10 +24,10 @@ export class ConnectionView {
             this.y1 = this.source.actor.draggableRectangle.top + this.source.centerY
             if (this.target instanceof BusView) {
                 if (this.target.orientation === A.BusOrientation.Horizontal) {
-                    this.x2 = this.x1
+                    this.x2 = horizontalClamp(this.x1, this.target)
                 }
                 if (this.target.orientation === A.BusOrientation.Vertical) {
-                    this.y2 = this.y1
+                    this.y2 = verticalClamp(this.y1, this.target)
                 }
             }
         }
@@ -36,7 +37,7 @@ export class ConnectionView {
     updateTargetPosition(): void {
 
         if (this.target instanceof BusView) {
-            this.x2 = this.x1
+            this.x2 = horizontalClamp(this.x1, this.target)
             this.y2 = this.target.draggableRectangle.top
         }
 
@@ -45,10 +46,10 @@ export class ConnectionView {
             this.y2 = this.target.actor.draggableRectangle.top + this.target.centerY
             if (this.source instanceof BusView) {
                 if (this.source.orientation === A.BusOrientation.Horizontal) {
-                    this.x1 = this.x2
+                    this.x1 = horizontalClamp(this.x2, this.source)
                 }
                 if (this.source.orientation === A.BusOrientation.Vertical) {
-                    this.y1 = this.y2
+                    this.y1 = verticalClamp(this.y2, this.source)
                 }
             }
         }
@@ -78,37 +79,27 @@ export class ConnectionView {
         this.line.setAttribute('stroke-width', '5')
 
         if (source instanceof PortView) {
-            // initial values
             this.x1 = source.actor.draggableRectangle.left + source.centerX
             this.y1 = source.actor.draggableRectangle.top + source.centerY
-            // updates
             sys.whenIntTrackChanged(source.offsetId, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.left, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.top, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.width, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.height, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.left, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.top, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.width, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(source.actor.draggableRectangle.trackedIds.height, () => this.updateTargetPosition())
+            const trackedIds = source.actor.draggableRectangle.trackedIds
+            sys.whenIntTrackChanged(trackedIds.left, () => this.updateSourcePosition())
+            sys.whenIntTrackChanged(trackedIds.top, () => this.updateSourcePosition())
+            sys.whenIntTrackChanged(trackedIds.width, () => this.updateSourcePosition())
+            sys.whenIntTrackChanged(trackedIds.height, () => this.updateSourcePosition())
         }
 
         if (source instanceof BusView) {
+            const trackedIds = source.draggableRectangle.trackedIds
             if (source.orientation === A.BusOrientation.Horizontal) {
                 this.x1 = this.getPortViewX(target)
                 this.y1 = source.draggableRectangle.top
-                sys.whenIntTrackChanged(
-                    source.draggableRectangle.trackedIds.top,
-                    () => this.updateSourcePosition(),
-                )
+                sys.whenIntTrackChanged(trackedIds.top, () => this.updateSourcePosition())
             }
             if (source.orientation === A.BusOrientation.Vertical) {
                 this.x1 = source.draggableRectangle.left
                 this.y1 = this.y2
-                sys.whenIntTrackChanged(
-                    source.draggableRectangle.trackedIds.left,
-                    () => this.updateSourcePosition(),
-                )
+                sys.whenIntTrackChanged(trackedIds.left, () => this.updateSourcePosition())
             }
         }
 
@@ -116,32 +107,24 @@ export class ConnectionView {
             this.x2 = target.actor.draggableRectangle.left + target.centerX
             this.y2 = target.actor.draggableRectangle.top + target.centerY
             sys.whenIntTrackChanged(target.offsetId, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.left, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.top, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.width, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.height, () => this.updateTargetPosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.left, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.top, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.width, () => this.updateSourcePosition())
-            sys.whenIntTrackChanged(target.actor.draggableRectangle.trackedIds.height, () => this.updateSourcePosition())
+            const trackedIds = target.actor.draggableRectangle.trackedIds
+            sys.whenIntTrackChanged(trackedIds.left, () => this.updateTargetPosition())
+            sys.whenIntTrackChanged(trackedIds.top, () => this.updateTargetPosition())
+            sys.whenIntTrackChanged(trackedIds.width, () => this.updateTargetPosition())
+            sys.whenIntTrackChanged(trackedIds.height, () => this.updateTargetPosition())
         }
 
         if (target instanceof BusView) {
+            const trackedIds = target.draggableRectangle.trackedIds
             if (target.orientation === A.BusOrientation.Horizontal) {
                 this.x2 = this.getPortViewX(source)
                 this.y2 = target.draggableRectangle.top
-                sys.whenIntTrackChanged(
-                    target.draggableRectangle.trackedIds.top,
-                    () => this.updateTargetPosition(),
-                )
+                sys.whenIntTrackChanged(trackedIds.top, () => this.updateTargetPosition())
             }
             if (target.orientation === A.BusOrientation.Vertical) {
                 this.x2 = target.draggableRectangle.left
                 this.y2 = this.y1
-                sys.whenIntTrackChanged(
-                    target.draggableRectangle.trackedIds.left,
-                    () => this.updateTargetPosition(),
-                )
+                sys.whenIntTrackChanged(trackedIds.left, () => this.updateTargetPosition())
             }
         }
 
@@ -162,4 +145,14 @@ export class ConnectionView {
         this.line.remove()
     }
 
+}
+
+/* Returns 'v' clamped to the left and right boundaries of the given bus. */
+function horizontalClamp(v: number, b: BusView): number {
+    return M.clamp(v, b.draggableRectangle.left, b.draggableRectangle.right)
+}
+
+/* Returns 'v' clamped to the top and bottom boundaries of the given bus. */
+function verticalClamp(v: number, b: BusView): number {
+    return M.clamp(v, b.draggableRectangle.top, b.draggableRectangle.bottom)
 }

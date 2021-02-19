@@ -1,6 +1,7 @@
 import * as A from '../../shared/architecture.js'
 import { ChangeSet } from '../changeSet.js'
 import * as D from '../dragHandlers.js'
+import * as M from '../mathematics.js'
 import * as svg from '../svg.js'
 import { SystemServices } from '../systemServices.js'
 
@@ -131,22 +132,22 @@ export class PortView {
         const position = this.offset
         switch (this.border) {
             case A.Border.Left:
-                offset = clamp(position, 0, maxTop)
+                offset = M.clamp(position, 0, maxTop)
                 this.x = 0
                 this.y = offset
                 break
             case A.Border.Right:
-                offset = clamp(position, 0, maxTop)
+                offset = M.clamp(position, 0, maxTop)
                 this.x = maxLeft
                 this.y = offset
                 break
             case A.Border.Top:
-                offset = clamp(position, 0, maxLeft)
+                offset = M.clamp(position, 0, maxLeft)
                 this.x = offset
                 this.y = 0
                 break
             case A.Border.Bottom:
-                offset = clamp(position, 0, maxLeft)
+                offset = M.clamp(position, 0, maxLeft)
                 this.x = offset
                 this.y = maxTop
                 break
@@ -170,13 +171,6 @@ function outsideRangeDist(x: number, l: number, h: number): number {
  */
 function euclid2Dist(x: number, y: number) {
     if (x === 0) { return y } else if (y === 0) { return x } else { return Math.sqrt(x * x + y * y) }
-}
-
-/**
- * Clamp a number between a minimum and maximum value.
- */
-function clamp(v: number, min: number, max: number) {
-    return Math.min(Math.max(v, min), max)
 }
 
 /**
