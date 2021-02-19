@@ -179,3 +179,76 @@ namespace pirate {
 					for (size_t c_3 = 0; c_3 < 4; c_3++) {
 						for (size_t c_4 = 0; c_4 < 5; c_4++) {
 							for (size_t c_5 = 0; c_5 < 6; c_5++) {
+							const float* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5];
+							unsigned char* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
+							memcpy(&field_c, inptr, sizeof(uint32_t));
+							field_c = htobe32(field_c);
+							memcpy(outptr, &field_c, sizeof(uint32_t));
+							}
+						}
+					}
+				}
+			}
+		}
+		memcpy(&field_a, &input->a, sizeof(uint8_t));
+		memcpy(&output->a, &field_a, sizeof(uint8_t));
+	}
+
+	inline struct Arrays::Struct_Array_Field fromWireType(const struct Arrays::Struct_Array_Field_wire* input) {
+		struct Arrays::Struct_Array_Field retval;
+		struct Arrays::Struct_Array_Field* output = &retval;
+		uint8_t field_a;
+		uint32_t field_b;
+		uint32_t field_c;
+		for (size_t b_0 = 0; b_0 < 10; b_0++) {
+			const unsigned char* inptr = &input->b[b_0][0];
+			int32_t* outptr = &output->b[b_0];
+			memcpy(&field_b, inptr, sizeof(uint32_t));
+			field_b = be32toh(field_b);
+			memcpy(outptr, &field_b, sizeof(uint32_t));
+		}
+		for (size_t c_0 = 0; c_0 < 1; c_0++) {
+			for (size_t c_1 = 0; c_1 < 2; c_1++) {
+				for (size_t c_2 = 0; c_2 < 3; c_2++) {
+					for (size_t c_3 = 0; c_3 < 4; c_3++) {
+						for (size_t c_4 = 0; c_4 < 5; c_4++) {
+							for (size_t c_5 = 0; c_5 < 6; c_5++) {
+							const unsigned char* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
+							float* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5];
+							memcpy(&field_c, inptr, sizeof(uint32_t));
+							field_c = be32toh(field_c);
+							memcpy(outptr, &field_c, sizeof(uint32_t));
+							}
+						}
+					}
+				}
+			}
+		}
+		memcpy(&field_a, &input->a, sizeof(uint8_t));
+		memcpy(&output->a, &field_a, sizeof(uint8_t));
+		return retval;
+	}
+
+	template<>
+	struct Serialization<struct Arrays::Struct_Array_Field> {
+		static void toBuffer(struct Arrays::Struct_Array_Field const& val, std::vector<char>& buf) {
+			buf.resize(sizeof(struct Arrays::Struct_Array_Field_wire));
+			struct Arrays::Struct_Array_Field_wire* output = (struct Arrays::Struct_Array_Field_wire*) buf.data();
+			const struct Arrays::Struct_Array_Field* input = &val;
+			toWireType(input, output);
+		}
+
+		static struct Arrays::Struct_Array_Field fromBuffer(std::vector<char> const& buf) {
+			const struct Arrays::Struct_Array_Field_wire* input = (const struct Arrays::Struct_Array_Field_wire*) buf.data();
+			if (buf.size() != sizeof(struct Arrays::Struct_Array_Field)) {
+				static const std::string error_msg =
+					std::string("pirate::Serialization::fromBuffer() for Arrays::Struct_Array_Field type did not receive a buffer of size ") +
+					std::to_string(sizeof(struct Arrays::Struct_Array_Field));
+				throw std::length_error(error_msg);
+			}
+			return fromWireType(input);
+		}
+	};
+}
+
+#endif // _ARRAYS_IDL_CODEGEN_H
