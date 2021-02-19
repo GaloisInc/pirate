@@ -100,7 +100,7 @@ int TrilliumVideoSource::init()
     encodeOrionNetworkVideoPacketStructure(&pkt, &videoSettings);
 
     // Prepare Trillum UDP command socket
-    rv = trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
+    rv = trilliumInitUDPSocket(mTrilliumIpAddress, mSockFd, mSockAddr);
     if (rv != 0)
     {
         return rv;
@@ -115,7 +115,7 @@ int TrilliumVideoSource::init()
 
     for (int i = 0; i < 2; i++)
     {
-        rv = trilliumPktSend(mSockFd, pkt);
+        rv = trilliumPktSend(mSockFd, pkt, mSockAddr);
         if (rv != 0)
         {
             return rv;

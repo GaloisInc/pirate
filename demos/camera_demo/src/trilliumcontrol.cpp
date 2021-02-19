@@ -83,7 +83,7 @@ int TrilliumControl::init()
         return -1;
     }
 
-    rv = trilliumConnectUDPSocket(mTrilliumIpAddress, mSockFd);
+    rv = trilliumInitUDPSocket(mTrilliumIpAddress, mSockFd, mSockAddr);
     if (rv != 0)
     {
         return rv;
@@ -169,7 +169,7 @@ bool TrilliumControl::applyAngularPosition(PanTilt angularPosition)
     }
 
     encodeOrionCmdPacket(&pkt, &cmd);
-    return trilliumPktSend(mSockFd, pkt) == 0;
+    return trilliumPktSend(mSockFd, pkt, mSockAddr) == 0;
 }
 
 void TrilliumControl::updateZoom(CameraZoom zoom)
@@ -212,7 +212,7 @@ void TrilliumControl::updateZoom(CameraZoom zoom)
 
     encodeOrionCameraStatePacket(&pkt, mState.mZoom, -1, 0);
 
-    rv = trilliumPktSend(mSockFd, pkt);
+    rv = trilliumPktSend(mSockFd, pkt, mSockAddr);
     if (rv != 0)
     {
         std::perror("Failed to send Trillium zoom command");
@@ -247,7 +247,7 @@ int TrilliumControl::trilliumSensorConfig()
     }
 
     encodeOrionAptinaSettingsPacketStructure(&pkt, &mState.mAptina);
-    return trilliumPktSend(mSockFd, pkt);
+    return trilliumPktSend(mSockFd, pkt, mSockAddr);
 }
 
 int TrilliumControl::trilliumConfigParse(std::string file, OrionAptinaSettings_t &cfg)
@@ -306,7 +306,7 @@ int TrilliumControl::trilliumLimitsRequest()
     OrionPkt_t pkt;
     MakeOrionPacket(&pkt, ORION_PKT_LIMITS, 0);
 
-    rv = trilliumPktSend(mSockFd, pkt);
+    rv = trilliumPktSend(mSockFd, pkt, mSockAddr);
     if (rv != 0)
     {
         std::perror("Failed to send Trillium limits request command");

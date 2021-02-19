@@ -28,11 +28,13 @@
 #include "orion-sdk/Constants.hpp"
 #include "orion-sdk/OrionComm.hpp"
 
-int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
+int trilliumInitUDPSocket(std::string trilliumIpAddress, int& sockFd, sockaddr_in& addr)
 {
     int rv = -1;
     uint32_t address = INADDR_BROADCAST;
     struct sockaddr_in sock_addr;
+    struct ip_mreq mreq;
+    int mcast_addr;
     int enable = 1;
     struct timeval tv;
 
@@ -73,17 +75,21 @@ int trilliumConnectUDPSocket(std::string trilliumIpAddress, int& sockFd)
         goto err;
     }
 
-    // Connect
-    memset(&sock_addr, 0, sizeof(sock_addr));
-    sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = address;
-    sock_addr.sin_port        = htons(UDP_PORT);
-    rv = connect(sockFd, (struct sockaddr *)&sock_addr, sizeof(sock_addr));
-    if (rv != 0)
+    // Prepare target socket address for future sends
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = address;
+    addr.sin_port        = htons(UDP_PORT);
+
+    // Join the multicast group in case there are multiple command senders
+    mcast_addr = htonl((ntohl(address) & 0x00FFFFFF) | (MSG_MCAST_BASE << 24));
+    mreq.imr_multiaddr.s_addr = mcast_addr;
+	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    if (setsockopt(sockFd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
     {
-        std::cerr << "Connect failed" << std::endl;
+        std::cerr << "Failed to add socket multicast membership" << std::endl;
         goto err;
-    }
+	}
 
     // Set the receive timeout to 1 second
     tv.tv_sec = 1;
@@ -104,12 +110,12 @@ err:
     return -1;
 }
 
-int trilliumPktSend(int sockFd, OrionPkt_t& pkt)
+int trilliumPktSend(int sockFd, OrionPkt_t& pkt, sockaddr_in& addr)
 {
     ssize_t len = pkt.Length + ORION_PKT_OVERHEAD;
     ssize_t rv = -1;
 
-    rv = sendto(sockFd, (char *)&pkt, len, 0, (struct sockaddr *)NULL, 0);
+    rv = sendto(sockFd, (char *)&pkt, len, 0, (struct sockaddr *)&addr, sizeof(addr));
     if (rv != len)
     {
         std::perror("Failed to send datagram packet\n");

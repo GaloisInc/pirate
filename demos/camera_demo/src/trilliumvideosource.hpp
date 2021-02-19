@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <stdint.h>
+#include <netinet/in.h>
 
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
@@ -40,4 +41,5 @@ public:
 private:
     const std::string mTrilliumIpAddress;
     int mSockFd;
+    struct sockaddr_in mSockAddr;
 };

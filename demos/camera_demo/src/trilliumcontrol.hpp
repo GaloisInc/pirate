@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <netinet/in.h>
 #include "basecameracontroloutput.hpp"
 #include "orion-sdk/OrionPublicPacketShim.hpp"
 
@@ -35,6 +36,7 @@ private:
     const std::string mTrilliumIpAddress;
     const std::string mTrilliumConfig;
     int mSockFd;
+    struct sockaddr_in mSockAddr;
 
     const bool mPrintState;
     std::thread *mReceiveThread;
