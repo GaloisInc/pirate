@@ -14,6 +14,7 @@
     },
     "plugins": [
         "@typescript-eslint",
+        "eslint-plugin-tsdoc",
         "import"
     ],
     "rules": {
@@ -58,10 +59,10 @@
                 "groups": [
                     "builtin",
                     "external",
+                    "internal",
                     "parent",
                     "sibling",
-                    "index",
-                    "internal"
+                    "index"
                 ],
                 "newlines-between": "always"
             }
@@ -85,7 +86,8 @@
             }
         ],
         "semi": "off",
-        "template-curly-spacing": ["error", "never"]
+        "template-curly-spacing": ["error", "never"],
+        "tsdoc/syntax": "warn"
     },
     "settings": {
         "import/parsers": {

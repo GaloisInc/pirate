@@ -20,3 +20,22 @@ start debugging (F5) or build it manually by running:
 ```
 npm run compile
 ```
+
+# Debugging
+
+Debugging webviews is not yet officially supported, but there is an
+experimental workaround. You need to set the following fields in your user
+configuration (they will **not** work in the workspace configuration):
+
+```
+"debug.javascript.usePreview": true,
+"webview.experimental.useIframes": true,
+```
+
+This works in conjunction with the line:
+
+```
+debugWebviews: true
+```
+
+in `launch.json`.

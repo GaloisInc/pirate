@@ -1,5 +1,4 @@
 /**
- * @module
  * Interfaces for communication between the extension proper and its webview
  * component.
  */
@@ -22,7 +21,7 @@ export namespace extension {
     export const enum Tag {
         SetSystemModel,
         InvalidateModel,
-        DocumentEdited
+        DocumentEdited,
     }
 
     /**

@@ -1,5 +1,4 @@
 /**
- * @module
  * Implements the ModelWebviewServices interface.
  */
 
@@ -39,19 +38,19 @@ function addPortSymbol(syms: vscode.DocumentSymbol[], p: A.Port) {
     const selRange = mkvscodeRange(p.name)
     const psym = new vscode.DocumentSymbol(p.name.value, 'port', kind, range, selRange)
     syms.push(psym)
-
 }
 
-function mkSymbols(mdl:A.SystemModel):vscode.DocumentSymbol[] {
-    const symbols:vscode.DocumentSymbol[]=[]
-    for (const a of mdl.actors) {
+function mkSymbols(mdl: A.SystemModel): vscode.DocumentSymbol[] {
+    const symbols: vscode.DocumentSymbol[] = []
+    for (const locatedActor of mdl.actors) {
+        const actor = locatedActor.value
         const kind = vscode.SymbolKind.Interface
-        const range = mkvscodeRange(a.definition)
-        const selRange = mkvscodeRange(a.name)
-        const asym = new vscode.DocumentSymbol(a.name.value, 'actor', kind, range, selRange)
+        const range = mkvscodeRange(actor.definition)
+        const selRange = mkvscodeRange(actor.name)
+        const asym = new vscode.DocumentSymbol(actor.name.value, 'actor', kind, range, selRange)
         symbols.push(asym)
-        for (const p of a.inPorts) { addPortSymbol(asym.children, p) }
-        for (const p of a.outPorts) { addPortSymbol(asym.children, p) }
+        for (const p of actor.inPorts) { addPortSymbol(asym.children, p.value) }
+        for (const p of actor.outPorts) { addPortSymbol(asym.children, p.value) }
     }
     return symbols
 }
@@ -120,7 +119,6 @@ export class ModelResources implements ModelWebviewServices {
         }
     }
 
-
     #expectedEdits: null | tracker.NormalizedEdits = null
 
     /**
@@ -162,7 +160,9 @@ export class ModelResources implements ModelWebviewServices {
         const doEdit = () => {
             this.#expectedEdits = edit
             for (const v of this.#activeWebviews) {
-                v.notifyDocumentEdited(edit.array)
+                if (v !== source) {
+                    v.notifyDocumentEdited(edit.array)
+                }
             }
             const wsEdit = doc.mkWorkspaceEdit(edit)
             vscode.workspace.applyEdit(wsEdit).then((success) => {

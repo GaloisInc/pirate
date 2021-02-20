@@ -1,5 +1,4 @@
 /**
- * @module
  * Implements the lexical analysis of the piratemap file format.
  */
 
@@ -52,6 +51,7 @@ export function readDigitsRev(s: string, endOff: number): { count: number, value
     let mult = 1
     let c = s.charAt(endOff)
     while ('0' <= c && c <= '9') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = (c as any) - ('0' as any)
         endOff--
         value = d * mult + value
@@ -69,6 +69,7 @@ export function readDigits(s: string, o: number): { count: number, value: number
     let value = 0
     let c = s.charAt(o)
     while ('0' <= c && c <= '9') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = (c as any) - ('0' as any)
         value = 10 * value + d
         o++
@@ -311,6 +312,10 @@ export class Lexer {
                 return unexpectedChar(start, end, `Unexpected character '${c}'`)
             }
         }
+    }
+
+    here(): TextPosition {
+        return this.#position
     }
 
     peek(): Token {

@@ -1,14 +1,13 @@
 /**
- * @module
  * Tools for manipulating a document containing tracked locations by sending
  * text updates to update those locations.
  */
 
 import * as vscode from 'vscode'
 
-import * as A from '../shared/architecture'
-import { TextRange } from '../shared/position'
-import { common } from '../shared/webviewProtocol'
+import * as A from '@shared/architecture'
+import { TextRange } from '@shared/position'
+import { common } from '@shared/webviewProtocol'
 
 import { SourceLocation, Tracker } from './parser'
 
@@ -19,7 +18,7 @@ type DocEdit = common.TrackUpdate
  * Return number of lines in string and number of characters in last line.
  *
  * This treats carriage return and new lines as line terminators,
- * and treats DOS newlines (\r\n) as a single newline.
+ * and treats DOS newlines (\\r\\n) as a single newline.
  */
 function lineSourceDelta(x: string): { line: number, lastCharCount: number } {
     const lines = x.match(/^.*(\r\n)?/gm)
@@ -32,8 +31,15 @@ function lineSourceDelta(x: string): { line: number, lastCharCount: number } {
 
 /**
  * Returns a position at specified offset from existing position.
+ * @param p - Position to modify from
+ * @param lineDelta - How many lines to shift by
+ * @param columnDelta - How many columns to shift by
  */
-function modifyPosition(p: vscode.Position, lineDelta: number, columnDelta: number) {
+function modifyPosition(
+    p: vscode.Position,
+    lineDelta: number,
+    columnDelta: number,
+): vscode.Position {
     return new vscode.Position(p.line + lineDelta, p.character + columnDelta)
 }
 
@@ -42,7 +48,7 @@ function modifyPosition(p: vscode.Position, lineDelta: number, columnDelta: numb
  */
 function modifyRangeLine(r: vscode.Range, lineDelta: number): vscode.Range {
     return new vscode.Range(modifyPosition(r.start, lineDelta, 0),
-                            modifyPosition(r.end, lineDelta, 0))
+        modifyPosition(r.end, lineDelta, 0))
 }
 
 class Edit implements DocEdit {
@@ -62,13 +68,13 @@ function compareTrackIndex(x: Edit, y: Edit) {
 // Type synonym intended for arrays that are sorted by
 // trackIndex and have no duplicate track index assignments.
 export class NormalizedEdits {
-    readonly array:readonly Edit[]
+    readonly array: readonly Edit[]
 
     private constructor(edits: readonly Edit[]) {
         this.array = edits
     }
 
-    static fromArray(edits: readonly DocEdit[]):NormalizedEdits {
+    static fromArray(edits: readonly DocEdit[]): NormalizedEdits {
         const sorted = edits.map((e) => new Edit(e)).sort(compareTrackIndex)
         const r: Edit[] = []
         if (edits.length > 0) {
@@ -114,13 +120,12 @@ export interface LocationInfo {
 }
 
 /**
- * A tracked document maintains a set of locations in a VSCode document
- * at a specific URI.
+ * A tracked document maintains a set of locations in a VSCode document at a
+ * specific URI.
  *
  * To use it, one first should call `track` to define each location to be
- * tracked.  Calls to One can generate a list of updates
- * to perform, and the tracker will apply them asynchronously to the undering
- * VScode URI.
+ * tracked.  Calls to One can generate a list of updates to perform, and the
+ * tracker will apply them asynchronously to the undering VScode URI.
  *
  * One can then call `apply` to indicate changes.  As apply changes the text
  * document, we can check whether the changes are expected in an event handler
@@ -143,17 +148,22 @@ export class TrackedDoc implements Tracker {
      * Locations should be tracked in order of appearance of the document so
      * that we can ensure lower tracked indices come before higher ones.
      */
-    track(r: TextRange): A.TrackIndex|undefined {
+    track(r: TextRange): A.TrackIndex | undefined {
         const start = new vscode.Position(r.start.line, r.start.character)
-        const end   = new vscode.Position(r.end.line, r.end.character)
-        // Fail if end posiition is not at or before the start
-        if (start.isAfter(end)) return undefined
+        const end = new vscode.Position(r.end.line, r.end.character)
+
+        // Fail if end position is not at or before the start
+        // if (start.isAfter(end)) {
+        //     return undefined
+        // }
 
         const m = this.#ranges
-        const lastEnd = m.length > 0 ? m[m.length-1].end : undefined
+        // const lastEnd = m.length > 0 ? m[m.length - 1].end : undefined
 
         // Fail if last end position was not at or before the start of this one.
-        if (lastEnd && lastEnd.isAfter(start)) { return undefined }
+        // if (lastEnd && lastEnd.isAfter(start)) {
+        //     return undefined
+        // }
 
         m.push(new vscode.Range(start, end))
         return m.length - 1
@@ -161,10 +171,10 @@ export class TrackedDoc implements Tracker {
 
     get locations(): readonly LocationInfo[] { return this.#locations }
 
-    location(r: TextRange, loc:SourceLocation): A.LocationIndex|undefined {
+    location(r: TextRange, loc: SourceLocation): A.LocationIndex | undefined {
         const trackIdx = this.track(r)
         if (trackIdx === undefined) return undefined
-        this.#locations.push({trackIdx: trackIdx, loc: loc})
+        this.#locations.push({ trackIdx: trackIdx, loc: loc })
         return this.#locations.length - 1
     }
 
@@ -198,8 +208,8 @@ export class TrackedDoc implements Tracker {
             // Compute new end base on whether we have newlines or not
             const newEnd
                 = newTextDelta.line === 1
-                ? new vscode.Position(newStart.line, newStart.character + newTextDelta.lastCharCount)
-                : new vscode.Position(newStart.line + newTextDelta.line, newTextDelta.lastCharCount)
+                    ? new vscode.Position(newStart.line, newStart.character + newTextDelta.lastCharCount)
+                    : new vscode.Position(newStart.line + newTextDelta.line, newTextDelta.lastCharCount)
             this.#ranges[trackIndex] = new vscode.Range(newStart, newEnd)
             // Adjust line delta by number of lines deleted in this edit.
             lineDelta = newEnd.line - editEnd.line
@@ -210,9 +220,9 @@ export class TrackedDoc implements Tracker {
             // Handle case where neither old text or  new text have new lines
             // Get loc index of next edit (or length of locs if this is the last endit.)
             const nextTrackIndex
-                = editIndex+1 < editArray.length
-                ? editArray[editIndex+1].trackIndex
-                : this.#ranges.length
+                = editIndex + 1 < editArray.length
+                    ? editArray[editIndex + 1].trackIndex
+                    : this.#ranges.length
             // While we aren't updating a modified location and the location is on the line of
             // this edit.
             let idx = trackIndex + 1
@@ -222,8 +232,8 @@ export class TrackedDoc implements Tracker {
                 const startPos = modifyPosition(r.start, lineDelta, columnDelta)
                 // Modify end position by line if it is also already on line.
                 const endPos = r.end.line === adjustedLine
-                             ? modifyPosition(r.end, lineDelta, columnDelta)
-                             : modifyPosition(r.end, lineDelta, 0)
+                    ? modifyPosition(r.end, lineDelta, columnDelta)
+                    : modifyPosition(r.end, lineDelta, 0)
                 this.#ranges[idx] = new vscode.Range(startPos, endPos)
                 ++idx
             }
@@ -236,7 +246,7 @@ export class TrackedDoc implements Tracker {
         }
     }
 
-    mkWorkspaceEdit(edits:NormalizedEdits):vscode.WorkspaceEdit {
+    mkWorkspaceEdit(edits: NormalizedEdits): vscode.WorkspaceEdit {
         const edit = new vscode.WorkspaceEdit()
         for (const e of edits.array) { edit.replace(this.#uri, this.#ranges[e.trackIndex], e.newText) }
         return edit
@@ -245,33 +255,33 @@ export class TrackedDoc implements Tracker {
     /**
      * Checks whether the change to the range is expected.
      */
-    private findEditIndex(edits: NormalizedEdits, updatedRange:vscode.Range, newText:string): number|null {
+    private findEditIndex(edits: NormalizedEdits, updatedRange: vscode.Range, newText: string): number | null {
         const editArray = edits.array
         let l = 0
         let h = editArray.length - 1
         while (l <= h) {
-            const m = Math.floor((l + h)/2)
+            const m = Math.floor((l + h) / 2)
             const e = editArray[m]
             const r = this.#ranges[e.trackIndex]
             if (r.start.isEqual(updatedRange.start)) {
                 const isSame = r.end.isEqual(updatedRange.end) && e.newText === newText
                 return isSame ? m : null
             } else if (r.start.isBefore(updatedRange.start)) {
-                l = m+1
+                l = m + 1
             } else {
-                h = m-1
+                h = m - 1
             }
         }
         return null
     }
 
-    allExpected(edits: NormalizedEdits, changes:readonly vscode.TextDocumentContentChangeEvent[]):boolean {
+    allExpected(edits: NormalizedEdits, changes: readonly vscode.TextDocumentContentChangeEvent[]): boolean {
         const editArray = edits.array
         if (edits === null) return false
         if (changes.length !== editArray.length) return false
         if (editArray.length === 0) return false
 
-        const seen:(boolean|undefined)[] = new Array(editArray.length)
+        const seen: (boolean | undefined)[] = new Array(editArray.length)
         // Check to see if all changes are expected
         for (const ce of changes) {
             const idx = this.findEditIndex(edits, ce.range, ce.text)

@@ -1,5 +1,4 @@
 /**
- * @module
  * Interfaces for dealing with text positions in files.
  */
 
