@@ -175,11 +175,11 @@ namespace pirate {
 					for (size_t c_3 = 0; c_3 < 4; c_3++) {
 						for (size_t c_4 = 0; c_4 < 5; c_4++) {
 							for (size_t c_5 = 0; c_5 < 6; c_5++) {
-							const float* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5];
-							unsigned char* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
-							memcpy(&field_c, inptr, sizeof(uint32_t));
-							field_c = htobe32(field_c);
-							memcpy(outptr, &field_c, sizeof(uint32_t));
+								const float* inptr = &input->c[c_0][c_1][c_2][c_3][c_4][c_5];
+								unsigned char* outptr = &output->c[c_0][c_1][c_2][c_3][c_4][c_5][0];
+								memcpy(&field_c, inptr, sizeof(uint32_t));
+								field_c = htobe32(field_c);
+								memcpy(outptr, &field_c, sizeof(uint32_t));
 							}
 						}
 					}
