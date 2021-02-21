@@ -7,9 +7,9 @@ struct  Params {
     int stdout = -1;
     int stderr = -1;
     FILE* output = ::stdout;
-
+    /** Path to pattern file */
+    std::vector<const char*> knownExes;
     bool debug = false;
-    bool jsonOutput = false;
 
     std::string cmd;
     std::vector<std::string> args;

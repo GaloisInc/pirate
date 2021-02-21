@@ -19,6 +19,10 @@
 #include <string>
 #include <vector>
 
+/**
+ * @concatPath(X, y) prepends @x@ to @y@ with a path
+ * separator added if x does not end with '/'.
+ */
 static
 std::string concatPath(const std::string& p, const char* fname) {
     if (p.back() == '/') {
@@ -28,6 +32,9 @@ std::string concatPath(const std::string& p, const char* fname) {
     }
 }
 
+/**
+ * Search for the given name in the current path.
+ */
 static
 std::string findApp(char* nm) {
     const char* r = strrchr(nm, '/');
@@ -59,19 +66,26 @@ std::string findApp(char* nm) {
     exit(-1);
 }
 
+/**
+ * Show usage
+ */
 void showUsage(FILE* f, const char* exe) {
     fprintf(f, "Usage:\n");
     fprintf(f, "  %s --help: Show help\n", exe);
     fprintf(f, "  %s flags* cmd args\n", exe);
-    fprintf(f, "    --json: Emit output in json format\n");
     fprintf(f, "    --verbose|-v: Emit debugging information\n");
     fprintf(f, "    --output path: Path to emit collected information to (stdout is default)\n");
     fprintf(f, "    --stdout path: Path to redirect stdout to (stdout is default)\n");
     fprintf(f, "    --stdout path: Path to redirect stderr to (stderr is default)\n");
+    fprintf(f, "    --untraced path: Exe to skip tracing on (repeatable).\n");
+
     fprintf(f, "    cmd:  Program to trace.\n");
     fprintf(f, "    args: Command line arguments to cmd.\n");
 }
 
+/**
+ * Parse a file argument and open it for writing.
+ */
 FILE* parseFileArg(char* const*& curArg, char* const* endArg) {
     if (curArg == endArg) {
         fprintf(stderr, "Expected output file.\n");
@@ -86,6 +100,9 @@ FILE* parseFileArg(char* const*& curArg, char* const* endArg) {
     return r;
 }
 
+/**
+ * Parse a file descriptor argument and open it for writing.
+ */
 int parseFdArg(char* const*& curArg, char* const* endArg) {
     if (curArg == endArg) {
         fprintf(stderr, "Expected output file.\n");
@@ -121,9 +138,14 @@ void parseArgs(Params& params, int argc, char* const* argv, char*const* envp) {
         } else if (strcmp(*curArg, "--stderr") == 0) {
             ++curArg;
             params.stderr = parseFdArg(curArg, endArg);
-        } else if (strcmp(*curArg, "--json") == 0) {
+        } else if (strcmp(*curArg, "--untraced") == 0) {
             ++curArg;
-            params.jsonOutput = true;
+            if (curArg == endArg) {
+                fprintf(stderr, "Expected executable.\n");
+                exit(-1);
+            }
+            params.knownExes.push_back(*curArg);
+            ++curArg;
         } else if ((strcmp(*curArg, "--verbose") == 0) || (strcmp(*curArg, "-v") == 0)) {
             ++curArg;
             params.debug = true;
