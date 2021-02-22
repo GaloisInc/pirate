@@ -47,10 +47,10 @@ inline indent_facet::result indent_facet::do_out(state_type &need_indentation,
 		if ((state(need_indentation) == 0) && (*from != '\n')) {
 			res = std::codecvt_base::ok;
 			state(need_indentation) = 1;
-			for(int i=0; i<m_indentation_level && to+1 < to_end; ++i){
+			for(int i=0; i<m_indentation_level; ++i){
 				*to = '\t'; ++to;
 			}
-			if (to == to_end) {
+			if (to >= to_end) {
 				res = std::codecvt_base::partial;
 				break;
 			}
