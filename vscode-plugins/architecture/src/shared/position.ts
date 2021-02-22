@@ -1,4 +1,9 @@
 /**
+ * @module
+ * Interfaces for dealing with text positions in files.
+ */
+
+/**
  * A position including character index, line and column.
  */
 export interface TextPosition {

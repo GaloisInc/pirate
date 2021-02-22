@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Tools for manipulating a document containing tracked locations by sending
+ * text updates to update those locations.
+ */
+
 import * as vscode from 'vscode'
 
 import * as A from '../shared/architecture'
@@ -106,6 +112,7 @@ export interface LocationInfo {
     trackIdx: A.TrackIndex
     loc: SourceLocation
 }
+
 /**
  * A tracked document maintains a set of locations in a VSCode document
  * at a specific URI.

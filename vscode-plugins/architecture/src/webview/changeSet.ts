@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Interface via which changes to the documents are batched before being sent
+ * to the document updater for processing.
+ */
+
 import { common } from '../shared/webviewProtocol.js'
 
 export type TrackedIndex = number
