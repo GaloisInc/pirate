@@ -52,10 +52,10 @@ namespace pirate {
 
 		static struct Zero::Zero fromBuffer(std::vector<char> const& buf) {
 			const struct Zero::Zero_wire* input = (const struct Zero::Zero_wire*) buf.data();
-			if (buf.size() != sizeof(struct Zero::Zero)) {
+			if (buf.size() != sizeof(struct Zero::Zero_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Zero::Zero type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Zero::Zero));
+					std::to_string(sizeof(struct Zero::Zero_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

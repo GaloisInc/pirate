@@ -91,10 +91,10 @@ namespace pirate {
 
 		static struct PNT::Position fromBuffer(std::vector<char> const& buf) {
 			const struct PNT::Position_wire* input = (const struct PNT::Position_wire*) buf.data();
-			if (buf.size() != sizeof(struct PNT::Position)) {
+			if (buf.size() != sizeof(struct PNT::Position_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for PNT::Position type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct PNT::Position));
+					std::to_string(sizeof(struct PNT::Position_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -145,10 +145,10 @@ namespace pirate {
 
 		static struct PNT::Distance fromBuffer(std::vector<char> const& buf) {
 			const struct PNT::Distance_wire* input = (const struct PNT::Distance_wire*) buf.data();
-			if (buf.size() != sizeof(struct PNT::Distance)) {
+			if (buf.size() != sizeof(struct PNT::Distance_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for PNT::Distance type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct PNT::Distance));
+					std::to_string(sizeof(struct PNT::Distance_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

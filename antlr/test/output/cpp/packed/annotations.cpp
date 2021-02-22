@@ -117,10 +117,10 @@ namespace pirate {
 
 		static struct Annotations_Module::Annotation_Struct_Example fromBuffer(std::vector<char> const& buf) {
 			const struct Annotations_Module::Annotation_Struct_Example_wire* input = (const struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
-			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example)) {
+			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Struct_Example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example));
+					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

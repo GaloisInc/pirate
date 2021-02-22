@@ -229,10 +229,10 @@ namespace pirate {
 
 		static struct Primitives::Primitives fromBuffer(std::vector<char> const& buf) {
 			const struct Primitives::Primitives_wire* input = (const struct Primitives::Primitives_wire*) buf.data();
-			if (buf.size() != sizeof(struct Primitives::Primitives)) {
+			if (buf.size() != sizeof(struct Primitives::Primitives_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Primitives::Primitives type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Primitives::Primitives));
+					std::to_string(sizeof(struct Primitives::Primitives_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
