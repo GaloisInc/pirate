@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Interfaces for recurring fields when dealing with geometric figures.
+ */
+
 export interface Bottom<T> { readonly bottom: T }
 export interface Height<T> { readonly height: T }
 export interface Left<T> { readonly left: T }

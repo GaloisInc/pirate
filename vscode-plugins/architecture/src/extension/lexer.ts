@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Implements the lexical analysis of the piratemap file format.
+ */
+
 import { TextPosition, TextRange } from '../shared/position'
 
 export interface Identifier extends TextRange {

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Interfaces capturing the abstract syntax of the piratemap file.
+ */
+
 import { TextLocated, TextRange } from './position'
 
 /** Integer that identifies a source locations in the document. */

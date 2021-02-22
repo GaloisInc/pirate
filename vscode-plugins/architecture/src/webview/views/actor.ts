@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Actor view, responsible for displaying itself and its ports.
+ */
+
 import * as A from '../../shared/architecture.js'
 import { DraggableRectangle } from '../draggableRectangle.js'
 import { SystemServices } from '../systemServices.js'

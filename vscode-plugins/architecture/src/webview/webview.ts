@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Sets up the webview component of the plug-in, and gives the implementation
+ * of the system services.
+ */
+
 import * as A from '../shared/architecture.js'
 import { common, extension, webview } from '../shared/webviewProtocol.js'
 

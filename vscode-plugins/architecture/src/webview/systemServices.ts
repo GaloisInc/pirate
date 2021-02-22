@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Interface for operations needed pervasively through the program that require
+ * knowledge of the global state of the world.
+ */
+
 import * as A from '../shared/architecture.js'
 
 import { ChangeSet, TrackedIndex } from './changeSet.js'
@@ -45,6 +51,5 @@ export interface SystemServices {
         _parser: (_newValue: string) => V | undefined,
         _listener: (_newValue: V) => void,
     ): void
-
 
 }

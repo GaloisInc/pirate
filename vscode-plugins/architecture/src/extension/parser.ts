@@ -1,4 +1,9 @@
-//import * as vscode from 'vscode'
+/**
+ * @module
+ * Implements the semantic analysis of the piratemap file format.
+ */
+
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import * as A from '../shared/architecture'
 import { StringField, TrackedValue } from '../shared/architecture'
@@ -185,7 +190,7 @@ const stringField: Parser<StringField> = (p: ParserStream) => {
 }
 
 /**
- * Parse a string field
+ * Parse a length with unit field
  */
 const lengthParser: Parser<A.Length> = (p: ParserStream) => {
     const t = stringParser(p)
@@ -324,8 +329,7 @@ const locationField: Parser<A.LocationIndex> = (p: ParserStream) => {
     }
     lastIdx -= linePair.count
     if (v.charAt(lastIdx) !== ':') {
-        p.pushError(t, `Could not find line separator ${
-             colPair.value} ${linePair.value} ${lastIdx.toString()} ${v.charAt(lastIdx)} ${linePair.count}`)
+        p.pushError(t, `Could not find line separator ${colPair.value} ${linePair.value} ${lastIdx.toString()} ${v.charAt(lastIdx)} ${linePair.count}`)
         return undefined
     }
 
@@ -342,14 +346,14 @@ const locationField: Parser<A.LocationIndex> = (p: ParserStream) => {
 
 const enum Arity { Required, Array }
 
-
 interface ObjectField {
     fieldName: string
     lexName: string
     arity: Arity
-    setter: (p: ParserStream
-        , obj: any
-        , key: lexer.Identifier
+    setter: (
+        p: ParserStream,
+        obj: any,
+        key: lexer.Identifier,
     ) => boolean
 }
 

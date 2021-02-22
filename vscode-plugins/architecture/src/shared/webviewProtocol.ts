@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Interfaces for communication between the extension proper and its webview
+ * component.
+ */
+
 import * as A from './architecture.js'
 
 // Namespace for types used in multiple protocol directions.
