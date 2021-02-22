@@ -113,7 +113,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Annotations_Module::Annotation_Struct_Example> {
 		static void toBuffer(struct Annotations_Module::Annotation_Struct_Example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Annotations_Module::Annotation_Struct_Example));
+			buf.resize(sizeof(struct Annotations_Module::Annotation_Struct_Example_wire));
 			struct Annotations_Module::Annotation_Struct_Example_wire* output = (struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
 			const struct Annotations_Module::Annotation_Struct_Example* input = &val;
 			toWireType(input, output);
@@ -121,10 +121,10 @@ namespace pirate {
 
 		static struct Annotations_Module::Annotation_Struct_Example fromBuffer(std::vector<char> const& buf) {
 			const struct Annotations_Module::Annotation_Struct_Example_wire* input = (const struct Annotations_Module::Annotation_Struct_Example_wire*) buf.data();
-			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example)) {
+			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Struct_Example_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Struct_Example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example));
+					std::to_string(sizeof(struct Annotations_Module::Annotation_Struct_Example_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -196,7 +196,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Annotations_Module::Annotation_Union_Example> {
 		static void toBuffer(struct Annotations_Module::Annotation_Union_Example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Annotations_Module::Annotation_Union_Example));
+			buf.resize(sizeof(struct Annotations_Module::Annotation_Union_Example_wire));
 			struct Annotations_Module::Annotation_Union_Example_wire* output = (struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
 			const struct Annotations_Module::Annotation_Union_Example* input = &val;
 			toWireType(input, output);
@@ -204,10 +204,10 @@ namespace pirate {
 
 		static struct Annotations_Module::Annotation_Union_Example fromBuffer(std::vector<char> const& buf) {
 			const struct Annotations_Module::Annotation_Union_Example_wire* input = (const struct Annotations_Module::Annotation_Union_Example_wire*) buf.data();
-			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Union_Example)) {
+			if (buf.size() != sizeof(struct Annotations_Module::Annotation_Union_Example_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Annotations_Module::Annotation_Union_Example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Annotations_Module::Annotation_Union_Example));
+					std::to_string(sizeof(struct Annotations_Module::Annotation_Union_Example_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

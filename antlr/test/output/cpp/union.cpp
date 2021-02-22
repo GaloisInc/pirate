@@ -106,7 +106,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct UnionType::Union_Example> {
 		static void toBuffer(struct UnionType::Union_Example const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct UnionType::Union_Example));
+			buf.resize(sizeof(struct UnionType::Union_Example_wire));
 			struct UnionType::Union_Example_wire* output = (struct UnionType::Union_Example_wire*) buf.data();
 			const struct UnionType::Union_Example* input = &val;
 			toWireType(input, output);
@@ -114,10 +114,10 @@ namespace pirate {
 
 		static struct UnionType::Union_Example fromBuffer(std::vector<char> const& buf) {
 			const struct UnionType::Union_Example_wire* input = (const struct UnionType::Union_Example_wire*) buf.data();
-			if (buf.size() != sizeof(struct UnionType::Union_Example)) {
+			if (buf.size() != sizeof(struct UnionType::Union_Example_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for UnionType::Union_Example type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct UnionType::Union_Example));
+					std::to_string(sizeof(struct UnionType::Union_Example_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

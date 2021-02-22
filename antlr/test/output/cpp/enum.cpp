@@ -71,7 +71,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct EnumType::Week_Interval> {
 		static void toBuffer(struct EnumType::Week_Interval const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct EnumType::Week_Interval));
+			buf.resize(sizeof(struct EnumType::Week_Interval_wire));
 			struct EnumType::Week_Interval_wire* output = (struct EnumType::Week_Interval_wire*) buf.data();
 			const struct EnumType::Week_Interval* input = &val;
 			toWireType(input, output);
@@ -79,10 +79,10 @@ namespace pirate {
 
 		static struct EnumType::Week_Interval fromBuffer(std::vector<char> const& buf) {
 			const struct EnumType::Week_Interval_wire* input = (const struct EnumType::Week_Interval_wire*) buf.data();
-			if (buf.size() != sizeof(struct EnumType::Week_Interval)) {
+			if (buf.size() != sizeof(struct EnumType::Week_Interval_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for EnumType::Week_Interval type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct EnumType::Week_Interval));
+					std::to_string(sizeof(struct EnumType::Week_Interval_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
