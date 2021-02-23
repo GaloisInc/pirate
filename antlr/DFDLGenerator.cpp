@@ -70,7 +70,7 @@ set_defaults(Element* defaults, bool packed)
     defaults->SetAttribute("encoding", "utf-8");
     defaults->SetAttribute("encodingErrorPolicy", "replace");
     defaults->SetAttribute("escapeSchemeRef", "");
-    defaults->SetAttribute("fillByte", "%#r20;");
+    defaults->SetAttribute("fillByte", "%NUL;");
     defaults->SetAttribute("floating", "no");
     defaults->SetAttribute("ignoreCase", "no");
     defaults->SetAttribute("initiatedContent", "no");
