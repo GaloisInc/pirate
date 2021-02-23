@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Connection view. A connection is displayed as a link connection its
+ * endpoints. As such, it has no "proper" coordinates, and must instead rely on
+ * staying up-to-date with the coordinates of the endpoints it links.
+ */
+
 import * as A from '../../shared/architecture.js'
 import * as M from '../mathematics.js'
 import * as svg from '../svg.js'

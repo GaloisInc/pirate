@@ -140,7 +140,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Arrays::Union_Array_Field> {
 		static void toBuffer(struct Arrays::Union_Array_Field const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Arrays::Union_Array_Field));
+			buf.resize(sizeof(struct Arrays::Union_Array_Field_wire));
 			struct Arrays::Union_Array_Field_wire* output = (struct Arrays::Union_Array_Field_wire*) buf.data();
 			const struct Arrays::Union_Array_Field* input = &val;
 			toWireType(input, output);
@@ -148,10 +148,10 @@ namespace pirate {
 
 		static struct Arrays::Union_Array_Field fromBuffer(std::vector<char> const& buf) {
 			const struct Arrays::Union_Array_Field_wire* input = (const struct Arrays::Union_Array_Field_wire*) buf.data();
-			if (buf.size() != sizeof(struct Arrays::Union_Array_Field)) {
+			if (buf.size() != sizeof(struct Arrays::Union_Array_Field_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Arrays::Union_Array_Field type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Arrays::Union_Array_Field));
+					std::to_string(sizeof(struct Arrays::Union_Array_Field_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -228,7 +228,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct Arrays::Struct_Array_Field> {
 		static void toBuffer(struct Arrays::Struct_Array_Field const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct Arrays::Struct_Array_Field));
+			buf.resize(sizeof(struct Arrays::Struct_Array_Field_wire));
 			struct Arrays::Struct_Array_Field_wire* output = (struct Arrays::Struct_Array_Field_wire*) buf.data();
 			const struct Arrays::Struct_Array_Field* input = &val;
 			toWireType(input, output);
@@ -236,10 +236,10 @@ namespace pirate {
 
 		static struct Arrays::Struct_Array_Field fromBuffer(std::vector<char> const& buf) {
 			const struct Arrays::Struct_Array_Field_wire* input = (const struct Arrays::Struct_Array_Field_wire*) buf.data();
-			if (buf.size() != sizeof(struct Arrays::Struct_Array_Field)) {
+			if (buf.size() != sizeof(struct Arrays::Struct_Array_Field_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for Arrays::Struct_Array_Field type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct Arrays::Struct_Array_Field));
+					std::to_string(sizeof(struct Arrays::Struct_Array_Field_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

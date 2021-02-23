@@ -145,7 +145,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct NestedTypes::Foo> {
 		static void toBuffer(struct NestedTypes::Foo const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct NestedTypes::Foo));
+			buf.resize(sizeof(struct NestedTypes::Foo_wire));
 			struct NestedTypes::Foo_wire* output = (struct NestedTypes::Foo_wire*) buf.data();
 			const struct NestedTypes::Foo* input = &val;
 			toWireType(input, output);
@@ -153,10 +153,10 @@ namespace pirate {
 
 		static struct NestedTypes::Foo fromBuffer(std::vector<char> const& buf) {
 			const struct NestedTypes::Foo_wire* input = (const struct NestedTypes::Foo_wire*) buf.data();
-			if (buf.size() != sizeof(struct NestedTypes::Foo)) {
+			if (buf.size() != sizeof(struct NestedTypes::Foo_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::Foo type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct NestedTypes::Foo));
+					std::to_string(sizeof(struct NestedTypes::Foo_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -199,7 +199,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct NestedTypes::Bar> {
 		static void toBuffer(struct NestedTypes::Bar const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct NestedTypes::Bar));
+			buf.resize(sizeof(struct NestedTypes::Bar_wire));
 			struct NestedTypes::Bar_wire* output = (struct NestedTypes::Bar_wire*) buf.data();
 			const struct NestedTypes::Bar* input = &val;
 			toWireType(input, output);
@@ -207,10 +207,10 @@ namespace pirate {
 
 		static struct NestedTypes::Bar fromBuffer(std::vector<char> const& buf) {
 			const struct NestedTypes::Bar_wire* input = (const struct NestedTypes::Bar_wire*) buf.data();
-			if (buf.size() != sizeof(struct NestedTypes::Bar)) {
+			if (buf.size() != sizeof(struct NestedTypes::Bar_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::Bar type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct NestedTypes::Bar));
+					std::to_string(sizeof(struct NestedTypes::Bar_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -273,7 +273,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct NestedTypes::OuterStruct> {
 		static void toBuffer(struct NestedTypes::OuterStruct const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct NestedTypes::OuterStruct));
+			buf.resize(sizeof(struct NestedTypes::OuterStruct_wire));
 			struct NestedTypes::OuterStruct_wire* output = (struct NestedTypes::OuterStruct_wire*) buf.data();
 			const struct NestedTypes::OuterStruct* input = &val;
 			toWireType(input, output);
@@ -281,10 +281,10 @@ namespace pirate {
 
 		static struct NestedTypes::OuterStruct fromBuffer(std::vector<char> const& buf) {
 			const struct NestedTypes::OuterStruct_wire* input = (const struct NestedTypes::OuterStruct_wire*) buf.data();
-			if (buf.size() != sizeof(struct NestedTypes::OuterStruct)) {
+			if (buf.size() != sizeof(struct NestedTypes::OuterStruct_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::OuterStruct type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct NestedTypes::OuterStruct));
+					std::to_string(sizeof(struct NestedTypes::OuterStruct_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -378,7 +378,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct NestedTypes::OuterUnion> {
 		static void toBuffer(struct NestedTypes::OuterUnion const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct NestedTypes::OuterUnion));
+			buf.resize(sizeof(struct NestedTypes::OuterUnion_wire));
 			struct NestedTypes::OuterUnion_wire* output = (struct NestedTypes::OuterUnion_wire*) buf.data();
 			const struct NestedTypes::OuterUnion* input = &val;
 			toWireType(input, output);
@@ -386,10 +386,10 @@ namespace pirate {
 
 		static struct NestedTypes::OuterUnion fromBuffer(std::vector<char> const& buf) {
 			const struct NestedTypes::OuterUnion_wire* input = (const struct NestedTypes::OuterUnion_wire*) buf.data();
-			if (buf.size() != sizeof(struct NestedTypes::OuterUnion)) {
+			if (buf.size() != sizeof(struct NestedTypes::OuterUnion_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::OuterUnion type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct NestedTypes::OuterUnion));
+					std::to_string(sizeof(struct NestedTypes::OuterUnion_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);
@@ -483,7 +483,7 @@ namespace pirate {
 	template<>
 	struct Serialization<struct NestedTypes::ScopedOuterUnion> {
 		static void toBuffer(struct NestedTypes::ScopedOuterUnion const& val, std::vector<char>& buf) {
-			buf.resize(sizeof(struct NestedTypes::ScopedOuterUnion));
+			buf.resize(sizeof(struct NestedTypes::ScopedOuterUnion_wire));
 			struct NestedTypes::ScopedOuterUnion_wire* output = (struct NestedTypes::ScopedOuterUnion_wire*) buf.data();
 			const struct NestedTypes::ScopedOuterUnion* input = &val;
 			toWireType(input, output);
@@ -491,10 +491,10 @@ namespace pirate {
 
 		static struct NestedTypes::ScopedOuterUnion fromBuffer(std::vector<char> const& buf) {
 			const struct NestedTypes::ScopedOuterUnion_wire* input = (const struct NestedTypes::ScopedOuterUnion_wire*) buf.data();
-			if (buf.size() != sizeof(struct NestedTypes::ScopedOuterUnion)) {
+			if (buf.size() != sizeof(struct NestedTypes::ScopedOuterUnion_wire)) {
 				static const std::string error_msg =
 					std::string("pirate::Serialization::fromBuffer() for NestedTypes::ScopedOuterUnion type did not receive a buffer of size ") +
-					std::to_string(sizeof(struct NestedTypes::ScopedOuterUnion));
+					std::to_string(sizeof(struct NestedTypes::ScopedOuterUnion_wire));
 				throw std::length_error(error_msg);
 			}
 			return fromWireType(input);

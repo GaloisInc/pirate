@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Port view, currently only ever occurring on actors.
+ */
+
 import * as A from '../../shared/architecture.js'
 import { ChangeSet } from '../changeSet.js'
 import * as D from '../dragHandlers.js'

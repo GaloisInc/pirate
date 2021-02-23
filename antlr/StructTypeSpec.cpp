@@ -217,7 +217,7 @@ void StructTypeSpec::cppDeclareSerializationFunction(std::ostream &ostream) {
     ostream << " " << "{" << std::endl;
     ostream << indent_manip::push;
     ostream << "buf" << "." << "resize" << "(";
-    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << "_wire" << ")";
     ostream << ")" << ";" << std::endl;
     ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << "*";
     ostream << " " << "output" << " " << "=" << " ";
@@ -257,7 +257,7 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << "(" << "const" << " " << "struct" << " " << namespacePrefix << identifier << "_wire" << "*" << ")";
     ostream << " " << "buf" << "." << "data" << "(" << ")" << ";" << std::endl;
     ostream << "if" << " " << "(" << "buf" << "." << "size" << "(" << ")" << " " << "!=" << " ";
-    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << ")";
+    ostream << "sizeof(" << "struct" << " " << namespacePrefix << identifier << "_wire" << ")";
     ostream << ")" << " " << "{" << std::endl;
     ostream << indent_manip::push;
     ostream << "static" << " " << "const" << " " << "std" << "::" << "string" << " ";
@@ -269,7 +269,7 @@ void StructTypeSpec::cppDeclareDeserializationFunction(std::ostream &ostream) {
     ostream << " type did not receive a buffer of size " << "\"";
     ostream << ")" << " " << "+" << std::endl;
     ostream << "std" << "::" << "to_string" << "(" << "sizeof" << "(";
-    ostream << "struct" << " " << namespacePrefix << identifier << ")" << ")" <<";" << std::endl;
+    ostream << "struct" << " " << namespacePrefix << identifier << "_wire" << ")" << ")" <<";" << std::endl;
     ostream << indent_manip::pop;
     ostream << "throw" << " " << "std" << "::" << "length_error" << "(";
     ostream << "error_msg" << ")" << ";" << std::endl;

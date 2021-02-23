@@ -1,4 +1,9 @@
 /**
+ * @module
+ * Interfaces and functions for handling drag events in the view.
+ */
+
+/**
  * Interface needed for addSVGDragHandlers to make an element dragable.
  */
 export

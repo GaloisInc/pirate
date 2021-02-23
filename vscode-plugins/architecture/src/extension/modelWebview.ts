@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Defines the ModelWebview class capturing the state of a webview instance for
+ * a given URI, as well as the interface for their communication with the
+ * extension.
+ */
+
 import * as fs from 'fs'
 import * as path from 'path'
 
