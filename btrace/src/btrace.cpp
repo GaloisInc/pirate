@@ -73,12 +73,8 @@ void showUsage(FILE* f, const char* exe) {
     fprintf(f, "Usage:\n");
     fprintf(f, "  %s --help: Show help\n", exe);
     fprintf(f, "  %s flags* cmd args\n", exe);
-    fprintf(f, "    --verbose|-v: Emit debugging information\n");
-    fprintf(f, "    --output path: Path to emit collected information to (stdout is default)\n");
-    fprintf(f, "    --stdout path: Path to redirect stdout to (stdout is default)\n");
-    fprintf(f, "    --stdout path: Path to redirect stderr to (stderr is default)\n");
     fprintf(f, "    --untraced path: Exe to skip tracing on (repeatable).\n");
-
+    fprintf(f, "    --verbose|-v: Emit debugging information\n");
     fprintf(f, "    cmd:  Program to trace.\n");
     fprintf(f, "    args: Command line arguments to cmd.\n");
 }
@@ -129,16 +125,7 @@ void parseArgs(Params& params, int argc, char* const* argv, char*const* envp) {
             showUsage(stdout, argv[0]);
             exit(0);
         }
-        if (strcmp(*curArg, "--output") == 0) {
-            ++curArg;
-            params.output = parseFileArg(curArg, endArg);
-        } else if (strcmp(*curArg, "--stdout") == 0) {
-            ++curArg;
-            params.stdout = parseFdArg(curArg, endArg);
-        } else if (strcmp(*curArg, "--stderr") == 0) {
-            ++curArg;
-            params.stderr = parseFdArg(curArg, endArg);
-        } else if (strcmp(*curArg, "--untraced") == 0) {
+        if (strcmp(*curArg, "--untraced") == 0) {
             ++curArg;
             if (curArg == endArg) {
                 fprintf(stderr, "Expected executable.\n");

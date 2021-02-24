@@ -3,7 +3,9 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 #include <sys/ptrace.h>
+#include <sys/signalfd.h>
 #include <sys/syscall.h>
 #include <sys/user.h>
 #include <sys/wait.h>
@@ -14,7 +16,6 @@
 #include <sstream>
 
 #include "event.h"
-#include "rapidjson/filewritestream.h"
 
 namespace {
 
@@ -146,9 +147,9 @@ public:
     // Set of executable paths that we do not trace.
     std::set<std::string> untracedExes;
 
-    state_t(bool debug, FILE* f)
+    state_t(bool debug)
       : debug(debug),
-        os(f, writeBuffer, sizeof(writeBuffer)) {
+        os(::stdout, writeBuffer, sizeof(writeBuffer)) {
     }
 
     state_t(const state_t&) = delete;
@@ -170,11 +171,11 @@ public:
         // If element inserted
         if (r.second) {
             if (!this->alive.insert(p).second) {
-                logError(p, "process already inserted in alive set.");
+                logError(os, p, "process already inserted in alive set.");
             }
             r.first->second.running = true;
         } else {
-            logError(p, "process already inserted in process map.");
+            logError(os, p, "process already inserted in process map.");
         }
         return r.first->second;
     }
@@ -185,7 +186,7 @@ public:
     void stopMonitoring(pid_t p, process_t& ps) {
         size_t cnt = this->alive.erase(p);
         if (cnt == 0 || !ps.running) {
-            logError(p, "internal error: stopMonitoring when already stopped.");
+            logError(os, p, "internal error: stopMonitoring when already stopped.");
         }
         ps.running = false;
     }
@@ -209,7 +210,7 @@ public:
      */
     void resumeUntilSyscall(pid_t p, process_t& ps, int signal = 0) {
         if (ptrace(PTRACE_SYSCALL, p, 0, signal)) {
-            printFatalProcessError(this->os, p, "ptrace(PTRACE_SYSCALL, ...) failed (errno = %d).\n", p, errno);
+            logFatalError(this->os, p, "ptrace(PTRACE_SYSCALL, ...) failed (errno = %d).", p, errno);
             stopMonitoring(p, ps);
         }
     }
@@ -222,12 +223,11 @@ public:
      */
     void resumeWithoutMonitoring(pid_t p) {
         if (ptrace(PTRACE_CONT, p, 0, 0)) {
-            logError(p, "ptrace(PTRACE_CONT, ...) failed (errno = %d).", errno);
+            logError(os, p, "ptrace(PTRACE_CONT, ...) failed (errno = %d).", errno);
         }
     }
 
     void debugLog(pid_t p, const char* fmt, ...) const;
-    void logError(pid_t p, const char* fmt, ...);
 
     friend void loop(state_t& s);
 };
@@ -254,28 +254,12 @@ void state_t::debugLog(pid_t p, const char* fmt, ...) const {
     int cnt = vasprintf(&msg, fmt, vl);
     va_end(vl);
     if (cnt == -1) {
-        const char* msg = "internal error: log failed.\n";
+        const char* msg = "internal error: log failed.";
         write(STDERR_FILENO, msg, strlen(msg));
         return;
     }
     debugDump(p, this->alive, msg);
     free(msg);
-}
-
-void state_t::logError(pid_t p, const char* fmt, ...) {
-    char* s;
-    va_list vl;
-    va_start(vl, fmt);
-    int cnt = vasprintf(&s, fmt, vl);
-    va_end(vl);
-    if (cnt == -1) {
-        const char* msg = "internal error: log failed.\n";
-        printMessage(os, false, p, msg);
-        return;
-    }
-
-    printMessage(os, false, p, s);
-    free(s);
 }
 
 /**
@@ -290,9 +274,9 @@ void state_t::syscallEnterDone(pid_t p, process_t& ps, uint64_t syscallNo) {
 
 void state_t::syscallExitDone(pid_t p, process_t& ps, uint64_t syscallNo) {
     if (!ps.inSyscall) {
-        logError(p, "Entered syscall when already in one.");
+        logError(os, p, "Entered syscall when already in one.");
     } else if (ps.lastSyscall != syscallNo) {
-        logError(p, "Syscall enter %d not matched by syscall exit %d.", ps.lastSyscall, syscallNo);
+        logError(os, p, "Syscall enter %d not matched by syscall exit %d.", ps.lastSyscall, syscallNo);
     }
     ps.inSyscall = false;
     this->resumeUntilSyscall(p, ps);
@@ -306,22 +290,22 @@ void state_t::syscallExitDone(pid_t p, process_t& ps, uint64_t syscallNo) {
 bool populateCwdExe(state_t& s, pid_t p, execve_t& execveState) {
     char* dirPath;
     if (asprintf(&dirPath, "/proc/%d", p) == -1) {
-        s.logError(p, "Error in asprintf (errno = %d).", errno);
+        logError(s.os, p, "Error in asprintf (errno = %d).", errno);
         return false;
     }
     int dirFd = open(dirPath, O_DIRECTORY | O_PATH);
     if (dirFd == -1) {
         free(dirPath);
-        s.logError(p, "Error opening procfs dir (errno = %d).", errno);
+        logError(s.os, p, "Error opening procfs dir (errno = %d).", errno);
         return false;
     }
     free(dirPath);
 
     if (!myReadlinkAt(dirFd, "cwd", execveState.cwdPath)) {
-        s.logError(p, "Failed to read cwd path (errno = %d).", errno);
+        logError(s.os, p, "Failed to read cwd path (errno = %d).", errno);
     }
     if (!myReadlinkAt(dirFd, "exe", execveState.exePath)) {
-        s.logError(p, "Failed to read exe path (errno = %d).", errno);
+        logError(s.os, p, "Failed to read exe path (errno = %d).", errno);
     }
     bool traced = s.untracedExes.count(execveState.cmd) == 0;
     printExecve(s.os, p, execveState, traced);
@@ -333,11 +317,11 @@ void execveInvoke(state_t& s, pid_t p, process_t& ps, const struct user_regs_str
     execve_t& e = ps.execve.back();
     uint64_t errorAddr;
     if (!readChars(p, regs.rdi, e.cmd, errorAddr)) {
-        s.logError(p, "Error reading execve path (addr = %lu, errno = %d).", errorAddr, errno);
+        logError(s.os, p, "Error reading execve path (addr = %lu, errno = %d).", errorAddr, errno);
     } else if (!readArgs(p, regs.rsi, e.args, errorAddr)) {
-        s.logError(p, "Error reading execve args (addr = %lu;, errno = %d).", errorAddr, errno);
+        logError(s.os, p, "Error reading execve args (addr = %lu;, errno = %d).", errorAddr, errno);
     } else if (!readArgs(p, regs.rdx, e.env, errorAddr)) {
-        s.logError(p, "Error reading execve env (addr = %lu, errno = %d).", errorAddr, errno);
+        logError(s.os, p, "Error reading execve env (addr = %lu, errno = %d).", errorAddr, errno);
     }
     s.syscallEnterDone(p, ps, SYS_execve);
 }
@@ -347,12 +331,12 @@ void execveInvoke(state_t& s, pid_t p, process_t& ps, const struct user_regs_str
  */
 void execveReturn(state_t& s, pid_t p,  process_t& ps, const struct user_regs_struct& regs) {
     if (ps.execve.empty()) {
-        s.logError(p, "execve return unmatched.");
+        logError(s.os, p, "execve return unmatched.");
         return;
     }
     execve_t& e = ps.execve.back();
     if (regs.rax != 0) {
-        s.logError(p, "execve failed (error = %llu).", regs.rax);
+        logError(s.os, p, "execve failed (error = %llu).", regs.rax);
         return;
     }
     if (populateCwdExe(s, p, e)) {
@@ -371,10 +355,10 @@ static void clonevforkReturn(state_t& s, pid_t p, const struct user_regs_struct&
     if (ptrace(PTRACE_ATTACH, newPid, NULL, NULL)) {
         switch (errno) {
         case EPERM:
-            s.logError(newPid, "Process already being traced.", errno);
+            logError(s.os, newPid, "Process already being traced.", errno);
             break;
         default:
-            s.logError(newPid, "ptrace(PTRACE_ATTACH, ...) failed (errno = %d).", errno);
+            logError(s.os, newPid, "ptrace(PTRACE_ATTACH, ...) failed (errno = %d).", errno);
             break;
 
         }
@@ -396,7 +380,7 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
     case 0x85:
         struct user_regs_struct regs;
         if (ptrace(PTRACE_GETREGS, p, NULL, &regs)) {
-            printFatalProcessError(s.os, p, "ptrace(PTRACE_GETREGS, ..) failed (errno = %d).\n", errno);
+            logFatalError(s.os, p, "ptrace(PTRACE_GETREGS, ..) failed (errno = %d).", errno);
             s.stopMonitoring(p, ps);
             s.resumeWithoutMonitoring(p);
             return;
@@ -428,14 +412,14 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
             case -1: // Special error code for no-return calls.
                 if (   ps.lastSyscall != SYS_rt_sigreturn
                     && ps.lastSyscall != SYS_clone) {
-                    s.logError(p, "syscall error on %ld.", ps.lastSyscall);
+                    logError(s.os, p, "syscall error on %ld.", ps.lastSyscall);
                 }
                 s.resumeUntilSyscall(p, ps);
                 break;
             case SYS_clone: // 56
             case SYS_vfork: // 58
                 if (ps.lastSyscall != regs.orig_rax) {
-                    s.logError(p, "syscall exit %ld (expected = %d).",
+                    logError(s.os, p, "syscall exit %ld (expected = %d).",
                        regs.orig_rax, ps.lastSyscall);
                 }
                 clonevforkReturn(s, p, regs);
@@ -443,14 +427,14 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
                 break;
             case SYS_execve: // 59
                 if (ps.lastSyscall != regs.orig_rax) {
-                    s.logError(p, "syscall exit %ld (expected = %d).",
+                    logError(s.os, p, "syscall exit %ld (expected = %d).",
                        regs.orig_rax, ps.lastSyscall);
                 }
                 execveReturn(s, p, ps, regs);
                 break;
             default:
                 if (ps.lastSyscall != regs.orig_rax) {
-                    s.logError(p, "syscall exit %ld (expected = %d).",
+                    logError(s.os, p, "syscall exit %ld (expected = %d).",
                        regs.orig_rax, ps.lastSyscall);
                 }
                 s.resumeUntilSyscall(p, ps);
@@ -466,7 +450,7 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
             if (!isExecTrap) {
                 s.resumeUntilSyscall(p, ps, 0);
             } else if (!(ps.inSyscall && ps.lastSyscall == SYS_execve)) {
-                s.logError(p, "Exec SIGTRAP not in execve.", status >> 8);
+                logError(s.os, p, "Exec SIGTRAP not in execve.", status >> 8);
                 s.resumeUntilSyscall(p, ps, 0);
             } else {
                 s.resumeUntilSyscall(p, ps, 0);
@@ -484,9 +468,9 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
             if (ptrace(PTRACE_SETOPTIONS, p, 0, PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC)) {
                 switch (errno) {
                 case ESRCH:
-                    printFatalProcessError(s.os, p, "tracesysgood failed - no such process.\n", p);
+                    logFatalError(s.os, p, "tracesysgood failed - no such process.", p);
                 default:
-                    printFatalProcessError(s.os, p, "tracesysgood failed %d.\n", p, errno);
+                    logFatalError(s.os, p, "tracesysgood failed %d.", p, errno);
                 }
                 s.stopMonitoring(p, ps);
                 s.resumeWithoutMonitoring(p);
@@ -499,24 +483,24 @@ static void processStopped(state_t& s, pid_t p, process_t& ps, int status) {
         break;
     default:
         s.debugLog(p, "SIGNAL %d", WSTOPSIG(status));
-        s.logError(p, "Unexpected signal %d.", WSTOPSIG(status));
+        logError(s.os, p, "Unexpected signal %d.", WSTOPSIG(status));
         s.resumeUntilSyscall(p, ps, signal);
     }
 }
 
-void loop(state_t& s) {
+void loop(state_t& s, const struct signalfd_siginfo& siginfo) {
     int status;
     pid_t p = wait(&status);
     if (p == -1) {
         switch (errno) {
         case ECHILD:
-            s.logError(p, "wait failed due to no children.");
+            logError(s.os, p, "wait failed due to no children.");
             return;
         case EINTR:
-            s.logError(p, "Unexpected signal in wait.");
+            logError(s.os, p, "Unexpected signal in wait.");
             return;
         default:
-            s.logError(p, "wait failed %d.", errno);
+            logError(s.os, p, "wait failed (errno = %d).", errno);
             return;
         }
     }
@@ -524,7 +508,7 @@ void loop(state_t& s) {
     if (WIFEXITED(status)) {
         auto ip = s.processMap.find(p);
         if (ip == s.processMap.end()) {
-            s.logError(p, "Unexpected tracee.");
+            logError(s.os, p, "Unexpected tracee.");
             return;
         }
         process_t& ps = ip->second;
@@ -535,7 +519,7 @@ void loop(state_t& s) {
     } else if (WIFSIGNALED(status)) {
         auto ip = s.processMap.find(p);
         if (ip == s.processMap.end()) {
-            s.logError(p, "Unexpected tracee.");
+            logError(s.os, p, "Unexpected tracee.");
             return;
         }
         process_t& ps = ip->second;
@@ -546,13 +530,13 @@ void loop(state_t& s) {
     } else if (WIFSTOPPED(status)) {
         auto ip = s.processMap.find(p);
         if (ip == s.processMap.end()) {
-            s.logError(p, "Unexpected tracee.");
+            logError(s.os, p, "Unexpected tracee.");
             s.resumeWithoutMonitoring(p);
             return;
         }
         process_t& ps = ip->second;
         if (!ps.running) {
-            s.logError(p, "Unexpected tracee stop event after terminal failure.");
+            logError(s.os, p, "Unexpected tracee stop event after terminal failure.");
             s.resumeWithoutMonitoring(p);
             return;
         }
@@ -560,38 +544,135 @@ void loop(state_t& s) {
     } else if (WIFCONTINUED(status)) {
         auto ip = s.processMap.find(p);
         if (ip == s.processMap.end()) {
-            s.logError(p, "Unexpected tracee.");
+            logError(s.os, p, "Unexpected tracee.");
             s.resumeWithoutMonitoring(p);
             return;
         }
         process_t& ps = ip->second;
         if (!ps.running) {
-            s.logError(p, "Unexpected tracee continued event after terminal failure.");
+            logError(s.os, p, "Unexpected tracee continued event after terminal failure.");
             s.resumeWithoutMonitoring(p);
             return;
         }
-        s.logError(p, "Unexpected continue.");
+        logError(s.os, p, "Unexpected continue.");
         s.resumeUntilSyscall(p, ps);
     } else {
         auto ip = s.processMap.find(p);
         if (ip == s.processMap.end()) {
-            s.logError(p, "Unexpected tracee.");
+            logError(s.os, p, "Unexpected tracee.");
             s.resumeWithoutMonitoring(p);
             return;
         }
         process_t& ps = ip->second;
         if (!ps.running) {
-            s.logError(p, "Unexpected wait after terminal failure.");
+            logError(s.os, p, "Unexpected wait after terminal failure.");
             s.resumeWithoutMonitoring(p);
             return;
         }
-        s.logError(p, "Unexpected wait %d.", status);
+        logError(s.os, p, "Unexpected wait %d.", status);
         s.resumeUntilSyscall(p, ps);
     }
 }
 
-int run(const Params& params, pid_t p) {
-    state_t s(params.debug, params.output);
+}
+
+int btrace(const Params& params) {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    state_t s(params.debug);
+
+    int stdoutPipe[2];
+    if (pipe2(stdoutPipe, 0)) {
+        logFatalError(s.os, -1, "Pipe failed (errno = %d).", errno);
+        return -1;
+    }
+    int stderrPipe[2];
+    if (pipe2(stderrPipe, 0)) {
+        logFatalError(s.os, -1, "Pipe failed (errno = %d).", errno);
+        return -1;
+    }
+
+    // Launch application
+    pid_t p = fork();
+    // Child process
+    if (p == 0) {
+        close(stdoutPipe[0]);
+        close(stderrPipe[0]);
+        ptrace(PTRACE_TRACEME);
+        dup2(stdoutPipe[1], STDOUT_FILENO);
+        dup2(stderrPipe[1], STDERR_FILENO);
+
+        std::vector<char*> execArgs;
+        execArgs.reserve(params.args.size() + 1);
+        for (auto& a : params.args)
+            execArgs.push_back((char*) a.c_str());
+        execArgs.push_back(0);
+        int r = execve(params.cmd.c_str(), &execArgs[0], params.envp);
+        exit(errno);
+    }
+    close(stdoutPipe[1]);
+    close(stderrPipe[1]);
+    const int stdoutReadFd = stdoutPipe[0];
+    const int stderrReadFd = stderrPipe[0];
+
+    // Create mask that contains currently blocked signals.
+    sigset_t mask;
+    if (sigemptyset(&mask)) {
+        logFatalError(s.os, -1, "Failed to initialize signal mask.");
+        kill(p, SIGKILL);
+        return -1;
+    }
+    // Add SIGCHLD
+    if (sigaddset(&mask, SIGCHLD)) {
+        logFatalError(s.os, -1, "sigaddset(.., SIGCHLD) failed.");
+        kill(p, SIGKILL);
+        return -1;
+    }
+
+    // Block SIGCHLD signals
+    if (sigprocmask(SIG_BLOCK, &mask, 0)) {
+        logFatalError(s.os, -1, "sigprocmask failed to set signals (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
+
+    // Create signalfd for listening to signals.
+    int sigfd = signalfd(-1, &mask, 0);
+    if (sigfd == -1) {
+        logFatalError(s.os, -1, "signalfd create failed (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
+
+    // Create epollfd to listen to sigfd and child stderr/stdout.
+    int epollfd = epoll_create1(0);
+    if (epollfd == -1) {
+        logFatalError(s.os, -1, "epoll_create failed (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
+
+    // Add
+    epoll_event event;
+    event.data.fd = sigfd;
+    event.events = EPOLLIN;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sigfd, &event)) {
+        logFatalError(s.os, -1, "epoll_ctl failed (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
+
+    event.data.fd = stdoutReadFd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, stdoutReadFd, &event)) {
+        logFatalError(s.os, -1, "epoll_ctl failed (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
+    event.data.fd = stderrReadFd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, stderrReadFd, &event)) {
+        logFatalError(s.os, p, "epoll_ctl failed (errno = %d).", errno);
+        kill(p, SIGKILL);
+        return -1;
+    }
 
     for (const auto& exe : params.knownExes) {
         s.untracedExes.insert(exe);
@@ -600,27 +681,27 @@ int run(const Params& params, pid_t p) {
     int status;
     int r = waitpid(p, &status, 0);
     if (r == -1) {
-        s.logError(p, "waitpid failed %d.\n", errno);
+        logFatalError(s.os, p, "waitpid failed (errno = %d).", errno);
         kill(p, SIGKILL);
         return -1;
     }
 
-    // If execve in child thread succeeds, then next event will be a trap.
+    // If execve in child thread succeeds, then next event will be stop with a trap.
     if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
         // Do nothing
     // Otherwise it should be a exit as execve failed.
     } else if (WIFEXITED(status)) {
-        s.logError(p, "Could not run %s (errno = %d).\n", params.cmd.c_str(), WEXITSTATUS(status));
+        logFatalError(s.os, p, "Could not run %s (errno = %d).", params.cmd.c_str(), WEXITSTATUS(status));
         // Quit (child printed error message).
         return -1;
     } else {
-        s.logError(p, "Unexpected result from fork (status = %d).\n", status);
+        logFatalError(s.os, p, "Unexpected result from fork (status = %d).", status);
         kill(p, SIGKILL);
         return -1;
     }
 
     if (ptrace(PTRACE_SETOPTIONS, p, 0, PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC)) {
-        s.logError(p, "ptrace(PTRACE_SETOPTIONS, ..) failed (errno = %d).\n", errno);
+        logFatalError(s.os, p, "ptrace(PTRACE_SETOPTIONS, ..) failed (errno = %d).", errno);
         kill(p, SIGKILL);
         return -1;
     }
@@ -637,39 +718,45 @@ int run(const Params& params, pid_t p) {
     }
     initCmd.env.shrink_to_fit();
     if (!populateCwdExe(s, p, initCmd)) {
-        printFatalProcessError(s.os, p, "Initial process %s untraced.\n", initCmd.exePath.c_str());
+        logFatalError(s.os, p, "Initial process %s untraced.", initCmd.exePath.c_str());
+        kill(p, SIGKILL);
         return -1;
     }
     // Resume from trap now that state is setup.
     s.resumeUntilSyscall(p, ps);
+
     // Run
     while (s.hasAliveProcesses()) {
-        loop(s);
+        int r = epoll_wait(epollfd, &event, 1, -1);
+        if (r > 0) {
+            int fd = event.data.fd;
+            if (fd == sigfd) {
+                struct signalfd_siginfo sig;
+                ssize_t br = read(sigfd, &sig, sizeof(sig));
+                loop(s, sig);
+            } else if (fd == stdoutReadFd) {
+                char buf[4092];
+                ssize_t br = read(stdoutReadFd, buf, sizeof(buf));
+                if (br == -1) {
+                    logError(s.os, -1, "Failed to read stdout (errno = %d).", errno);
+                } else {
+                    printOutput(s.os, "stdout", buf, br);
+                }
+            } else if (fd == stderrReadFd) {
+                char buf[4092];
+                ssize_t br = read(stderrReadFd, buf, sizeof(buf));
+                if (br == -1) {
+                    logError(s.os, -1, "Failed to read stdout (errno = %d).", errno);
+                } else {
+                    printOutput(s.os, "stderr", buf, br);
+                }
+            } else {
+                logFatalError(s.os, -1, "Unexpected filedescriptor %d", fd);
+                return -1;
+            }
+        }
     }
+    close(epollfd);
+    close(sigfd);
     return s.hasErrors() ? -1 : 0;
-}
-
-}
-
-int btrace(const Params& params) {
-    // Launch application
-    pid_t p = fork();
-    // Child process
-    if (p == 0) {
-        ptrace(PTRACE_TRACEME);
-        if (params.stdout != -1) {
-            dup2(params.stdout, STDOUT_FILENO);
-        }
-        if (params.stdout != -1) {
-            dup2(params.stderr, STDERR_FILENO);
-        }
-        std::vector<char*> execArgs;
-        execArgs.reserve(params.args.size() + 1);
-        for (auto& a : params.args)
-            execArgs.push_back((char*) a.c_str());
-        execArgs.push_back(0);
-        int r = execve(params.cmd.c_str(), &execArgs[0], params.envp);
-        exit(errno);
-    }
-    return run(params, p);
 }

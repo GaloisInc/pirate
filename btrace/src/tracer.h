@@ -4,9 +4,6 @@
 #include <stdio.h>
 
 struct  Params {
-    int stdout = -1;
-    int stderr = -1;
-    FILE* output = ::stdout;
     /** Path to pattern file */
     std::vector<const char*> knownExes;
     bool debug = false;

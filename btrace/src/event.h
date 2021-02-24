@@ -1,10 +1,11 @@
 // Functions for printing events in JSON format to stream.
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "rapidjson/writer.h"
+#include "rapidjson/filewritestream.h"
 #include <vector>
 
 /**
- * Write a print message element.
+ * Write JSON for a (possibly fatal message).
  *
  * If fatal is set, then this indicates the process will no
  * longer be monitored and additional messages about that process
@@ -17,10 +18,66 @@ void printMessage(S& os, bool fatal, pid_t p, const char* msg) {
     writer.StartObject();
     writer.Key("tag");
     writer.String(fatal ? "fatal" : "message");
-    writer.Key("pid");
-    writer.Uint64(p);
+    if (p != -1) {
+        writer.Key("pid");
+        writer.Uint64(p);
+    }
     writer.Key("message");
     writer.String(msg);
+    writer.EndObject();
+    os.Put('\n');
+    os.Flush();
+}
+
+template<typename S>
+void logError(S& os, pid_t p, const char* fmt, ...) {
+    char* s;
+    va_list vl;
+    va_start(vl, fmt);
+    int cnt = vasprintf(&s, fmt, vl);
+    va_end(vl);
+    if (cnt == -1) {
+        const char* msg = "internal error: log failed.";
+        printMessage(os, false, p, msg);
+        return;
+    }
+
+    printMessage(os, false, p, s);
+    free(s);
+}
+
+template<typename S>
+void logFatalError(S& os, pid_t p, const char* fmt, ...) {
+    char* s;
+    va_list vl;
+    va_start(vl, fmt);
+    int cnt = vasprintf(&s, fmt, vl);
+    va_end(vl);
+    if (cnt == -1) {
+        const char* msg = "format error when printing fatal message.\n";
+        printMessage(os, true, p, msg);
+        return;
+    }
+    printMessage(os, true, p, s);
+    free(s);
+}
+
+/**
+ * Write a print message element.
+ *
+ * If fatal is set, then this indicates the process will no
+ * longer be monitored and additional messages about that process
+ * are not expected to appear.  Additonal non-fatal messages may
+ * appear if btrace unexpectedly receives a message.
+ */
+template<typename S>
+void printOutput(S& os, const char* tag, const char* msg, ssize_t cnt) {
+    rapidjson::Writer<S> writer(os);
+    writer.StartObject();
+    writer.Key("tag");
+    writer.String(tag);
+    writer.Key("value");
+    writer.String(msg, cnt);
     writer.EndObject();
     os.Put('\n');
     os.Flush();
@@ -56,21 +113,6 @@ void printSignaled(S& os, pid_t p, uint64_t signal) {
     os.Flush();
 }
 
-template<typename S>
-void printFatalProcessError(S& os, pid_t p, const char* fmt, ...) {
-    char* s;
-    va_list vl;
-    va_start(vl, fmt);
-    int cnt = vasprintf(&s, fmt, vl);
-    va_end(vl);
-    if (cnt == -1) {
-        const char* msg = "format error when printing fatal message.\n";
-        printMessage(os, true, p, msg);
-        return;
-    }
-    printMessage(os, true, p, s);
-    free(s);
-}
 template<typename S>
 void printClone(S& os, pid_t parent, pid_t child) {
     rapidjson::Writer<S> writer(os);
