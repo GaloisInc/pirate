@@ -40,7 +40,7 @@ export class ActorView {
         this.draggableRectangle.rect.style.fill = a.color.value
 
         const div = document.createElement('div')
-        const enclaveName = document.createElement('span') as HTMLSpanElement
+        const enclaveName = document.createElement('div') as HTMLSpanElement
         enclaveName.classList.add('enclave-name')
         enclaveName.innerHTML = a.name.value
 

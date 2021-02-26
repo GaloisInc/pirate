@@ -1,0 +1,200 @@
+pageheight: "4in";
+pagewidth: "6in";
+
+width: 800;
+
+bus ActiveMQ_green {
+  orientation: horizontal;
+  left: 16;
+  width: 308;
+  top: 188;
+  height: 16;
+}
+
+actor EOIR {
+  location: "pnt/sensors.h:30:6";
+  left: 16;
+  top:  16;
+  width: 144;
+  height: 80;
+  color: "#009646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+}
+
+actor External {
+  location: "pnt/sensors.h:64:6";
+  left:   16;
+  top:    312;
+  width:  144;
+  height: 80;
+  color: "#009646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 90;
+  }
+}
+
+actor ISRM_proxy {
+  location: "pnt/sensors.h:30:6";
+  left: 180;
+  width: 144;
+  top:  48;
+  height: 80;
+  color: "#009646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+  out_port GAPS_out {
+    location: "pnt/sensors.h:30:6";
+    border: right;
+    offset: 15;
+  }
+  in_port GAPS_in {
+    location: "pnt/sensors.h:30:6";
+    border: right;
+    offset: 45;
+  }
+}
+
+actor MPU_proxy {
+  location: "pnt/sensors.h:64:6";
+  left:   180;
+  top:    264;
+  width:  144;
+  height: 80;
+  color: "#009646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 90;
+  }
+  out_port GAPS_out {
+    location: "pnt/sensors.h:30:6";
+    border: right;
+    offset: 15;
+  }
+  in_port GAPS_in {
+    location: "pnt/sensors.h:30:6";
+    border: right;
+    offset: 45;
+  }
+}
+
+bus GAPS_device {
+  orientation: vertical;
+  left: 376;
+  width: 32;
+  top: 48;
+  height: 296;
+}
+
+bus ActiveMQ_orange {
+  orientation: horizontal;
+  left: 444;
+  width: 308;
+  top: 188;
+  height: 16;
+}
+
+actor ISRM {
+  location: "pnt/sensors.h:30:6";
+  left: 444;
+  top: 48;
+  width: 144;
+  height: 80;
+  color: "#F79646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+  out_port GAPS_out {
+    location: "pnt/sensors.h:30:6";
+    border: left;
+    offset: 15;
+  }
+  in_port GAPS_in {
+    location: "pnt/sensors.h:30:6";
+    border: left;
+    offset: 45;
+  }
+}
+
+actor MPU {
+  location: "pnt/sensors.h:30:6";
+  left: 444;
+  top: 264;
+  width: 144;
+  height: 80;
+  color: "#F79646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 90;
+  }
+  out_port GAPS_out {
+    location: "pnt/sensors.h:30:6";
+    border: left;
+    offset: 15;
+  }
+  in_port GAPS_in {
+    location: "pnt/sensors.h:30:6";
+    border: left;
+    offset: 45;
+  }
+}
+
+actor RDR {
+  location: "pnt/sensors.h:30:6";
+  left: 608;
+  top: 16;
+  width: 144;
+  height: 80;
+  color: "#F79646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+}
+
+actor MPX {
+  location: "pnt/sensors.h:30:6";
+  left: 608;
+  top: 312;
+  width: 144;
+  height: 80;
+  color: "#F79646";
+
+  out_port activemq {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 90;
+  }
+}
+
+connect EOIR.activemq       ActiveMQ_green;
+connect ISRM_proxy.activemq ActiveMQ_green;
+connect MPU_proxy.activemq  ActiveMQ_green;
+connect External.activemq   ActiveMQ_green;
+
+connect ISRM.activemq   ActiveMQ_green;
+connect MPU.activemq    ActiveMQ_green;
+connect RDR.activemq    ActiveMQ_green;
+connect MPX.activemq    ActiveMQ_green;
+
+connect GAPS_device ISRM_proxy.GAPS_in;

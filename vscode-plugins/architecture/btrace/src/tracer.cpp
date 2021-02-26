@@ -6,7 +6,9 @@
 #include <sys/epoll.h>
 #include <sys/ptrace.h>
 #include <sys/signalfd.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <sys/user.h>
 #include <sys/wait.h>
 
@@ -574,11 +576,75 @@ void loop(state_t& s, const struct signalfd_siginfo& siginfo) {
     }
 }
 
+/**
+ * @concatPath(X, y) prepends @x@ to @y@ with a path
+ * separator added if x does not end with '/'.
+ */
+static
+std::string concatPath(const std::string& p, const char* fname) {
+    if (p.back() == '/') {
+        return p + fname;
+    } else {
+        return p + '/' + fname;
+    }
 }
+
+/**
+ * Search for an executable in the current environment path,
+ * and return it in result.
+ *
+ * Returns 0 if found and -1 if not.
+ *
+ * If nm contains a / character, we treat this as relative
+ * to current directory.  Otherwise, we search the PATH
+ * in the environment.
+ */
+static
+int findApp(const char* nm, std::string& result) {
+    const char* r = strrchr(nm, '/');
+    if (r != 0) {
+        result = nm;
+        return 0;
+    }
+    const char* path = getenv("PATH");
+    while (path) {
+        const char* next = strchr(path,':');
+        std::string dir;
+        if (next) {
+            dir = std::string(path, next);
+            path = next+1;
+        } else {
+            dir = std::string(path);
+            path = 0;
+        }
+        if (dir.empty()) continue;
+        std::string dirNm = concatPath(dir, nm);
+        struct stat buf;
+        if (stat(dirNm.c_str(), &buf)) {
+            continue;
+        }
+        bool isExec = buf.st_mode & S_IXOTH;
+        if (isExec) {
+            result = dirNm;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+}
+
 
 int btrace(const Params& params) {
     setvbuf(stdout, NULL, _IONBF, 0);
+
     state_t s(params.debug);
+
+    std::string exePath;
+    if (findApp(params.cmd, exePath)) {
+        logFatalError(s.os, -1, "Could not find '%s' in path.", params.cmd);
+        return -1;
+    }
 
     int stdoutPipe[2];
     if (pipe2(stdoutPipe, 0)) {
@@ -587,9 +653,13 @@ int btrace(const Params& params) {
     }
     int stderrPipe[2];
     if (pipe2(stderrPipe, 0)) {
+        close(stdoutPipe[0]);
+        close(stdoutPipe[1]);
         logFatalError(s.os, -1, "Pipe failed (errno = %d).", errno);
         return -1;
     }
+
+
 
     // Launch application
     pid_t p = fork();
@@ -606,7 +676,9 @@ int btrace(const Params& params) {
         for (auto& a : params.args)
             execArgs.push_back((char*) a.c_str());
         execArgs.push_back(0);
-        int r = execve(params.cmd.c_str(), &execArgs[0], params.envp);
+
+
+        int r = execve(exePath.c_str(), &execArgs[0], params.envp);
         exit(errno);
     }
     close(stdoutPipe[1]);
@@ -691,7 +763,7 @@ int btrace(const Params& params) {
         // Do nothing
     // Otherwise it should be a exit as execve failed.
     } else if (WIFEXITED(status)) {
-        logFatalError(s.os, p, "Could not run %s (errno = %d).", params.cmd.c_str(), WEXITSTATUS(status));
+        logFatalError(s.os, p, "Could not run %s (errno = %d).", exePath.c_str(), WEXITSTATUS(status));
         // Quit (child printed error message).
         return -1;
     } else {

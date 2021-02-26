@@ -40,7 +40,7 @@ class Webview implements SystemServices {
     #buses: BusView[] = []
     #connections: ConnectionView[] = []
 
-    #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
+//    #errormsgDiv = document.getElementById('lasterrormsg') as HTMLDivElement
 
     constructor(thisSVG: SVGSVGElement) {
         this.#svg = thisSVG
@@ -102,8 +102,7 @@ class Webview implements SystemServices {
     clearModel(errorMsgText: string): void {
         for (const a of this.#actors) { a.dispose() }
         this.#actors = []
-        if (this.#errormsgDiv) { this.#errormsgDiv.innerText = errorMsgText }
-
+        console.log(errorMsgText)
     }
 
     getCollidableObjects(): readonly Rectangle<number>[] {
@@ -142,7 +141,7 @@ class Webview implements SystemServices {
         return { source, target }
     }
 
-    adjustX(thisObject: any, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
+    adjustX(thisObject: unknown, r: YRange<number>, width: number, oldLeft: number, newLeft: number): number {
         const collidables = this.getCollidableObjects()
 
         const top = r.top

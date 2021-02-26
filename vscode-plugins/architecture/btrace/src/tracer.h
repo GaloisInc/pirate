@@ -8,7 +8,7 @@ struct  Params {
     std::vector<const char*> knownExes;
     bool debug = false;
 
-    std::string cmd;
+    const char* cmd;
     std::vector<std::string> args;
     char*const* envp;
 };
