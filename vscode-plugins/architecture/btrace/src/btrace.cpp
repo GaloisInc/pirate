@@ -20,53 +20,6 @@
 #include <vector>
 
 /**
- * @concatPath(X, y) prepends @x@ to @y@ with a path
- * separator added if x does not end with '/'.
- */
-static
-std::string concatPath(const std::string& p, const char* fname) {
-    if (p.back() == '/') {
-        return p + fname;
-    } else {
-        return p + '/' + fname;
-    }
-}
-
-/**
- * Search for the given name in the current path.
- */
-static
-std::string findApp(char* nm) {
-    const char* r = strrchr(nm, '/');
-    if (r != 0) {
-        return std::string(nm);
-    }
-    const char* path = getenv("PATH");
-    while (path) {
-        const char* next = strchr(path,':');
-        std::string dir;
-        if (next) {
-            dir = std::string(path, next);
-            path = next+1;
-        } else {
-            dir = std::string(path);
-            path = 0;
-        }
-        if (dir.empty()) continue;
-        std::string path = concatPath(dir, nm);
-        struct stat buf;
-        if (stat(path.c_str(), &buf)) {
-            continue;
-        }
-        bool isExec = buf.st_mode & S_IXOTH;
-        if (!isExec) continue;
-        return path;
-    }
-    fprintf(stderr, "Could not find %s.\n", nm);
-    exit(-1);
-}
-
-/**
  * Show usage
  */
 void showUsage(FILE* f, const char* exe) {
@@ -148,7 +101,7 @@ void parseArgs(Params& params, int argc, char* const* argv, char*const* envp) {
         fprintf(stderr, "For help run `%s --help`.\n", argv[0]);
         exit(-1);
     }
-    params.cmd = findApp(*curArg);
+    params.cmd = *curArg;
     ++curArg;
     params.args.push_back(params.cmd);
     while (curArg < endArg) {

@@ -7,6 +7,10 @@ body {
     font-family: var(--vscode-font-family);
 }
 
+a {
+   color: black;
+}
+
 .enclave {
     stroke: black;
     stroke-width: 5;
@@ -20,7 +24,7 @@ body {
 
  .enclave-visit-class {
     font-size: 9pt;
-    margin-left: 2em;
+    margin-left: 0em;
     cursor: pointer;
     user-select: none;
  }

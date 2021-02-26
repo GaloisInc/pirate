@@ -83,6 +83,7 @@ void printOutput(S& os, const char* tag, const char* msg, ssize_t cnt) {
     os.Flush();
 }
 
+/** Notify that the process ended with the given exit code. */
 template<typename S>
 void printExited(S& os, pid_t p, uint64_t exitCode) {
     rapidjson::Writer<S> writer(os);
