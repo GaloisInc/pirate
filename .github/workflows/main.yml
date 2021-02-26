@@ -178,6 +178,33 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
               ../libpirategetopt
         make install
+    - name: Cache antlr4 runtime
+      if: matrix.upload-artifact
+      id: cache-antlr4-runtime
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-antlr4.8-runtime
+      with:
+        path: ~/antlr4
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: Build antlr4 runtime
+      if: matrix.upload-artifact && steps.cache-antlr4-runtime.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ~/antlr4
+        cd ~/antlr4
+        wget -qO - https://www.antlr.org/download/antlr-4.8-complete.jar > antlr-4.8-complete.jar
+        wget -qO - https://www.antlr.org/download/antlr4-cpp-runtime-4.8-source.zip > antlr4-cpp-runtime-4.8-source.zip
+        unzip antlr4-cpp-runtime-4.8-source.zip
+        mkdir build
+        cd build
+        cmake -DANTLR4_INSTALL=1 -DWITH_LIBCXX=Off ..
+        make
+    - name: Install antlr4 runtime
+      if: matrix.upload-artifact
+      run: |
+        cd ~/antlr4/build
+        sudo make install
+        cd ..
     - name: Build idl
       if: matrix.upload-artifact
       run: |
