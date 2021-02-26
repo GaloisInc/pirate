@@ -187,7 +187,7 @@ jobs:
         cache-name: cache-antlr4.8-runtime-1
       with:
         path: ~/antlr4
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        key: ${{ runner.os }}-build-${{ matrix.name }}-${{ env.cache-name }}
     - name: Build antlr4 runtime
       if: matrix.upload-artifact && steps.cache-antlr4-runtime.outputs.cache-hit != 'true'
       run: |
