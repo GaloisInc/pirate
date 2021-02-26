@@ -178,6 +178,21 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
               ../libpirategetopt
         make install
+    - name: Build idl
+      if: matrix.upload-artifact
+      run: |
+        cd antlr
+        mkdir -p build
+        cd build
+        # Link statically so that including in the archive is easy
+        cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DPIRATE_LINK_STATIC=On \
+              -DANTLR4_MODULE_PATH=/usr/local/lib/cmake/antlr4 \
+              -DANTLR4_JAR_LOCATION=$HOME/antlr4/antlr-4.8-complete.jar \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              ..
+        make install
     # Build lldb-mi so we can include it in archive.
     - name: Build lldb-mi
       if: matrix.upload-artifact
@@ -287,7 +302,7 @@ jobs:
       run: |
         sudo sed -i 's/azure.archive.ubuntu.com/us.archive.ubuntu.com/g' /etc/apt/sources.list
         sudo apt-get update
-        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev uuid-dev default-jre-headless
+        sudo apt-get install --no-install-recommends -y clang valgrind libyaml-dev uuid-dev default-jre-headless pkg-config unzip
     - name: googletest
       run: |
         mkdir ~/googletest
@@ -313,7 +328,7 @@ jobs:
         unzip antlr4-cpp-runtime-4.8-source.zip
         mkdir build
         cd build
-        cmake -D ANTLR4_INSTALL=1 ..
+        cmake -DANTLR4_INSTALL=1 -DWITH_LIBCXX=Off ..
         make
     - name: Install antlr4 runtime
       run: |
