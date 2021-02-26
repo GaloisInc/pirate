@@ -4,11 +4,12 @@ if (NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif(NOT DEFINED CMAKE_BUILD_TYPE)
 
+option(PIRATE_LINK_STATIC "Link CDRGenerator statically" Off)
 set(CMAKE_CXX_STANDARD 11)
 set(PTHREAD_ADDED_LIB "pthread")
-if (DEFINED PIRATE_LINK_STATIC)
+if (PIRATE_LINK_STATIC)
     set(PTHREAD_ADDED_LIB "-static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
-endif(DEFINED PIRATE_LINK_STATIC)
+endif(PIRATE_LINK_STATIC)
 
 add_subdirectory(ticpp-master)
 
