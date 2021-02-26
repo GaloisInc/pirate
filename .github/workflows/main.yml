@@ -184,7 +184,7 @@ jobs:
       id: cache-antlr4-runtime
       uses: actions/cache@v2
       env:
-        cache-name: cache-antlr4.8-runtime
+        cache-name: cache-antlr4.8-runtime-1
       with:
         path: ~/antlr4
         key: ${{ runner.os }}-build-${{ env.cache-name }}
