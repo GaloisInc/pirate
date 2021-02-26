@@ -213,7 +213,7 @@ jobs:
         mkdir -p build
         cd build
         # Link statically so that including in the archive is easy
-        if [[ "${{ matrix.name }}" == "ubuntu" ]]; then modpath=/usr/local/lib/cmake/antlr4; else modpath=/usr/local/lib64/cmake/antlr4; fi
+        if [ "${{ matrix.name }}" == "ubuntu" ]; then modpath=/usr/local/lib/cmake/antlr4; else modpath=/usr/local/lib64/cmake/antlr4; fi
         cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/dist/pirate \
               -DCMAKE_BUILD_TYPE=Release \
               -DPIRATE_LINK_STATIC=On \
