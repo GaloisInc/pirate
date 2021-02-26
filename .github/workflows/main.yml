@@ -49,13 +49,14 @@ jobs:
           - name: ubuntu
             container: ubuntu:focal
             packager: apt-get
-            extra-packages: wget ca-certificates libtinfo-dev binutils git cmake make libstdc++-9-dev libedit2 libpython3.8 libssl-dev libjpeg-dev libx11-dev libcpprest-dev
+            extra-packages: wget ca-certificates libtinfo-dev binutils git cmake make libstdc++-9-dev libedit2 libpython3.8 libssl-dev libjpeg-dev libx11-dev libcpprest-dev unzip
             extra-cmake: -DIPV6_TESTS=OFF
             upload-artifact: true
             pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.ubuntu.tgz
           - name: centos7
             container: centos:7
             packager: yum
+            extra-packages: unzip
             extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
             upload-artifact: true
             pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.centos.tgz
@@ -84,7 +85,7 @@ jobs:
            ncurses-libs \
            libyaml-devel-0.1.4-11.el7_0.x86_64 \
            openssl11 openssl11-devel \
-           libjpeg-devel libX11-devel
+           libjpeg-devel libX11-devel ${{matrix.extra-packages}}
         # Add links in
         echo "/opt/rh/devtoolset-8/root/bin" >> $GITHUB_PATH
         ln -s /usr/bin/cmake3 /usr/local/bin/cmake
