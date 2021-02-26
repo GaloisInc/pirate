@@ -56,7 +56,7 @@ jobs:
           - name: centos7
             container: centos:7
             packager: yum
-            extra-packages: unzip libuuid-devel pkgconfig java-11-openjdk
+            extra-packages: unzip libuuid-devel pkgconfig java-11-openjdk cmake
             extra-cmake: -DIPV6_TESTS=OFF -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/libcrypto.so.1.1 -DOPENSSL_SSL_LIBRARY=/usr/lib64/libssl.so.1.1
             upload-artifact: true
             pirate-llvm: https://pirate.azureedge.net/dist/pirate-llvm/master/pirate-llvm.centos.tgz
