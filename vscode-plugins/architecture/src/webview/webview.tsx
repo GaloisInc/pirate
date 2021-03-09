@@ -3,7 +3,7 @@
  * of the system services.
  */
 
-import { Context } from 'immutability-helper'
+import { Context, Spec } from 'immutability-helper'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 
@@ -198,13 +198,56 @@ function WebviewComponent(props: {
             )
         }
 
+    const updateInPort =
+        (portIndex: number, updatePort: Spec<A.Port, never>): Spec<A.Actor, never> => (
+            { inPorts: { [portIndex]: { value: updatePort } } }
+        )
+
+    const updateOutPort =
+        (portIndex: number, updatePort: Spec<A.Port, never>): Spec<A.Actor, never> => (
+            { outPorts: { [portIndex]: { value: updatePort } } }
+        )
+
+    const updateActor = (actorIndex: number, updateField: Spec<A.Actor, never>) =>
+        setActors((actors) => update(actors, { [actorIndex]: { value: updateField } }))
+
+    const trackPortFields = (
+        port: A.TrackedValue<A.Port>,
+        updateThisPort: (spec: Spec<A.Port, never>) => void,
+    ) => {
+        props.sys.whenTrackedChanged(
+            port.value.border.trackId,
+            (border: string) => border as A.Border,
+            (border: A.Border) => updateThisPort({ border: { value: { $set: border } } }),
+        )
+        props.sys.whenIntTrackChanged(
+            port.value.location.trackId,
+            (location: A.LocationIndex) => updateThisPort({ location: { value: { $set: location } } }),
+        )
+        props.sys.whenIntTrackChanged(
+            port.value.offset.trackId,
+            (offset: number) => updateThisPort({ offset: { value: { $set: offset } } }),
+        )
+    }
+
     // Register listeners for tracked actor fields
-    actors.map((actor, index) => {
-        listenToTrackedInt(setActors, actor, index, 'height')
-        listenToTrackedInt(setActors, actor, index, 'left')
-        listenToTrackedInt(setActors, actor, index, 'top')
-        listenToTrackedInt(setActors, actor, index, 'width')
-        // TODO: ports
+    actors.map((actor, actorIndex) => {
+
+        listenToTrackedInt(setActors, actor, actorIndex, 'height')
+        listenToTrackedInt(setActors, actor, actorIndex, 'left')
+        listenToTrackedInt(setActors, actor, actorIndex, 'top')
+        listenToTrackedInt(setActors, actor, actorIndex, 'width')
+
+        actor.value.inPorts.map((port, portIndex) => {
+            const updateThisPort = (spec: Spec<A.Port, never>) => updateActor(actorIndex, updateInPort(portIndex, spec))
+            trackPortFields(port, updateThisPort)
+        })
+
+        actor.value.outPorts.map((port, portIndex) => {
+            const updateThisPort = (spec: Spec<A.Port, never>) => updateActor(actorIndex, updateOutPort(portIndex, spec))
+            trackPortFields(port, updateThisPort)
+        })
+
     })
 
     // Register listeners for tracked bus fields
@@ -214,8 +257,6 @@ function WebviewComponent(props: {
         listenToTrackedInt(setBuses, bus, index, 'top')
         listenToTrackedInt(setBuses, bus, index, 'width')
     })
-
-    // TODO: connections
 
     const actorsComponents = actors.map((trackedActor, index) => {
         const actor = trackedActor.value
@@ -623,7 +664,7 @@ function getEndpointKey(
     }
 }
 
-// sets a field whose type is <A.TrackedValue<T>
+// sets a field whose type is A.TrackedValue<T>
 const setField =
     <ValueType, R extends Record<Key, A.TrackedValue<ValueType>>, Key extends keyof R>
         (fieldName: Key) =>
