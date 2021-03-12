@@ -1,5 +1,4 @@
 /**
- * @module
  * Interfaces for recurring fields when dealing with geometric figures.
  */
 
@@ -9,6 +8,8 @@ export interface Left<T> { readonly left: T }
 export interface Right<T> { readonly right: T }
 export interface Top<T> { readonly top: T }
 export interface Width<T> { readonly width: T }
+
+export type Dimensions<T> = Height<T> & Width<T>
 
 export type XRange<T> = Left<T> & Width<T>
 export type YRange<T> = Top<T> & Height<T>

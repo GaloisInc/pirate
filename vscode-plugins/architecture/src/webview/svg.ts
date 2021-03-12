@@ -1,5 +1,4 @@
 /**
- * @module
  * This file contains utilities for working with SVGs.
  */
 

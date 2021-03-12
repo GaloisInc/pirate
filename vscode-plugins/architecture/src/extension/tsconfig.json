@@ -2,7 +2,15 @@
     "extends": "../../tsconfig-default.json",
     "compilerOptions": {
         "module": "CommonJS",
-        "outDir": "../../out/extension"
+        "outDir": "../../out/extension",
+        "paths": {
+            "@shared/*": [
+                "../shared/*"
+            ],
+            "@webview/*": [
+                "../webview/*"
+            ],
+        }
     },
     "files": [
         "docUpdater.ts",
@@ -15,6 +23,9 @@
     "references": [
         {
             "path": "../shared"
+        },
+        {
+            "path": "../webview"
         }
     ]
 }

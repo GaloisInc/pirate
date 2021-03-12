@@ -1,5 +1,4 @@
 /**
- * @module
  * Entry point for the extension. Note that the extension uses a webview, which
  * has its own execution environment and can be considered as a second entry
  * point.

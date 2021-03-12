@@ -7,25 +7,52 @@ body {
     font-family: var(--vscode-font-family);
 }
 
+.connection {
+    stroke: black;
+    stroke-width: 5;
+}
+
+.controls {
+    background-color: darkgray;
+    bottom: 0;
+    color: black;
+    margin: 10px;
+    overflow-y: clip;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 2in;
+}
+
+.controls ul {
+    list-style: none;
+    margin: 2px;
+    padding: 2px;
+}
+
 .enclave {
     stroke: black;
     stroke-width: 5;
     cursor: grab;
- }
+}
 
- .enclave-name {
+.enclave-content {
+    margin: 2em;
+}
+
+.enclave-name {
     font-size: 12pt;
     width: max-content;
- }
+}
 
- .enclave-visit-class {
+.enclave-visit-class {
     font-size: 9pt;
     margin-left: 2em;
     cursor: pointer;
     user-select: none;
- }
+}
 
- .menu {
+.menu {
     background-color: var(--vscode-menu-foreground);
     list-style-type: none;
     padding-top: 0.1em;
@@ -43,7 +70,7 @@ body {
     z-index: 10;
 }
 
- .menu li {
+.menu li {
     color: black;
     display: list-item;
     list-style-type: none;
@@ -53,9 +80,19 @@ body {
     padding-left: 0.5em;
     padding-right: 1em;
     padding-bottom: 0.3em;
- }
+}
 
- .menu li:hover {
+.menu li:hover {
     background-color: var(--vscode-menu-selectionBackground);
     color: var(--vscode-menu-selectionForeground);
+}
+
+.svg-container {
+    background-color: 'var(--vscode-sidebar-background)';
+    bottom: 0;
+    left: 0;
+    overflow-x: auto;
+    position: absolute;
+    right: 2in;
+    top: 0;
 }
