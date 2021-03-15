@@ -23,11 +23,12 @@
 #include <vector>
 
 #include <signal.h>
+#include <sys/ptrace.h>
 #include <sys/signalfd.h>
 #include <unistd.h>
 
-#include "orientationinputcreator.hpp"
-#include "orientationoutputcreator.hpp"
+#include "cameracontrolinputcreator.hpp"
+#include "cameracontroloutputcreator.hpp"
 #include "frameprocessorcreator.hpp"
 #include "videosourcecreator.hpp"
 #include "imageconvert.hpp"
@@ -56,53 +57,68 @@ static int waitInterrupt(void* arg) {
 
 int main(int argc, char *argv[])
 {
-    int rv;
+    int rv = 0;
     Options options;
     sigset_t set;
-    std::thread *signalThread;
+    struct sigaction newaction;
+    std::thread *signalThread = nullptr;
     std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
-
-    // block SIGINT for all threads except for the signalThread
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-
+ 
     parseArgs(argc, argv, &options);
 
-    OrientationOutput *orientationOutput;
-    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
+    if (!options.mGDB) {
+        // block SIGINT for all threads except for the signalThread
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        pthread_sigmask(SIG_BLOCK, &set, NULL);
+        newaction.sa_handler = SIG_IGN;
+        newaction.sa_flags = 0;
+        sigemptyset(&newaction.sa_mask);
+        sigaction(SIGINT, &newaction, NULL);
+    }
+
+    CameraControlOutput *cameraControlOutput = nullptr;
+    std::vector<std::shared_ptr<CameraControlInput>> cameraControlInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
-    orientationOutput = OrientationOutputCreator::get(options);
+    cameraControlOutput = CameraControlOutputCreator::get(options);
 
-    CameraOrientationCallbacks angPosCallbacks = orientationOutput->getCallbacks();
+    CameraControlCallbacks cameraControlCallbacks = cameraControlOutput->getCallbacks();
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, angPosCallbacks);
-        orientationInputs.push_back(colorTracking);
+        colorTracking = std::make_shared<ColorTracking>(options, cameraControlCallbacks);
+        cameraControlInputs.push_back(colorTracking);
     }
 
     if (options.mInputKeyboard) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Keyboard, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mInputFreespace) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Freespace, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(Filesystem, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(Filesystem, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(XWindows, frameProcessors, options, cameraControlCallbacks);
+    }
+
+    if (options.mMetaDataProcessor) {
+        FrameProcessorCreator::add(MetaDataProcessor, frameProcessors, options, cameraControlCallbacks);
+    }
+
+    if (options.mOpenLayersApi) {
+        FrameProcessorCreator::add(MetaDataProcessorOpenLayers, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(H264Stream, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(H264Stream, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mImageTracking) {
@@ -114,17 +130,17 @@ int main(int argc, char *argv[])
 
     VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
 
-    rv = orientationOutput->init();
+    rv = cameraControlOutput->init();
     if (rv != 0)
     {
-        return -1;
+        goto cleanup;
     }
 
-    for (auto orientationInput : orientationInputs) {
-        rv = orientationInput->init();
+    for (auto cameraControlInput : cameraControlInputs) {
+        rv = cameraControlInput->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -132,31 +148,37 @@ int main(int argc, char *argv[])
         rv = frameProcessor->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
     rv = videoSource->init();
     if (rv != 0)
     {
-        videoSource->term();
-        return -1;
+        goto cleanup;
     }
 
-    signalThread = new std::thread(waitInterrupt, nullptr);
+    if (!options.mGDB) {
+        signalThread = new std::thread(waitInterrupt, nullptr);
+    }
 
     while (!interrupted)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    signalThread->join();
-
-    delete signalThread;
-    delete videoSource;
+cleanup:
+    if (signalThread != nullptr) {
+        signalThread->join();
+        delete signalThread;
+    }
+    if (videoSource != nullptr) {
+        delete videoSource;
+    }
     frameProcessors.clear();
-    orientationInputs.clear();
-    delete orientationOutput;
-
-    return 0;
+    cameraControlInputs.clear();
+    if (cameraControlOutput != nullptr) {
+        delete cameraControlOutput;
+    }
+    return rv;
 }

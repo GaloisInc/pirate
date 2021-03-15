@@ -16,11 +16,13 @@
 #pragma once
 
 #include "options.hpp"
+#include "testsource.hpp"
 #include "videosensor.hpp"
 #include "videosource.hpp"
 
 #if FFMPEG_PRESENT
 #include "mpeg-ts-decoder.hpp"
+#include "trilliumvideosource.hpp"
 #endif
 
 class VideoSourceCreator {
@@ -35,7 +37,13 @@ public:
 #if FFMPEG_PRESENT
             case VIDEO_STREAM:
                 return new MpegTsDecoder(options, frameProcessors);
+            case VIDEO_TRILLIUM:
+                return new TrilliumVideoSource(options, frameProcessors);
 #endif
+            case VIDEO_TEST:
+                return new TestSource(options, frameProcessors);
+            case VIDEO_NULL:
+                return new VideoSource(options, frameProcessors);
             default:
                 return new VideoSensor(options, frameProcessors);
         }

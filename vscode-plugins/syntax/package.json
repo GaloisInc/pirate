@@ -3,7 +3,7 @@
     "displayName": "Pirate Syntax",
     "description": "Syntax highlighting for Pirate annotations",
     "version": "0.0.1",
-    "publisher": "Galois, Inc.",
+    "publisher": "pirateteam",
     "engines": {
         "vscode": "^1.44.0"
     },

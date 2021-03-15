@@ -35,7 +35,7 @@ public:
     virtual void term() override;
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
     std::string mH264Url;

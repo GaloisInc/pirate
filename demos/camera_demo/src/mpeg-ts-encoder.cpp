@@ -228,7 +228,7 @@ int MpegTsEncoder::processYUYV(FrameBuffer data, size_t length)
         return 1;
     }
 
-    mOutputFrame->pts = mIndex;
+    mOutputFrame->pts = mVideoIndex;
 
     rv = avcodec_send_frame(mCodecContext, mOutputFrame);
     if (rv) {
@@ -264,8 +264,8 @@ int MpegTsEncoder::processH264(FrameBuffer data, size_t length)
     }
 
     memcpy(mPkt.data, data, length);
-    mPkt.pts = mIndex;
-    mPkt.dts = mIndex;
+    mPkt.pts = mVideoIndex;
+    mPkt.dts = mVideoIndex;
 
     rv = av_interleaved_write_frame(mOutputContext, &mPkt);
     if (rv) {
@@ -276,8 +276,11 @@ int MpegTsEncoder::processH264(FrameBuffer data, size_t length)
     return rv;
 }
 
-int MpegTsEncoder::process(FrameBuffer data, size_t length)
+int MpegTsEncoder::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
+    if (dataStream != VideoData) {
+        return 0;
+    }
     switch (mVideoType) {
         case VIDEO_YUYV:
             return processYUYV(data, length);

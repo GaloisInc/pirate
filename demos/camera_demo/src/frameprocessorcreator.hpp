@@ -17,17 +17,22 @@
 
 #include "options.hpp"
 
-#include "orientationinput.hpp"
-#include "orientationoutput.hpp"
+#include "cameracontrolinput.hpp"
+#include "cameracontroloutput.hpp"
 #include "fileframeprocessor.hpp"
 #include "videosource.hpp"
 
 #if XWIN_PRESENT
 #include "xwinframeprocessor.hpp"
+#include "metadataframeprocessor.hpp"
 #endif
 
 #if FFMPEG_PRESENT
 #include "mpeg-ts-encoder.hpp"
+#endif
+
+#if RESTSDK_PRESENT
+#include "metadataopenlayers.hpp"
 #endif
 
 class FrameProcessorCreator {
@@ -36,9 +41,9 @@ public:
         FrameProcessorType processorType,
         std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors,
         const Options& options,
-        CameraOrientationCallbacks angPosCallbacks)
+        CameraControlCallbacks cameraControlCallbacks)
     {
-        (void) angPosCallbacks;
+        (void) cameraControlCallbacks;
 
         FrameProcessor *fp = nullptr;
 
@@ -46,12 +51,20 @@ public:
         {
 #if XWIN_PRESENT
             case XWindows:
-                fp = new XWinFrameProcessor(options, angPosCallbacks);
+                fp = new XWinFrameProcessor(options, cameraControlCallbacks);
+                break;
+            case MetaDataProcessor:
+                fp = new MetaDataFrameProcessor(options);
                 break;
 #endif
 #if FFMPEG_PRESENT
             case H264Stream:
                 fp = new MpegTsEncoder(options);
+                break;
+#endif
+#if RESTSDK_PRESENT
+            case MetaDataProcessorOpenLayers:
+                fp = new MetaDataOpenLayers(options);
                 break;
 #endif
             case Filesystem:

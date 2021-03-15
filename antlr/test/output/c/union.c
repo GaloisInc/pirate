@@ -14,7 +14,7 @@ struct Union_Example {
 };
 
 struct Union_Example_wire {
-	unsigned char tag[2];
+	unsigned char tag[2] __attribute__((aligned(2)));
 	union {
 		unsigned char a[1] __attribute__((aligned(1)));
 		unsigned char b[4] __attribute__((aligned(4)));
@@ -30,6 +30,7 @@ void encode_union_example(struct Union_Example* input, struct Union_Example_wire
 	uint8_t data_a;
 	uint32_t data_b;
 	uint32_t data_c;
+	memset(output, 0, sizeof(*output));
 	memcpy(&tag, &input->tag, sizeof(uint16_t));
 	tag = htobe16(tag);
 	memcpy(&output->tag, &tag, sizeof(uint16_t));

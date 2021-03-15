@@ -40,8 +40,7 @@ public:
 
 private:
     const std::string mDevicePath;
-    const bool mFlipHorizontal;
-    const bool mFlipVertical;
+    const bool mFlip;
     const unsigned mFrameRateNumerator;
     const unsigned mFrameRateDenominator;
 

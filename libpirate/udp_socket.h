@@ -17,6 +17,7 @@
 #define __PIRATE_CHANNEL_UDP_SOCKET_H
 
 #include "libpirate.h"
+#include "pirate_common.h"
 
 typedef struct {
     int flags;
@@ -30,6 +31,9 @@ int pirate_udp_socket_close(void *_ctx);
 ssize_t pirate_udp_socket_read(const void *_param, void *_ctx, void *buf, size_t count);
 ssize_t pirate_udp_socket_write(const void *_param, void *_ctx, const void *buf, size_t count);
 ssize_t pirate_udp_socket_write_mtu(const void *_param, void *_ctx);
+
+int pirate_udp_socket_reader_open(pirate_udp_socket_param_t *param, common_ctx *ctx);
+int pirate_udp_socket_writer_open(pirate_udp_socket_param_t *param, common_ctx *ctx);
 
 #define PIRATE_UDP_SOCKET_CHANNEL_FUNCS { pirate_udp_socket_parse_param, pirate_udp_socket_get_channel_description, pirate_udp_socket_open, pirate_udp_socket_close, pirate_udp_socket_read, pirate_udp_socket_write, pirate_udp_socket_write_mtu }
 

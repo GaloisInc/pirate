@@ -213,7 +213,7 @@ Test utility for writing deterministic GAPS packets
    UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]
    UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
-   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
+   MERCURY       mercury,mode=[immediate|payload],session=N,message=N,data=N[,descriptor=N,mtu=N]
    GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]
 
 
@@ -247,7 +247,7 @@ Test utility for reading deterministic GAPS packets
    UDP_SHMEM     udp_shmem,path[,buffer_size=N,packet_size=N,packet_count=N,mtu=N]
    UIO           uio[,path=N,mtu=N]
    SERIAL        serial,path[,baud=N,mtu=N]
-   MERCURY       mercury,level,src_id,dst_id[,msg_id_1,...,mtu=N]
+   MERCURY       mercury,mode=[immediate|payload],session=N,message=N,data=N[,descriptor=N,mtu=N]
    GE_ETH        ge_eth,reader addr,reader port,writer addr,writer port,msg_id[,mtu=N]
 
 

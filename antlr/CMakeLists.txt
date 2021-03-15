@@ -50,11 +50,11 @@ if(PIRATE_UNIT_TEST)
     target_compile_options(idl_test PRIVATE ${IDL_CXX_FLAGS})
     target_link_libraries(idl_test ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARIES} antlr4-runtime pthread ticpp)
 
-    file(GLOB IDL_REGRESSION_TEST_SRC test/output/c/*.c)
+    file(GLOB IDL_REGRESSION_TEST_SRC test/output/c/*.c test/output/c/packed/*.c)
     add_library(idl-regression STATIC ${IDL_REGRESSION_TEST_SRC})
     target_compile_options(idl-regression PRIVATE ${IDL_CXX_FLAGS})
 
-    file(GLOB IDL_REGRESSION_TEST_CXX_SRC test/output/cpp/*.cpp)
+    file(GLOB IDL_REGRESSION_TEST_CXX_SRC test/output/cpp/*.cpp test/output/cpp/packed/*.cpp)
     add_library(idl-regression-cxx STATIC ${IDL_REGRESSION_TEST_CXX_SRC})
     target_compile_options(idl-regression-cxx PRIVATE ${IDL_CXX_FLAGS})
 

@@ -118,6 +118,7 @@ int launch(struct app *app, char *cfg_path,
     char *new_envp[1 /*PAL_FD*/ + enc->enc_env_count + envp_count + 1 /*NULL*/];
     char path[strlen(cfg_path) + strlen(enc_path) + 1 /*\0*/];
     char pal_fd_env[32]; // Large enough for "PAL_FD=XXXX"
+    int cwd = -1;
 
     // Open pipe to child
     if(socketpair(AF_LOCAL, SOCK_STREAM, 0, fds)) {
@@ -136,11 +137,25 @@ int launch(struct app *app, char *cfg_path,
             envp, envp_count);
     app->name = enc->enc_name;
 
+    if (enc->enc_directory) {
+        cwd = open(".", O_RDONLY | O_CLOEXEC);
+        if (cwd < 0)
+            PERROR("open current directory");
+        if (chdir(enc->enc_directory))
+            PERROR("change directory");
+    }
+
     if(set_cloexec(fds[PARENT_END]))
         PERROR("set FD_CLOEXEC on pipe");
     else if(posix_spawn(&app->pid, path, NULL, NULL, new_argv, new_envp))
         PERROR("spawn process");
 
     close(fds[CHILD_END]);
+    if (cwd >= 0) {
+        if (fchdir(cwd))
+            PERROR("revert directory");
+        if (close(cwd))
+            PERROR("close current directory");
+    }
     return 0;
 }

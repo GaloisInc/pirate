@@ -33,7 +33,7 @@ public:
     virtual ~VideoSource();
 
     virtual int init();
-    virtual void term() = 0;
+    virtual void term();
 
 protected:
     ImageConvert mImageConvert;
@@ -45,5 +45,5 @@ protected:
     unsigned mIndex, mSnapshotIndex;
     time_t mSnapshotTime;
 
-    int process(FrameBuffer data, size_t length);
+    int process(FrameBuffer data, size_t length, DataStreamType dataStream);
 };

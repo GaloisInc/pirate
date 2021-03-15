@@ -24,6 +24,3 @@ cmake .. -DCMAKE_CXX_COMPILER=$HOME/opt/pirate/clang++
 make
 LD_LIBRARY_PATH=$HOME/opt/pirate/lib ../scripts/run_both.sh
 ```
-
-## Building within VSCode
-

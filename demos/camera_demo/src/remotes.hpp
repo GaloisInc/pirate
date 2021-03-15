@@ -20,15 +20,15 @@
 struct RemoteDescriptors
 {
     RemoteDescriptors() :
-        mClientReadGd(-1),
-        mClientWriteGd(-1),
-        mServerReadGd(-1),
-        mServerWriteGds()
+        mGapsRequestWriteGd(-1),
+        mGapsResponseReadGd(-1),
+        mGapsRequestReadGds(),
+        mGapsResponseWriteGds()
     {
     }
 
-    int mClientReadGd;
-    int mClientWriteGd;
-    int mServerReadGd;
-    std::vector<int> mServerWriteGds;    
+    int mGapsRequestWriteGd;
+    int mGapsResponseReadGd;
+    std::vector<int> mGapsRequestReadGds;
+    std::vector<int> mGapsResponseWriteGds;
 };

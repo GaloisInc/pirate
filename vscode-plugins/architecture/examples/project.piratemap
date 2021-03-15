@@ -1,0 +1,107 @@
+pageheight: "4in";
+pagewidth: "6in";
+
+width: 600;
+
+actor GPS {
+  location: "pnt/sensors.h:30:6";
+  left: 50;
+  top: 50;
+  width: 200;
+  height: 100;
+  color: "#009646";
+
+  out_port sensorData {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+}
+
+bus GPS_data {
+  orientation: horizontal;
+  left: 50;
+  width: 450;
+  top: 165;
+  height: 5;
+}
+
+connect GPS.sensorData GPS_data;
+
+actor RFSensor {
+  location: "pnt/sensors.h:64:6";
+  left:   350;
+  top:    50;
+  width:  200;
+  height: 100;
+  color: "#F79646";
+
+  out_port sensorData {
+    location: "pnt/sensors.h:30:6";
+    border: bottom;
+    offset: 90;
+  }
+}
+
+bus RFSensor_data {
+  orientation: horizontal;
+  left: 50;
+  width: 450;
+  top: 180;
+  height: 5;
+}
+
+connect RFSensor.sensorData RFSensor_data;
+
+actor UAV {
+  location: "pnt/sensors.h:30:6";
+  left:   350;
+  top:    250;
+  width:  200;
+  height: 100;
+  color: "#F79646";
+
+  in_port gps {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 30;
+  }
+
+  out_port position {
+    location: "pnt/sensors.h:30:6";
+    border: left;
+    offset: 30;
+  }
+}
+
+connect RFSensor_data UAV.gps;
+
+actor Target {
+  location: "pnt/sensors.h:30:6";
+  left:   50;
+  width:  200;
+  top:    250;
+  height: 100;
+  color: "#009646";
+
+  in_port gps {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 30;
+  }
+
+  in_port rf {
+    location: "pnt/sensors.h:30:6";
+    border: top;
+    offset: 120;
+  }
+
+  in_port uav {
+    location: "pnt/sensors.h:30:6";
+    border: right;
+    offset: 30;
+  }
+}
+
+connect GPS_data Target.gps;
+connect RFSensor_data Target.rf;

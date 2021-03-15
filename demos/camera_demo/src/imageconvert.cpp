@@ -154,7 +154,9 @@ int ImageConvert::jpegToRGB(FrameBuffer src, size_t srcLength) {
     cinfo.err = jpeg_std_error(&jerr);
 
     jpeg_create_decompress(&cinfo);
-    jpeg_mem_src(&cinfo, src, srcLength);
+    // Cast src to a (unsigned char*) for compatibility with libjpeg-turbo 1.2.1 and earlier.
+    // Needed for Centos 7 compatibility.
+    jpeg_mem_src(&cinfo, (unsigned char*) src, srcLength);
     jpeg_read_header(&cinfo, 1);
     cinfo.scale_num = 1;
     cinfo.scale_denom = 1;
@@ -162,6 +164,10 @@ int ImageConvert::jpegToRGB(FrameBuffer src, size_t srcLength) {
     jpeg_start_decompress(&cinfo);
     width = cinfo.output_width;
     depth = cinfo.num_components; //should always be 3
+    if (depth != 3) {
+        std::cout << "Expected 3 components and received " << depth << " components" << std::endl;
+        return -1;
+    }
     if ((cinfo.output_width != mImageWidth) || (cinfo.output_height != mImageHeight)) {
         std::cout << "Expected " << mImageWidth << " x " << mImageHeight << " resolution"
         << " and received " << cinfo.output_width << " x " << cinfo.output_height << std::endl;

@@ -70,10 +70,13 @@ std::string FileFrameProcessor::buildFilename(unsigned index) {
     return ss.str();
 }
 
-int FileFrameProcessor::process(FrameBuffer data, size_t length)
+int FileFrameProcessor::process(FrameBuffer data, size_t length, DataStreamType dataStream)
 {
+    if (dataStream != VideoData) {
+        return 0;
+    }
     // Save the image file
-    std::string filename = buildFilename(mIndex);
+    std::string filename = buildFilename(mVideoIndex);
     if (filename.empty())
     {
         return -1;
@@ -95,8 +98,8 @@ int FileFrameProcessor::process(FrameBuffer data, size_t length)
         return -1;
     }
 
-    if ((mImageOutputMaxFiles > 0) && (mIndex > mImageOutputMaxFiles)) {
-        unsigned prevIndex = mIndex - mImageOutputMaxFiles;
+    if ((mImageOutputMaxFiles > 0) && (mVideoIndex > mImageOutputMaxFiles)) {
+        unsigned prevIndex = mVideoIndex - mImageOutputMaxFiles;
         std::string prevFilename = buildFilename(prevIndex);
         if (!prevFilename.empty()) {
             remove(prevFilename.c_str());

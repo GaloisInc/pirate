@@ -1,0 +1,98 @@
+#uri {
+    font-size: 14pt;
+}
+
+body {
+    padding-left: 0px;
+    font-family: var(--vscode-font-family);
+}
+
+.connection {
+    stroke: black;
+    stroke-width: 5;
+}
+
+.controls {
+    background-color: darkgray;
+    bottom: 0;
+    color: black;
+    margin: 10px;
+    overflow-y: clip;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 2in;
+}
+
+.controls ul {
+    list-style: none;
+    margin: 2px;
+    padding: 2px;
+}
+
+.enclave {
+    stroke: black;
+    stroke-width: 5;
+    cursor: grab;
+}
+
+.enclave-content {
+    margin: 2em;
+}
+
+.enclave-name {
+    font-size: 12pt;
+    width: max-content;
+}
+
+.enclave-visit-class {
+    font-size: 9pt;
+    margin-left: 2em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.menu {
+    background-color: var(--vscode-menu-foreground);
+    list-style-type: none;
+    padding-top: 0.1em;
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+    padding-bottom: 0.1em;
+    margin: 0px;
+    height: min-content;
+    width: max-content;
+    border-style: solid;
+    border-color: var(--vscode-menu-background);
+    border-width: 0.05em;
+    display: none;
+    position: absolute;
+    z-index: 10;
+}
+
+.menu li {
+    color: black;
+    display: list-item;
+    list-style-type: none;
+    list-style-position: inside;
+    border-width: 0;
+    padding-top: 0.3em;
+    padding-left: 0.5em;
+    padding-right: 1em;
+    padding-bottom: 0.3em;
+}
+
+.menu li:hover {
+    background-color: var(--vscode-menu-selectionBackground);
+    color: var(--vscode-menu-selectionForeground);
+}
+
+.svg-container {
+    background-color: 'var(--vscode-sidebar-background)';
+    bottom: 0;
+    left: 0;
+    overflow-x: auto;
+    position: absolute;
+    right: 2in;
+    top: 0;
+}

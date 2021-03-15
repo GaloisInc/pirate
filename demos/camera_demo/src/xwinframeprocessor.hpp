@@ -22,37 +22,43 @@
 #include "imageconvert.hpp"
 #include "frameprocessor.hpp"
 #include "options.hpp"
-#include "orientationinput.hpp"
-#include "orientationoutput.hpp"
+#include "cameracontrolinput.hpp"
+#include "cameracontroloutput.hpp"
 
 class XWinFrameProcessor : public FrameProcessor
 {
 public:
     XWinFrameProcessor(const Options& options,
-        CameraOrientationCallbacks angPosCallbacks);
+        CameraControlCallbacks cameraControlCallbacks);
     virtual ~XWinFrameProcessor();
 
     virtual int init() override;
     virtual void term() override;
 
 protected:
-    virtual int process(FrameBuffer data, size_t length) override;
+    virtual int process(FrameBuffer data, size_t length, DataStreamType dataStream) override;
 
 private:
-    CameraOrientationCallbacks mCallbacks;
-    const float                mAngMin;
-    const float                mAngMax;
-    bool                       mImageSlidingWindow;
-    Display*                   mDisplay;
-    Window                     mWindow;
-    XImage*                    mImage;
-    unsigned char*             mImageBuffer;
-    GC                         mContext;
-    XGCValues                  mContextVals;
+    CameraControlCallbacks mCallbacks;
+    const float            mPanAxisMin;
+    const float            mPanAxisMax;
+    const float            mTiltAxisMin;
+    const float            mTiltAxisMax;
+    const bool             mColorPick;
+    bool                   mImageSlidingWindow;
+    Display*               mDisplay;
+    Window                 mWindow;
+    XImage*                mImage;
+    unsigned char*         mImageBuffer;
+    GC                     mContext;
+    XGCValues              mContextVals;
+    static const uint32_t  mColorPickBoxSize = 50;
+    static const uint32_t  mColorPickBoxColor = 0x00FF4500; // red
 
     int xwinDisplayInitialize();
     void xwinDisplayTerminate();
     void slidingWindow();
     void renderImage();
+    void colorPick();
 };
 

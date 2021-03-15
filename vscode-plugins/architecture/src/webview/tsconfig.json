@@ -1,0 +1,31 @@
+{
+    "extends": "../../tsconfig-default.json",
+    "compilerOptions": {
+        "module": "CommonJS",
+        "outDir": "../../out/webview",
+        "paths": {
+            "@shared/*": [
+                "../shared/*"
+            ],
+        },
+        "rootDir": ".."
+    },
+    "files": [
+        "changeSet.ts",
+        "debugLog.ts",
+        "geometry.ts",
+        "mathematics.ts",
+        "svg.ts",
+        "views/actor.tsx",
+        "views/bus.tsx",
+        "views/connection.tsx",
+        "views/draggable.tsx",
+        "views/port.tsx",
+        "webview.tsx"
+    ],
+    "references": [
+        {
+            "path": "../shared"
+        }
+    ]
+}

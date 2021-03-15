@@ -33,14 +33,12 @@
 #include "options.hpp"
 #include "mpeg-ts-decoder.hpp"
 
-#include "KlvParser.hpp"
-#include "KlvTree.hpp"
-
 MpegTsDecoder::MpegTsDecoder(const Options& options,
         const std::vector<std::shared_ptr<FrameProcessor>>& frameProcessors) :
     VideoSource(options, frameProcessors),
     mH264Url(options.mH264DecoderUrl),
     mFFmpegLogLevel(options.mFFmpegLogLevel),
+    mFlip(options.mImageFlip),
     mInputWidth(0),
     mInputHeight(0),
     mInputContext(nullptr),
@@ -50,6 +48,7 @@ MpegTsDecoder::MpegTsDecoder(const Options& options,
     mCodecContext(nullptr),
     mInputFrame(nullptr),
     mOutputFrame(nullptr),
+    mImageBuffer(nullptr),
     mSwsContext(nullptr),
     mMetaDataBytes(0),
     mMetaDataSize(0),
@@ -65,35 +64,28 @@ MpegTsDecoder::~MpegTsDecoder()
     term();
 }
 
-int MpegTsDecoder::init()
+init_video_result_t MpegTsDecoder::initVideo()
 {
     int rv;
-
-    if (mH264Url.empty()) {
-        std::cout << "decoder url must be specified on the command-line" << std::endl;
-        return 1;
-    }
-
-    rv = VideoSource::init();
-    if (rv) {
-        return rv;
-    }
-
-    av_log_set_level(mFFmpegLogLevel);
-    avcodec_register_all();
-    av_register_all();
-    avformat_network_init();
+    AVDictionary* opts = NULL;
 
     mInputContext = avformat_alloc_context();
     
-    if (avformat_open_input(&mInputContext, mH264Url.c_str(), NULL, NULL) < 0) {
+    // udp protocol timeout is in microseconds
+    av_dict_set(&opts, "timeout", "2000000", 0);
+    if (avformat_open_input(&mInputContext, mH264Url.c_str(), NULL, &opts) < 0) {
+        if (opts != NULL) av_dict_free(&opts);
         std::cout << "unable to open url " << mH264Url << std::endl;
-        return 1;
+        return INIT_TIMEOUT;
+    } else {
+        // on success opts will be destroyed and replaced
+        // with a dict containing options that were not found
+        if (opts != NULL) av_dict_free(&opts);
     }
 
     if (mInputContext->nb_streams == 0) {
         std::cout << "no streams found at url " << mH264Url << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     mVideoStreamNum = av_find_best_stream(mInputContext, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
@@ -101,7 +93,7 @@ int MpegTsDecoder::init()
 
     if (mVideoStreamNum < 0) {
         std::cout << "no video streams found at url " << mH264Url << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     av_read_play(mInputContext);
@@ -115,33 +107,86 @@ int MpegTsDecoder::init()
     mInputFrame = av_frame_alloc();
     if (mInputFrame == nullptr) {
         std::cout << "unable to allocate input frame" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
     mOutputFrame = av_frame_alloc();
     if (mOutputFrame == nullptr) {
         std::cout << "unable to allocate output frame" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
-    mOutputFrame->format = YUYV_PIXEL_FORMAT;
+    mOutputFrame->format = BGRA_PIXEL_FORMAT;
     mOutputFrame->width  = mOutputWidth;
     mOutputFrame->height = mOutputHeight;
 
     rv = av_frame_get_buffer(mOutputFrame, 32);
     if (rv < 0) {
         std::cout << "unable to allocate output image buffer" << std::endl;
-        return 1;
+        return INIT_FAILURE;
     }
 
     av_init_packet(&mPkt);
     mPkt.data = NULL;
     mPkt.size = 0;
 
+    return INIT_SUCCESS;
+}
+
+
+int MpegTsDecoder::init()
+{
+    int rv;
+    init_video_result_t result;
+
+    if (mH264Url.empty()) {
+        std::cout << "decoder url must be specified on the command-line" << std::endl;
+        return 1;
+    }
+
+    rv = VideoSource::init();
+    if (rv) {
+        return rv;
+    }
+
+    mImageBuffer = (unsigned char*) calloc(mOutputWidth * mOutputHeight * 4, 1);
+
+    av_log_set_level(mFFmpegLogLevel);
+    avcodec_register_all();
+    av_register_all();
+    avformat_network_init();
+
+    result = initVideo();
+    if (result != INIT_SUCCESS) {
+        return 1;
+    }
+
     // Start the capture thread
     mPoll = true;
     mPollThread = new std::thread(&MpegTsDecoder::pollThread, this);
 
     return 0;
+}
+
+void MpegTsDecoder::termVideo()
+{
+    if (mSwsContext != nullptr) {
+        sws_freeContext(mSwsContext);
+        mSwsContext = nullptr;
+    }
+    if (mOutputFrame != nullptr) {
+        av_frame_free(&mOutputFrame);
+    }
+    if (mInputFrame != nullptr) {
+        av_frame_free(&mInputFrame);
+    }
+    if (mCodecContext != nullptr) {
+        avcodec_free_context(&mCodecContext);
+    }
+    if (mInputContext != nullptr) {
+        avformat_close_input(&mInputContext);
+    }
+    mInputWidth = 0;
+    mInputHeight = 0;
 }
 
 void MpegTsDecoder::term()
@@ -156,33 +201,22 @@ void MpegTsDecoder::term()
             mPollThread = nullptr;
         }
     }
-    if (mSwsContext != nullptr) {
-        sws_freeContext(mSwsContext);
-    }
-    if (mOutputFrame != nullptr) {
-        av_frame_free(&mOutputFrame);
-    }
-    if (mInputFrame != nullptr) {
-        av_frame_free(&mInputFrame);
-    }
-    if (mCodecContext != nullptr) {
-        avcodec_close(mCodecContext);
-        avcodec_free_context(&mCodecContext);
-    }
-    if (mInputContext != nullptr) {
-        avformat_close_input(&mInputContext);
-        avformat_free_context(mInputContext);
+    termVideo();
+    if (mImageBuffer != nullptr) {
+        free(mImageBuffer);
     }
     if (mMetaData != nullptr) {
         free(mMetaData);
     }
+    // this is a workaround to fix a memory leak in the ffmpeg library
+    av_lockmgr_register(nullptr);
 }
 
 #ifndef MIN
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #endif
 
-int MpegTsDecoder::parseDataFrame() {
+int MpegTsDecoder::processDataFrame() {
     // If we have a full metadata packet in memory, zero out the size and index
     if (mMetaDataBytes == mMetaDataSize) {
         mMetaDataBytes = mMetaDataSize = 0;
@@ -256,22 +290,8 @@ int MpegTsDecoder::parseDataFrame() {
         mMetaDataBytes += bytesToCopy;
     }
 
-    return 0;
-}
-
-int MpegTsDecoder::processDataFrame() {
     if ((mMetaDataSize > 0) && (mMetaDataBytes == mMetaDataSize)) {
-        uint64_t ts;
-        int success = 0;
-
-        if (mVerbose && (mIndex > 0) && ((mIndex % 100) == 0)) {
-            KlvNewData(mMetaData, mMetaDataSize);
-            ts = KlvGetValueUInt(KLV_UAS_TIME_STAMP, &success);
-            if (success) {
-                std::time_t t = ts / 1000000;
-                std::cout << "KLV metadata has timestamp of " << std::asctime(std::localtime(&t));
-            }
-        }
+        return process(mMetaData, mMetaDataSize, MetaData);
     }
 
     return 0;
@@ -309,7 +329,7 @@ int MpegTsDecoder::processVideoFrame() {
 
         mSwsContext = sws_getContext(mInputFrame->width, mInputFrame->height,
             H264_PIXEL_FORMAT, mOutputWidth, mOutputHeight,
-            YUYV_PIXEL_FORMAT, 0, nullptr, nullptr, nullptr);
+            BGRA_PIXEL_FORMAT, 0, nullptr, nullptr, nullptr);
 
         if (mSwsContext == nullptr) {
             std::cout << "unable to allocate SwsContext" << std::endl;
@@ -328,7 +348,17 @@ int MpegTsDecoder::processVideoFrame() {
         return -1;
     }
 
-    rv = process(mOutputFrame->data[0], mOutputWidth * mOutputHeight * 2);
+    if (mFlip) {
+        for(size_t i = 0; i < mOutputWidth * mOutputHeight; i++) {
+            uint32_t *src = (uint32_t*) (mOutputFrame->data[0] + 4 * i);
+            uint32_t *dst = (uint32_t*) (mImageBuffer + 4 * (mOutputWidth * mOutputHeight - i - 1));
+            *dst = *src;
+        }
+    } else {
+        memcpy(mImageBuffer, mOutputFrame->data[0], mOutputWidth * mOutputHeight * 4);
+    }
+
+    rv = process(mImageBuffer, mOutputWidth * mOutputHeight * 4, VideoData);
     if (rv) {
         return rv;
     }
@@ -338,23 +368,35 @@ int MpegTsDecoder::processVideoFrame() {
 
 void MpegTsDecoder::pollThread()
 {
-    int index, rv;
+    int index, rv, reconnect = 0;
+    init_video_result_t result;
 
     while (mPoll)
     {
+        if (reconnect) {
+            termVideo();
+            result = initVideo();
+            switch (result) {
+                case INIT_SUCCESS:
+                    reconnect = 0;
+                    break;
+                case INIT_FAILURE:
+                    return;
+                case INIT_TIMEOUT:
+                    continue;
+            }
+        }
         rv = av_read_frame(mInputContext, &mPkt);
         if (rv) {
             std::cout << "av_read_frame error " << rv << std::endl;
-            return;
+            reconnect = 1;
+            continue;
         }
 
         index = mPkt.stream_index;
 
         if (index == mDataStreamNum) {
-            rv = parseDataFrame();
-            if (!rv) {
-                rv = processDataFrame();
-            }
+            rv = processDataFrame();
         } else if (index == mVideoStreamNum) {
             rv = processVideoFrame();
         }

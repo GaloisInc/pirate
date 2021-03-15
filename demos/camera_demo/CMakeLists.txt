@@ -19,37 +19,64 @@ find_library(AVCODEC_LIB avcodec)
 find_library(AVFORMAT_LIB avformat)
 find_library(AVUTIL_LIB avutil)
 find_library(SWSCALE_LIB swscale)
-set(LIBS pthread pirate)
+find_library(CPPREST_LIB cpprest)
+find_library(BOOST_SYSTEM_LIB boost_system)
+find_library(CRYPTO_LIB crypto)
+find_library(SSL_LIB ssl)
+
+set(LIBS rt pthread ${PIRATE_APP_LIBS})
 
 if (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
     set(FFMPEG_LIBS 1)
 endif (AVCODEC_LIB AND AVFORMAT_LIB AND AVUTIL_LIB AND SWSCALE_LIB)
 
+if (CPPREST_LIB AND BOOST_SYSTEM_LIB AND CRYPTO_LIB AND SSL_LIB)
+    set(RESTSDK_LIBS 1)
+endif (CPPREST_LIB AND BOOST_SYSTEM_LIB AND CRYPTO_LIB AND SSL_LIB)
+
 # Source files
 set(SRCS
+    src/pantilt.cpp
     src/optionsparser.cpp
     src/imageconvert.cpp
     src/frameprocessor.cpp
     src/fileframeprocessor.cpp
-    src/keyboardorientationinput.cpp
-    src/orientationoutput.cpp
-    src/baseorientationoutput.cpp
-    src/remoteorientationoutput.cpp
+    src/keyboardcameracontrolinput.cpp
+    src/cameracontroloutput.cpp
+    src/basecameracontroloutput.cpp
+    src/remotecameracontroloutput.cpp
+    src/testsource.cpp
+    src/trilliumcontrol.cpp
+    src/trilliumutilities.cpp
     src/videosource.cpp
     src/videosensor.cpp
     src/colortracking.cpp
     src/orion-sdk/fielddecode.cpp
-    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/fieldencode.cpp
     src/orion-sdk/floatspecial.cpp
     src/orion-sdk/KlvParser.cpp
     src/orion-sdk/KlvTree.cpp
+    src/orion-sdk/OrionPublicPacket.cpp
+    src/orion-sdk/OrionPublicPacketShim.cpp
+    src/orion-sdk/scaleddecode.cpp
+    src/orion-sdk/scaledencode.cpp
+    src/orion-sdk/TrilliumPacket.cpp
 )
+
+if (RESTSDK_LIBS)
+    message("-- Restsdk library found")
+    set(BUILD_FLAGS -DRESTSDK_PRESENT=1 ${BUILD_FLAGS})
+    set(LIBS ${BOOST_SYSTEM_LIB} ${SSL_LIB} ${CRYPTO_LIB} ${CPPREST_LIB} ${LIBS})
+    set(SRCS ${SRCS} src/metadataopenlayers.cpp)
+else ()
+    message("-- Restsdk library not found")
+endif (RESTSDK_LIBS)
 
 if (FREESPACE_LIB)
     message("-- Freespace library found")
     set(BUILD_FLAGS -DFREESPACE_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${FREESPACE_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/freespaceorientationinput.cpp)
+    set(SRCS ${SRCS} src/freespacecameracontrolinput.cpp)
 else ()
     message("-- Freespace library not found")
 endif (FREESPACE_LIB)
@@ -60,6 +87,7 @@ if (FFMPEG_LIBS)
     set(LIBS ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${LIBS})
     set(SRCS ${SRCS} src/mpeg-ts-encoder.cpp)
     set(SRCS ${SRCS} src/mpeg-ts-decoder.cpp)
+    set(SRCS ${SRCS} src/trilliumvideosource.cpp)
 else ()
     message("-- Ffmpeg libraries not found")
 endif (FFMPEG_LIBS)
@@ -68,7 +96,7 @@ if (PIGPIO_LIB)
     message("-- Pigpio library found")
     set(BUILD_FLAGS -DPIGPIO_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${PIGPIO_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/piservoorientationoutput.cpp)
+    set(SRCS ${SRCS} src/piservocameracontroloutput.cpp)
 else ()
     message("-- Pigpio library not found")
 endif (PIGPIO_LIB)
@@ -85,7 +113,7 @@ if (X11_LIB)
     message("-- X11 library found")
     set(BUILD_FLAGS -DXWIN_PRESENT=1 ${BUILD_FLAGS})
     set(LIBS ${X11_LIB} ${LIBS})
-    set(SRCS ${SRCS} src/xwinframeprocessor.cpp)
+    set(SRCS ${SRCS} src/xwinframeprocessor.cpp src/metadataframeprocessor.cpp)
 else ()
     message("-- X11 library not found")
 endif (X11_LIB)
@@ -103,3 +131,7 @@ target_include_directories(${TGT_CAMERA_DEMO_MONOLITH} PRIVATE src/orion-sdk)
 # Scripts
 set(SCRIPTS_DIR ${PROJECT_SOURCE_DIR}/scripts)
 configure_file(${SCRIPTS_DIR}/camera_demo.sh ${PROJECT_BINARY_DIR} COPYONLY)
+
+# Configuration files
+set(CONF_DIR ${PROJECT_SOURCE_DIR}/conf)
+configure_file(${CONF_DIR}/trilliumconfig.txt ${PROJECT_BINARY_DIR} COPYONLY)

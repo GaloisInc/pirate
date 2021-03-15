@@ -38,6 +38,12 @@ void ModuleDecl::cTypeDeclWire(std::ostream &ostream) {
     }
 }
 
+void ModuleDecl::cppTypeDeclWire(std::ostream &ostream) {
+    for (TypeSpec* definition : definitions) {
+        definition->cppTypeDeclWire(ostream);
+    }
+}
+
 void ModuleDecl::cDeclareFunctions(std::ostream &ostream, CDRFunc functionType) {
     for (TypeSpec* definition : definitions) {
         definition->cDeclareFunctions(ostream, functionType);

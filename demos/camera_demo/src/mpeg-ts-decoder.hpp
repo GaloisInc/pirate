@@ -33,6 +33,12 @@ extern "C" {
 #include "options.hpp"
 #include "videosource.hpp"
 
+typedef enum {
+    INIT_SUCCESS = 0,
+    INIT_TIMEOUT  = 1,
+    INIT_FAILURE  = 2
+} init_video_result_t;
+
 class MpegTsDecoder : public VideoSource
 {
 public:
@@ -43,9 +49,12 @@ public:
     virtual int init() override;
     virtual void term() override;
 
-private:
+protected:
     const std::string mH264Url;
-    int mFFmpegLogLevel;
+
+private:
+    const int mFFmpegLogLevel;
+    const bool mFlip;
     int mInputWidth;
     int mInputHeight;
 
@@ -55,6 +64,7 @@ private:
     AVCodec *mCodec;
     AVCodecContext *mCodecContext;
     AVFrame *mInputFrame, *mOutputFrame;
+    uint8_t* mImageBuffer;
     struct SwsContext *mSwsContext;
     AVPacket mPkt;
     uint64_t mMetaDataBytes, mMetaDataSize;
@@ -65,12 +75,13 @@ private:
     std::thread *mPollThread;
     bool mPoll;
 
+    init_video_result_t initVideo();
+    void termVideo();
     void pollThread();
-    int parseDataFrame();
-    int processDataFrame();    
+    int processDataFrame();
     int processVideoFrame();
 
-    static const AVPixelFormat YUYV_PIXEL_FORMAT = AV_PIX_FMT_YUYV422;
+    static const AVPixelFormat BGRA_PIXEL_FORMAT = AV_PIX_FMT_BGRA;
     static const AVPixelFormat H264_PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
 };
 

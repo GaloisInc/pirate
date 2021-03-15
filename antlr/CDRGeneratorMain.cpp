@@ -24,7 +24,9 @@
 int main(int argc, char* argv[]) {
     int rv = 0, option_index = 0;
     TargetLanguage target = TargetLanguage::UNKNOWN;
+    int packed = 0;
     struct option long_options[] = {
+        {"packed", no_argument, &packed, 1},
         {"target", required_argument, 0, 't'},
         {0, 0, 0, 0}
     };
@@ -49,6 +51,8 @@ int main(int argc, char* argv[]) {
                     return 1;
                 }
                 break;
+            case 0:
+                break;
             default:
                 return 1;
         }
@@ -59,5 +63,5 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    return parse(std::cin, std::cout, std::cerr, target);
+    return parse(std::cin, std::cout, std::cerr, target, packed);
 }

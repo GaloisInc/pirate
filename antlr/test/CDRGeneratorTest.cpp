@@ -24,7 +24,7 @@
 
 using namespace std;
 
-class RegressionTest : public ::testing::TestWithParam<std::tuple<std::string, target_t>> { };
+class RegressionTest : public ::testing::TestWithParam<std::tuple<std::string, target_t, bool>> { };
 
 std::vector<std::string> filenames;
 
@@ -32,8 +32,10 @@ TEST_P(RegressionTest, RegressionTestCase) {
     auto params = GetParam();
     std::string root = std::get<0>(params);
     target_t target = std::get<1>(params);
+    bool packed = std::get<2>(params);
     std::string input_path = "input/" + root + ".idl";
-    std::string output_path = "output/" + target_as_string(target) + "/" + root + "." + target_as_string(target);
+    std::string packed_path = packed ? "/packed" : "";
+    std::string output_path = "output/" + target_as_string(target) + packed_path + "/" + root + "." + target_as_string(target);
 
     ifstream input_file;
     ifstream expected_output_file;
@@ -55,7 +57,7 @@ TEST_P(RegressionTest, RegressionTestCase) {
     ASSERT_FALSE(observed_output_file_w.fail());
     expected_output << expected_output_file.rdbuf();
     expected_output_file.close();
-    rv = parse(input_file, observed_output_file_w, observed_error, target);
+    rv = parse(input_file, observed_output_file_w, observed_error, target, packed);
     input_file.close();
     observed_output_file_w.close();
     observed_output_file_r.open("/tmp/" + root + ".c");
@@ -68,14 +70,16 @@ TEST_P(RegressionTest, RegressionTestCase) {
 }
 
 struct PrintParamName {
-  string operator()(const testing::TestParamInfo<std::tuple<std::string, target_t>>& info) const {
-    return std::get<0>(info.param) + "_" + target_as_string(std::get<1>(info.param));
+  string operator()(const testing::TestParamInfo<std::tuple<std::string, target_t, bool>>& info) const {
+    string packed = std::get<2>(info.param) ? "_packed" : "";
+    return std::get<0>(info.param) + "_" + target_as_string(std::get<1>(info.param)) + packed;
   }
 };
 
 INSTANTIATE_TEST_SUITE_P(RegressionTestSuite,
     RegressionTest, ::testing::Combine(::testing::ValuesIn(filenames),
-        ::testing::Values(TargetLanguage::C_LANG, TargetLanguage::CPP_LANG)),
+        ::testing::Values(TargetLanguage::C_LANG, TargetLanguage::CPP_LANG),
+        ::testing::Values(false, true)),
     PrintParamName());
 
 void initial_setup() {

@@ -34,18 +34,22 @@ endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 include_directories(
     .
+    include
     ${PROJECT_SOURCE_DIR}/../devices/mercury/loopback_ilip/include
 )
 
 add_library(${PIRATE_STATIC_LIB} STATIC ${PIRATE_SOURCES})
+target_include_directories(${PIRATE_STATIC_LIB} PUBLIC include)
 set_target_properties(${PIRATE_STATIC_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_STATIC_LIB} PRIVATE ${PIRATE_C_FLAGS})
 
 add_library(${PIRATE_SHARED_LIB} SHARED ${PIRATE_SOURCES})
 set_target_properties(${PIRATE_SHARED_LIB} PROPERTIES OUTPUT_NAME pirate CLEAN_DIRECT_OUTPUT 1)
 target_compile_options(${PIRATE_SHARED_LIB} PRIVATE ${PIRATE_C_FLAGS})
+target_include_directories(${PIRATE_SHARED_LIB} PUBLIC include)
 
-install(FILES libpirate.h libpirate.hpp shmem_buffer.h DESTINATION include)
+
+install(FILES include/libpirate.h include/libpirate.hpp shmem_buffer.h DESTINATION include)
 install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
 install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
 
@@ -79,6 +83,10 @@ if(PIRATE_UNIT_TEST)
     include_directories(BEFORE libpirate)
     link_directories(BEFORE ${CMAKE_BINARY_DIR}/libpirate)
 
+    if(NOT IPV6_TESTS)
+        add_definitions(-DDISABLE_IPV6_TESTS)
+    endif(NOT IPV6_TESTS)
+
     set(PIRATE_C_TEST_FLAGS ${PIRATE_C_FLAGS})
     set(GAPS_CHANNELS_TEST gaps_channels_test)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -89,6 +97,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         "test/ge_eth_test.cpp")
 else()
     set(GAPS_CHANNELS_TEST_LIBS ${PIRATE_APP_LIBS} pthread)
+    if (PIRATE_SHMEM_FEATURE)
+      set(GAPS_CHANNELS_TEST_LIBS ${GAPS_CHANNELS_TEST_LIBS} rt)
+    endif(PIRATE_SHMEM_FEATURE)
     file(GLOB GAPS_CHANNELS_TEST_SRC test/*.cpp)
 endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_executable(${GAPS_CHANNELS_TEST} ${GAPS_CHANNELS_TEST_SRC})
@@ -104,6 +115,10 @@ endif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_custom_target(valgrind COMMAND valgrind
         --leak-check=full
         --error-exitcode=1
-        ./${GAPS_CHANNELS_TEST}
+        ./${GAPS_CHANNELS_TEST} --gtest_filter=-*MercuryFunctionalTest*
     )
 endif(PIRATE_UNIT_TEST)
+
+install(TARGETS ${PIRATE_SHARED_LIB} DESTINATION lib)
+install(TARGETS ${PIRATE_STATIC_LIB} DESTINATION lib)
+install(FILES include/libpirate.h include/libpirate.hpp DESTINATION include)

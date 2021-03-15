@@ -38,7 +38,6 @@ set(PIRATE_C_FLAGS -Werror -Wall -Wextra -Wpedantic -fPIC)
 
 set(PIRATE_STATIC_LIB libpirate_static)
 set(PIRATE_SHARED_LIB libpirate_shared)
-set(PIRATE_APP_LIBS pirate)
 
 if (PIRATE_SHMEM_FEATURE)
     set(PIRATE_APP_LIBS ${PIRATE_APP_LIBS} pthread rt)
@@ -66,11 +65,9 @@ if (CHANNEL_DEMO OR GAPS_DEMOS)
 endif(CHANNEL_DEMO OR GAPS_DEMOS)
 
 if ((RESOURCE_DEMOS OR GAPS_DEMOS) AND NOT GAPS_DISABLE)
-    add_subdirectory(resource_demos/1.manual_resources_with_pal)
-    add_subdirectory(resource_demos/2.auto_resources_with_pal)
-    if (PIRATE_LAUNCHER)
-        add_subdirectory(resource_demos/3.channels_with_pal)
-    endif(PIRATE_LAUNCHER)
+  add_subdirectory(resource_demos/1.manual_resources_with_pal)
+  add_subdirectory(resource_demos/2.auto_resources_with_pal)
+  add_subdirectory(resource_demos/3.channels_with_pal)
 endif((RESOURCE_DEMOS OR GAPS_DEMOS) AND NOT GAPS_DISABLE)
 
 if (CAMERA_DEMO OR GAPS_DEMOS)

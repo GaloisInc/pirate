@@ -19,45 +19,67 @@
 
 #include "options.hpp"
 
-const int OPT_THRESH    = 129;
-const int OPT_CODEC     = 131;
-const int OPT_OUT_DIR   = 132;
-const int OPT_MAX_OUT   = 133;
-const int OPT_SLIDE     = 134;
-const int OPT_LIMIT     = 135;
-const int OPT_INC       = 136;
-const int OPT_LOGLEVEL  = 137;
-const int OPT_KBD       = 138;
-const int OPT_FREESPACE = 139;
+const int OPT_THRESH        = 1100;
+const int OPT_METADATA      = 1200;
+const int OPT_OPENLAYERS    = 1201;
+const int OPT_CODEC         = 1300;
+const int OPT_OUT_DIR       = 1400;
+const int OPT_MAX_OUT       = 1500;
+const int OPT_SLIDE         = 1600;
+const int OPT_TRILLIUM      = 1700;
+const int OPT_TRILLIUM_CFG  = 1701;
+const int OPT_PAN_MIN       = 1800;
+const int OPT_PAN_MAX       = 1900;
+const int OPT_TILT_MIN      = 2000;
+const int OPT_TILT_MAX      = 2100;
+const int OPT_INC           = 2200;
+const int OPT_LOGLEVEL      = 2300;
+const int OPT_KBD           = 2400;
+const int OPT_FREESPACE     = 2500;
+const int OPT_GAPS_REQ      = 2600;
+const int OPT_GAPS_RSP      = 2700;
+const int OPT_COLOR_PICK    = 2800;
+const int OPT_GDB           = 2900;
 
 static struct argp_option options[] =
 {
-    { 0,              0,             0,             0, "video options:",                            1 },
-    { "video_device", 'd',           "device",      0, "video device",                              0 },
-    { "video_type",   't',           "type",        0, "video type (jpeg|yuyv|h264|stream)",        0 },
-    { "width",        'W',           "pixels",      0, "image width",                               0 },
-    { "height",       'H',           "pixels",      0, "image height",                              0 },
-    { "flip",         'f',           "v|h",         0, "horizontal or vertical image flip",         0 },
-    { "decoder",      'D',           "url",         0, "MPEG-TS H.264 decoder url (host:port)",     0 },
-    { 0,              0,             0,             0, "frame processor options:",                  2 },
-    { "color_track",  'C',           "RRGGBB",      0, "color tracking (RGB hex)",                  0 },
-    { "threshold",    OPT_THRESH,    "val",         0, "color tracking threshold",                  0 },
-    { "xwindows",     'X',           NULL,          0, "xwindows frame processor",                  0 },
-    { "filesystem",   'F',           NULL,          0, "filesystem frame processor",                0 },
-    { "encoder",      'E',           "url",         0, "MPEG-TS H.264 encoder url (host:port)",     0 },
-    { "codec",        OPT_CODEC,     "type",        0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
-    { "out_dir",      OPT_OUT_DIR,   "path",        0, "image output directory",                    0 },
-    { "out_count",    OPT_MAX_OUT,   "val",         0, "image output maximum file count",           0 },
-    { "sliding",      OPT_SLIDE,     NULL,          0, "sliding window image filter",               0 },
-    { 0,              0,             0,             0, "input/output options:",                     3 },
-    { "in_keyboard",  OPT_KBD,       NULL,          0, "read position input from keyboard",         0 },
-    { "in_freespace", OPT_FREESPACE, NULL,          0, "read position input from freespace device", 0 },
-    { "output",       'o',           "servo|print", 0, "angular position output",                   0 },
-    { "output_limit", OPT_LIMIT,     "val",         0, "angular position bound",                    0 },
-    { "output_incr",  OPT_INC,       "val",         0, "angular position increment",                0 },
-    { "verbose",      'v',           NULL,          0, "verbose output",                            4 },
-    { "loglevel",     OPT_LOGLEVEL,  "val",         0, "ffmpeg libraries log level",                0 },
-    { NULL,            0 ,           NULL,          0, NULL,                                        0 },
+    { 0,              0,                0,          0, "video options:",                            1 },
+    { "video_device", 'd',              "device",   0, "video device file path",                    0 },
+    { "video_type",   't',              "type",     0, "video type (jpeg|yuyv|h264|stream|trillium|test|none)", 0 },
+    { "width",        'W',              "pixels",   0, "image width",                               0 },
+    { "height",       'H',              "pixels",   0, "image height",                              0 },
+    { "flip",         'f',              NULL,       0, "flip image and controls (rotate 180)",      0 },
+    { "decoder",      'D',              "url",      0, "MPEG-TS H.264 decoder url (host:port)",     0 },
+    { 0,              0,                0,          0, "frame processor options:",                  2 },
+    { "color_track",  'C',              "RRGGBB",   0, "color tracking (RGB hex)",                  0 },
+    { "color_pick",   OPT_COLOR_PICK,   NULL,       0, "object color pick tool",                    0 },
+    { "threshold",    OPT_THRESH,       "val",      0, "color tracking threshold",                  0 },
+    { "xwindows",     'X',              NULL,       0, "xwindows frame processor",                  0 },
+    { "filesystem",   'F',              NULL,       0, "filesystem frame processor",                0 },
+    { "metadata",     OPT_METADATA,     NULL,       0, "metadata frame processor",                  0 },
+    { "openlayers",   OPT_OPENLAYERS,   "url",      0, "open layers rest api url (host:port)",      0 },
+    { "encoder",      'E',              "url",      0, "MPEG-TS H.264 encoder url (host:port)",     0 },
+    { "codec",        OPT_CODEC,        "type",     0, "encoder codec (mpeg1|mpeg2|h264)",          0 },
+    { "out_dir",      OPT_OUT_DIR,      "path",     0, "image output directory",                    0 },
+    { "out_count",    OPT_MAX_OUT,      "val",      0, "image output maximum file count",           0 },
+    { "sliding",      OPT_SLIDE,        NULL,       0, "sliding window image filter",               0 },
+    { 0,              0,                0,          0, "input/output options:",                     3 },
+    { "in_keyboard",  OPT_KBD,          NULL,       0, "read position input from keyboard",         0 },
+    { "in_freespace", OPT_FREESPACE,    NULL,       0, "read position input from freespace device", 0 },
+    { "output",       'o',              "type",     0, "controller (servo|trillium|print|none)",    0 },
+    { "trillium",     OPT_TRILLIUM,     "addr",     0, "trillium camera IP address",                0 },
+    { "trillium_cfg", OPT_TRILLIUM_CFG, "path",     0, "optional Trillium configuration file",      0 },
+    { "pan_min",      OPT_PAN_MIN,      "val",      0, "pan axis minimum angle",                    0 },
+    { "pan_max",      OPT_PAN_MAX,      "val",      0, "pan axis maximum angle",                    0 },
+    { "tilt_min",     OPT_TILT_MIN,     "val",      0, "tilt axis minimum angle",                   0 },
+    { "tilt_max",     OPT_TILT_MAX,     "val",      0, "tilt axis maximum angle",                   0 },
+    { "output_incr",  OPT_INC,          "val",      0, "angular position increment",                0 },
+    { "gaps_req",     OPT_GAPS_REQ,     "channel",  0, "gaps request channel",                      0 },
+    { "gaps_rsp",     OPT_GAPS_RSP,     "channel",  0, "gaps response channel",                     0 },
+    { "verbose",      'v',              NULL,       0, "verbose output",                            4 },
+    { "gdb",          OPT_GDB,          NULL,       0, "gdb support (disable SIGINT trap)",         0 },
+    { "loglevel",     OPT_LOGLEVEL,     "val",      0, "ffmpeg libraries log level",                0 },
+    { NULL,            0 ,              NULL,       0, NULL,                                        0 },
 };
 
 static std::string parseStreamUrl(std::string url, struct argp_state * state, bool encoder)
@@ -80,6 +102,19 @@ static std::string parseStreamUrl(std::string url, struct argp_state * state, bo
     else
     {
         return "udp://" + url;
+    }
+}
+
+static std::string parseApiUrl(std::string url, struct argp_state * state)
+{
+    if (url.find(':') == std::string::npos)
+    {
+        argp_error(state, "openlayers argument '%s' must be host:port", url.c_str());
+        return "";
+    }
+    else
+    {
+        return "http://" + url;
     }
 }
 
@@ -113,7 +148,22 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             else if (ss.str() == "stream")
             {
                 opt->mVideoInputType = VIDEO_STREAM;
-                opt->mVideoOutputType = VIDEO_YUYV;
+                opt->mVideoOutputType = VIDEO_BGRX;
+            }
+            else if (ss.str() == "trillium")
+            {
+                opt->mVideoInputType = VIDEO_TRILLIUM;
+                opt->mVideoOutputType = VIDEO_BGRX;
+            }
+            else if (ss.str() == "test")
+            {
+                opt->mVideoInputType = VIDEO_TEST;
+                opt->mVideoOutputType = VIDEO_BGRX;
+            }
+            else if (ss.str() == "none")
+            {
+                opt->mVideoInputType = VIDEO_NULL;
+                opt->mVideoOutputType = VIDEO_NULL;
             }
             else
             {
@@ -149,19 +199,7 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
 
         case 'f':
-            if (ss.str() == "v")
-            {
-                opt->mImageVerticalFlip = true;
-            }
-            else if (ss.str() == "h")
-            {
-                opt->mImageHorizontalFlip = true;
-            }
-            else
-            {
-                argp_error(state, "invalid flip argument '%s'", arg);
-            }
-
+            opt->mImageFlip = true;
             break;
 
         case OPT_OUT_DIR:
@@ -175,11 +213,23 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
         case 'o':
             if (ss.str() == "servo")
             {
-                opt->mOutputType = PiServo;
+                opt->mOutputType = PiServoOutput;
+                opt->mHasOutput = true;
+            }
+            else if (ss.str() == "trillium")
+            {
+                opt->mOutputType = TrilliumOutput;
+                opt->mHasOutput = true;
             }
             else if (ss.str() == "print")
             {
-                opt->mOutputType = Print;
+                opt->mOutputType = PrintOutput;
+                opt->mHasOutput = true;
+            }
+            else if (ss.str() == "none")
+            {
+                opt->mOutputType = NoneOutput;
+                opt->mHasOutput = false;
             }
             else
             {
@@ -189,10 +239,12 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_KBD:
             opt->mInputKeyboard = true;
+            opt->mHasInput = true;
             break;
 
         case OPT_FREESPACE:
             opt->mInputFreespace = true;
+            opt->mHasInput = true;
             break;
 
         case 'X':
@@ -201,6 +253,15 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case 'F':
             opt->mFilesystemProcessor = true;
+            break;
+
+        case OPT_METADATA:
+            opt->mMetaDataProcessor = true;
+            break;
+
+        case OPT_OPENLAYERS:
+            opt->mOpenLayersApi = true;
+            opt->mOpenLayersApiUrl = parseApiUrl(ss.str(), state);
             break;
 
         case 'E':
@@ -212,13 +273,29 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             opt->mH264DecoderUrl = parseStreamUrl(ss.str(), state, false);
             break;
 
-        case OPT_LIMIT: {
-            float limit;
-            ss >> limit;
-            opt->mAngularPositionMin = -limit;
-            opt->mAngularPositionMax = limit;
+        case OPT_TRILLIUM:
+            ss >> opt->mTrilliumIpAddress;
             break;
-        }
+
+        case OPT_TRILLIUM_CFG:
+            ss >> opt->mTrilliumConfig;
+            break;
+
+        case OPT_PAN_MIN:
+            ss >> opt->mPanAxisMin;
+            break;
+
+        case OPT_PAN_MAX:
+            ss >> opt->mPanAxisMax;
+            break;
+
+        case OPT_TILT_MIN:
+            ss >> opt->mTiltAxisMin;
+            break;
+
+        case OPT_TILT_MAX:
+            ss >> opt->mTiltAxisMax;
+            break;
 
         case OPT_INC:
             ss >> opt->mAngularPositionIncrement;
@@ -229,11 +306,13 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
 
         case OPT_SLIDE:
             opt->mImageSlidingWindow = true;
+            opt->mHasInput = true;
             break;
 
         case 'C': {
             std::string argval = ss.str();
             opt->mImageTracking = true;
+            opt->mHasInput = true;
             if (argval.length() != 6)
             {
                 argp_error(state, "invalid length of color tracking argument '%s'", arg);
@@ -260,12 +339,28 @@ static error_t parseOpt(int key, char * arg, struct argp_state * state)
             break;
         }
 
+        case OPT_COLOR_PICK:
+            opt->mImageColorPick = true;
+            break;
+
         case OPT_THRESH:
             ss >> opt->mImageTrackingThreshold;
             break;
 
         case 'v':
             opt->mVerbose = true;
+            break;
+
+        case OPT_GDB:
+            opt->mGDB = true;
+            break;
+
+        case OPT_GAPS_REQ:
+            opt->mGapsRequestChannel.push_back(ss.str());
+            break;
+
+        case OPT_GAPS_RSP:
+            opt->mGapsResponseChannel.push_back(ss.str());
             break;
 
         case OPT_LOGLEVEL:
@@ -281,7 +376,7 @@ void parseArgs(int argc, char * argv[], Options * opt)
     struct argp argp;
     argp.options = options;
     argp.parser = parseOpt;
-    argp.args_doc = "test";
+    argp.args_doc = "";
     argp.doc = "Embedded application based on camera, position input and position driver";
     argp.children = NULL;
     argp.help_filter = NULL;

@@ -18,18 +18,20 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <thread>
 #include <vector>
 
 #include <signal.h>
+#include <sys/ptrace.h>
 #include <sys/signalfd.h>
 #include <unistd.h>
 
 #include "libpirate.h"
 
-#include "orientationinputcreator.hpp"
-#include "orientationoutputcreator.hpp"
-#include "remoteorientationoutput.hpp"
+#include "cameracontrolinputcreator.hpp"
+#include "cameracontroloutputcreator.hpp"
+#include "remotecameracontroloutput.hpp"
 #include "frameprocessorcreator.hpp"
 #include "videosourcecreator.hpp"
 #include "imageconvert.hpp"
@@ -57,22 +59,54 @@ static int waitInterrupt(void* arg) {
     return 0;
 }
 
+int pirateValidateGapsOptions(Options &options) {
+    if (options.mHasInput && options.mGapsRequestChannel.empty()) {
+        std::cerr << "--gaps_req argument required for keyboard, freespace, or color tracking" << std::endl;
+        return -1;
+    }
+    if (options.mHasOutput && options.mGapsRequestChannel.empty()) {
+        std::cerr << "--gaps_req argument required for servo or print output types" << std::endl;
+        return -1;
+    }
+    if (options.mImageSlidingWindow && options.mGapsResponseChannel.empty()) {
+        std::cerr << "--gaps_rsp argument required for sliding window" << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
 void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
-    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_RDONLY);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
+    if (options.mHasOutput) {
+        for (std::string channelDesc : options.mGapsRequestChannel) {
+            rv = pirate_open_parse(channelDesc.c_str(), O_RDONLY);
+            if (rv < 0) {
+                perror("unable to open gaps request channel for reading");
+                return;
+            }
+            remotes.mGapsRequestReadGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for reading." << std::endl;
+            std::cout << msg.str();
+            msg.str(std::string());
+        }
     }
-    remotes.mServerReadGd = rv;
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_RDONLY);
-    if (rv < 0) {
-        perror("pirate open client read channel error");
-        return;
+
+    if (options.mHasInput && !options.mGapsResponseChannel.empty()) {
+        std::string channelDesc = options.mGapsResponseChannel[0];
+        rv = pirate_open_parse(channelDesc.c_str(), O_RDONLY);
+        if (rv < 0) {
+            perror("unable to open gaps response channel for reading");
+            return;
+        }
+        remotes.mGapsResponseReadGd = rv;
+        msg << "Opened " << channelDesc << " for reading." << std::endl;
+        std::cout << msg.str();
+        msg.str(std::string());
     }
-    remotes.mClientReadGd = rv;
 
     success = 0;
 }
@@ -80,35 +114,52 @@ void pirateInitReaders(RemoteDescriptors &remotes, const Options &options, int &
 void pirateInitWriters(RemoteDescriptors &remotes, Options &options, int &success) {
     int rv;
     success = -1;
+    // pirateInitReaders() and pirateInitWriters() both writing to std::cout
+    std::stringstream msg;
 
-    rv = pirate_open_parse(options.mOutputServerChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open server write channel error");
-        return;
+    if (options.mHasInput && !options.mGapsRequestChannel.empty()) {
+        std::string channelDesc = options.mGapsRequestChannel[0];
+        rv = pirate_open_parse(channelDesc.c_str(), O_WRONLY);
+        if (rv < 0) {
+            perror("unable to open gaps request channel for writing");
+            return;
+        }
+        remotes.mGapsRequestWriteGd = rv;
+        msg << "Opened " << channelDesc << " for writing." << std::endl;
+        std::cout << msg.str();
+        msg.str(std::string());
     }
-    remotes.mClientWriteGd = rv;
 
-    rv = pirate_open_parse(options.mOutputClientChannel.c_str(), O_WRONLY);
-    if (rv < 0) {
-        perror("pirate open client write channel error");
-        return;
+    if (options.mHasOutput) {
+        for (std::string channelDesc : options.mGapsResponseChannel) {
+            rv = pirate_open_parse(channelDesc.c_str(), O_WRONLY);
+            if (rv < 0) {
+                perror("unable to open gaps response channel for writing");
+                return;
+            }
+            remotes.mGapsResponseWriteGds.push_back(rv);
+            msg << "Opened " << channelDesc << " for writing." << std::endl;
+            std::cout << msg.str();
+            msg.str(std::string());
+        }
     }
-    remotes.mServerWriteGds.push_back(rv);
 
     success = 0;
 }
 
 void pirateCloseRemotes(const RemoteDescriptors &remotes) {
-    if (remotes.mClientReadGd > 0) {
-        pirate_close(remotes.mClientReadGd);
+    if (remotes.mGapsRequestWriteGd > 0) {
+        pirate_close(remotes.mGapsRequestWriteGd);
     }
-    if (remotes.mClientWriteGd > 0) {
-        pirate_close(remotes.mClientWriteGd);       
+    if (remotes.mGapsResponseReadGd > 0) {
+        pirate_close(remotes.mGapsResponseReadGd);
     }
-    if (remotes.mServerReadGd > 0) {
-        pirate_close(remotes.mServerReadGd);
+    for (auto gd : remotes.mGapsResponseWriteGds) {
+        if (gd > 0) {
+            pirate_close(gd);
+        }
     }
-    for (auto gd : remotes.mServerWriteGds) {
+    for (auto gd : remotes.mGapsRequestReadGds) {
         if (gd > 0) {
             pirate_close(gd);
         }
@@ -117,11 +168,12 @@ void pirateCloseRemotes(const RemoteDescriptors &remotes) {
 
 int main(int argc, char *argv[])
 {
-    int rv, readerSuccess, writerSuccess;
+    int rv = 0, readerSuccess, writerSuccess;
     Options options;
     RemoteDescriptors remotes;
     sigset_t set;
-    std::thread *signalThread, *readerInitThread, *writerInitThread;
+    struct sigaction newaction;
+    std::thread *signalThread = nullptr, *readerInitThread, *writerInitThread;
     std::vector<std::shared_ptr<FrameProcessor>> frameProcessors;
 
     parseArgs(argc, argv, &options);
@@ -136,47 +188,61 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // block SIGINT for all threads except for the signalThread
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
+    if (!options.mGDB) {
+        // block SIGINT for all threads except for the signalThread
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        pthread_sigmask(SIG_BLOCK, &set, NULL);
+        newaction.sa_handler = SIG_IGN;
+        newaction.sa_flags = 0;
+        sigemptyset(&newaction.sa_mask);
+        sigaction(SIGINT, &newaction, NULL);
+    }
 
-    OrientationOutput *orientationOutput;
+    CameraControlOutput *cameraControlOutput = nullptr;
 
-    std::vector<std::shared_ptr<OrientationInput>> orientationInputs;
+    std::vector<std::shared_ptr<CameraControlInput>> cameraControlInputs;
     std::shared_ptr<ColorTracking> colorTracking = nullptr;
 
-    std::unique_ptr<OrientationOutput> delegate(OrientationOutputCreator::get(options));
-    orientationOutput = new RemoteOrientationOutput(std::move(delegate), options, remotes);
-    CameraOrientationCallbacks angPosCallbacks = orientationOutput->getCallbacks();
+    std::unique_ptr<CameraControlOutput> delegate(CameraControlOutputCreator::get(options));
+    cameraControlOutput = new RemoteCameraControlOutput(std::move(delegate), options, remotes);
+    CameraControlCallbacks cameraControlCallbacks = cameraControlOutput->getCallbacks();
 
     if (options.mImageTracking) {
-        colorTracking = std::make_shared<ColorTracking>(options, angPosCallbacks);
-        orientationInputs.push_back(colorTracking);
+        colorTracking = std::make_shared<ColorTracking>(options, cameraControlCallbacks);
+        cameraControlInputs.push_back(colorTracking);
     }
 
     if (options.mInputKeyboard) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Keyboard, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Keyboard, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mInputFreespace) {
-        std::shared_ptr<OrientationInput> io =
-            std::shared_ptr<OrientationInput>(OrientationInputCreator::get(Freespace, options, angPosCallbacks));
-        orientationInputs.push_back(io);
+        std::shared_ptr<CameraControlInput> io =
+            std::shared_ptr<CameraControlInput>(CameraControlInputCreator::get(Freespace, options, cameraControlCallbacks));
+        cameraControlInputs.push_back(io);
     }
 
     if (options.mFilesystemProcessor) {
-        FrameProcessorCreator::add(Filesystem, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(Filesystem, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mXWinProcessor) {
-        FrameProcessorCreator::add(XWindows, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(XWindows, frameProcessors, options, cameraControlCallbacks);
+    }
+
+    if (options.mMetaDataProcessor) {
+        FrameProcessorCreator::add(MetaDataProcessor, frameProcessors, options, cameraControlCallbacks);
+    }
+
+    if (options.mOpenLayersApi) {
+        FrameProcessorCreator::add(MetaDataProcessorOpenLayers, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mH264Encoder) {
-        FrameProcessorCreator::add(H264Stream, frameProcessors, options, angPosCallbacks);
+        FrameProcessorCreator::add(H264Stream, frameProcessors, options, cameraControlCallbacks);
     }
 
     if (options.mImageTracking) {
@@ -185,17 +251,17 @@ int main(int argc, char *argv[])
 
     VideoSource *videoSource = VideoSourceCreator::create(options.mVideoInputType, frameProcessors, options);
 
-    rv = orientationOutput->init();
+    rv = cameraControlOutput->init();
     if (rv != 0)
     {
-        return -1;
+        goto cleanup;
     }
 
-    for (auto orientationInput : orientationInputs) {
-        rv = orientationInput->init();
+    for (auto cameraControlInput : cameraControlInputs) {
+        rv = cameraControlInput->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -203,33 +269,40 @@ int main(int argc, char *argv[])
         rv = frameProcessor->init();
         if (rv != 0)
         {
-            return -1;
+            goto cleanup;
         }
     }
 
     rv = videoSource->init();
     if (rv != 0)
     {
-        videoSource->term();
-        return -1;
+        goto cleanup;
     }
 
-    signalThread = new std::thread(waitInterrupt, nullptr);
+    if (!options.mGDB) {
+        signalThread = new std::thread(waitInterrupt, nullptr);
+    }
 
     while (!interrupted)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    signalThread->join();
-
-    delete signalThread;
-    delete videoSource;
+cleanup:
+    if (signalThread != nullptr) {
+        signalThread->join();
+        delete signalThread;
+    }
+    if (videoSource != nullptr) {
+        delete videoSource;
+    }
     frameProcessors.clear();
-    orientationInputs.clear();
-    delete orientationOutput;
+    cameraControlInputs.clear();
+    if (cameraControlOutput != nullptr) {
+        delete cameraControlOutput;
+    }
 
     pirateCloseRemotes(remotes);
 
-    return 0;
+    return rv;
 }

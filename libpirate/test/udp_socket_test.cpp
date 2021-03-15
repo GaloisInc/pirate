@@ -136,7 +136,7 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     int gd_w1, gd_w2;
     int rv;
 
-    gd_r1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_RDONLY);
+    gd_r1 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72601", O_RDONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_r1, 0);
 
@@ -144,11 +144,143 @@ TEST(ChannelUdpSocketTest, WriterAddressAndPort) {
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_r2, 0);
 
-    gd_w1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_WRONLY);
+    gd_w1 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72601", O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_w1, 0);
 
     gd_w2 = pirate_open_parse("udp_socket,127.0.0.1,72600,127.0.0.1,72602", O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_w2, 0);
+
+    rv = pirate_write(gd_w1, "hello", 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+
+    rv = pirate_write(gd_w1, "a", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "b", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "c", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w2, "world", 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+
+    rv = pirate_read(gd_r2, buf, 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+    // this would be "hello" if the streams were crossed
+    ASSERT_STREQ("world", buf);
+
+    rv = pirate_read(gd_r1, buf, 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+    ASSERT_STREQ("hello", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("a", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("b", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("c", buf);
+
+    pirate_close(gd_r1);
+    pirate_close(gd_r2);
+    pirate_close(gd_w1);
+    pirate_close(gd_w2);
+#endif
+}
+
+TEST(ChannelUdpSocketTest, WriterPort) {
+#ifndef _WIN32
+    char buf[80];
+    int gd_r1, gd_w1;
+    int rv;
+
+    gd_r1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_r1, 0);
+
+    gd_w1 = pirate_open_parse("udp_socket,127.0.0.1,72600,0.0.0.0,72601", O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_w1, 0);
+
+    rv = pirate_write(gd_w1, "hello", 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+
+    rv = pirate_write(gd_w1, "a", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "b", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+    rv = pirate_write(gd_w1, "c", 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+
+
+    rv = pirate_read(gd_r1, buf, 6);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(6, rv);
+    ASSERT_STREQ("hello", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("a", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("b", buf);
+
+    rv = pirate_read(gd_r1, buf, 2);
+    ASSERT_EQ(0, errno);
+    ASSERT_EQ(2, rv);
+    ASSERT_STREQ("c", buf);
+
+    pirate_close(gd_r1);
+    pirate_close(gd_w1);
+#endif
+}
+
+TEST(ChannelUdpSocketTest, WriterAddressAndPortIPv6) {
+#if !defined(_WIN32) && !defined(DISABLE_IPV6_TESTS)
+    char buf[80];
+    int gd_r1, gd_r2;
+    int gd_w1, gd_w2;
+    int rv;
+
+    gd_r1 = pirate_open_parse("udp_socket,::1,72600,::1,72601", O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_r1, 0);
+
+    gd_r2 = pirate_open_parse("udp_socket,::1,72600,::1,72602", O_RDONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_r2, 0);
+
+    gd_w1 = pirate_open_parse("udp_socket,::1,72600,::1,72601", O_WRONLY);
+    ASSERT_EQ(0, errno);
+    ASSERT_GE(gd_w1, 0);
+
+    gd_w2 = pirate_open_parse("udp_socket,::1,72600,::1,72602", O_WRONLY);
     ASSERT_EQ(0, errno);
     ASSERT_GE(gd_w2, 0);
 
